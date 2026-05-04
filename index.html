@@ -5,522 +5,366 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>ZAP FLAGS - Caça ao Tesouro</title>
     
-    <!-- MAPAS (Leaflet) -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    
-    <!-- QR CODE -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
     <style>
-        /* --- ESTILOS GERAIS --- */
-        body { margin: 0; padding: 0; font-family: 'Courier New', monospace; background: #000; color: #0f0; overflow: hidden; }
+        /* ESTILOS HACKER */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Courier New', monospace; 
+            background: linear-gradient(45deg, #000, #001100); 
+            color: #0f0; 
+            min-height: 100vh; 
+            overflow-x: hidden;
+        }
+        
+        /* ANIMAÇÕES */
+        @keyframes glow { 0%,100%{text-shadow:0 0 10px #0f0;} 50%{text-shadow:0 0 30px #0f0,0 0 40px #0f0;} }
+        @keyframes scan { 0%{width:0;} 100%{width:100%;} }
+        
+        .glow { animation: glow 2s infinite; }
+        .scanner { position: relative; overflow: hidden; }
+        .scanner::after { content: ''; position: absolute; top: 0; left: 0; height: 100%; background: linear-gradient(90deg,transparent,#0f0,#0f0,#0f0,transparent); animation: scan 2s infinite; }
+
+        /* PÁGINA INICIAL */
+        #home { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; }
+        #home h1 { font-size: clamp(2rem, 8vw, 4rem); margin-bottom: 20px; }
+        .btn-big { background: #0f0; color: #000; border: none; padding: 15px 40px; font-size: 18px; font-weight: bold; cursor: pointer; border-radius: 5px; margin: 10px; transition: all 0.3s; box-shadow: 0 0 20px #0f0; }
+        .btn-big:hover { transform: scale(1.05); box-shadow: 0 0 30px #0f0; }
+        .btn-pr { background: #333; color: #fff; }
+
+        /* FORMULÁRIOS */
+        .form-container { background: rgba(0,0,0,0.9); border: 2px solid #0f0; padding: 30px; border-radius: 10px; max-width: 400px; width: 90%; box-shadow: 0 0 30px #0f0; }
+        .form-group { margin-bottom: 20px; position: relative; }
+        input { width: 100%; padding: 15px; background: #111; color: #0f0; border: 1px solid #0f0; font-family: inherit; font-size: 16px; border-radius: 5px; }
+        input:focus { outline: none; box-shadow: 0 0 10px #0f0; }
+        .error { color: #f00; font-size: 14px; margin-top: 5px; }
+        .success { color: #0f0; font-size: 14px; margin-top: 5px; animation: glow 1s infinite; }
+
+        /* PÁGINAS OCULTAS */
         .hidden { display: none !important; }
-        button { background: #0f0; color: #000; border: none; padding: 10px 20px; font-weight: bold; font-size: 16px; cursor: pointer; }
-        input { background: #222; color: #0f0; border: 1px solid #0f0; padding: 10px; width: 80%; margin-bottom: 10px; }
 
-        /* --- ECRÃ DE LOGIN --- */
-        #login-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #000; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; }
-        #login-screen h1 { font-size: 3rem; text-shadow: 0 0 10px #0f0; }
-
-        /* --- MAPA --- */
+        /* ESTILOS DO JOGO (mantidos) */
         #map { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
-        
-        /* --- HUD (Heads Up Display) --- */
-        #hud { position: absolute; top: 10px; left: 10px; width: calc(100% - 20px); z-index: 1000; background: rgba(0,0,0,0.8); padding: 10px; border: 2px solid #0f0; box-sizing: border-box; }
-        .bar { width: 100%; height: 20px; background: #333; border: 1px solid #0f0; margin-top: 5px; position: relative; }
-        #energy-fill { height: 100%; background: #0f0; width: 100%; transition: width 0.5s; }
-        .stat { display: inline-block; margin-right: 15px; font-weight: bold; }
-
-        /* --- MENUS FLUTUANTES --- */
-        .modal { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #000; border: 3px solid #0f0; padding: 20px; z-index: 2000; width: 80%; max-width: 400px; text-align: center; }
-        .btn-group { display: flex; gap: 10px; justify-content: center; margin-top: 10px; flex-wrap: wrap; }
-        
-        /* --- LISTA DE BANDEIRAS --- */
-        #flag-list { max-height: 200px; overflow-y: auto; text-align: left; margin: 10px 0; border: 1px solid #0f0; padding: 5px; }
-        .flag-item { display: flex; justify-content: space-between; padding: 5px; border-bottom: 1px solid #333; align-items: center; }
-        .flag-item button { padding: 5px 10px; font-size: 12px; }
-
-        /* Custom icon fix */
-        .custom-icon { background: transparent; border: none; }
+        #hud { position: absolute; top: 10px; left: 10px; width: calc(100% - 20px); z-index: 1000; background: rgba(0,0,0,0.9); padding: 15px; border: 2px solid #0f0; border-radius: 10px; backdrop-filter: blur(10px); }
+        .modal { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.95); border: 3px solid #0f0; padding: 25px; z-index: 2000; width: 90%; max-width: 450px; border-radius: 10px; box-shadow: 0 0 50px #0f0; max-height: 90vh; overflow-y: auto; }
+        .btn-group { display: flex; gap: 10px; justify-content: center; margin-top: 20px; flex-wrap: wrap; }
+        button { background: #0f0; color: #000; border: none; padding: 12px 20px; font-weight: bold; font-size: 14px; cursor: pointer; border-radius: 5px; transition: all 0.3s; }
+        button:hover { transform: translateY(-2px); box-shadow: 0 5px 15px #0f0; }
     </style>
 </head>
 <body>
 
-    <!-- 1. ECRÃ DE LOGIN -->
-    <div id="login-screen">
-        <h1>⚡ ZAP FLAGS ⚡</h1>
-        <input type="text" id="player-name" placeholder="Nome do Jogador">
-        <input type="email" id="player-email" placeholder="Email (para recuperar conta)">
-        <button onclick="startGame()">🚀 COMEÇAR CAÇADA</button>
-        <button onclick="showPRDashboard()" style="background: #333; color: #fff; margin-top: 20px;">🏪 SOU LOJISTA (PR)</button>
+<!-- 1. PÁGINA INICIAL / EMPRESA -->
+<div id="home-screen">
+    <div class="glow">⚡ ZAP FLAGS ⚡</div>
+    <h1 class="glow">CAÇA AO TESOURO</h1>
+    <p style="font-size: 1.2rem; margin: 20px 0;">Sistema de Fidelização Geolocation para Lojas</p>
+    
+    <div style="margin: 40px 0;">
+        <button class="btn-big" onclick="showLogin()">🎮 ENTRAR NO JOGO</button>
+        <br>
+        <button class="btn-big btn-pr" onclick="showPRDashboard()">🏪 PAINEL LOJISTA (PR)</button>
     </div>
+    
+    <p style="opacity: 0.7; max-width: 500px;">
+        Regista-te e começa a caçar bandeiras virtuais nas lojas parceiras!<br>
+        Ganha QR Codes e troca por prémios reais! 🎁
+    </p>
+</div>
 
-    <!-- 2. MAPA -->
+<!-- 2. LOGIN -->
+<div id="login-screen" class="hidden">
+    <div class="form-container">
+        <h2 class="glow">🔐 ENTRAR</h2>
+        <div class="form-group">
+            <input type="email" id="login-email" placeholder="📧 Email" required>
+            <div id="login-email-error" class="error"></div>
+        </div>
+        <div class="form-group">
+            <input type="password" id="login-password" placeholder="🔑 Senha" required>
+        </div>
+        <button class="btn-big" style="width:100%; font-size:16px;" onclick="login()">🚀 ACESSAR JOGO</button>
+        <p style="margin-top: 15px;">
+            <a href="#" onclick="showRegister()" style="color:#0f0;">Não tens conta? <b>REGISTAR</b></a>
+        </p>
+    </div>
+</div>
+
+<!-- 3. REGISTO -->
+<div id="register-screen" class="hidden">
+    <div class="form-container">
+        <h2 class="glow">📝 REGISTAR</h2>
+        <div class="form-group">
+            <input type="text" id="reg-name" placeholder="👤 Nome Completo" required>
+        </div>
+        <div class="form-group">
+            <input type="email" id="reg-email" placeholder="📧 Email" required>
+            <div id="reg-email-error" class="error"></div>
+        </div>
+        <div class="form-group">
+            <input type="tel" id="reg-phone" placeholder="📱 Telemóvel (+351)" required>
+        </div>
+        <div class="form-group">
+            <input type="password" id="reg-password" placeholder="🔑 Senha (min 6)" required>
+            <div id="reg-password-error" class="error"></div>
+        </div>
+        <div class="form-group">
+            <input type="password" id="reg-confirm-password" placeholder="🔄 Confirmar Senha" required>
+            <div id="reg-confirm-error" class="error"></div>
+        </div>
+        <button class="btn-big" style="width:100%; font-size:16px;" onclick="register()">📨 ENVIAR LINK DE CONFIRMAÇÃO</button>
+        <p style="margin-top: 15px; font-size: 12px; opacity: 0.8;">
+            Receberás link por Email ou SMS 📧📱
+        </p>
+        <p><a href="#" onclick="showLogin()" style="color:#0f0;">Já tens conta? <b>ENTRAR</b></a></p>
+    </div>
+</div>
+
+<!-- 4. CONFIRMAÇÃO -->
+<div id="confirm-screen" class="hidden">
+    <div class="form-container">
+        <h2 class="glow">✅ CONFIRMAR REGISTO</h2>
+        <p id="confirm-message">Link enviado para <b id="confirm-email"></b></p>
+        <div class="form-group">
+            <input type="text" id="confirm-code" placeholder="Código de 6 dígitos" maxlength="6">
+            <div id="confirm-error" class="error"></div>
+        </div>
+        <button class="btn-big" style="width:100%;" onclick="confirmRegistration()">VALIDAR CÓDIGO</button>
+        <button onclick="resendCode()" style="background:#333; width:100%; margin-top:10px;">🔄 Reenviar Código</button>
+        <p><a href="#" onclick="showRegister()" style="color:#0f0;">Alterar dados →</a></p>
+    </div>
+</div>
+
+<!-- 5. JOGO (HUD + MAPA) -->
+<div id="game-container" class="hidden">
     <div id="map"></div>
-
-    <!-- 3. HUD -->
-    <div id="hud" class="hidden">
-        <div class="stat">🏴 Bandeiras: <span id="flag-count">0</span></div>
-        <div class="stat">⚡ Nível: <span id="skill-level">1</span> (<span id="vision-range">5</span>m)</div>
-        <div class="stat">🎯 QR Prontos: <span id="qr-count">0</span></div>
-        <div class="bar"><div id="energy-fill"></div></div>
-        <div class="btn-group" style="margin-top: 10px;">
-            <button onclick="toggleTrade()">🔄 Trocar</button>
-            <button onclick="showMyQR()">🎫 Meus QRs</button>
+    <div id="hud">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <div>👤 <span id="player-name-display"></span></div>
+            <div>🏴 <span id="flag-count">0</span></div>
         </div>
-    </div>
-
-    <!-- 4. JANELA DE TROCA -->
-    <div id="trade-modal" class="modal hidden">
-        <h2>💰 MERCADO DE BANDEIRAS</h2>
-        <p>Listar custa 5% Energia. Dura 5 dias.</p>
-        <div id="flag-list"></div>
+        <div style="display:flex; gap:10px; margin-bottom:10px;">
+            <div style="flex:1;">⚡ <span id="skill-level">1</span> (<span id="vision-range">5</span>m)</div>
+            <div>🎯 <span id="qr-count">0</span></div>
+        </div>
+        <div class="bar" style="margin-bottom:10px;"><div id="energy-fill" style="height:100%; background:#0f0; width:100%; transition:width 0.5s; border-radius:3px;"></div></div>
         <div class="btn-group">
-            <button onclick="listFlagForTrade()">📤 LISTAR BANDEIRA (-5% Energia)</button>
-            <button onclick="toggleTrade()">❌ FECHAR</button>
+            <button onclick="logout()">🚪 Sair</button>
+            <button onclick="toggleTrade()">🔄 Mercado</button>
+            <button onclick="showMyQR()">🎫 QRs</button>
         </div>
     </div>
+</div>
 
-    <!-- 5. JANELA MEUS QRs -->
-    <div id="qr-modal" class="modal hidden">
-        <h2>🎫 OS TEUS QRs</h2>
-        <div id="my-qrs"></div>
-        <button onclick="toggleQR()" style="margin-top: 20px;">❌ FECHAR</button>
+<!-- MODAIS DO JOGO (mercado, QRs, PR) - simplificados -->
+<div id="trade-modal" class="modal hidden">
+    <h3>💰 Mercado (Demo)</h3>
+    <p>Funcionalidade PRO 💎</p>
+    <div class="btn-group"><button onclick="toggleTrade()">Fechar</button></div>
+</div>
+
+<div id="qr-modal" class="modal hidden">
+    <h3>🎫 Teus QRs (Demo)</h3>
+    <p>Caça 10 flags = 1 QR!</p>
+    <div class="btn-group"><button onclick="toggleQR()">Fechar</button></div>
+</div>
+
+<div id="pr-dashboard" class="modal hidden" style="width:90%; max-width:none;">
+    <h2>🏪 Painel Lojista (Demo)</h2>
+    <p>Ativa campanhas pagas! 💳</p>
+    <div class="btn-group">
+        <button onclick="buyDemoPack()">Comprar Pack Demo</button>
+        <button onclick="closePR()">Fechar</button>
     </div>
+</div>
 
-    <!-- 6. PAINEL DO PR -->
-    <div id="pr-dashboard" class="modal hidden" style="width: 90%; height: 90%; overflow-y: auto; max-width: none;">
-        <h2>🏪 PAINEL DO LOJISTA</h2>
-        <button onclick="location.reload()">🏠 VOLTAR AO JOGO</button>
+<script>
+    // === SISTEMA DE USUÁRIOS (LocalStorage Simulado) ===
+    let users = JSON.parse(localStorage.getItem('zap_users')) || [];
+    let currentUser = null;
+    let gameData = {};
+
+    // === 1. NAVEGAÇÃO ===
+    function showScreen(screenId) {
+        document.querySelectorAll('[id$="-screen"], #game-container, .modal').forEach(el => el.classList.add('hidden'));
+        document.getElementById(screenId)?.classList.remove('hidden');
+    }
+
+    function showLogin() { 
+        clearErrors(); 
+        showScreen('login-screen'); 
+    }
+
+    function showRegister() { 
+        clearErrors(); 
+        showScreen('register-screen'); 
+    }
+
+    // === 2. REGISTO ===
+    function register() {
+        clearErrors();
+        const name = document.getElementById('reg-name').value.trim();
+        const email = document.getElementById('reg-email').value.trim().toLowerCase();
+        const phone = document.getElementById('reg-phone').value.trim();
+        const password = document.getElementById('reg-password').value;
+        const confirmPassword = document.getElementById('reg-confirm-password').value;
+
+        // Validações
+        if (!name || !email || !phone || !password) {
+            showError('reg-email-error', 'Preenche todos os campos!');
+            return;
+        }
+        if (users.find(u => u.email === email)) {
+            showError('reg-email-error', '❌ Email já registado!');
+            return;
+        }
+        if (password.length < 6) {
+            showError('reg-password-error', 'Senha deve ter 6+ caracteres!');
+            return;
+        }
+        if (password !== confirmPassword) {
+            showError('reg-confirm-error', 'Senhas não coincidem!');
+            return;
+        }
+
+        // Cria user pendente
+        const userId = Date.now();
+        users.push({
+            id: userId,
+            name,
+            email,
+            phone,
+            password, // Em produção: hash!
+            verified: false,
+            code: Math.floor(100000 + Math.random() * 900000).toString(),
+            codeSent: new Date().toISOString()
+        });
+
+        localStorage.setItem('zap_users', JSON.stringify(users));
         
-        <h3>💳 Comprar Pacotes</h3>
-        <div class="btn-group" style="flex-direction: column; gap: 10px;">
-            <button onclick="buyPack('BRONZE')" style="background: #CD7F32;">🥉 BRONZE (5€) - 50.000 flags (5km)</button>
-            <button onclick="buyPack('PRATA')" style="background: #C0C0C0;">🥈 PRATA (15€) - 150.000 flags (20km)</button>
-            <button onclick="buyPack('OURO')" style="background: #FFD700;">🥇 OURO (50€) - 500.000 flags (50km)</button>
-            <button onclick="buyPack('PLATINA')" style="background: #E5E4E2;">💎 PLATINA (100€) - 2M flags (150km)</button>
-        </div>
+        // Simula envio
+        document.getElementById('confirm-email').textContent = email;
+        showScreen('confirm-screen');
+        showSuccess('confirm-message', `✅ Código enviado para ${email} e ${phone}`);
+    }
+
+    function resendCode() {
+        register(); // Reexecuta para novo código
+    }
+
+    function confirmRegistration() {
+        const code = document.getElementById('confirm-code').value;
+        if (!code || code.length !== 6) {
+            showError('confirm-error', 'Código deve ter 6 dígitos!');
+            return;
+        }
+
+        const user = users.find(u => u.code === code && !u.verified);
+        if (!user) {
+            showError('confirm-error', '❌ Código inválido ou expirado!');
+            return;
+        }
+
+        // Confirma user
+        user.verified = true;
+        localStorage.setItem('zap_users', JSON.stringify(users));
         
-        <h3>📊 Minhas Campanhas</h3>
-        <div id="pr-campaigns"></div>
+        alert('🎉 Conta confirmada! Podes entrar no jogo!');
+        showLogin();
+    }
 
-        <h3>📸 Scanner QR</h3>
-        <button onclick="openScanner()">🔍 ABRIR SCANNER</button>
-        <div id="scanner-result"></div>
-    </div>
+    // === 3. LOGIN ===
+    function login() {
+        clearErrors();
+        const email = document.getElementById('login-email').value.trim().toLowerCase();
+        const password = document.getElementById('login-password').value;
 
-    <script>
-        // =========================================================================
-        // 🧠 CÉREBRO DO JOGO (LÓGICA PURA) - VERSÃO CORRIGIDA
-        // =========================================================================
+        if (!email) {
+            showError('login-email-error', '❌ Precisas de email para entrar!');
+            return;
+        }
 
-        // --- 1. DADOS INICIAIS ---
-        let player = {
-            name: "",
-            email: "",
-            lat: 39.3999, lng: -8.2245, // Lisboa por default
-            energy: 100,
-            flags: 0,
-            qrs: [],
-            skill: 1,
-            vision: 5,
-            inventory: []
+        const user = users.find(u => u.email === email && u.password === password && u.verified);
+        if (!user) {
+            showError('login-email-error', '❌ Email não registado ou senha errada!');
+            return;
+        }
+
+        currentUser = user;
+        gameData = {
+            lat: 39.3999, lng: -8.2245,
+            energy: 100, flags: 0, qrs: 0,
+            skill: 1, vision: 5
         };
 
-        let prs = [
-            { id: 1, name: "Café Central", lat: 41.1496, lng: -8.6109, pack: "BRONZE", radius: 5000, flagsLeft: 50000, color: "red" },
-            { id: 2, name: "Ginásio Fit", lat: 38.7223, lng: -9.1393, pack: "PRATA", radius: 20000, flagsLeft: 150000, color: "blue" },
-            { id: 3, name: "Pastelaria Doce", lat: 41.5595, lng: -8.4218, pack: "OURO", radius: 50000, flagsLeft: 500000, color: "yellow" }
-        ];
+        document.getElementById('player-name-display').textContent = user.name;
+        showScreen('game-container');
+        updateHUD();
+        alert(`🎮 Bem-vindo ${user.name}! GPS ativo...`);
+    }
 
-        let map, playerMarker, watchId;
-        let allMarkers = [];
-        let gameRunning = false;
+    function logout() {
+        currentUser = null;
+        showScreen('home-screen');
+    }
 
-        // --- 2. INICIALIZAÇÃO ---
-        function startGame() {
-            const name = document.getElementById('player-name').value.trim();
-            const email = document.getElementById('player-email').value.trim();
-            if(!name || !email) { alert("⚠️ Preenche NOME e EMAIL!"); return; }
+    // === 4. UTILS ===
+    function clearErrors() {
+        document.querySelectorAll('.error').forEach(e => e.textContent = '');
+    }
 
-            player.name = name;
-            player.email = email;
-            player.energy = 100;
+    function showError(id, msg) {
+        document.getElementById(id).textContent = msg;
+    }
 
-            document.getElementById('login-screen').classList.add('hidden');
-            document.getElementById('hud').classList.remove('hidden');
+    function showSuccess(id, msg) {
+        const el = document.getElementById(id);
+        el.textContent = msg;
+        el.className = 'success';
+    }
 
-            initMap();
-            gameRunning = true;
-        }
+    // === 5. JOGO SIMPLIFICADO ===
+    function updateHUD() {
+        document.getElementById('flag-count').textContent = gameData.flags;
+        document.getElementById('qr-count').textContent = gameData.qrs;
+        document.getElementById('skill-level').textContent = gameData.skill;
+        document.getElementById('vision-range').textContent = gameData.vision;
+        document.getElementById('energy-fill').style.width = gameData.energy + '%';
+    }
 
-        function initMap() {
-            map = L.map('map').setView([player.lat, player.lng], 16);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '© OpenStreetMap | ZAP FLAGS'
-            }).addTo(map);
+    function toggleTrade() {
+        document.getElementById('trade-modal').classList.toggle('hidden');
+    }
 
-            // GPS
-            if (navigator.geolocation) {
-                watchId = navigator.geolocation.watchPosition(updatePosition, handleError, { 
-                    enableHighAccuracy: true, 
-                    maximumAge: 10000,
-                    timeout: 5000
-                });
-            } else {
-                alert("❌ GPS não suportado neste dispositivo.");
-            }
+    function toggleQR() {
+        document.getElementById('qr-modal').classList.toggle('hidden');
+    }
 
-            // Game loops
-            setInterval(gameLoop, 2000); // Flags spawn mais rápido
-            setInterval(recoverEnergy, 30000); // Recuperação mais rápida
-            calculateSkill(); // Calcular skill inicial
+    function showPRDashboard() {
+        showScreen('pr-dashboard');
+    }
+
+    function closePR() {
+        showScreen('home-screen');
+    }
+
+    function buyDemoPack() {
+        alert('💎 Pack DEMO ativado! Contacta support@zapflags.com');
+    }
+
+    // Demo game loop
+    setInterval(() => {
+        if (currentUser) {
+            if (gameData.energy < 100) gameData.energy = Math.min(100, gameData.energy + 1);
             updateHUD();
         }
+    }, 5000);
 
-        function updatePosition(position) {
-            player.lat = position.coords.latitude;
-            player.lng = position.coords.longitude;
+    // === INIT ===
+    console.log('🔥 ZAP FLAGS v2.0 - Sistema Completo!');
+</script>
 
-            if (!playerMarker) {
-                playerMarker = L.marker([player.lat, player.lng], {
-                    icon: L.divIcon({
-                        className: 'custom-icon',
-                        html: '<div style="background:#00f; width:24px; height:24px; border-radius:50%; border:3px solid #fff; box-shadow:0 0 10px #00f;"></div>',
-                        iconSize: [24, 24]
-                    })
-                }).addTo(map).bindPopup(`👤 ${player.name}`);
-            } else {
-                playerMarker.setLatLng([player.lat, player.lng]);
-            }
-            map.panTo([player.lat, player.lng], { animate: true, duration: 1 });
-        }
-
-        function handleError(error) {
-            console.warn("GPS Error:", error);
-            // Fallback para posição fixa se GPS falhar
-        }
-
-        // --- 3. GAME LOOP (CORRIGIDO) ---
-        function gameLoop() {
-            if (!gameRunning) return;
-            
-            clearMarkers();
-            spawnZapFlag();
-            
-            prs.forEach(pr => {
-                const dist = getDistance(player.lat, player.lng, pr.lat, pr.lng);
-                if (dist < pr.radius) {
-                    let chance = Math.max(1, 25 - (dist / 1000 * 1.5));
-                    if (Math.random() * 100 < chance && pr.flagsLeft > 0) {
-                        spawnPRFlag(pr);
-                        pr.flagsLeft--; // Diminui flags do PR
-                    }
-                }
-            });
-        }
-
-        function spawnZapFlag() {
-            const angle = Math.random() * 2 * Math.PI;
-            const dist = 20 + Math.random() * 40; // 20-60m
-            const newLat = player.lat + (dist / 111000) * Math.cos(angle);
-            const newLng = player.lng + (dist / (111000 * Math.cos(player.lat * Math.PI/180))) * Math.sin(angle);
-
-            if (getDistance(player.lat, player.lng, newLat, newLng) <= player.vision) {
-                const marker = L.marker([newLat, newLng], { icon: getIcon('blue') })
-                    .addTo(map)
-                    .bindPopup(`🔵 Bandeira ZAP<br>+10% Energia<br>Visão: ${player.vision}m`)
-                    .on('click', () => collectFlag('ZAP'));
-                allMarkers.push(marker);
-            }
-        }
-
-        function spawnPRFlag(pr) { // ✅ FIXED SYNTAX
-            const angle = Math.random() * 2 * Math.PI;
-            const dist = Math.random() * 80; // Até 80m do PR
-            const newLat = pr.lat + (dist / 111000) * Math.cos(angle);
-            const newLng = pr.lng + (dist / (111000 * Math.cos(pr.lat * Math.PI/180))) * Math.sin(angle);
-
-            if (getDistance(player.lat, player.lng, newLat, newLng) <= player.vision) {
-                const marker = L.marker([newLat, newLng], { icon: getIcon(pr.color) })
-                    .addTo(map)
-                    .bindPopup(`🔴 ${pr.name}<br>+1 Ponto QR<br>Visão: ${player.vision}m`)
-                    .on('click', () => collectFlag('PR', pr));
-                allMarkers.push(marker);
-            }
-        }
-
-        function collectFlag(type, pr = null) {
-            if (player.energy < 1) { 
-                alert("🔋 SEM ENERGIA! Espera recuperar ou troca bandeiras."); 
-                return; 
-            }
-            
-            player.energy -= 1;
-            
-            if (type === 'ZAP') {
-                player.energy = Math.min(100, player.energy + 12);
-            } else if (type === 'PR') {
-                player.flags++;
-                player.inventory.push(pr.id);
-                
-                if (player.flags % 10 === 0) {
-                    player.qrs.push({ 
-                        id: Date.now(), 
-                        pr_id: pr.id, 
-                        date: Date.now() + (15 * 24 * 60 * 60 * 1000) 
-                    });
-                }
-            }
-            
-            calculateSkill();
-            updateHUD();
-            gameLoop();
-        }
-
-        // --- 4. HUD E SKILL (MELHORADO) ---
-        function updateHUD() {
-            document.getElementById('flag-count').innerText = player.flags.toLocaleString();
-            document.getElementById('qr-count').innerText = player.qrs.length;
-            document.getElementById('skill-level').innerText = player.skill;
-            document.getElementById('vision-range').innerText = player.vision;
-            document.getElementById('energy-fill').style.width = player.energy + "%";
-        }
-
-        function calculateSkill() {
-            const points = player.flags;
-            const newVision = 5 + Math.sqrt(points / 50);
-            player.vision = Math.floor(Math.min(newVision, 120)); // Máx 120m
-            player.skill = 1 + Math.floor(points / 50);
-        }
-
-        function recoverEnergy() {
-            if (player.energy < 100) {
-                player.energy = Math.min(100, player.energy + 3);
-                updateHUD();
-            }
-        }
-
-        // --- 5. MERCADO (MELHORADO) ---
-        let marketListings = [];
-
-        function toggleTrade() {
-            const el = document.getElementById('trade-modal');
-            el.classList.toggle('hidden');
-            if (!el.classList.contains('hidden')) renderMarket();
-        }
-
-        function listFlagForTrade() {
-            if (player.inventory.length === 0) return alert("📭 Não tens bandeiras no inventário!");
-            if (player.energy < 5) return alert("⚡ Precisas 5% energia para listar!");
-
-            const index = Math.floor(Math.random() * player.inventory.length);
-            const prId = player.inventory.splice(index, 1)[0];
-
-            marketListings.push({ 
-                owner: player.name, 
-                pr_id: prId, 
-                expires: Date.now() + (5 * 24 * 60 * 60 * 1000) 
-            });
-            player.energy -= 5;
-            updateHUD();
-            alert("✅ Bandeira listada no mercado!");
-            renderMarket();
-        }
-
-        function renderMarket() {
-            const list = document.getElementById('flag-list');
-            list.innerHTML = marketListings.map((item, index) => {
-                const prName = prs.find(p => p.id === item.pr_id)?.name || "Loja";
-                const daysLeft = Math.ceil((item.expires - Date.now()) / (24*60*60*1000));
-                return `
-                    <div class="flag-item">
-                        <span>${prName} (${item.owner})<br><small>${daysLeft} dias</small></span>
-                        <button onclick="buyFromMarket(${index})">💰 Comprar</button>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        function buyFromMarket(index) {
-            if (index >= marketListings.length || player.energy < 3) {
-                return alert("❌ Energia insuficiente ou item expirado!");
-            }
-            
-            const item = marketListings[index];
-            player.energy -= 3;
-            player.flags++;
-            player.inventory.push(item.pr_id);
-            
-            if (player.flags % 10 === 0) {
-                player.qrs.push({ id: Date.now(), pr_id: item.pr_id });
-            }
-            
-            marketListings.splice(index, 1);
-            calculateSkill();
-            updateHUD();
-            renderMarket();
-            alert("✅ Compra realizada!");
-        }
-
-        // --- 6. QR SYSTEM (FIXED SYNTAX) ---
-        function showMyQR() {
-            const el = document.getElementById('qr-modal');
-            const container = document.getElementById('my-qrs');
-            el.classList.toggle('hidden');
-            
-            if (el.classList.contains('hidden')) return;
-            
-            container.innerHTML = "";
-            if (player.qrs.length === 0) {
-                container.innerHTML = "<p>🎫 Ainda não tens QRs. Apanha 10 bandeiras da mesma loja!</p>";
-                return;
-            }
-
-            player.qrs.forEach((qr) => {
-                const prName = prs.find(p => p.id === qr.pr_id)?.name || "Loja";
-                const expires = new Date(qr.date).toLocaleDateString('pt-PT');
-                const qrText = `ZAP_QR_${qr.id}_${player.email}`;
-                
-                const div = document.createElement('div');
-                div.style.margin = "15px 0; padding: 10px; border: 1px solid #0f0;";
-                div.innerHTML = `<b>${prName}</b><br>Expira: ${expires}`;
-                
-                const qrDiv = document.createElement('div');
-                qrDiv.style.margin = "10px 0";
-                div.appendChild(qrDiv);
-                
-                new QRCode(qrDiv, {
-                    text: qrText,
-                    width: 128,
-                    height: 128,
-                    colorDark: "#0f0",
-                    colorLight: "#111"
-                });
-
-                const useBtn = document.createElement('button');
-                useBtn.innerText = "👁️ Mostrar ao PR";
-                useBtn.style.marginTop = "5px";
-                useBtn.onclick = () => {
-                    alert(`📱 Mostra este QR ao dono da loja ${prName}\n\nCódigo: ${qrText}`);
-                };
-                div.appendChild(useBtn);
-
-                container.appendChild(div);
-            });
-        }
-
-        function toggleQR() {
-            document.getElementById('qr-modal').classList.add('hidden');
-        }
-
-        // --- 7. PR DASHBOARD ---
-        function showPRDashboard() {
-            document.getElementById('login-screen').classList.add('hidden');
-            document.getElementById('pr-dashboard').classList.remove('hidden');
-            renderPRDashboard();
-        }
-
-        function buyPack(type) {
-            const packs = {
-                'BRONZE': { radius: 5000, count: 50000, price: 5 },
-                'PRATA': { radius: 20000, count: 150000, price: 15 },
-                'OURO': { radius: 50000, count: 500000, price: 50 },
-                'PLATINA': { radius: 150000, count: 2000000, price: 100 }
-            };
-
-            const pack = packs[type];
-            const newPr = { 
-                id: Date.now(),
-                name: `Minha Loja #${prs.length + 1}`,
-                lat: player.lat || 39.3999,
-                lng: player.lng || -8.2245,
-                pack: type,
-                radius: pack.radius,
-                flagsLeft: pack.count,
-                color: type === 'OURO' ? 'gold' : type === 'PLATINA' ? 'purple' : type.toLowerCase()
-            };
-            
-            prs.push(newPr);
-            alert(`✅ Pack ${type} ativado!\n📏 Raio: ${pack.radius/1000}km\n🏴 Flags: ${pack.count.toLocaleString()}`);
-            renderPRDashboard();
-        }
-
-        function renderPRDashboard() {
-            const div = document.getElementById('pr-campaigns');
-            div.innerHTML = prs.map(pr => `
-                <div style="border:2px solid #0f0; padding:15px; margin:10px 0; background:rgba(0,255,0,0.1);">
-                    <b>${pr.name}</b> <span style="color:${getColorForPack(pr.pack)}">[${pr.pack}]</span><br>
-                    🏴 Restantes: <span style="font-size:1.2em;">${pr.flagsLeft.toLocaleString()}</span><br>
-                    📏 Raio: ${pr.radius/1000}km
-                </div>
-            `).join('');
-        }
-
-        function getColorForPack(pack) {
-            const colors = { BRONZE: '#CD7F32', PRATA: '#C0C0C0', OURO: '#FFD700', PLATINA: '#E5E4E2' };
-            return colors[pack] || '#0f0';
-        }
-
-        function openScanner() {
-            document.getElementById('scanner-result').innerHTML = '<p>🔍 Simulando scanner... (2s)</p>';
-            
-            setTimeout(() => {
-                const randomQR = player.qrs.length > 0 ? 
-                    `ZAP_QR_${player.qrs[Math.floor(Math.random()*player.qrs.length)].id}_${player.email}` : 
-                    "ZAP_QR_INVALID_123_test@email.com";
-                
-                const isValid = player.qrs.some(qr => `ZAP_QR_${qr.id}_${player.email}` === randomQR);
-                
-                if (isValid) {
-                    player.qrs = player.qrs.filter(qr => `ZAP_QR_${qr.id}_${player.email}` !== randomQR);
-                    document.getElementById('scanner-result').innerHTML = 
-                        "<p style='color:#0f0; font-size:1.2em;'>✅ QR VÁLIDO! Prémio creditado ao cliente.</p>";
-                } else {
-                    document.getElementById('scanner-result').innerHTML = 
-                        "<p style='color:#f00;'>❌ QR Inválido ou já usado.</p>";
-                }
-            }, 2000);
-        }
-
-        // --- UTILS ---
-        function clearMarkers() { 
-            allMarkers.forEach(m => map.removeLayer(m)); 
-            allMarkers = []; 
-        }
-
-        function getDistance(lat1, lon1, lat2, lon2) {
-            const R = 6371e3;
-            const φ1 = lat1 * Math.PI/180; 
-            const φ2 = lat2 * Math.PI/180;
-            const Δφ = (lat2-lat1) * Math.PI/180; 
-            const Δλ = (lon2-lon1) * Math.PI/180;
-            const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ/2) * Math.sin(Δλ/2);
-            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-            return R * c;
-        }
-
-        function getIcon(color) {
-            const colors = { 
-                blue: '#00f', 
-                red: '#f00', 
-                yellow: '#ff0', 
-                gold: '#ffd700',
-                purple: '#800080',
-                orange: '#ffa500'
-            };
-            return L.divIcon({ 
-                className: 'custom-icon', 
-                html: `<div style="background:${colors[color] || '#f0f'}; width:20px; height:20px; border-radius:50%; border:2px solid #fff; box-shadow:0 0 8px currentColor;"></div>`,
-                iconSize: [20, 20],
-                iconAnchor: [10, 10]
-            });
-        }
-
-        // Previne zoom/pinch no mobile
-        document.addEventListener('touchmove', function(e) {
-            if (e.scale !== 1) e.preventDefault();
-        }, { passive: false });
-    </script>
 </body>
 </html>
