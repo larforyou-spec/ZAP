@@ -2,8 +2,8 @@
 <html lang="pt">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>ZAP FLAGS - Caça ao Tesouro</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>ZAP FLAGS - Opção B (Enterprise)</title>
 
   <!-- Leaflet -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -16,21 +16,23 @@
     :root {
       --green: #0f0;
       --bg: #000;
-      --panel: rgba(0,0,0,0.85);
+      --panel: rgba(0,0,0,0.9);
       --border: 2px solid var(--green);
+      --danger: #f00;
     }
 
     * { box-sizing: border-box; }
     html, body { height: 100%; }
     body {
-      margin: 0;
-      padding: 0;
+      margin: 0; padding: 0;
       font-family: 'Courier New', monospace;
       background: var(--bg);
       color: var(--green);
       overflow: hidden;
     }
     .hidden { display: none !important; }
+    
+    /* Botões */
     button {
       background: var(--green);
       color: #000;
@@ -41,12 +43,15 @@
       cursor: pointer;
       border-radius: 2px;
       transition: filter 0.15s ease;
+      text-transform: uppercase;
     }
     button:disabled { opacity: 0.45; cursor: not-allowed; filter: grayscale(0.2); }
     button:hover:not(:disabled) { filter: brightness(1.15); }
-    button:focus-visible { outline: 2px dashed var(--green); outline-offset: 3px; }
-
-    input {
+    button.secondary { background: #333; color: #fff; border: 1px solid #555; }
+    button.danger { background: var(--danger); color: #fff; }
+    
+    /* Inputs */
+    input, select {
       background: #222;
       color: var(--green);
       border: 1px solid var(--green);
@@ -54,6 +59,7 @@
       width: 100%;
       margin-bottom: 10px;
       border-radius: 2px;
+      font-family: inherit;
     }
     input::placeholder { color: #6f6; }
 
@@ -64,10 +70,7 @@
       display: flex; flex-direction: column; align-items: center; justify-content: center;
       z-index: 9999; padding: 20px; text-align: center;
     }
-    #login-screen h1 {
-      font-size: 3rem; text-shadow: 0 0 10px var(--green);
-      margin: 0 0 24px 0;
-    }
+    #login-screen h1 { font-size: 3rem; text-shadow: 0 0 10px var(--green); margin: 0 0 24px 0; }
     .login-card {
       width: 100%; max-width: 420px;
       border: var(--border);
@@ -77,9 +80,7 @@
     }
 
     /* --- MAPA --- */
-    #map {
-      position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1;
-    }
+    #map { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
 
     /* --- HUD --- */
     #hud {
@@ -91,19 +92,9 @@
       display: flex; flex-wrap: wrap; align-items: center; gap: 12px;
       backdrop-filter: saturate(1.2) blur(1px);
     }
-    .stat {
-      display: inline-flex; align-items: center; gap: 4px;
-      font-weight: bold; white-space: nowrap;
-    }
-    .bar {
-      width: 100%; height: 20px; background: #333;
-      border: 1px solid var(--green);
-      position: relative; margin-top: 4px;
-    }
-    #energy-fill {
-      height: 100%; background: var(--green);
-      width: 100%; transition: width 0.3s ease;
-    }
+    .stat { display: inline-flex; align-items: center; gap: 4px; font-weight: bold; white-space: nowrap; }
+    .bar { width: 100%; height: 20px; background: #333; border: 1px solid var(--green); position: relative; margin-top: 4px; }
+    #energy-fill { height: 100%; background: var(--green); width: 100%; transition: width 0.3s ease; }
     .btn-group { display: flex; gap: 10px; align-items: center; margin-left: auto; }
 
     /* --- MODAIS --- */
@@ -112,10 +103,10 @@
       background: var(--bg);
       border: 3px solid var(--green);
       padding: 20px; z-index: 2000;
-      width: 90%; max-width: 460px;
+      width: 90%; max-width: 600px; /* Mais largo para empresa */
       text-align: center;
       box-shadow: 0 0 30px rgba(0,255,0,0.2);
-      max-height: 85vh; overflow-y: auto;
+      max-height: 90vh; overflow-y: auto;
     }
     .modal h2 { margin-top: 0; text-shadow: 0 0 6px var(--green); }
     .modal .btn-group { justify-content: center; margin-top: 12px; flex-wrap: wrap; }
@@ -142,15 +133,17 @@
     }
     .qr-canvas { width: 128px; height: 128px; background: #fff; padding: 4px; border-radius: 4px; }
 
-    /* --- PAINEL PR --- */
-    #pr-dashboard {
-      width: 95%; height: 90%; overflow-y: auto;
-      text-align: left;
-      padding: 24px;
+    /* --- PAINEL PR (EMPRESA) --- */
+    #pr-dashboard { width: 95%; height: 90%; overflow-y: auto; text-align: left; padding: 24px; }
+    #pr-dashboard h2, #pr-dashboard h3 { text-shadow: 0 0 6px var(--green); margin-bottom: 10px; }
+    
+    .company-header {
+      display: flex; justify-content: space-between; align-items: center;
+      border-bottom: 1px solid var(--green); padding-bottom: 10px; margin-bottom: 20px;
     }
-    #pr-dashboard h2, #pr-dashboard h3 { text-shadow: 0 0 6px var(--green); }
+
     .pack-grid {
-      display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
       gap: 12px; margin: 12px 0 24px 0;
     }
     .pack-card {
@@ -169,7 +162,30 @@
     }
     .campaign-item:last-child { border-bottom: none; }
 
-    /* Pequenas melhorias responsivas */
+    /* --- LOJA DE PACOTES AVANÇADA --- */
+    .store-interface { display: flex; flex-direction: column; gap: 15px; }
+    .store-list { display: flex; flex-direction: column; gap: 10px; }
+    .store-item {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 10px; border: 1px solid #333; background: #111;
+      cursor: pointer;
+    }
+    .store-item:hover, .store-item.selected { border-color: var(--green); background: #050505; }
+    
+    .store-details {
+      border: 2px solid var(--green); padding: 15px; background: #000;
+      display: none; /* Oculto por padrão */
+    }
+    .store-details.active { display: block; }
+    
+    .detail-row { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #333; }
+    .detail-row span:last-child { color: #fff; font-weight: bold; }
+    
+    .receipt-box {
+      border: 1px dashed var(--green); padding: 15px; margin-top: 15px;
+      background: #050505; text-align: left; font-size: 13px;
+    }
+
     @media (max-width: 560px) {
       #hud { gap: 8px; font-size: 14px; }
       .btn-group { width: 100%; margin-left: 0; justify-content: space-between; }
@@ -184,193 +200,218 @@
     <div class="login-card">
       <h1>ZAP FLAGS</h1>
       <label for="player-name">Nome do Jogador</label>
-      <input type="text" id="player-name" placeholder="Ex.: Ana Silva" autocomplete="name" aria-required="true" />
+      <input type="text" id="player-name" placeholder="Ex.: Ana Silva" autocomplete="name" />
 
-      <label for="player-email">Email (para recuperar conta)</label>
-      <input type="email" id="player-email" placeholder="exemplo@email.com" autocomplete="email" aria-required="true" />
+      <label for="player-email">Email (Login Único)</label>
+      <input type="email" id="player-email" placeholder="exemplo@email.com" autocomplete="email" />
 
       <div style="display:flex; gap:10px; align-items:center; justify-content:center; flex-wrap:wrap; margin-top:6px;">
         <button id="btn-start-game" onclick="startGame()">COMEÇAR CAÇADA</button>
-        <button onclick="showPRDashboard()" style="background:#333; color:#fff;">SOU LOJISTA (PR)</button>
+        <button onclick="showPRDashboard()" class="secondary">SOU LOJISTA (PR)</button>
       </div>
       <p style="font-size:12px; margin:16px 0 0 0; opacity:0.8;">
-        Dica: ativa o GPS e dá permissão de localização para poderes apanhar bandeiras no mapa.
+        Dica: ativa o GPS para apanhar bandeiras.
       </p>
     </div>
   </div>
 
   <!-- 2. MAPA -->
-  <div id="map" aria-label="Mapa interativo da caça ao tesouro"></div>
+  <div id="map"></div>
 
   <!-- 3. HUD -->
-  <div id="hud" class="hidden" aria-live="polite">
+  <div id="hud" class="hidden">
     <div class="stat">🏴 Bandeiras: <span id="flag-count">0</span></div>
     <div class="stat">⚡ Nível: <span id="skill-level">1</span> (<span id="vision-range">5</span>m)</div>
     <div class="stat">🎯 QR Prontos: <span id="qr-count">0</span></div>
     <div style="width:100%;">
-      <div class="bar" aria-label="Energia do jogador">
-        <div id="energy-fill"></div>
-      </div>
+      <div class="bar"><div id="energy-fill"></div></div>
       <small style="opacity:0.8;">Energia: <span id="energy-text">100%</span></small>
     </div>
     <div class="btn-group">
       <button onclick="toggleTrade()">🔄 Trocar</button>
       <button onclick="showMyQR()">🎫 Meus QRs</button>
-      <button onclick="saveGameState()" title="Guardar progresso localmente">💾 Guardar</button>
+      <button onclick="saveGameState()">💾 Guardar</button>
     </div>
   </div>
 
   <!-- 4. JANELA DE TROCA -->
-  <div id="trade-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="trade-title">
-    <h2 id="trade-title">MERCADO DE BANDEIRAS</h2>
-    <p>Listar custa <strong>5% Energia</strong>. A listagem dura <strong>5 dias</strong>.</p>
-    <div id="flag-list" aria-live="polite"></div>
+  <div id="trade-modal" class="modal hidden">
+    <h2>MERCADO DE BANDEIRAS</h2>
+    <p>Listar custa <strong>5% Energia</strong>. Dura <strong>5 dias</strong>.</p>
+    <div id="flag-list"></div>
     <div class="btn-group">
-      <button id="btn-list-flag" onclick="listFlagForTrade()">LISTAR BANDEIRA (-5% Energia)</button>
+      <button id="btn-list-flag" onclick="listFlagForTrade()">LISTAR (-5% E)</button>
       <button onclick="toggleTrade()">FECHAR</button>
     </div>
   </div>
 
   <!-- 5. JANELA MEUS QRs -->
-  <div id="qr-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="qr-title">
-    <h2 id="qr-title">OS TEUS QRs</h2>
-    <div id="my-qrs" aria-live="polite"></div>
-    <div class="btn-group">
-      <button onclick="toggleQR()">FECHAR</button>
-    </div>
+  <div id="qr-modal" class="modal hidden">
+    <h2>OS TEUS QRs</h2>
+    <div id="my-qrs"></div>
+    <div class="btn-group"><button onclick="toggleQR()">FECHAR</button></div>
   </div>
 
-  <!-- 6. PAINEL DO PR -->
-  <div id="pr-dashboard" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="pr-title">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-      <h2 id="pr-title" style="margin:0;">PAINEL DO LOJISTA</h2>
-      <button onclick="backToGame()">⬅️ VOLTAR AO JOGO</button>
-    </div>
-
-    <h3>Comprar Bandeiras (Packs)</h3>
-    <div class="pack-grid">
-      <div class="pack-card">
-        <div><strong>🥉 BRONZE</strong> — 5€</div>
-        <div>50.000 flags • Raio: 5 km</div>
-        <button onclick="buyPack('BRONZE')">Comprar BRONZE</button>
-      </div>
-      <div class="pack-card">
-        <div><strong>🥈 PRATA</strong> — 15€</div>
-        <div>150.000 flags • Raio: 20 km</div>
-        <button onclick="buyPack('PRATA')">Comprar PRATA</button>
-      </div>
-      <div class="pack-card">
-        <div><strong>🥇 OURO</strong> — 50€</div>
-        <div>500.000 flags • Raio: 50 km</div>
-        <button onclick="buyPack('OURO')">Comprar OURO</button>
-      </div>
-      <div class="pack-card">
-        <div><strong>💎 PLATINA</strong> — 100€</div>
-        <div>2.000.000 flags • Raio: 150 km</div>
-        <button onclick="buyPack('PLATINA')">Comprar PLATINA</button>
+  <!-- 6. PAINEL DO PR (EMPRESA) -->
+  <div id="pr-dashboard" class="modal hidden">
+    <div class="company-header">
+      <h2 style="margin:0;">PAINEL DO LOJISTA</h2>
+      <div style="display:flex; gap:5px;">
+        <button class="secondary" style="font-size:12px; padding:5px 10px;" onclick="openEditCompanyData()">✏️ Editar Dados</button>
+        <button onclick="backToGame()">⬅️ SAIR</button>
       </div>
     </div>
 
-    <h3>As Minhas Campanhas</h3>
-    <div class="campaign-list" id="pr-campaigns" aria-live="polite">
-      <em>Ainda não tens campanhas. Compra um pack para criar a tua primeira loja/campanha.</em>
+    <!-- Dados da Empresa -->
+    <div style="background:#111; padding:10px; margin-bottom:20px; border:1px solid #333;">
+      <strong>Empresa:</strong> <span id="dash-company-name">Não definida</span><br>
+      <strong>NIF:</strong> <span id="dash-company-nif">-</span><br>
+      <strong>Saldo de Bandeiras:</strong> <span id="dash-flags-total" style="color:#0f0">0</span>
+    </div>
+
+    <h3>Loja de Pacotes</h3>
+    <div class="store-interface">
+      <!-- Lista de Pacotes -->
+      <div id="pack-list-container" class="store-list">
+        <!-- Preenchido via JS -->
+      </div>
+
+      <!-- Detalhes da Compra -->
+      <div id="pack-detail-container" class="store-details">
+        <h3 id="detail-title" style="color:#fff; border-bottom:1px solid #0f0; padding-bottom:5px;"></h3>
+        
+        <div class="detail-row"><span>🚩 Quantidade:</span> <span id="detail-flags"></span></div>
+        <div class="detail-row"><span>📡 Raio de Ação:</span> <span id="detail-radius"></span></div>
+        <div class="detail-row"><span>💰 Preço Unitário:</span> <span id="detail-price"></span></div>
+
+        <hr style="border-color:#333; margin: 15px 0;">
+
+        <label>Quantidade de Pacotes:</label>
+        <select id="pack-quantity" onchange="updateTotalPrice()">
+          <option value="1">1 Pacote</option>
+          <option value="5">5 Pacotes (-5% Desc)</option>
+          <option value="10">10 Pacotes (-10% Desc)</option>
+          <option value="15">15 Pacotes (-15% Desc)</option>
+        </select>
+
+        <label>Método de Pagamento:</label>
+        <select id="payment-method">
+          <option value="QR">Pagamento por QR Code (MB Way)</option>
+          <option value="MB">Referência Multibanco</option>
+          <option value="CC">Cartão de Crédito</option>
+        </select>
+
+        <div style="text-align:right; font-size:18px; margin:10px 0; color:#0f0;">
+          Total: <span id="final-total">0.00</span>€
+        </div>
+
+        <button class="action-btn" onclick="confirmPurchase()" style="background:#0f0; color:#000; width:100%;">EFETUAR PAGAMENTO</button>
+        <button class="secondary" onclick="closePackDetails()" style="width:100%; margin-top:5px;">Voltar à Lista</button>
+      </div>
+
+      <!-- Recibo -->
+      <div id="receipt-area" class="receipt-box hidden">
+        <h4 style="margin:0; color:#0f0; text-align:center;">RECIBO ZAP FLAGS</h4>
+        <p>Data: <span id="rec-date"></span></p>
+        <p>Cliente: <span id="rec-company"></span></p>
+        <p>NIF: <span id="rec-nif"></span></p>
+        <p>Item: <span id="rec-pack"></span></p>
+        <p>Qtd: <span id="rec-qty"></span></p>
+        <p>Total Pago: <span id="rec-value"></span>€</p>
+        <p style="text-align:center; margin-top:10px; font-weight:bold;">*** PAGO ***</p>
+        <button class="secondary" onclick="document.getElementById('receipt-area').classList.add('hidden')">Fechar Recibo</button>
+      </div>
+    </div>
+
+    <h3 style="margin-top:30px;">As Minhas Campanhas</h3>
+    <div class="campaign-list" id="pr-campaigns">
+      <em>Ainda não tens campanhas.</em>
     </div>
 
     <h3>Escanear QR (simulação)</h3>
     <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin:8px 0 16px 0;">
-      <button onclick="openScanner()">📸 ABRIR SCANNER (SIMULAÇÃO)</button>
-      <input type="text" id="manual-qr-input" placeholder="Ou cola aqui o conteúdo do QR (para testes)" style="max-width:360px;" />
-      <button onclick="validateManualQR()">Validar QR colado</button>
+      <button onclick="openScanner()">📸 ABRIR SCANNER</button>
+      <input type="text" id="manual-qr-input" placeholder="Ou cola o conteúdo do QR" style="flex:1; min-width:200px;" />
+      <button class="secondary" onclick="validateManualQR()">Validar</button>
     </div>
-    <div id="scanner-result" aria-live="polite" style="min-height:28px;"></div>
+    <div id="scanner-result" style="min-height:28px; font-weight:bold;"></div>
+  </div>
+
+  <!-- 7. MODAL EDITAR DADOS EMPRESA -->
+  <div id="edit-company-modal" class="modal hidden">
+    <h2>EDITAR DADOS DA EMPRESA</h2>
+    <form onsubmit="saveEditCompanyData(event)">
+      <label>Nome Comercial:</label>
+      <input type="text" id="edit-billing" required>
+      <label>NIF:</label>
+      <input type="text" id="edit-nif" required>
+      <label>Morada:</label>
+      <input type="text" id="edit-address" required>
+      <label>Código Postal:</label>
+      <input type="text" id="edit-zip" required>
+      <label>Telefone:</label>
+      <input type="tel" id="edit-phone" required>
+      <div class="btn-group">
+        <button type="submit">GUARDAR</button>
+        <button type="button" class="secondary" onclick="document.getElementById('edit-company-modal').classList.add('hidden')">CANCELAR</button>
+      </div>
+    </form>
   </div>
 
   <script>
     // =========================================================================
-    // 🧠 ESTADO CENTRALIZADO + PERSISTÊNCIA LOCAL
+    // 🧠 ESTADO CENTRALIZADO + PERSISTÊNCIA
     // =========================================================================
-    const STORAGE_KEY = "zapFlagsState_v1";
+    const STORAGE_KEY = "zapFlagsState_v2_OptionB";
 
     const DEFAULT_STATE = {
       player: {
-        name: "",
-        email: "",
-        lat: null,           // posição atual
-        lng: null,
-        energy: 100,         // 0–100
-        flags: 0,            // total de bandeiras (pontos)
-        qrs: [],             // { id, pr_id, date, used }
-        skill: 1,
-        vision: 5,           // metros
-        inventory: []        // lista de pr_id apanhados (para mercado)
+        name: "", email: "", lat: null, lng: null,
+        energy: 100, flags: 0, qrs: [], skill: 1, vision: 5, inventory: []
+      },
+      company: {
+        name: "Minha Empresa",
+        nif: "",
+        address: "",
+        zip: "",
+        phone: "",
+        totalFlags: 0,
+        campaigns: []
       },
       prs: [
-        // PRs fictícios iniciais (Portugal)
-        {
-          id: 1,
-          name: "Café Central",
-          lat: 41.1496,
-          lng: -8.6109,
-          pack: "BRONZE",
-          radius: 5000,
-          flagsLeft: 50000,
-          color: "red"
-        },
-        {
-          id: 2,
-          name: "Ginásio Fit",
-          lat: 38.7223,
-          lng: -9.1393,
-          pack: "PRATA",
-          radius: 20000,
-          flagsLeft: 150000,
-          color: "blue"
-        },
-        {
-          id: 3,
-          name: "Pastelaria Doce",
-          lat: 41.5595,
-          lng: -8.4218,
-          pack: "OURO",
-          radius: 50000,
-          flagsLeft: 500000,
-          color: "yellow"
-        }
+        { id: 1, name: "Café Central", lat: 41.1496, lng: -8.6109, pack: "BRONZE", radius: 5000, flagsLeft: 50000, color: "red" },
+        { id: 2, name: "Ginásio Fit", lat: 38.7223, lng: -9.1393, pack: "PRATA", radius: 20000, flagsLeft: 150000, color: "blue" }
       ],
-      marketListings: [
-        // { owner, pr_id, expires }
-      ],
-      map: null,
-      playerMarker: null,
-      allMarkers: [],
-      watchId: null,
-      gameLoopTimer: null,
-      energyRegenTimer: null,
-      marketCleanupTimer: null,
-      lastPositionUpdateTs: 0
+      marketListings: [],
+      map: null, playerMarker: null, allMarkers: [], watchId: null,
+      gameLoopTimer: null, energyRegenTimer: null, lastPositionUpdateTs: 0
     };
 
+    // Definição dos Pacotes
+    const PACKS = [
+      { id: 'MIN', name: 'Pacote Mínimo', flags: 1000, radius: 5, price: 10 },
+      { id: 'MED', name: 'Pacote Médio', flags: 2500, radius: 15, price: 25 },
+      { id: 'MAX', name: 'Pacote Máximo', flags: 5000, radius: 30, price: 45 },
+      { id: 'PRO', name: 'Pacote Profissional', flags: 10000, radius: 50, price: 80 }
+    ];
+
     let state = structuredClone(DEFAULT_STATE);
+    let selectedPack = null;
 
     // =========================================================================
-    // 💾 PERSISTÊNCIA (localStorage)
+    // 💾 PERSISTÊNCIA
     // =========================================================================
     function saveGameState() {
       try {
         const toSave = {
-          player: {
-            ...state.player,
-            // não guardar referências do mapa
-          },
+          player: { ...state.player },
+          company: { ...state.company },
           prs: state.prs,
           marketListings: state.marketListings
         };
         localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
-        showToast("💾 Progresso guardado localmente.");
-      } catch (e) {
-        console.error("Erro ao guardar:", e);
-        showToast("⚠️ Não foi possível guardar o progresso.");
-      }
+        showToast("💾 Progresso guardado.");
+      } catch (e) { console.error("Erro ao guardar:", e); }
     }
 
     function loadGameState() {
@@ -378,133 +419,53 @@
         const raw = localStorage.getItem(STORAGE_KEY);
         if (!raw) return false;
         const saved = JSON.parse(raw);
-
-        // Merge seguro (mantém defaults se faltar algo)
-        if (saved.player) {
-          state.player = {
-            ...DEFAULT_STATE.player,
-            ...saved.player,
-            qrs: Array.isArray(saved.player.qrs) ? saved.player.qrs : [],
-            inventory: Array.isArray(saved.player.inventory) ? saved.player.inventory : []
-          };
-          // Normalizações
-          if (state.player.energy > 100) state.player.energy = 100;
-          if (state.player.energy < 0) state.player.energy = 0;
-          recalcSkillFromFlags();
-        }
+        if (saved.player) state.player = { ...DEFAULT_STATE.player, ...saved.player };
+        if (saved.company) state.company = { ...DEFAULT_STATE.company, ...saved.company };
         if (Array.isArray(saved.prs)) state.prs = saved.prs;
         if (Array.isArray(saved.marketListings)) state.marketListings = saved.marketListings;
-
-        // Limpar listagens expiradas ao carregar
-        cleanupMarketListings();
+        recalcSkillFromFlags();
         return true;
-      } catch (e) {
-        console.error("Erro ao carregar:", e);
-        return false;
-      }
-    }
-
-    function clearGameState() {
-      localStorage.removeItem(STORAGE_KEY);
-      state = structuredClone(DEFAULT_STATE);
+      } catch (e) { return false; }
     }
 
     // =========================================================================
     // 🧭 UTILITÁRIOS
     // =========================================================================
     function showToast(msg) {
-      // Toast simples sem dependências
       const toast = document.createElement("div");
       toast.textContent = msg;
-      toast.style.position = "fixed";
-      toast.style.bottom = "20px";
-      toast.style.left = "50%";
-      toast.style.transform = "translateX(-50%)";
-      toast.style.background = "rgba(0,0,0,0.9)";
-      toast.style.border = "1px solid #0f0";
-      toast.style.color = "#0f0";
-      toast.style.padding = "10px 16px";
-      toast.style.zIndex = "5000";
-      toast.style.borderRadius = "2px";
-      toast.style.boxShadow = "0 0 10px rgba(0,255,0,0.3)";
+      toast.style.cssText = "position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:#000; border:1px solid #0f0; color:#0f0; padding:10px 16px; z-index:5000; border-radius:2px;";
       document.body.appendChild(toast);
-      setTimeout(() => {
-        toast.style.transition = "opacity 0.3s ease";
-        toast.style.opacity = "0";
-        setTimeout(() => toast.remove(), 350);
-      }, 1800);
+      setTimeout(() => { toast.style.opacity = "0"; setTimeout(() => toast.remove(), 350); }, 1800);
     }
 
     function getDistanceMeters(lat1, lon1, lat2, lon2) {
-      // Haversine
       const R = 6371e3;
-      const φ1 = lat1 * Math.PI / 180;
-      const φ2 = lat2 * Math.PI / 180;
-      const Δφ = (lat2 - lat1) * Math.PI / 180;
-      const Δλ = (lon2 - lon1) * Math.PI / 180;
-      const a =
-        Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
-        Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
-      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-      return R * c;
+      const φ1 = lat1 * Math.PI / 180; const φ2 = lat2 * Math.PI / 180;
+      const Δφ = (lat2 - lat1) * Math.PI / 180; const Δλ = (lon2 - lon1) * Math.PI / 180;
+      const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     }
 
     function getRandomPointAround(lat, lng, minMeters, maxMeters) {
-      // Gera ponto aleatório num anel [minMeters, maxMeters] à volta de (lat,lng)
       const angle = Math.random() * 2 * Math.PI;
       const dist = minMeters + Math.random() * Math.max(0, maxMeters - minMeters);
-      // Conversão aproximada metros -> graus (latitude constante; longitude ajustada por cos lat)
       const deltaLat = (dist / 111000) * Math.cos(angle);
       const deltaLng = (dist / (111000 * Math.cos((lat * Math.PI) / 180))) * Math.sin(angle);
-      return {
-        lat: lat + deltaLat,
-        lng: lng + deltaLng
-      };
+      return { lat: lat + deltaLat, lng: lng + deltaLng };
     }
 
     function getIcon(color) {
-      const mapColors = {
-        blue: "#0000FF",
-        red: "#FF0000",
-        yellow: "#FFFF00",
-        orange: "#FFA500",
-        green: "#00FF00"
-      };
+      const mapColors = { blue: "#0000FF", red: "#FF0000", yellow: "#FFFF00", orange: "#FFA500", green: "#00FF00" };
       const bg = mapColors[color] || "#0f0";
-      return L.divIcon({
-        className: "custom-icon",
-        html: `
-          <div style="
-            background:${bg};
-            width:20px; height:20px; border-radius:50%;
-            border:2px solid white; box-shadow:0 0 4px rgba(0,0,0,0.6);
-          "></div>`
-      });
-    }
-
-    function cleanupMarketListings() {
-      const now = Date.now();
-      const before = state.marketListings.length;
-      state.marketListings = state.marketListings.filter(item => item.expires > now);
-      if (state.marketListings.length < before) {
-        showToast("🧹 Algumas listagens expiraram e foram removidas do mercado.");
-        if (!document.getElementById("trade-modal").classList.contains("hidden")) {
-          renderMarket();
-        }
-      }
+      return L.divIcon({ className: "custom-icon", html: `<div style="background:${bg}; width:20px; height:20px; border-radius:50%; border:2px solid white;"></div>` });
     }
 
     function recalcSkillFromFlags() {
       const points = Math.max(0, state.player.flags);
-      // Fórmula: visão = 5 + sqrt(pontos / 100), limite 100m
       let newVision = 5 + Math.sqrt(points / 100);
-      if (!isFinite(newVision)) newVision = 5;
-      newVision = Math.floor(newVision);
-      if (newVision > 100) newVision = 100;
-      if (newVision < 5) newVision = 5;
-      state.player.vision = newVision;
+      state.player.vision = Math.min(100, Math.max(5, Math.floor(newVision)));
       state.player.skill = 1 + Math.floor(points / 100);
-      if (state.player.skill < 1) state.player.skill = 1;
     }
 
     function updateHUD() {
@@ -516,14 +477,10 @@
       const energyPct = Math.max(0, Math.min(100, Math.round(p.energy)));
       document.getElementById("energy-fill").style.width = energyPct + "%";
       document.getElementById("energy-text").innerText = energyPct + "%";
-      // Botões de mercado dependem de energia/inventário
+      
       const btnList = document.getElementById("btn-list-flag");
       if (btnList) {
-        const canList = p.inventory.length > 0 && p.energy >= 5;
-        btnList.disabled = !canList;
-        btnList.title = canList
-          ? "Listar uma bandeira (custa 5% energia)"
-          : "Precisas de pelo menos 1 bandeira no inventário e 5% energia";
+        btnList.disabled = !(p.inventory.length > 0 && p.energy >= 5);
       }
     }
 
@@ -531,725 +488,357 @@
     // 🗺️ MAPA + GPS
     // =========================================================================
     function initMap() {
-      if (state.map) return; // já inicializado
-
-      // Centrar em Portugal
+      if (state.map) return;
       state.map = L.map("map").setView([39.3999, -8.2245], 7);
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        attribution: "© OpenStreetMap",
-        maxZoom: 19
-      }).addTo(state.map);
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution: "© OpenStreetMap" }).addTo(state.map);
 
-      // GPS
-      if (!navigator.geolocation) {
-        alert("O teu dispositivo não suporta GPS. Algumas funcionalidades não vão funcionar.");
-        return;
+      if (navigator.geolocation) {
+        state.watchId = navigator.geolocation.watchPosition(updatePosition, handleGeoError, { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 });
       }
-
-      const options = {
-        enableHighAccuracy: true,
-        maximumAge: 0,
-        timeout: 15000
-      };
-
-      state.watchId = navigator.geolocation.watchPosition(
-        updatePosition,
-        handleGeoError,
-        options
-      );
     }
 
     function updatePosition(position) {
       const now = Date.now();
-      // Throttle: evita atualizações excessivas do mapa (ex.: 500ms)
       if (now - state.lastPositionUpdateTs < 500) return;
       state.lastPositionUpdateTs = now;
-
-      const lat = position.coords.latitude;
-      const lng = position.coords.longitude;
-
-      state.player.lat = lat;
-      state.player.lng = lng;
-
+      state.player.lat = position.coords.latitude;
+      state.player.lng = position.coords.longitude;
       if (!state.map) return;
-
       if (!state.playerMarker) {
-        state.playerMarker = L.marker([lat, lng], {
-          title: "És tu!"
-        }).addTo(state.map).bindPopup("📍 És tu!");
+        state.playerMarker = L.marker([state.player.lat, state.player.lng]).addTo(state.map).bindPopup("📍 És tu!");
       } else {
-        state.playerMarker.setLatLng([lat, lng]);
-        state.map.panTo([lat, lng], { animate: true });
+        state.playerMarker.setLatLng([state.player.lat, state.player.lng]);
+        state.map.panTo([state.player.lat, state.player.lng]);
       }
     }
 
-    function handleGeoError(error) {
-      let msg = "Erro de localização desconhecido.";
-      switch (error.code) {
-        case error.PERMISSION_DENIED:
-          msg = "Permissão de localização negada. Ativa o GPS nas definições do navegador.";
-          break;
-        case error.POSITION_UNAVAILABLE:
-          msg = "Localização indisponível neste momento.";
-          break;
-        case error.TIMEOUT:
-          msg = "Tempo limite ao obter localização. Tenta novamente.";
-          break;
-        default:
-          msg = error.message || msg;
-      }
-      console.warn("Geolocation error:", msg);
-      showToast("📍 " + msg);
-    }
-
-    function stopGeolocation() {
-      if (state.watchId !== null) {
-        navigator.geolocation.clearWatch(state.watchId);
-        state.watchId = null;
-      }
-    }
+    function handleGeoError(error) { console.warn("GPS Error:", error.message); }
 
     // =========================================================================
-    // 🎮 LOOP PRINCIPAL DO JOGO (SPAWN + LÓGICA)
+    // 🎮 LOOP DO JOGO
     // =========================================================================
     function startGameLoops() {
-      // Limpar timers antigos se existirem (evita duplicação)
       stopGameLoops();
-
-      // Game loop: spawn de bandeiras a cada 3 segundos
       state.gameLoopTimer = setInterval(gameLoop, 3000);
-
-      // Regeneração de energia: 1% por minuto (quando parado)
       state.energyRegenTimer = setInterval(() => {
-        if (state.player.energy < 100) {
-          state.player.energy = Math.min(100, state.player.energy + 1);
-          updateHUD();
-          saveGameState();
-        }
-      }, 60 * 1000);
-
-      // Limpeza automática do mercado (a cada 10 minutos)
-      state.marketCleanupTimer = setInterval(() => {
-        cleanupMarketListings();
-        saveGameState();
-      }, 10 * 60 * 1000);
+        if (state.player.energy < 100) { state.player.energy = Math.min(100, state.player.energy + 1); updateHUD(); saveGameState(); }
+      }, 60000);
     }
 
     function stopGameLoops() {
-      if (state.gameLoopTimer) { clearInterval(state.gameLoopTimer); state.gameLoopTimer = null; }
-      if (state.energyRegenTimer) { clearInterval(state.energyRegenTimer); state.energyRegenTimer = null; }
-      if (state.marketCleanupTimer) { clearInterval(state.marketCleanupTimer); state.marketCleanupTimer = null; }
+      if (state.gameLoopTimer) clearInterval(state.gameLoopTimer);
+      if (state.energyRegenTimer) clearInterval(state.energyRegenTimer);
     }
 
     function gameLoop() {
-      // Só corre se tivermos posição válida
       const p = state.player;
-      if (p.lat == null || p.lng == null) {
-        // tenta forçar um update se possível (não bloqueia)
-        return;
-      }
-
-      // 1) Limpar marcadores antigos do mapa
+      if (p.lat == null || p.lng == null) return;
       clearAllMarkers();
-
-      // 2) Spawn: Bandeiras ZAP (energia) — sempre a cada ~30–60m
       spawnZapFlag();
-
-      // 3) Spawn: Bandeiras dos PRs (clientes) — dentro do raio do pack
       for (let i = 0; i < state.prs.length; i++) {
         const pr = state.prs[i];
         if (pr.flagsLeft <= 0) continue;
         const dist = getDistanceMeters(p.lat, p.lng, pr.lat, pr.lng);
         if (dist < pr.radius) {
-          // Chance proporcional à proximidade (20% base - (dist km * 2)), mínimo 1%
           let chance = 20 - (dist / 1000) * 2;
           if (chance < 1) chance = 1;
           if (Math.random() * 100 < chance) {
             spawnPRFlag(pr);
-            // opcional: decrementar flagsLeft do PR (simulação de stock)
             pr.flagsLeft = Math.max(0, pr.flagsLeft - 1);
           }
         }
       }
-
-      // 4) Atualizações de HUD/skill
       recalcSkillFromFlags();
       updateHUD();
     }
 
     function clearAllMarkers() {
-      const map = state.map;
-      if (!map) { state.allMarkers = []; return; }
-      for (let i = 0; i < state.allMarkers.length; i++) {
-        const marker = state.allMarkers[i];
-        if (marker && map.hasLayer(marker)) {
-          map.removeLayer(marker);
-        }
-      }
+      if (!state.map) { state.allMarkers = []; return; }
+      state.allMarkers.forEach(m => { if (state.map.hasLayer(m)) state.map.removeLayer(m); });
       state.allMarkers = [];
     }
 
     function spawnZapFlag() {
       const p = state.player;
-      if (p.lat == null || p.lng == null) return;
-      // Ponto aleatório a 30–60 metros do jogador
+      if (!p.lat) return;
       const pt = getRandomPointAround(p.lat, p.lng, 30, 60);
-      const distFromPlayer = getDistanceMeters(p.lat, p.lng, pt.lat, pt.lng);
-      // Só mostra se estiver dentro do raio de visão atual
-      if (distFromPlayer <= p.vision) {
-        const marker = L.marker([pt.lat, pt.lng], { icon: getIcon("blue") })
-          .addTo(state.map)
-          .bindPopup("🔵 Bandeira ZAP (+10% Energia)")
-          .on("click", function () {
-            collectFlag("ZAP", marker);
-          });
+      if (getDistanceMeters(p.lat, p.lng, pt.lat, pt.lng) <= p.vision) {
+        const marker = L.marker([pt.lat, pt.lng], { icon: getIcon("blue") }).addTo(state.map).bindPopup("🔵 +10% Energia").on("click", () => collectFlag("ZAP", marker));
         state.allMarkers.push(marker);
       }
     }
 
     function spawnPRFlag(pr) {
       const p = state.player;
-      if (p.lat == null || p.lng == null) return;
-      // Ponto aleatório até 100m do centro do PR
+      if (!p.lat) return;
       const pt = getRandomPointAround(pr.lat, pr.lng, 5, 100);
-      const distFromPlayer = getDistanceMeters(p.lat, p.lng, pt.lat, pt.lng);
-      if (distFromPlayer <= p.vision) {
-        const marker = L.marker([pt.lat, pt.lng], { icon: getIcon(pr.color || "red") })
-          .addTo(state.map)
-          .bindPopup(`🔴 ${pr.name} (+1 Ponto QR)`)
-          .on("click", function () {
-            collectFlag("PR", marker, pr);
-          });
+      if (getDistanceMeters(p.lat, p.lng, pt.lat, pt.lng) <= p.vision) {
+        const marker = L.marker([pt.lat, pt.lng], { icon: getIcon(pr.color) }).addTo(state.map).bindPopup(`🔴 ${pr.name}`).on("click", () => collectFlag("PR", marker, pr));
         state.allMarkers.push(marker);
       }
     }
 
     function collectFlag(type, marker, pr = null) {
       const p = state.player;
-      // Validações
-      if (p.energy <= 0) {
-        showToast("⚡ Sem energia! Espera regenerar ou troca no mercado.");
-        return;
-      }
-      // Gasta energia por interação
+      if (p.energy <= 0) { showToast("⚡ Sem energia!"); return; }
       p.energy = Math.max(0, p.energy - 1);
 
       if (type === "ZAP") {
-        // +10% energia
         p.energy = Math.min(100, p.energy + 10);
         showToast("🔵 +10% Energia!");
       } else if (type === "PR" && pr) {
-        // +1 bandeira / ponto
         p.flags += 1;
-        // Adiciona ao inventário (para mercado) — guarda pr_id
         p.inventory.push(pr.id);
         showToast(`🏴 Bandeira de ${pr.name} recolhida!`);
-
-        // Lógica de QR: 10 bandeiras = 1 QR (válido 15 dias)
         if (p.flags % 10 === 0) {
-          const qrId = Date.now() + Math.floor(Math.random() * 1000);
-          const expires = Date.now() + (15 * 24 * 60 * 60 * 1000);
-          p.qrs.push({
-            id: qrId,
-            pr_id: pr.id,
-            date: expires,
-            used: false
-          });
-          showToast("🎫 Novo QR gerado! (válido 15 dias)");
+          p.qrs.push({ id: Date.now(), pr_id: pr.id, date: Date.now() + (15 * 24 * 60 * 60 * 1000), used: false });
+          showToast("🎫 Novo QR gerado!");
         }
       }
-
-      // Remove o marcador recolhido do mapa para evitar cliques duplicados
-      const map = state.map;
-      if (map && marker && state.allMarkers.includes(marker)) {
-        if (map.hasLayer(marker)) map.removeLayer(marker);
-        const idx = state.allMarkers.indexOf(marker);
-        if (idx >= 0) state.allMarkers.splice(idx, 1);
-      }
-
-      // Atualiza e guarda
-      recalcSkillFromFlags();
-      updateHUD();
-      saveGameState();
-
-      // Refresh imediato do ambiente (não obrigatório, mas dá sensação de vida)
+      if (state.map && marker) { state.map.removeLayer(marker); state.allMarkers = state.allMarkers.filter(m => m !== marker); }
+      recalcSkillFromFlags(); updateHUD(); saveGameState();
       gameLoop();
     }
 
     // =========================================================================
-    // 🔁 MERCADO DE TROCAS
+    // 🔁 MERCADO
     // =========================================================================
     function toggleTrade() {
       const el = document.getElementById("trade-modal");
-      if (el.classList.contains("hidden")) {
-        cleanupMarketListings();
-        el.classList.remove("hidden");
-        renderMarket();
-        updateHUD();
-      } else {
-        el.classList.add("hidden");
-      }
+      if (el.classList.contains("hidden")) { el.classList.remove("hidden"); renderMarket(); updateHUD(); }
+      else { el.classList.add("hidden"); }
     }
 
     function listFlagForTrade() {
       const p = state.player;
-      if (p.inventory.length === 0) {
-        showToast("📦 Não tens bandeiras no inventário para vender.");
-        return;
-      }
-      if (p.energy < 5) {
-        showToast("⚡ Precisas de 5% energia para listar.");
-        return;
-      }
-      // Remove uma bandeira aleatória do inventário
+      if (p.inventory.length === 0 || p.energy < 5) { showToast("❌ Sem bandeiras ou energia."); return; }
       const idx = Math.floor(Math.random() * p.inventory.length);
-      const prId = p.inventory[idx];
-      p.inventory.splice(idx, 1);
-
-      // Cria listagem (5 dias)
-      const expires = Date.now() + (5 * 24 * 60 * 60 * 1000);
-      state.marketListings.push({
-        owner: p.name || "Jogador",
-        pr_id: prId,
-        expires
-      });
-
-      // Custo
-      p.energy = Math.max(0, p.energy - 5);
-
-      showToast("📜 Bandeira listada no mercado! (5 dias)");
-      saveGameState();
-      updateHUD();
-      renderMarket();
+      const prId = p.inventory.splice(idx, 1)[0];
+      state.marketListings.push({ owner: p.name, pr_id: prId, expires: Date.now() + (5 * 24 * 60 * 60 * 1000) });
+      p.energy -= 5;
+      showToast("📜 Bandeira listada!");
+      saveGameState(); updateHUD(); renderMarket();
     }
 
     function renderMarket() {
       const listEl = document.getElementById("flag-list");
-      if (!listEl) return;
-      cleanupMarketListings();
-      if (state.marketListings.length === 0) {
-        listEl.innerHTML = "<em>Sem listagens no momento. Sê o primeiro a vender!</em>";
-        return;
-      }
-
+      if (state.marketListings.length === 0) { listEl.innerHTML = "<em>Sem listagens.</em>"; return; }
       let html = "";
-      for (let i = 0; i < state.marketListings.length; i++) {
-        const item = state.marketListings[i];
+      state.marketListings.forEach((item, i) => {
         const pr = state.prs.find(p => p.id === item.pr_id);
-        const prName = pr ? pr.name : `PR #${item.pr_id}`;
-        const expiresStr = new Date(item.expires).toLocaleDateString("pt-PT");
-        html += `
-          <div class="flag-item">
-            <div>
-              <strong>${escapeHtml(prName)}</strong><br>
-              <small>Expira: ${expiresStr} • Dono: ${escapeHtml(item.owner)}</small>
-            </div>
-            <button onclick="buyFromMarket(${i})">Comprar</button>
-          </div>
-        `;
-      }
+        html += `<div class="flag-item"><div><strong>${pr ? pr.name : 'PR #'}</strong><br><small>Dono: ${item.owner}</small></div><button onclick="buyFromMarket(${i})">Comprar</button></div>`;
+      });
       listEl.innerHTML = html;
     }
 
     function buyFromMarket(index) {
       const p = state.player;
-      if (index < 0 || index >= state.marketListings.length) {
-        showToast("❌ Listagem inválida.");
-        return;
-      }
-      if (p.energy < 2) {
-        showToast("⚡ Precisas de 2% energia para a transação.");
-        return;
-      }
+      if (p.energy < 2) { showToast("⚡ Precisas de 2% energia."); return; }
       const item = state.marketListings[index];
-      // Transação
-      p.energy = Math.max(0, p.energy - 2);
-      // Recebe a bandeira
-      p.flags += 1;
-      p.inventory.push(item.pr_id);
-      showToast("✅ Bandeira comprada no mercado!");
-
-      // QR se atingiu múltiplo de 10
-      if (p.flags % 10 === 0) {
-        const qrId = Date.now() + Math.floor(Math.random() * 1000);
-        const expires = Date.now() + (15 * 24 * 60 * 60 * 1000);
-        p.qrs.push({
-          id: qrId,
-          pr_id: item.pr_id,
-          date: expires,
-          used: false
-        });
-        showToast("🎫 Novo QR gerado!");
-      }
-
-      // Remove do mercado
+      p.energy -= 2; p.flags += 1; p.inventory.push(item.pr_id);
+      if (p.flags % 10 === 0) p.qrs.push({ id: Date.now(), pr_id: item.pr_id, date: Date.now() + (15 * 24 * 60 * 60 * 1000), used: false });
       state.marketListings.splice(index, 1);
-
-      recalcSkillFromFlags();
-      updateHUD();
-      saveGameState();
-      renderMarket();
+      showToast("✅ Compra efetuada!");
+      recalcSkillFromFlags(); updateHUD(); saveGameState(); renderMarket();
     }
 
     // =========================================================================
-    // 🎫 QRs DO JOGADOR
+    // 🎫 QRs
     // =========================================================================
-    function showMyQR() {
+    function toggleQR() {
       const modal = document.getElementById("qr-modal");
       const container = document.getElementById("my-qrs");
       if (modal.classList.contains("hidden")) {
         modal.classList.remove("hidden");
-        renderMyQRs(container);
-      } else {
-        modal.classList.add("hidden");
-      }
-    }
-
-    function toggleQR() {
-      const modal = document.getElementById("qr-modal");
-      if (modal.classList.contains("hidden")) {
-        modal.classList.remove("hidden");
-        renderMyQRs(document.getElementById("my-qrs"));
-      } else {
-        modal.classList.add("hidden");
-      }
-    }
-
-    function renderMyQRs(container) {
-      if (!container) return;
-      // Limpar QRs expirados/used
-      const now = Date.now();
-      const beforeCount = state.player.qrs.length;
-      state.player.qrs = state.player.qrs.filter(qr => !qr.used && qr.date > now);
-      if (state.player.qrs.length < beforeCount) {
-        saveGameState();
-        updateHUD();
-      }
-
-      if (state.player.qrs.length === 0) {
-        container.innerHTML = "<em>Ainda não tens QRs. Recolhe 10 bandeiras para gerar um!</em>";
-        return;
-      }
-
-      let html = "";
-      for (let i = 0; i < state.player.qrs.length; i++) {
-        const qr = state.player.qrs[i];
-        const pr = state.prs.find(p => p.id === qr.pr_id);
-        const prName = pr ? pr.name : `Loja #${qr.pr_id}`;
-        const expiresStr = new Date(qr.date).toLocaleDateString("pt-PT");
-        const qrPayload = `ZAP_QR_${qr.id}_${state.player.email}`;
-        html += `
-          <div class="qr-card" data-qrid="${qr.id}">
-            <div>
-              <strong>${escapeHtml(prName)}</strong><br>
-              <small>Expira: ${expiresStr}</small>
-            </div>
-            <div class="qr-canvas" id="qr-canvas-${qr.id}"></div>
-            <div style="font-size:12px; word-break:break-all; opacity:0.85;">${escapeHtml(qrPayload)}</div>
-            <div class="btn-group">
-              <button onclick="useQRNow(${qr.id})">USAR AGORA (mostrar ao PR)</button>
-            </div>
-          </div>
-        `;
-      }
-      container.innerHTML = html;
-
-      // Gerar QR codes
-      for (let i = 0; i < state.player.qrs.length; i++) {
-        const qr = state.player.qrs[i];
-        const canvasId = `qr-canvas-${qr.id}`;
-        const elCanvas = document.getElementById(canvasId);
-        if (elCanvas && typeof QRCode !== "undefined") {
-          // Limpa conteúdo anterior
-          elCanvas.innerHTML = "";
-          new QRCode(elCanvas, {
-            text: `ZAP_QR_${qr.id}_${state.player.email}`,
-            width: 128,
-            height: 128,
-            colorDark: "#000000",
-            colorLight: "#ffffff",
-            correctLevel: QRCode.CorrectLevel.M
-          });
-        }
-      }
+        container.innerHTML = "";
+        const validQrs = state.player.qrs.filter(q => !q.used && q.date > Date.now());
+        if (validQrs.length === 0) { container.innerHTML = "<em>Sem QRs válidos.</em>"; return; }
+        validQrs.forEach(qr => {
+          const pr = state.prs.find(p => p.id === qr.pr_id);
+          const div = document.createElement("div"); div.className = "qr-card";
+          div.innerHTML = `<strong>${pr ? pr.name : 'Loja'}</strong><div class="qr-canvas" id="qr-${qr.id}"></div><button onclick="useQRNow(${qr.id})">USAR AGORA</button>`;
+          container.appendChild(div);
+          new QRCode(document.getElementById(`qr-${qr.id}`), { text: `ZAP_QR_${qr.id}_${state.player.email}`, width: 128, height: 128 });
+        });
+      } else { modal.classList.add("hidden"); }
     }
 
     function useQRNow(qrId) {
-      const p = state.player;
-      const idx = p.qrs.findIndex(q => q.id === qrId && !q.used);
-      if (idx === -1) {
-        showToast("❌ QR inválido ou já usado.");
-        return;
-      }
-      const qr = p.qrs[idx];
-      const pr = state.prs.find(pr => pr.id === qr.pr_id);
-      const prName = pr ? pr.name : `Loja #${qr.pr_id}`;
-      showToast(`📲 Mostra este QR ao dono de ${prName} para ser validado no scanner.`);
-      // Em versão real, o QR só é marcado como usado após validação do PR no servidor.
-      // Aqui deixamos a UX correta e a validação acontece no painel PR.
+      const qr = state.player.qrs.find(q => q.id === qrId);
+      if (qr) showToast(`📲 Mostra este QR ao dono de ${state.prs.find(p=>p.id===qr.pr_id)?.name}`);
     }
 
     // =========================================================================
-    // 🏪 PAINEL DO LOJISTA (PR)
+    // 🏪 PAINEL DA EMPRESA (OPÇÃO B)
     // =========================================================================
     function showPRDashboard() {
-      // Fecha login e abre painel PR
       document.getElementById("login-screen").classList.add("hidden");
       document.getElementById("pr-dashboard").classList.remove("hidden");
-      renderPRDashboard();
+      updateCompanyDashboard();
+      renderPackList();
     }
 
     function backToGame() {
       document.getElementById("pr-dashboard").classList.add("hidden");
-      // Volta ao login se o jogador ainda não iniciou; caso contrário ao HUD
-      const playerName = state.player.name;
-      const playerEmail = state.player.email;
-      if (!playerName || !playerEmail) {
-        document.getElementById("login-screen").classList.remove("hidden");
-        document.getElementById("hud").classList.add("hidden");
-      } else {
+      const p = state.player;
+      if (!p.name || !p.email) { document.getElementById("login-screen").classList.remove("hidden"); }
+      else {
         document.getElementById("login-screen").classList.add("hidden");
         document.getElementById("hud").classList.remove("hidden");
-        updateHUD();
+        initMap(); startGameLoops(); updateHUD();
       }
     }
 
-    function buyPack(type) {
-      // Simulação de compra (em produção: gateway de pagamento + backend)
-      let radius, count, priceLabel;
-      switch (type) {
-        case "BRONZE":
-          radius = 5000; count = 50000; priceLabel = "5€";
-          break;
-        case "PRATA":
-          radius = 20000; count = 150000; priceLabel = "15€";
-          break;
-        case "OURO":
-          radius = 50000; count = 500000; priceLabel = "50€";
-          break;
-        case "PLATINA":
-          radius = 150000; count = 2000000; priceLabel = "100€";
-          break;
-        default:
-          showToast("❌ Pack desconhecido.");
-          return;
-      }
-
-      // Coordenadas da nova campanha: usa posição atual do jogador se disponível; senão centro PT
-      let lat = 39.3999;
-      let lng = -8.2245;
-      if (state.player.lat != null && state.player.lng != null) {
-        // pequena variação para simular múltiplas lojas
-        const pt = getRandomPointAround(state.player.lat, state.player.lng, 50, 500);
-        lat = pt.lat;
-        lng = pt.lng;
-      }
-
-      const newPr = {
-        id: Date.now() + Math.floor(Math.random() * 1000),
-        name: "Minha Loja " + Math.floor(Math.random() * 1000),
-        lat,
-        lng,
-        pack: type,
-        radius,
-        flagsLeft: count,
-        color: "orange"
-      };
-
-      state.prs.push(newPr);
-      saveGameState();
-      showToast(`✅ Pack ${type} (${priceLabel}) ativado! Raio: ${Math.round(radius/1000)} km`);
-      renderPRDashboard();
-    }
-
-    function renderPRDashboard() {
+    function updateCompanyDashboard() {
+      document.getElementById("dash-company-name").innerText = state.company.name;
+      document.getElementById("dash-company-nif").innerText = state.company.nif || "-";
+      document.getElementById("dash-flags-total").innerText = state.company.totalFlags.toLocaleString();
+      
       const div = document.getElementById("pr-campaigns");
-      if (!div) return;
-      if (state.prs.length === 0) {
-        div.innerHTML = "<em>Ainda não tens campanhas. Compra um pack para começar.</em>";
-        return;
-      }
-
-      let html = "";
-      for (let i = 0; i < state.prs.length; i++) {
-        const pr = state.prs[i];
-        const radiusKm = Math.round((pr.radius / 1000) * 100) / 100;
-        html += `
-          <div class="campaign-item">
-            <div><strong>${escapeHtml(pr.name)}</strong> (${escapeHtml(pr.pack)})</div>
-            <div>Bandeiras restantes: <strong>${pr.flagsLeft.toLocaleString("pt-PT")}</strong></div>
-            <div>Raio: ${radiusKm} km • Coordenadas: ${pr.lat.toFixed(5)}, ${pr.lng.toFixed(5)}</div>
-          </div>
-        `;
-      }
-      div.innerHTML = html;
+      if (state.company.campaigns.length === 0) { div.innerHTML = "<em>Sem campanhas.</em>"; return; }
+      div.innerHTML = state.company.campaigns.map(c => `
+        <div class="campaign-item">
+          <div><strong>${c.packName}</strong> (x${c.qty})</div>
+          <div>Bandeiras: ${c.flagsAdded.toLocaleString()} | Raio: ${c.radius}km</div>
+          <div style="font-size:11px; color:#aaa">${new Date(c.date).toLocaleDateString()}</div>
+        </div>
+      `).join("");
     }
 
+    // --- Loja de Pacotes ---
+    function renderPackList() {
+      const container = document.getElementById("pack-list-container");
+      container.innerHTML = PACKS.map(p => `
+        <div class="store-item" onclick="showPackDetails('${p.id}')">
+          <div><strong>${p.name}</strong><br><small>${p.flags} Flags • ${p.radius}km</small></div>
+          <button class="secondary" style="width:auto; margin:0;">ABRIR ></button>
+        </div>
+      `).join("");
+      document.getElementById("pack-list-container").style.display = "flex";
+      document.getElementById("pack-detail-container").classList.remove("active");
+      document.getElementById("receipt-area").classList.add("hidden");
+    }
+
+    function showPackDetails(packId) {
+      selectedPack = PACKS.find(p => p.id === packId);
+      document.getElementById("pack-list-container").style.display = "none";
+      document.getElementById("pack-detail-container").classList.add("active");
+      
+      document.getElementById("detail-title").innerText = selectedPack.name;
+      document.getElementById("detail-flags").innerText = selectedPack.flags.toLocaleString();
+      document.getElementById("detail-radius").innerText = selectedPack.radius + " km";
+      document.getElementById("detail-price").innerText = selectedPack.price.toFixed(2) + "€";
+      updateTotalPrice();
+    }
+
+    function closePackDetails() { renderPackList(); selectedPack = null; }
+
+    function updateTotalPrice() {
+      if (!selectedPack) return;
+      const qty = parseInt(document.getElementById("pack-quantity").value);
+      let total = selectedPack.price * qty;
+      if (qty === 5) total *= 0.95;
+      if (qty === 10) total *= 0.90;
+      if (qty === 15) total *= 0.85;
+      document.getElementById("final-total").innerText = total.toFixed(2);
+    }
+
+    function confirmPurchase() {
+      const qty = parseInt(document.getElementById("pack-quantity").value);
+      const total = parseFloat(document.getElementById("final-total").innerText);
+      if(!confirm(`Confirmar compra de ${qty} pacote(s) no valor de ${total.toFixed(2)}€?`)) return;
+
+      state.company.totalFlags += (selectedPack.flags * qty);
+      state.company.campaigns.push({
+        packName: selectedPack.name, qty, total, date: Date.now(),
+        flagsAdded: selectedPack.flags * qty, radius: selectedPack.radius
+      });
+
+      // Gerar Recibo
+      document.getElementById("pack-detail-container").classList.remove("active");
+      document.getElementById("receipt-area").classList.remove("hidden");
+      document.getElementById("rec-date").innerText = new Date().toLocaleString();
+      document.getElementById("rec-company").innerText = state.company.name;
+      document.getElementById("rec-nif").innerText = state.company.nif;
+      document.getElementById("rec-pack").innerText = `${selectedPack.name} (x${qty})`;
+      document.getElementById("rec-qty").innerText = qty;
+      document.getElementById("rec-value").innerText = total.toFixed(2);
+
+      saveGameState(); updateCompanyDashboard();
+    }
+
+    // --- Edição de Dados ---
+    function openEditCompanyData() {
+      document.getElementById("edit-billing").value = state.company.name;
+      document.getElementById("edit-nif").value = state.company.nif;
+      document.getElementById("edit-address").value = state.company.address;
+      document.getElementById("edit-zip").value = state.company.zip;
+      document.getElementById("edit-phone").value = state.company.phone;
+      document.getElementById("edit-company-modal").classList.remove("hidden");
+    }
+
+    function saveEditCompanyData(e) {
+      e.preventDefault();
+      state.company.name = document.getElementById("edit-billing").value;
+      state.company.nif = document.getElementById("edit-nif").value;
+      state.company.address = document.getElementById("edit-address").value;
+      state.company.zip = document.getElementById("edit-zip").value;
+      state.company.phone = document.getElementById("edit-phone").value;
+      showToast("✅ Dados atualizados!");
+      document.getElementById("edit-company-modal").classList.add("hidden");
+      updateCompanyDashboard();
+      saveGameState();
+    }
+
+    // --- Scanner ---
     function openScanner() {
-      showToast("📸 A abrir scanner (simulação)... aponta a câmara ao QR do cliente.");
-      // Simulação: após 2s valida um QR aleatório do jogador (ou mostra erro)
+      showToast("📸 A abrir scanner...");
       setTimeout(() => {
         const validQrs = state.player.qrs.filter(q => !q.used && q.date > Date.now());
         if (validQrs.length === 0) {
-          document.getElementById("scanner-result").innerHTML =
-            "<p style='color:red'>❌ Não há QRs válidos para validar neste momento.</p>";
+          document.getElementById("scanner-result").innerHTML = "<span style='color:red'>❌ Sem QRs válidos.</span>";
           return;
         }
-        // Escolhe um QR aleatório para simular leitura
         const qr = validQrs[Math.floor(Math.random() * validQrs.length)];
-        const payload = `ZAP_QR_${qr.id}_${state.player.email}`;
-        // Valida
-        const isValid = validateQRPayload(payload);
-        if (isValid) {
-          // Marca como usado
-          const idx = state.player.qrs.findIndex(q => q.id === qr.id);
-          if (idx >= 0) {
-            state.player.qrs[idx].used = true;
-            saveGameState();
-            updateHUD();
-          }
-          document.getElementById("scanner-result").innerHTML =
-            `<p style='color:green'>✅ SUCESSO! QR validado para <strong>${escapeHtml(getPrNameById(qr.pr_id))}</strong>. Prémio atribuído.</p>`;
-          showToast("🎁 Prémio atribuído ao cliente!");
-        } else {
-          document.getElementById("scanner-result").innerHTML =
-            "<p style='color:red'>❌ QR Inválido ou já usado.</p>";
-        }
+        qr.used = true;
+        saveGameState(); updateHUD();
+        document.getElementById("scanner-result").innerHTML = `<span style='color:green'>✅ SUCESSO! QR validado.</span>`;
       }, 2000);
     }
 
     function validateManualQR() {
-      const input = document.getElementById("manual-qr-input");
-      const payload = input.value.trim();
-      if (!payload) {
-        document.getElementById("scanner-result").innerHTML =
-          "<p style='color:orange'>⚠️ Cola primeiro o conteúdo do QR.</p>";
-        return;
-      }
-      const isValid = validateQRPayload(payload);
-      if (isValid) {
-        // extrai qrId do payload: ZAP_QR_{id}_{email}
-        const parts = payload.split("_");
-        const qrId = parseInt(parts[2]);
-        const idx = state.player.qrs.findIndex(q => q.id === qrId);
-        if (idx >= 0 && !state.player.qrs[idx].used && state.player.qrs[idx].date > Date.now()) {
-          state.player.qrs[idx].used = true;
-          saveGameState();
-          updateHUD();
-          const prName = getPrNameById(state.player.qrs[idx].pr_id);
-          document.getElementById("scanner-result").innerHTML =
-            `<p style='color:green'>✅ SUCESSO! QR validado para <strong>${escapeHtml(prName)}</strong>. Prémio atribuído.</p>`;
-          showToast("🎁 Prémio atribuído ao cliente!");
-          input.value = "";
+      const payload = document.getElementById("manual-qr-input").value.trim();
+      const match = payload.match(/^ZAP_QR_(\d+)_(.+)$/);
+      if (match) {
+        const qrId = parseInt(match[1]);
+        const qr = state.player.qrs.find(q => q.id === qrId);
+        if (qr && !qr.used && qr.date > Date.now()) {
+          qr.used = true; saveGameState(); updateHUD();
+          document.getElementById("scanner-result").innerHTML = "<span style='color:green'>✅ QR Válido!</span>";
           return;
         }
       }
-      document.getElementById("scanner-result").innerHTML =
-        "<p style='color:red'>❌ QR Inválido, expirado ou já usado.</p>";
-    }
-
-    function validateQRPayload(payload) {
-      // Formato esperado: ZAP_QR_{qrId}_{playerEmail}
-      const regex = /^ZAP_QR_(\d+)_(.+)$/;
-      const match = payload.match(regex);
-      if (!match) return false;
-      const qrId = parseInt(match[1]);
-      const email = match[2];
-      // Verifica se pertence ao jogador atual e está válido
-      const qr = state.player.qrs.find(q => q.id === qrId);
-      if (!qr) return false;
-      if (qr.used) return false;
-      if (qr.date < Date.now()) return false;
-      if (email !== state.player.email) return false;
-      return true;
-    }
-
-    function getPrNameById(prId) {
-      const pr = state.prs.find(p => p.id === prId);
-      return pr ? pr.name : `Loja #${prId}`;
+      document.getElementById("scanner-result").innerHTML = "<span style='color:red'>❌ Inválido.</span>";
     }
 
     // =========================================================================
-    // 🧼 SEGURANÇA / UX HELPERS
+    // 🚀 INICIALIZAÇÃO
     // =========================================================================
-    function escapeHtml(text) {
-      if (text == null) return "";
-      return String(text)
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
-    }
-
     function startGame() {
-      const nameEl = document.getElementById("player-name");
-      const emailEl = document.getElementById("player-email");
-      const name = nameEl.value.trim();
-      const email = emailEl.value.trim();
-
-      if (!name || !email) {
-        showToast("✏️ Preenche o nome e o email para começar.");
-        return;
-      }
-      // Validação simples de email
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(email)) {
-        showToast("📧 Email inválido.");
-        return;
-      }
-
-      // Inicializa estado do jogador
-      state.player.name = name;
-      state.player.email = email;
-      // Reseta progresso se for “novo” (opcional) — aqui mantemos o que estiver em localStorage
-      // Garante que energia/flags/vision estão consistentes
-      if (state.player.energy > 100) state.player.energy = 100;
-      if (state.player.energy < 0) state.player.energy = 0;
-      recalcSkillFromFlags();
-
-      // Mostra HUD e mapa
+      const name = document.getElementById("player-name").value.trim();
+      const email = document.getElementById("player-email").value.trim();
+      if (!name || !email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showToast("✏️ Preenche nome e email corretamente."); return; }
+      
+      state.player.name = name; state.player.email = email;
       document.getElementById("login-screen").classList.add("hidden");
       document.getElementById("hud").classList.remove("hidden");
-
-      // Inicializa mapa + loops
-      initMap();
-      startGameLoops();
-      updateHUD();
-      saveGameState();
-
-      showToast(`🎮 Bem-vindo(a), ${escapeHtml(name)}! A caça começou.`);
+      initMap(); startGameLoops(); updateHUD(); saveGameState();
+      showToast(`🎮 Bem-vindo, ${name}!`);
     }
 
-    // =========================================================================
-    // 🚀 INICIALIZAÇÃO AUTOMÁTICA
-    // =========================================================================
     (function boot() {
-      // Carrega estado salvo (se existir)
       loadGameState();
-
-      // Se já houver jogador guardado, podemos mostrar diretamente o jogo (opcional)
-      // mas por UX mantemos o login; o utilizador pode continuar com o mesmo email/nome
-      // Liga listeners de visibilidade para pausar/regenerar de forma inteligente (opcional)
-      document.addEventListener("visibilitychange", function () {
-        if (document.hidden) {
-          // Página invisível: podemos reduzir frequência, mas não paramos totalmente
-          // (mantemos regeneração leve; spawn pode pausar)
-        } else {
-          // Volta a estar visível: força refresh do HUD e do mapa
-          if (state.map && state.player.lat != null && state.player.lng != null) {
-            gameLoop();
-          }
-          updateHUD();
-        }
-      });
-
-      // Guarda periodicamente (autosave a cada 30s)
       setInterval(saveGameState, 30000);
-
-      // Cleanup inicial do mercado
-      cleanupMarketListings();
-      updateHUD();
     })();
   </script>
 </body>
