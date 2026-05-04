@@ -1,846 +1,704 @@
 <!DOCTYPE html>
 <html lang="pt">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-  <title>ZAP FLAGS - Opção B (Enterprise)</title>
-
-  <!-- Leaflet -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-
-  <!-- QR Code -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-
-  <style>
-    /* --- ESTILOS GERAIS --- */
-    :root {
-      --green: #0f0;
-      --bg: #000;
-      --panel: rgba(0,0,0,0.9);
-      --border: 2px solid var(--green);
-      --danger: #f00;
-    }
-
-    * { box-sizing: border-box; }
-    html, body { height: 100%; }
-    body {
-      margin: 0; padding: 0;
-      font-family: 'Courier New', monospace;
-      background: var(--bg);
-      color: var(--green);
-      overflow: hidden;
-    }
-    .hidden { display: none !important; }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ZAP FLAGS - Opção A (Simplificado)</title>
     
-    /* Botões */
-    button {
-      background: var(--green);
-      color: #000;
-      border: none;
-      padding: 10px 16px;
-      font-weight: bold;
-      font-size: 16px;
-      cursor: pointer;
-      border-radius: 2px;
-      transition: filter 0.15s ease;
-      text-transform: uppercase;
-    }
-    button:disabled { opacity: 0.45; cursor: not-allowed; filter: grayscale(0.2); }
-    button:hover:not(:disabled) { filter: brightness(1.15); }
-    button.secondary { background: #333; color: #fff; border: 1px solid #555; }
-    button.danger { background: var(--danger); color: #fff; }
+    <!-- MAPAS (Leaflet) -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     
-    /* Inputs */
-    input, select {
-      background: #222;
-      color: var(--green);
-      border: 1px solid var(--green);
-      padding: 10px;
-      width: 100%;
-      margin-bottom: 10px;
-      border-radius: 2px;
-      font-family: inherit;
-    }
-    input::placeholder { color: #6f6; }
+    <!-- QR CODE -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
-    /* --- ECRÃ DE LOGIN --- */
-    #login-screen {
-      position: absolute; inset: 0;
-      background: var(--bg);
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      z-index: 9999; padding: 20px; text-align: center;
-    }
-    #login-screen h1 { font-size: 3rem; text-shadow: 0 0 10px var(--green); margin: 0 0 24px 0; }
-    .login-card {
-      width: 100%; max-width: 420px;
-      border: var(--border);
-      padding: 20px;
-      background: rgba(0,0,0,0.9);
-      box-shadow: 0 0 20px rgba(0,255,0,0.15) inset;
-    }
+    <style>
+        /* --- ESTILOS GERAIS --- */
+        body { 
+            margin: 0; padding: 0; font-family: 'Courier New', monospace; background: #000; color: #0f0; overflow: hidden; user-select: none;
+        }
+        .hidden { display: none !important; }
+        
+        /* Botões Gerais */
+        button { 
+            background: #000; color: #0f0; border: 2px solid #0f0; padding: 12px 20px; font-weight: bold; font-size: 16px; cursor: pointer; text-transform: uppercase; box-shadow: 0 0 5px #0f0; transition: all 0.2s; margin: 5px; width: 100%;
+        }
+        button:active { background: #0f0; color: #000; }
+        button.secondary { border-color: #555; color: #aaa; box-shadow: none; }
+        button.secondary:active { background: #555; color: #fff; }
 
-    /* --- MAPA --- */
-    #map { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
+        /* Botões Miniatura (HUD) */
+        .mini-btn {
+            padding: 4px 8px !important;
+            font-size: 10px !important;
+            width: auto !important;
+            margin: 2px !important;
+            display: inline-block;
+        }
 
-    /* --- HUD --- */
-    #hud {
-      position: absolute; top: 10px; left: 10px; right: 10px;
-      z-index: 1000;
-      background: var(--panel);
-      padding: 10px;
-      border: var(--border);
-      display: flex; flex-wrap: wrap; align-items: center; gap: 12px;
-      backdrop-filter: saturate(1.2) blur(1px);
-    }
-    .stat { display: inline-flex; align-items: center; gap: 4px; font-weight: bold; white-space: nowrap; }
-    .bar { width: 100%; height: 20px; background: #333; border: 1px solid var(--green); position: relative; margin-top: 4px; }
-    #energy-fill { height: 100%; background: var(--green); width: 100%; transition: width 0.3s ease; }
-    .btn-group { display: flex; gap: 10px; align-items: center; margin-left: auto; }
+        input { 
+            background: #111; color: #0f0; border: 1px solid #0f0; padding: 15px; width: 80%; margin-bottom: 15px; font-family: inherit; font-size: 16px;
+        }
 
-    /* --- MODAIS --- */
-    .modal {
-      position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-      background: var(--bg);
-      border: 3px solid var(--green);
-      padding: 20px; z-index: 2000;
-      width: 90%; max-width: 600px; /* Mais largo para empresa */
-      text-align: center;
-      box-shadow: 0 0 30px rgba(0,255,0,0.2);
-      max-height: 90vh; overflow-y: auto;
-    }
-    .modal h2 { margin-top: 0; text-shadow: 0 0 6px var(--green); }
-    .modal .btn-group { justify-content: center; margin-top: 12px; flex-wrap: wrap; }
+        /* --- ECRÃ DE LOGIN --- */
+        #login-screen { 
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #000; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; padding: 20px; box-sizing: border-box;
+        }
+        #login-screen h1 { font-size: 3rem; text-shadow: 0 0 15px #0f0; margin-bottom: 30px; text-align: center; }
 
-    /* --- LISTA DE BANDEIRAS / MARKET --- */
-    #flag-list {
-      max-height: 220px; overflow-y: auto; text-align: left;
-      margin: 10px 0; border: 1px solid var(--green);
-      padding: 6px; background: rgba(0,20,0,0.5);
-    }
-    .flag-item {
-      display: flex; justify-content: space-between; align-items: center;
-      padding: 6px; border-bottom: 1px solid #333; gap: 8px;
-    }
-    .flag-item:last-child { border-bottom: none; }
-    .flag-item button { padding: 2px 6px; font-size: 12px; }
+        /* --- MAPA --- */
+        #map { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; background: #111; }
+        
+        /* --- HUD (MINIATURIZADO NO TOPO) --- */
+        #hud { 
+            position: absolute; top: 0; left: 0; width: 100%; z-index: 1000; background: rgba(0,0,0,0.6); padding: 5px; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; pointer-events: none;
+        }
+        .hud-content { pointer-events: auto; display: flex; align-items: center; gap: 10px; width: 100%; justify-content: space-between; }
+        .hud-left { display: flex; align-items: center; gap: 5px; }
+        .hud-center { display: flex; gap: 5px; flex-wrap: wrap; justify-content: center; }
+        .hud-right { display: flex; align-items: center; }
 
-    /* --- QR --- */
-    .qr-card {
-      border: 1px dashed var(--green);
-      padding: 10px; margin: 12px 0;
-      background: rgba(0,30,0,0.4);
-      display: flex; flex-direction: column; align-items: center; gap: 8px;
-    }
-    .qr-canvas { width: 128px; height: 128px; background: #fff; padding: 4px; border-radius: 4px; }
+        /* Barra de Energia Miniatura */
+        .mini-bar-container { width: 60px; height: 8px; background: #333; border: 1px solid #0f0; position: relative; }
+        #energy-fill { height: 100%; background: #0f0; width: 100%; transition: width 0.5s; }
+        #energy-fill.low { background: #f00; animation: pulse 1s infinite; }
+        
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
 
-    /* --- PAINEL PR (EMPRESA) --- */
-    #pr-dashboard { width: 95%; height: 90%; overflow-y: auto; text-align: left; padding: 24px; }
-    #pr-dashboard h2, #pr-dashboard h3 { text-shadow: 0 0 6px var(--green); margin-bottom: 10px; }
-    
-    .company-header {
-      display: flex; justify-content: space-between; align-items: center;
-      border-bottom: 1px solid var(--green); padding-bottom: 10px; margin-bottom: 20px;
-    }
+        .stat-text { font-size: 10px; font-weight: bold; color: #fff; text-shadow: 1px 1px 0 #000; }
 
-    .pack-grid {
-      display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 12px; margin: 12px 0 24px 0;
-    }
-    .pack-card {
-      border: 1px solid var(--green);
-      padding: 12px; background: rgba(0,20,0,0.6);
-      display: flex; flex-direction: column; gap: 8px;
-    }
-    .campaign-list {
-      border: 1px solid var(--green);
-      padding: 10px; max-height: 260px; overflow-y: auto;
-      background: rgba(0,20,0,0.5);
-    }
-    .campaign-item {
-      border-bottom: 1px solid #333; padding: 8px 0;
-      display: flex; flex-direction: column; gap: 2px;
-    }
-    .campaign-item:last-child { border-bottom: none; }
+        /* --- MENUS FLUTUANTES (DRAGGABLE) --- */
+        .modal { 
+            position: absolute; top: 15%; left: 15%; width: 70%; max-width: 350px; max-height: 80vh; background: #000; border: 3px solid #0f0; z-index: 2000; box-shadow: 0 0 20px rgba(0, 255, 0, 0.2); display: flex; flex-direction: column; overflow: hidden;
+        }
+        .modal-header { background: #0f0; color: #000; padding: 5px 10px; font-weight: bold; cursor: move; display: flex; justify-content: space-between; align-items: center; user-select: none; }
+        .close-btn { background: none; border: none; color: #000; font-weight: bold; font-size: 18px; cursor: pointer; padding: 0; margin: 0; width: auto; box-shadow: none; line-height: 1; }
+        .modal-body { padding: 15px; overflow-y: auto; flex-grow: 1; }
+        
+        /* --- LISTA DE BANDEIRAS --- */
+        #flag-list { max-height: 200px; overflow-y: auto; text-align: left; margin: 10px 0; border: 1px solid #0f0; padding: 5px; background: #050505; }
+        .flag-item { display: flex; justify-content: space-between; padding: 8px; border-bottom: 1px solid #333; align-items: center; }
+        .flag-item button { padding: 5px 10px; font-size: 12px; width: auto; margin: 0; }
 
-    /* --- LOJA DE PACOTES AVANÇADA --- */
-    .store-interface { display: flex; flex-direction: column; gap: 15px; }
-    .store-list { display: flex; flex-direction: column; gap: 10px; }
-    .store-item {
-      display: flex; justify-content: space-between; align-items: center;
-      padding: 10px; border: 1px solid #333; background: #111;
-      cursor: pointer;
-    }
-    .store-item:hover, .store-item.selected { border-color: var(--green); background: #050505; }
-    
-    .store-details {
-      border: 2px solid var(--green); padding: 15px; background: #000;
-      display: none; /* Oculto por padrão */
-    }
-    .store-details.active { display: block; }
-    
-    .detail-row { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #333; }
-    .detail-row span:last-child { color: #fff; font-weight: bold; }
-    
-    .receipt-box {
-      border: 1px dashed var(--green); padding: 15px; margin-top: 15px;
-      background: #050505; text-align: left; font-size: 13px;
-    }
+        /* --- PR DASHBOARD (SIMPLIFICADO) --- */
+        #pr-dashboard { width: 80%; height: 80%; top: 10%; left: 10%; }
+        #pr-campaigns { text-align: left; font-size: 12px; margin-bottom: 20px; }
+        .pr-item { border: 1px solid #0f0; padding: 5px; margin: 5px 0; background: #050505; }
 
-    @media (max-width: 560px) {
-      #hud { gap: 8px; font-size: 14px; }
-      .btn-group { width: 100%; margin-left: 0; justify-content: space-between; }
-      #login-screen h1 { font-size: 2.4rem; }
-    }
-  </style>
+        /* --- QR STYLES --- */
+        .qr-container { border: 1px solid #fff; padding: 10px; display: inline-block; background: #fff; margin: 10px auto; }
+
+        /* --- ZOOM BOX (A+ / A-) --- */
+        .custom-zoom-box {
+            background: #000; border: 2px solid #0f0; border-radius: 5px; box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+            display: flex; flex-direction: column; overflow: hidden; margin-bottom: 10px;
+            position: absolute; bottom: 20px; right: 10px; width: 60px; z-index: 1000;
+        }
+        .zoom-btn-custom {
+            background: #000; color: #0f0; border: none; border-bottom: 1px solid #0f0;
+            padding: 10px 0; font-family: 'Courier New', monospace; font-weight: bold; font-size: 16px;
+            cursor: pointer; display: flex; justify-content: center; align-items: center; width: 100%; margin: 0; box-shadow: none;
+        }
+        .zoom-btn-custom:last-child { border-bottom: none; }
+        .zoom-btn-custom:active { background: #0f0; color: #000; }
+
+    </style>
 </head>
 <body>
 
-  <!-- 1. ECRÃ DE LOGIN -->
-  <div id="login-screen">
-    <div class="login-card">
-      <h1>ZAP FLAGS</h1>
-      <label for="player-name">Nome do Jogador</label>
-      <input type="text" id="player-name" placeholder="Ex.: Ana Silva" autocomplete="name" />
-
-      <label for="player-email">Email (Login Único)</label>
-      <input type="email" id="player-email" placeholder="exemplo@email.com" autocomplete="email" />
-
-      <div style="display:flex; gap:10px; align-items:center; justify-content:center; flex-wrap:wrap; margin-top:6px;">
-        <button id="btn-start-game" onclick="startGame()">COMEÇAR CAÇADA</button>
-        <button onclick="showPRDashboard()" class="secondary">SOU LOJISTA (PR)</button>
-      </div>
-      <p style="font-size:12px; margin:16px 0 0 0; opacity:0.8;">
-        Dica: ativa o GPS para apanhar bandeiras.
-      </p>
-    </div>
-  </div>
-
-  <!-- 2. MAPA -->
-  <div id="map"></div>
-
-  <!-- 3. HUD -->
-  <div id="hud" class="hidden">
-    <div class="stat">🏴 Bandeiras: <span id="flag-count">0</span></div>
-    <div class="stat">⚡ Nível: <span id="skill-level">1</span> (<span id="vision-range">5</span>m)</div>
-    <div class="stat">🎯 QR Prontos: <span id="qr-count">0</span></div>
-    <div style="width:100%;">
-      <div class="bar"><div id="energy-fill"></div></div>
-      <small style="opacity:0.8;">Energia: <span id="energy-text">100%</span></small>
-    </div>
-    <div class="btn-group">
-      <button onclick="toggleTrade()">🔄 Trocar</button>
-      <button onclick="showMyQR()">🎫 Meus QRs</button>
-      <button onclick="saveGameState()">💾 Guardar</button>
-    </div>
-  </div>
-
-  <!-- 4. JANELA DE TROCA -->
-  <div id="trade-modal" class="modal hidden">
-    <h2>MERCADO DE BANDEIRAS</h2>
-    <p>Listar custa <strong>5% Energia</strong>. Dura <strong>5 dias</strong>.</p>
-    <div id="flag-list"></div>
-    <div class="btn-group">
-      <button id="btn-list-flag" onclick="listFlagForTrade()">LISTAR (-5% E)</button>
-      <button onclick="toggleTrade()">FECHAR</button>
-    </div>
-  </div>
-
-  <!-- 5. JANELA MEUS QRs -->
-  <div id="qr-modal" class="modal hidden">
-    <h2>OS TEUS QRs</h2>
-    <div id="my-qrs"></div>
-    <div class="btn-group"><button onclick="toggleQR()">FECHAR</button></div>
-  </div>
-
-  <!-- 6. PAINEL DO PR (EMPRESA) -->
-  <div id="pr-dashboard" class="modal hidden">
-    <div class="company-header">
-      <h2 style="margin:0;">PAINEL DO LOJISTA</h2>
-      <div style="display:flex; gap:5px;">
-        <button class="secondary" style="font-size:12px; padding:5px 10px;" onclick="openEditCompanyData()">✏️ Editar Dados</button>
-        <button onclick="backToGame()">⬅️ SAIR</button>
-      </div>
+    <!-- 1. ECRÃ DE LOGIN -->
+    <div id="login-screen">
+        <h1>ZAP FLAGS</h1>
+        <input type="text" id="player-name" placeholder="Nome do Agente">
+        <input type="email" id="player-email" placeholder="Email (ID da Conta)">
+        <button onclick="startGame()">INICIAR MISSÃO</button>
+        <button class="secondary" onclick="showPRDashboard()">MODO LOJISTA (PR)</button>
     </div>
 
-    <!-- Dados da Empresa -->
-    <div style="background:#111; padding:10px; margin-bottom:20px; border:1px solid #333;">
-      <strong>Empresa:</strong> <span id="dash-company-name">Não definida</span><br>
-      <strong>NIF:</strong> <span id="dash-company-nif">-</span><br>
-      <strong>Saldo de Bandeiras:</strong> <span id="dash-flags-total" style="color:#0f0">0</span>
-    </div>
+    <!-- 2. MAPA -->
+    <div id="map"></div>
 
-    <h3>Loja de Pacotes</h3>
-    <div class="store-interface">
-      <!-- Lista de Pacotes -->
-      <div id="pack-list-container" class="store-list">
-        <!-- Preenchido via JS -->
-      </div>
+    <!-- 3. HUD (MINIATURIZADO NO TOPO) -->
+    <div id="hud" class="hidden">
+        <div class="hud-content">
+            <!-- Esquerda: Energia e Stats -->
+            <div class="hud-left">
+                <div class="mini-bar-container">
+                    <div id="energy-fill"></div>
+                </div>
+                <span class="stat-text">⚡<span id="energy-text">100</span>%</span>
+            </div>
 
-      <!-- Detalhes da Compra -->
-      <div id="pack-detail-container" class="store-details">
-        <h3 id="detail-title" style="color:#fff; border-bottom:1px solid #0f0; padding-bottom:5px;"></h3>
-        
-        <div class="detail-row"><span>🚩 Quantidade:</span> <span id="detail-flags"></span></div>
-        <div class="detail-row"><span>📡 Raio de Ação:</span> <span id="detail-radius"></span></div>
-        <div class="detail-row"><span>💰 Preço Unitário:</span> <span id="detail-price"></span></div>
+            <!-- Centro: Botões de Ação -->
+            <div class="hud-center">
+                <button class="mini-btn" onclick="toggleTrade()">🔄 Mercado</button>
+                <button class="mini-btn" onclick="showMyQR()">🎫 QRs</button>
+                <button class="mini-btn" onclick="toggleStats()">📊 Skills</button>
+                <button class="mini-btn" style="border-color: #f00; color: #f00;" onclick="confirmExit()">🚪 Sair</button>
+            </div>
 
-        <hr style="border-color:#333; margin: 15px 0;">
-
-        <label>Quantidade de Pacotes:</label>
-        <select id="pack-quantity" onchange="updateTotalPrice()">
-          <option value="1">1 Pacote</option>
-          <option value="5">5 Pacotes (-5% Desc)</option>
-          <option value="10">10 Pacotes (-10% Desc)</option>
-          <option value="15">15 Pacotes (-15% Desc)</option>
-        </select>
-
-        <label>Método de Pagamento:</label>
-        <select id="payment-method">
-          <option value="QR">Pagamento por QR Code (MB Way)</option>
-          <option value="MB">Referência Multibanco</option>
-          <option value="CC">Cartão de Crédito</option>
-        </select>
-
-        <div style="text-align:right; font-size:18px; margin:10px 0; color:#0f0;">
-          Total: <span id="final-total">0.00</span>€
+            <!-- Direita: Contador de Passos -->
+            <div class="hud-right">
+                <span class="stat-text">👣 <span id="step-count">0</span></span>
+            </div>
         </div>
-
-        <button class="action-btn" onclick="confirmPurchase()" style="background:#0f0; color:#000; width:100%;">EFETUAR PAGAMENTO</button>
-        <button class="secondary" onclick="closePackDetails()" style="width:100%; margin-top:5px;">Voltar à Lista</button>
-      </div>
-
-      <!-- Recibo -->
-      <div id="receipt-area" class="receipt-box hidden">
-        <h4 style="margin:0; color:#0f0; text-align:center;">RECIBO ZAP FLAGS</h4>
-        <p>Data: <span id="rec-date"></span></p>
-        <p>Cliente: <span id="rec-company"></span></p>
-        <p>NIF: <span id="rec-nif"></span></p>
-        <p>Item: <span id="rec-pack"></span></p>
-        <p>Qtd: <span id="rec-qty"></span></p>
-        <p>Total Pago: <span id="rec-value"></span>€</p>
-        <p style="text-align:center; margin-top:10px; font-weight:bold;">*** PAGO ***</p>
-        <button class="secondary" onclick="document.getElementById('receipt-area').classList.add('hidden')">Fechar Recibo</button>
-      </div>
     </div>
 
-    <h3 style="margin-top:30px;">As Minhas Campanhas</h3>
-    <div class="campaign-list" id="pr-campaigns">
-      <em>Ainda não tens campanhas.</em>
+    <!-- 4. JANELA DE TROCA (DRAGGABLE) -->
+    <div id="trade-modal" class="modal hidden">
+        <div class="modal-header" onmousedown="dragStart(event, 'trade-modal')">
+            <span>MERCADO NEGRO</span>
+            <button class="close-btn" onclick="toggleTrade()">X</button>
+        </div>
+        <div class="modal-body">
+            <p style="font-size: 12px; color: #aaa;">Listar custa 5% Energia. Dura 5 dias.</p>
+            <div id="flag-list"></div>
+            <div class="btn-group">
+                <button onclick="listFlagForTrade()">VENDER (-5% E)</button>
+                <button class="secondary" onclick="toggleTrade()">FECHAR</button>
+            </div>
+        </div>
     </div>
 
-    <h3>Escanear QR (simulação)</h3>
-    <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin:8px 0 16px 0;">
-      <button onclick="openScanner()">📸 ABRIR SCANNER</button>
-      <input type="text" id="manual-qr-input" placeholder="Ou cola o conteúdo do QR" style="flex:1; min-width:200px;" />
-      <button class="secondary" onclick="validateManualQR()">Validar</button>
+    <!-- 5. JANELA MEUS QRs (DRAGGABLE) -->
+    <div id="qr-modal" class="modal hidden">
+        <div class="modal-header" onmousedown="dragStart(event, 'qr-modal')">
+            <span>SEUS QRS</span>
+            <button class="close-btn" onclick="toggleQR()">X</button>
+        </div>
+        <div class="modal-body">
+            <div id="my-qrs"></div>
+            <button class="secondary" onclick="toggleQR()">FECHAR</button>
+        </div>
     </div>
-    <div id="scanner-result" style="min-height:28px; font-weight:bold;"></div>
-  </div>
 
-  <!-- 7. MODAL EDITAR DADOS EMPRESA -->
-  <div id="edit-company-modal" class="modal hidden">
-    <h2>EDITAR DADOS DA EMPRESA</h2>
-    <form onsubmit="saveEditCompanyData(event)">
-      <label>Nome Comercial:</label>
-      <input type="text" id="edit-billing" required>
-      <label>NIF:</label>
-      <input type="text" id="edit-nif" required>
-      <label>Morada:</label>
-      <input type="text" id="edit-address" required>
-      <label>Código Postal:</label>
-      <input type="text" id="edit-zip" required>
-      <label>Telefone:</label>
-      <input type="tel" id="edit-phone" required>
-      <div class="btn-group">
-        <button type="submit">GUARDAR</button>
-        <button type="button" class="secondary" onclick="document.getElementById('edit-company-modal').classList.add('hidden')">CANCELAR</button>
-      </div>
-    </form>
-  </div>
+    <!-- 6. JANELA SKILLS/STATS (DRAGGABLE) -->
+    <div id="stats-modal" class="modal hidden">
+        <div class="modal-header" onmousedown="dragStart(event, 'stats-modal')">
+            <span>PERFIL DO AGENTE</span>
+            <button class="close-btn" onclick="toggleStats()">X</button>
+        </div>
+        <div class="modal-body">
+            <div style="text-align: left; margin-bottom: 15px;">
+                <p>Nível: <span id="stat-level" style="color:#fff">1</span></p>
+                <p>Visão: <span id="stat-vision" style="color:#fff">5m</span></p>
+                <p>Bandeiras: <span id="stat-flags" style="color:#fff">0</span></p>
+                <hr style="border-color: #333">
+                <p>Passos Totais: <span id="stat-steps" style="color:#fff">0</span></p>
+                <p>Tempo de Jogo: <span id="stat-time" style="color:#fff">00:00</span></p>
+                <p>Skill Bonus: <span id="stat-skill" style="color:#0f0">0%</span></p>
+            </div>
+            <button class="secondary" onclick="toggleStats()">FECHAR</button>
+        </div>
+    </div>
 
-  <script>
-    // =========================================================================
-    // 🧠 ESTADO CENTRALIZADO + PERSISTÊNCIA
-    // =========================================================================
-    const STORAGE_KEY = "zapFlagsState_v2_OptionB";
+    <!-- 7. PAINEL DO PR (SIMPLIFICADO - DRAGGABLE) -->
+    <div id="pr-dashboard" class="modal hidden">
+        <div class="modal-header" onmousedown="dragStart(event, 'pr-dashboard')">
+            <span>PAINEL DO LOJISTA</span>
+            <button class="close-btn" onclick="location.reload()">X</button>
+        </div>
+        <div class="modal-body">
+            <button class="secondary" onclick="location.reload()">VOLTAR AO JOGO</button>
+            
+            <h3>Comprar Campanhas</h3>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <button onclick="buyPack('BRONZE', 5)" style="width: 45%;">🥉 BRONZE (5€)</button>
+                <button onclick="buyPack('PRATA', 15)" style="width: 45%;">🥈 PRATA (15€)</button>
+                <button onclick="buyPack('OURO', 50)" style="width: 45%;">🥇 OURO (50€)</button>
+                <button onclick="buyPack('PLATINA', 100)" style="width: 45%;">💎 PLATINA (100€)</button>
+            </div>
+            
+            <h3>Minhas Campanhas</h3>
+            <div id="pr-campaigns"></div>
+            <button onclick="openScanner()">📸 ESCANEAR QR CLIENTE</button>
+            <div id="scanner-result"></div>
+        </div>
+    </div>
 
-    const DEFAULT_STATE = {
-      player: {
-        name: "", email: "", lat: null, lng: null,
-        energy: 100, flags: 0, qrs: [], skill: 1, vision: 5, inventory: []
-      },
-      company: {
-        name: "Minha Empresa",
-        nif: "",
-        address: "",
-        zip: "",
-        phone: "",
-        totalFlags: 0,
-        campaigns: []
-      },
-      prs: [
-        { id: 1, name: "Café Central", lat: 41.1496, lng: -8.6109, pack: "BRONZE", radius: 5000, flagsLeft: 50000, color: "red" },
-        { id: 2, name: "Ginásio Fit", lat: 38.7223, lng: -9.1393, pack: "PRATA", radius: 20000, flagsLeft: 150000, color: "blue" }
-      ],
-      marketListings: [],
-      map: null, playerMarker: null, allMarkers: [], watchId: null,
-      gameLoopTimer: null, energyRegenTimer: null, lastPositionUpdateTs: 0
-    };
+    <script>
+        // =========================================================================
+        // 🧠 CÉREBRO DO JOGO (LÓGICA)
+        // =========================================================================
 
-    // Definição dos Pacotes
-    const PACKS = [
-      { id: 'MIN', name: 'Pacote Mínimo', flags: 1000, radius: 5, price: 10 },
-      { id: 'MED', name: 'Pacote Médio', flags: 2500, radius: 15, price: 25 },
-      { id: 'MAX', name: 'Pacote Máximo', flags: 5000, radius: 30, price: 45 },
-      { id: 'PRO', name: 'Pacote Profissional', flags: 10000, radius: 50, price: 80 }
-    ];
-
-    let state = structuredClone(DEFAULT_STATE);
-    let selectedPack = null;
-
-    // =========================================================================
-    // 💾 PERSISTÊNCIA
-    // =========================================================================
-    function saveGameState() {
-      try {
-        const toSave = {
-          player: { ...state.player },
-          company: { ...state.company },
-          prs: state.prs,
-          marketListings: state.marketListings
+        // --- 1. DADOS INICIAIS ---
+        let player = {
+            name: "",
+            email: "",
+            lat: 0,
+            lng: 0,
+            energy: 100,
+            flags: 0,
+            qrs: [], 
+            skill: 1,
+            vision: 5, // metros
+            inventory: [], // IDs de bandeiras
+            steps: 0,
+            startTime: 0
         };
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
-        showToast("💾 Progresso guardado.");
-      } catch (e) { console.error("Erro ao guardar:", e); }
-    }
 
-    function loadGameState() {
-      try {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        if (!raw) return false;
-        const saved = JSON.parse(raw);
-        if (saved.player) state.player = { ...DEFAULT_STATE.player, ...saved.player };
-        if (saved.company) state.company = { ...DEFAULT_STATE.company, ...saved.company };
-        if (Array.isArray(saved.prs)) state.prs = saved.prs;
-        if (Array.isArray(saved.marketListings)) state.marketListings = saved.marketListings;
-        recalcSkillFromFlags();
-        return true;
-      } catch (e) { return false; }
-    }
+        // PRs Fictícios Iniciais
+        let prs = [
+            { id: 1, name: "Café Central (Porto)", lat: 41.1496, lng: -8.6109, pack: "BRONZE", radius: 5000, flagsLeft: 50000, color: "orange" },
+            { id: 2, name: "Ginásio Fit (Lisboa)", lat: 38.7223, lng: -9.1393, pack: "PRATA", radius: 20000, flagsLeft: 150000, color: "orange" },
+        ];
 
-    // =========================================================================
-    // 🧭 UTILITÁRIOS
-    // =========================================================================
-    function showToast(msg) {
-      const toast = document.createElement("div");
-      toast.textContent = msg;
-      toast.style.cssText = "position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:#000; border:1px solid #0f0; color:#0f0; padding:10px 16px; z-index:5000; border-radius:2px;";
-      document.body.appendChild(toast);
-      setTimeout(() => { toast.style.opacity = "0"; setTimeout(() => toast.remove(), 350); }, 1800);
-    }
+        let map, playerMarker, watchId;
+        let allMarkers = [];
+        let lastPos = null; // Para calcular passos
 
-    function getDistanceMeters(lat1, lon1, lat2, lon2) {
-      const R = 6371e3;
-      const φ1 = lat1 * Math.PI / 180; const φ2 = lat2 * Math.PI / 180;
-      const Δφ = (lat2 - lat1) * Math.PI / 180; const Δλ = (lon2 - lon1) * Math.PI / 180;
-      const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
-      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    }
+        // --- 2. INICIALIZAÇÃO ---
+        function startGame() {
+            const name = document.getElementById('player-name').value;
+            const email = document.getElementById('player-email').value;
+            if(!name || !email) { alert("Identificação necessária!"); return; }
 
-    function getRandomPointAround(lat, lng, minMeters, maxMeters) {
-      const angle = Math.random() * 2 * Math.PI;
-      const dist = minMeters + Math.random() * Math.max(0, maxMeters - minMeters);
-      const deltaLat = (dist / 111000) * Math.cos(angle);
-      const deltaLng = (dist / (111000 * Math.cos((lat * Math.PI) / 180))) * Math.sin(angle);
-      return { lat: lat + deltaLat, lng: lng + deltaLng };
-    }
+            player.name = name;
+            player.email = email;
+            player.startTime = Date.now();
 
-    function getIcon(color) {
-      const mapColors = { blue: "#0000FF", red: "#FF0000", yellow: "#FFFF00", orange: "#FFA500", green: "#00FF00" };
-      const bg = mapColors[color] || "#0f0";
-      return L.divIcon({ className: "custom-icon", html: `<div style="background:${bg}; width:20px; height:20px; border-radius:50%; border:2px solid white;"></div>` });
-    }
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('hud').classList.remove('hidden');
 
-    function recalcSkillFromFlags() {
-      const points = Math.max(0, state.player.flags);
-      let newVision = 5 + Math.sqrt(points / 100);
-      state.player.vision = Math.min(100, Math.max(5, Math.floor(newVision)));
-      state.player.skill = 1 + Math.floor(points / 100);
-    }
-
-    function updateHUD() {
-      const p = state.player;
-      document.getElementById("flag-count").innerText = p.flags.toLocaleString();
-      document.getElementById("qr-count").innerText = p.qrs.filter(q => !q.used).length.toLocaleString();
-      document.getElementById("skill-level").innerText = p.skill;
-      document.getElementById("vision-range").innerText = p.vision;
-      const energyPct = Math.max(0, Math.min(100, Math.round(p.energy)));
-      document.getElementById("energy-fill").style.width = energyPct + "%";
-      document.getElementById("energy-text").innerText = energyPct + "%";
-      
-      const btnList = document.getElementById("btn-list-flag");
-      if (btnList) {
-        btnList.disabled = !(p.inventory.length > 0 && p.energy >= 5);
-      }
-    }
-
-    // =========================================================================
-    // 🗺️ MAPA + GPS
-    // =========================================================================
-    function initMap() {
-      if (state.map) return;
-      state.map = L.map("map").setView([39.3999, -8.2245], 7);
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution: "© OpenStreetMap" }).addTo(state.map);
-
-      if (navigator.geolocation) {
-        state.watchId = navigator.geolocation.watchPosition(updatePosition, handleGeoError, { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 });
-      }
-    }
-
-    function updatePosition(position) {
-      const now = Date.now();
-      if (now - state.lastPositionUpdateTs < 500) return;
-      state.lastPositionUpdateTs = now;
-      state.player.lat = position.coords.latitude;
-      state.player.lng = position.coords.longitude;
-      if (!state.map) return;
-      if (!state.playerMarker) {
-        state.playerMarker = L.marker([state.player.lat, state.player.lng]).addTo(state.map).bindPopup("📍 És tu!");
-      } else {
-        state.playerMarker.setLatLng([state.player.lat, state.player.lng]);
-        state.map.panTo([state.player.lat, state.player.lng]);
-      }
-    }
-
-    function handleGeoError(error) { console.warn("GPS Error:", error.message); }
-
-    // =========================================================================
-    // 🎮 LOOP DO JOGO
-    // =========================================================================
-    function startGameLoops() {
-      stopGameLoops();
-      state.gameLoopTimer = setInterval(gameLoop, 3000);
-      state.energyRegenTimer = setInterval(() => {
-        if (state.player.energy < 100) { state.player.energy = Math.min(100, state.player.energy + 1); updateHUD(); saveGameState(); }
-      }, 60000);
-    }
-
-    function stopGameLoops() {
-      if (state.gameLoopTimer) clearInterval(state.gameLoopTimer);
-      if (state.energyRegenTimer) clearInterval(state.energyRegenTimer);
-    }
-
-    function gameLoop() {
-      const p = state.player;
-      if (p.lat == null || p.lng == null) return;
-      clearAllMarkers();
-      spawnZapFlag();
-      for (let i = 0; i < state.prs.length; i++) {
-        const pr = state.prs[i];
-        if (pr.flagsLeft <= 0) continue;
-        const dist = getDistanceMeters(p.lat, p.lng, pr.lat, pr.lng);
-        if (dist < pr.radius) {
-          let chance = 20 - (dist / 1000) * 2;
-          if (chance < 1) chance = 1;
-          if (Math.random() * 100 < chance) {
-            spawnPRFlag(pr);
-            pr.flagsLeft = Math.max(0, pr.flagsLeft - 1);
-          }
+            initMap();
         }
-      }
-      recalcSkillFromFlags();
-      updateHUD();
-    }
 
-    function clearAllMarkers() {
-      if (!state.map) { state.allMarkers = []; return; }
-      state.allMarkers.forEach(m => { if (state.map.hasLayer(m)) state.map.removeLayer(m); });
-      state.allMarkers = [];
-    }
+        function initMap() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (pos) => {
+                        player.lat = pos.coords.latitude;
+                        player.lng = pos.coords.longitude;
+                        lastPos = { lat: player.lat, lng: player.lng };
+                        map.setView([player.lat, player.lng], 16);
+                        createPlayerMarker();
+                    },
+                    () => {
+                        map.setView([38.7223, -9.1393], 13);
+                        alert("GPS desligado. Usando localização simulada.");
+                    }
+                );
+            }
 
-    function spawnZapFlag() {
-      const p = state.player;
-      if (!p.lat) return;
-      const pt = getRandomPointAround(p.lat, p.lng, 30, 60);
-      if (getDistanceMeters(p.lat, p.lng, pt.lat, pt.lng) <= p.vision) {
-        const marker = L.marker([pt.lat, pt.lng], { icon: getIcon("blue") }).addTo(state.map).bindPopup("🔵 +10% Energia").on("click", () => collectFlag("ZAP", marker));
-        state.allMarkers.push(marker);
-      }
-    }
+            map = L.map('map', { zoomControl: false, attributionControl: false });
+            
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap'
+            }).addTo(map);
 
-    function spawnPRFlag(pr) {
-      const p = state.player;
-      if (!p.lat) return;
-      const pt = getRandomPointAround(pr.lat, pr.lng, 5, 100);
-      if (getDistanceMeters(p.lat, p.lng, pt.lat, pt.lng) <= p.vision) {
-        const marker = L.marker([pt.lat, pt.lng], { icon: getIcon(pr.color) }).addTo(state.map).bindPopup(`🔴 ${pr.name}`).on("click", () => collectFlag("PR", marker, pr));
-        state.allMarkers.push(marker);
-      }
-    }
+            // Controlo de Zoom Personalizado (A+ / A-)
+            var ZoomControl = L.Control.extend({
+                onAdd: function(map) {
+                    var container = L.DomUtil.create('div', 'custom-zoom-box');
+                    var btnIn = L.DomUtil.create('button', 'zoom-btn-custom', container);
+                    btnIn.innerHTML = 'A+ <span class="zoom-symbol">+</span>'; 
+                    btnIn.onclick = function() { map.zoomIn(); };
+                    var btnOut = L.DomUtil.create('button', 'zoom-btn-custom', container);
+                    btnOut.innerHTML = 'A- <span class="zoom-symbol">-</span>';
+                    btnOut.onclick = function() { map.zoomOut(); };
+                    return container;
+                }
+            });
+            map.addControl(new ZoomControl());
 
-    function collectFlag(type, marker, pr = null) {
-      const p = state.player;
-      if (p.energy <= 0) { showToast("⚡ Sem energia!"); return; }
-      p.energy = Math.max(0, p.energy - 1);
+            // Loop de GPS
+            if (navigator.geolocation) {
+                watchId = navigator.geolocation.watchPosition(updatePosition, handleError, { 
+                    enableHighAccuracy: true, maximumAge: 0, timeout: 5000
+                });
+            }
 
-      if (type === "ZAP") {
-        p.energy = Math.min(100, p.energy + 10);
-        showToast("🔵 +10% Energia!");
-      } else if (type === "PR" && pr) {
-        p.flags += 1;
-        p.inventory.push(pr.id);
-        showToast(`🏴 Bandeira de ${pr.name} recolhida!`);
-        if (p.flags % 10 === 0) {
-          p.qrs.push({ id: Date.now(), pr_id: pr.id, date: Date.now() + (15 * 24 * 60 * 60 * 1000), used: false });
-          showToast("🎫 Novo QR gerado!");
+            setInterval(gameLoop, 3000); 
+            
+            // Regeneração de Energia
+            setInterval(() => {
+                if(player.energy < 100) {
+                    player.energy = Math.min(100, player.energy + 1);
+                    updateHUD();
+                }
+            }, 60000); 
+
+            // Atualizar tempo de jogo
+            setInterval(updateGameTime, 1000);
         }
-      }
-      if (state.map && marker) { state.map.removeLayer(marker); state.allMarkers = state.allMarkers.filter(m => m !== marker); }
-      recalcSkillFromFlags(); updateHUD(); saveGameState();
-      gameLoop();
-    }
 
-    // =========================================================================
-    // 🔁 MERCADO
-    // =========================================================================
-    function toggleTrade() {
-      const el = document.getElementById("trade-modal");
-      if (el.classList.contains("hidden")) { el.classList.remove("hidden"); renderMarket(); updateHUD(); }
-      else { el.classList.add("hidden"); }
-    }
-
-    function listFlagForTrade() {
-      const p = state.player;
-      if (p.inventory.length === 0 || p.energy < 5) { showToast("❌ Sem bandeiras ou energia."); return; }
-      const idx = Math.floor(Math.random() * p.inventory.length);
-      const prId = p.inventory.splice(idx, 1)[0];
-      state.marketListings.push({ owner: p.name, pr_id: prId, expires: Date.now() + (5 * 24 * 60 * 60 * 1000) });
-      p.energy -= 5;
-      showToast("📜 Bandeira listada!");
-      saveGameState(); updateHUD(); renderMarket();
-    }
-
-    function renderMarket() {
-      const listEl = document.getElementById("flag-list");
-      if (state.marketListings.length === 0) { listEl.innerHTML = "<em>Sem listagens.</em>"; return; }
-      let html = "";
-      state.marketListings.forEach((item, i) => {
-        const pr = state.prs.find(p => p.id === item.pr_id);
-        html += `<div class="flag-item"><div><strong>${pr ? pr.name : 'PR #'}</strong><br><small>Dono: ${item.owner}</small></div><button onclick="buyFromMarket(${i})">Comprar</button></div>`;
-      });
-      listEl.innerHTML = html;
-    }
-
-    function buyFromMarket(index) {
-      const p = state.player;
-      if (p.energy < 2) { showToast("⚡ Precisas de 2% energia."); return; }
-      const item = state.marketListings[index];
-      p.energy -= 2; p.flags += 1; p.inventory.push(item.pr_id);
-      if (p.flags % 10 === 0) p.qrs.push({ id: Date.now(), pr_id: item.pr_id, date: Date.now() + (15 * 24 * 60 * 60 * 1000), used: false });
-      state.marketListings.splice(index, 1);
-      showToast("✅ Compra efetuada!");
-      recalcSkillFromFlags(); updateHUD(); saveGameState(); renderMarket();
-    }
-
-    // =========================================================================
-    // 🎫 QRs
-    // =========================================================================
-    function toggleQR() {
-      const modal = document.getElementById("qr-modal");
-      const container = document.getElementById("my-qrs");
-      if (modal.classList.contains("hidden")) {
-        modal.classList.remove("hidden");
-        container.innerHTML = "";
-        const validQrs = state.player.qrs.filter(q => !q.used && q.date > Date.now());
-        if (validQrs.length === 0) { container.innerHTML = "<em>Sem QRs válidos.</em>"; return; }
-        validQrs.forEach(qr => {
-          const pr = state.prs.find(p => p.id === qr.pr_id);
-          const div = document.createElement("div"); div.className = "qr-card";
-          div.innerHTML = `<strong>${pr ? pr.name : 'Loja'}</strong><div class="qr-canvas" id="qr-${qr.id}"></div><button onclick="useQRNow(${qr.id})">USAR AGORA</button>`;
-          container.appendChild(div);
-          new QRCode(document.getElementById(`qr-${qr.id}`), { text: `ZAP_QR_${qr.id}_${state.player.email}`, width: 128, height: 128 });
-        });
-      } else { modal.classList.add("hidden"); }
-    }
-
-    function useQRNow(qrId) {
-      const qr = state.player.qrs.find(q => q.id === qrId);
-      if (qr) showToast(`📲 Mostra este QR ao dono de ${state.prs.find(p=>p.id===qr.pr_id)?.name}`);
-    }
-
-    // =========================================================================
-    // 🏪 PAINEL DA EMPRESA (OPÇÃO B)
-    // =========================================================================
-    function showPRDashboard() {
-      document.getElementById("login-screen").classList.add("hidden");
-      document.getElementById("pr-dashboard").classList.remove("hidden");
-      updateCompanyDashboard();
-      renderPackList();
-    }
-
-    function backToGame() {
-      document.getElementById("pr-dashboard").classList.add("hidden");
-      const p = state.player;
-      if (!p.name || !p.email) { document.getElementById("login-screen").classList.remove("hidden"); }
-      else {
-        document.getElementById("login-screen").classList.add("hidden");
-        document.getElementById("hud").classList.remove("hidden");
-        initMap(); startGameLoops(); updateHUD();
-      }
-    }
-
-    function updateCompanyDashboard() {
-      document.getElementById("dash-company-name").innerText = state.company.name;
-      document.getElementById("dash-company-nif").innerText = state.company.nif || "-";
-      document.getElementById("dash-flags-total").innerText = state.company.totalFlags.toLocaleString();
-      
-      const div = document.getElementById("pr-campaigns");
-      if (state.company.campaigns.length === 0) { div.innerHTML = "<em>Sem campanhas.</em>"; return; }
-      div.innerHTML = state.company.campaigns.map(c => `
-        <div class="campaign-item">
-          <div><strong>${c.packName}</strong> (x${c.qty})</div>
-          <div>Bandeiras: ${c.flagsAdded.toLocaleString()} | Raio: ${c.radius}km</div>
-          <div style="font-size:11px; color:#aaa">${new Date(c.date).toLocaleDateString()}</div>
-        </div>
-      `).join("");
-    }
-
-    // --- Loja de Pacotes ---
-    function renderPackList() {
-      const container = document.getElementById("pack-list-container");
-      container.innerHTML = PACKS.map(p => `
-        <div class="store-item" onclick="showPackDetails('${p.id}')">
-          <div><strong>${p.name}</strong><br><small>${p.flags} Flags • ${p.radius}km</small></div>
-          <button class="secondary" style="width:auto; margin:0;">ABRIR ></button>
-        </div>
-      `).join("");
-      document.getElementById("pack-list-container").style.display = "flex";
-      document.getElementById("pack-detail-container").classList.remove("active");
-      document.getElementById("receipt-area").classList.add("hidden");
-    }
-
-    function showPackDetails(packId) {
-      selectedPack = PACKS.find(p => p.id === packId);
-      document.getElementById("pack-list-container").style.display = "none";
-      document.getElementById("pack-detail-container").classList.add("active");
-      
-      document.getElementById("detail-title").innerText = selectedPack.name;
-      document.getElementById("detail-flags").innerText = selectedPack.flags.toLocaleString();
-      document.getElementById("detail-radius").innerText = selectedPack.radius + " km";
-      document.getElementById("detail-price").innerText = selectedPack.price.toFixed(2) + "€";
-      updateTotalPrice();
-    }
-
-    function closePackDetails() { renderPackList(); selectedPack = null; }
-
-    function updateTotalPrice() {
-      if (!selectedPack) return;
-      const qty = parseInt(document.getElementById("pack-quantity").value);
-      let total = selectedPack.price * qty;
-      if (qty === 5) total *= 0.95;
-      if (qty === 10) total *= 0.90;
-      if (qty === 15) total *= 0.85;
-      document.getElementById("final-total").innerText = total.toFixed(2);
-    }
-
-    function confirmPurchase() {
-      const qty = parseInt(document.getElementById("pack-quantity").value);
-      const total = parseFloat(document.getElementById("final-total").innerText);
-      if(!confirm(`Confirmar compra de ${qty} pacote(s) no valor de ${total.toFixed(2)}€?`)) return;
-
-      state.company.totalFlags += (selectedPack.flags * qty);
-      state.company.campaigns.push({
-        packName: selectedPack.name, qty, total, date: Date.now(),
-        flagsAdded: selectedPack.flags * qty, radius: selectedPack.radius
-      });
-
-      // Gerar Recibo
-      document.getElementById("pack-detail-container").classList.remove("active");
-      document.getElementById("receipt-area").classList.remove("hidden");
-      document.getElementById("rec-date").innerText = new Date().toLocaleString();
-      document.getElementById("rec-company").innerText = state.company.name;
-      document.getElementById("rec-nif").innerText = state.company.nif;
-      document.getElementById("rec-pack").innerText = `${selectedPack.name} (x${qty})`;
-      document.getElementById("rec-qty").innerText = qty;
-      document.getElementById("rec-value").innerText = total.toFixed(2);
-
-      saveGameState(); updateCompanyDashboard();
-    }
-
-    // --- Edição de Dados ---
-    function openEditCompanyData() {
-      document.getElementById("edit-billing").value = state.company.name;
-      document.getElementById("edit-nif").value = state.company.nif;
-      document.getElementById("edit-address").value = state.company.address;
-      document.getElementById("edit-zip").value = state.company.zip;
-      document.getElementById("edit-phone").value = state.company.phone;
-      document.getElementById("edit-company-modal").classList.remove("hidden");
-    }
-
-    function saveEditCompanyData(e) {
-      e.preventDefault();
-      state.company.name = document.getElementById("edit-billing").value;
-      state.company.nif = document.getElementById("edit-nif").value;
-      state.company.address = document.getElementById("edit-address").value;
-      state.company.zip = document.getElementById("edit-zip").value;
-      state.company.phone = document.getElementById("edit-phone").value;
-      showToast("✅ Dados atualizados!");
-      document.getElementById("edit-company-modal").classList.add("hidden");
-      updateCompanyDashboard();
-      saveGameState();
-    }
-
-    // --- Scanner ---
-    function openScanner() {
-      showToast("📸 A abrir scanner...");
-      setTimeout(() => {
-        const validQrs = state.player.qrs.filter(q => !q.used && q.date > Date.now());
-        if (validQrs.length === 0) {
-          document.getElementById("scanner-result").innerHTML = "<span style='color:red'>❌ Sem QRs válidos.</span>";
-          return;
+        function createPlayerMarker() {
+            if (!playerMarker) {
+                playerMarker = L.marker([player.lat, player.lng], {
+                    icon: L.divIcon({
+                        className: 'player-icon',
+                        html: `<div style="background:#0f0; width:15px; height:15px; border-radius:50%; border:3px solid #fff; box-shadow: 0 0 10px #0f0;"></div>`
+                    })
+                }).addTo(map);
+            } else {
+                playerMarker.setLatLng([player.lat, player.lng]);
+            }
+            map.panTo([player.lat, player.lng]);
         }
-        const qr = validQrs[Math.floor(Math.random() * validQrs.length)];
-        qr.used = true;
-        saveGameState(); updateHUD();
-        document.getElementById("scanner-result").innerHTML = `<span style='color:green'>✅ SUCESSO! QR validado.</span>`;
-      }, 2000);
-    }
 
-    function validateManualQR() {
-      const payload = document.getElementById("manual-qr-input").value.trim();
-      const match = payload.match(/^ZAP_QR_(\d+)_(.+)$/);
-      if (match) {
-        const qrId = parseInt(match[1]);
-        const qr = state.player.qrs.find(q => q.id === qrId);
-        if (qr && !qr.used && qr.date > Date.now()) {
-          qr.used = true; saveGameState(); updateHUD();
-          document.getElementById("scanner-result").innerHTML = "<span style='color:green'>✅ QR Válido!</span>";
-          return;
+        function updatePosition(position) {
+            const newLat = position.coords.latitude;
+            const newLng = position.coords.longitude;
+            
+            // Calcular passos
+            if (lastPos) {
+                const dist = getDistance(lastPos.lat, lastPos.lng, newLat, newLng);
+                if (dist > 1) { // Ignorar ruído de GPS (< 1 metro)
+                    const stepsAdded = Math.floor(dist / 0.762);
+                    player.steps += stepsAdded;
+                    document.getElementById('step-count').innerText = player.steps;
+                }
+            }
+            
+            player.lat = newLat;
+            player.lng = newLng;
+            lastPos = { lat: newLat, lng: newLng };
+            createPlayerMarker();
         }
-      }
-      document.getElementById("scanner-result").innerHTML = "<span style='color:red'>❌ Inválido.</span>";
-    }
 
-    // =========================================================================
-    // 🚀 INICIALIZAÇÃO
-    // =========================================================================
-    function startGame() {
-      const name = document.getElementById("player-name").value.trim();
-      const email = document.getElementById("player-email").value.trim();
-      if (!name || !email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showToast("✏️ Preenche nome e email corretamente."); return; }
-      
-      state.player.name = name; state.player.email = email;
-      document.getElementById("login-screen").classList.add("hidden");
-      document.getElementById("hud").classList.remove("hidden");
-      initMap(); startGameLoops(); updateHUD(); saveGameState();
-      showToast(`🎮 Bem-vindo, ${name}!`);
-    }
+        function handleError(error) { console.warn("GPS Error:", error); }
 
-    (function boot() {
-      loadGameState();
-      setInterval(saveGameState, 30000);
-    })();
-  </script>
+        // --- 3. LÓGICA DE SPAWN ---
+        function gameLoop() {
+            clearMarkers();
+            spawnGameFlag();
+
+            prs.forEach(pr => {
+                const dist = getDistance(player.lat, player.lng, pr.lat, pr.lng);
+                if (dist < pr.radius) {
+                    let chance = 20 - (dist / 1000 * 2); 
+                    if (chance < 1) chance = 1; 
+                    if (Math.random() * 100 < chance) {
+                        spawnPRFlag(pr);
+                    }
+                }
+            });
+        }
+
+        function spawnGameFlag() {
+            const angle = Math.random() * 2 * Math.PI;
+            const dist = 80 + Math.random() * 40; 
+            
+            const newLat = player.lat + (dist / 111000) * Math.cos(angle) * 180/Math.PI;
+            const newLng = player.lng + (dist / (111000 * Math.cos(player.lat * Math.PI/180))) * Math.sin(angle) * 180/Math.PI;
+
+            if (getDistance(player.lat, player.lng, newLat, newLng) <= player.vision) {
+                let energyReward = 5;
+                let typeText = "+5%";
+                let color = "#006400";
+
+                const rng = Math.random();
+                if (rng > 0.90) { energyReward = 50; typeText = "BINGO! +50%"; color = "#00FF00"; } 
+                else if (rng > 0.60) { energyReward = 15; typeText = "+15%"; color = "#32CD32"; }
+
+                const marker = L.marker([newLat, newLng], { icon: getIcon(color) })
+                .addTo(map)
+                .bindPopup(`⚡ Bandeira ZAP (${typeText})`)
+                .on('click', () => collectGameFlag(energyReward));
+                
+                allMarkers.push(marker);
+            }
+        }
+
+        function spawnPRFlag(pr) {
+            const angle = Math.random() * 2 * Math.PI;
+            const dist = Math.random() * 100; 
+            const newLat = pr.lat + (dist / 111000) * Math.cos(angle) * 180/Math.PI;
+            const newLng = pr.lng + (dist / (111000 * Math.cos(pr.lat * Math.PI/180))) * Math.sin(angle) * 180/Math.PI;
+
+            if (getDistance(player.lat, player.lng, newLat, newLng) <= player.vision) {
+                const marker = L.marker([newLat, newLng], { icon: getIcon('orange') })
+                    .addTo(map)
+                    .bindPopup(`🎯 Bandeira Misteriosa (+1 Ponto QR)`)
+                    .on('click', () => collectFlag('PR', pr));
+                allMarkers.push(marker);
+            }
+        }
+
+        function collectGameFlag(energy) {
+            if (player.energy <= 0) { alert("⚠️ SEM ENERGIA!"); return; }
+            player.energy -= 1;
+            player.energy = Math.min(100, player.energy + energy);
+            updateHUD();
+            gameLoop(); 
+        }
+
+        function collectFlag(type, pr = null) {
+            if (player.energy <= 0) { alert("⚠️ SEM ENERGIA!"); return; }
+            player.energy -= 1;
+
+            if (type === 'PR') {
+                player.flags++;
+                player.inventory.push(pr.id);
+                if (player.flags % 10 === 0) {
+                    player.qrs.push({ id: Date.now(), pr_id: pr.id, date: Date.now() + (15 * 24 * 60 * 60 * 1000) });
+                }
+            }
+            calculateSkill();
+            updateHUD();
+            gameLoop(); 
+        }
+
+        // --- 4. SISTEMA DE SKILL & STATS ---
+        function calculateSkill() {
+            const points = player.flags;
+            let newVision = 5 + Math.sqrt(points / 100);
+            player.vision = Math.floor(newVision);
+            if (player.vision > 100) player.vision = 100; 
+            player.skill = 1 + Math.floor(points / 100);
+        }
+
+        function updateHUD() {
+            document.getElementById('energy-text').innerText = Math.floor(player.energy);
+            const fill = document.getElementById('energy-fill');
+            fill.style.width = player.energy + "%";
+            if (player.energy < 20) fill.classList.add('low');
+            else fill.classList.remove('low');
+        }
+
+        function updateGameTime() {
+            const now = Date.now();
+            const diff = Math.floor((now - player.startTime) / 1000);
+            const mins = Math.floor(diff / 60).toString().padStart(2, '0');
+            const secs = (diff % 60).toString().padStart(2, '0');
+            document.getElementById('stat-time').innerText = `${mins}:${secs}`;
+        }
+
+        function toggleStats() {
+            const el = document.getElementById('stats-modal');
+            el.classList.toggle('hidden');
+            if (!el.classList.contains('hidden')) {
+                document.getElementById('stat-level').innerText = player.skill;
+                document.getElementById('stat-vision').innerText = player.vision + "m";
+                document.getElementById('stat-flags').innerText = player.flags;
+                document.getElementById('stat-steps').innerText = player.steps;
+                const skillBonus = Math.min(50, Math.floor(player.steps / 100)); 
+                document.getElementById('stat-skill').innerText = skillBonus + "%";
+            }
+        }
+
+        // --- 5. SAÍDA DO JOGO ---
+        function confirmExit() {
+            if(confirm("⚠️ ATENÇÃO: Quer mesmo sair do jogo?")) {
+                location.reload();
+            }
+        }
+
+        // --- 6. MERCADO ---
+        let marketListings = []; 
+
+        function toggleTrade() {
+            const el = document.getElementById('trade-modal');
+            el.classList.toggle('hidden');
+            if (!el.classList.contains('hidden')) renderMarket();
+        }
+
+        function listFlagForTrade() {
+            if (player.inventory.length === 0) { alert("Inventário vazio!"); return; }
+            if (player.energy < 5) { alert("Energia insuficiente (5%)!"); return; }
+            const index = Math.floor(Math.random() * player.inventory.length);
+            const prId = player.inventory[index];
+            player.inventory.splice(index, 1); 
+            marketListings.push({ owner: player.name, pr_id: prId, expires: Date.now() + (5 * 24 * 60 * 60 * 1000) });
+            player.energy -= 5;
+            updateHUD();
+            renderMarket();
+        }
+
+        function renderMarket() {
+            const list = document.getElementById('flag-list');
+            list.innerHTML = "";
+            if(marketListings.length === 0) {
+                list.innerHTML = "<div style='padding:10px; text-align:center; color:#555;'>Mercado vazio.</div>";
+                return;
+            }
+            marketListings.forEach((item, index) => {
+                const prName = prs.find(p => p.id === item.pr_id)?.name || "Loja Desconhecida";
+                list.innerHTML += `
+                    <div class="flag-item">
+                        <span>${prName}</span>
+                        <button onclick="buyFromMarket(${index})">COMPRAR</button>
+                    </div>
+                `;
+            });
+        }
+
+        function buyFromMarket(index) {
+            const item = marketListings[index];
+            if (player.energy < 2) { alert("Energia insuficiente."); return; }
+            player.energy -= 2;
+            player.flags++;
+            player.inventory.push(item.pr_id);
+            if (player.flags % 10 === 0) player.qrs.push({ id: Date.now(), pr_id: item.pr_id });
+            marketListings.splice(index, 1); 
+            updateHUD();
+            renderMarket();
+        }
+
+        // --- 7. QR CODE ---
+        function showMyQR() {
+            const el = document.getElementById('qr-modal');
+            const container = document.getElementById('my-qrs');
+            el.classList.toggle('hidden');
+            container.innerHTML = "";
+            if (player.qrs.length === 0) { 
+                container.innerHTML = "<p style='color:#aaa'>Ainda não tens QRs. Apanha 10 bandeiras!</p>"; 
+                return; 
+            }
+            player.qrs.forEach((qr, index) => {
+                const prName = prs.find(p => p.id === qr.pr_id)?.name || "Loja";
+                const div = document.createElement('div');
+                div.style.borderBottom = "1px solid #333";
+                div.style.paddingBottom = "10px";
+                div.innerHTML = `<b>${prName}</b> (Expira em ${new Date(qr.date).toLocaleDateString()})`;
+                const qrDiv = document.createElement('div');
+                qrDiv.className = "qr-container";
+                div.appendChild(qrDiv);
+                new QRCode(qrDiv, {
+                    text: `ZAP_QR_${qr.id}_${player.email}`,
+                    width: 128, height: 128,
+                    colorDark : "#000000", colorLight : "#ffffff",
+                    correctLevel : QRCode.CorrectLevel.H
+                });
+                const useBtn = document.createElement('button');
+                useBtn.innerText = "MOSTRAR AO LOJISTA";
+                useBtn.onclick = () => alert("Aponta a câmara do Lojista para este código!");
+                div.appendChild(useBtn);
+                container.appendChild(div);
+            });
+        }
+        function toggleQR() { document.getElementById('qr-modal').classList.toggle('hidden'); }
+
+        // --- 8. PAINEL DO PR (SIMPLIFICADO) ---
+        function showPRDashboard() {
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('pr-dashboard').classList.remove('hidden');
+            renderPRDashboard();
+        }
+
+        function buyPack(type, value) {
+            let radius, count;
+            if (type === 'BRONZE') { radius = 5000; count = 50000; }
+            if (type === 'PRATA') { radius = 20000; count = 150000; }
+            if (type === 'OURO') { radius = 50000; count = 500000; }
+            if (type === 'PLATINA') { radius = 150000; count = 2000000; }
+
+            // Simples: Cria 2 PRs por pacote
+            for(let i=0; i<2; i++) {
+                const newPr = { 
+                    id: Date.now() + i, 
+                    name: "Minha Loja " + type + " #" + (i+1), 
+                    lat: 39.3999 + (Math.random()-0.5), 
+                    lng: -8.2245 + (Math.random()-0.5),
+                    pack: type, radius: radius, flagsLeft: count, color: "orange" 
+                };
+                prs.push(newPr);
+            }
+            alert(`Pack ${type} ativado! Criados 2 novos pontos.`);
+            renderPRDashboard();
+        }
+
+        function renderPRDashboard() {
+            const div = document.getElementById('pr-campaigns');
+            div.innerHTML = "";
+            prs.forEach(pr => {
+                div.innerHTML += `
+                    <div class="pr-item">
+                        <b>${pr.name}</b> (${pr.pack})<br>
+                        Bandeiras: ${pr.flagsLeft.toLocaleString()}<br>
+                        Raio: ${pr.radius/1000}km
+                    </div>
+                `;
+            });
+        }
+
+        function openScanner() {
+            const resultDiv = document.getElementById('scanner-result');
+            resultDiv.innerHTML = "📸 A apontar...";
+            setTimeout(() => {
+                const hasQr = player.qrs.length > 0;
+                if (hasQr) {
+                    resultDiv.innerHTML = "<span style='color:#0f0'>✅ SUCESSO! Cliente verificado.</span>";
+                    player.qrs.shift(); 
+                } else {
+                    resultDiv.innerHTML = "<span style='color:#f00'>❌ QR Inválido.</span>";
+                }
+            }, 1500);
+        }
+
+        // --- UTILS ---
+        function clearMarkers() { allMarkers.forEach(m => map.removeLayer(m)); allMarkers = []; }
+        
+        function getDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371e3; 
+            const φ1 = lat1 * Math.PI/180; const φ2 = lat2 * Math.PI/180;
+            const Δφ = (lat2-lat1) * Math.PI/180; const Δλ = (lon2-lon1) * Math.PI/180;
+            const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ/2) * Math.sin(Δλ/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return R * c; 
+        }
+        
+        function getIcon(color) {
+            let hexColor = color;
+            if(color === 'orange') hexColor = '#FFA500';
+            return L.divIcon({ 
+                className: 'custom-icon', 
+                html: `<div style="background:${hexColor}; width:20px; height:20px; border-radius:50%; border:2px solid white; box-shadow:0 0 5px ${hexColor};"></div>` 
+            });
+        }
+
+        // --- DRAG FUNCTIONALITY FOR MODALS ---
+        let draggedElement = null;
+        let initialX, initialY, currentX, currentY;
+        let xOffset = 0, yOffset = 0;
+
+        function dragStart(e, id) {
+            draggedElement = document.getElementById(id);
+            const rect = draggedElement.getBoundingClientRect();
+            xOffset = e.clientX - rect.left;
+            yOffset = e.clientY - rect.top;
+
+            document.addEventListener('mousemove', drag);
+            document.addEventListener('mouseup', dragEnd);
+            document.addEventListener('touchmove', dragTouch, {passive: false});
+            document.addEventListener('touchend', dragEnd);
+        }
+
+        function drag(e) {
+            if (draggedElement) {
+                e.preventDefault();
+                currentX = e.clientX - xOffset;
+                currentY = e.clientY - yOffset;
+                if(currentY < 0) currentY = 0;
+                draggedElement.style.left = currentX + "px";
+                draggedElement.style.top = currentY + "px";
+                draggedElement.style.transform = "none";
+            }
+        }
+
+        function dragTouch(e) {
+            if (draggedElement) {
+                e.preventDefault();
+                const touch = e.touches[0];
+                currentX = touch.clientX - xOffset;
+                currentY = touch.clientY - yOffset;
+                if(currentY < 0) currentY = 0;
+                draggedElement.style.left = currentX + "px";
+                draggedElement.style.top = currentY + "px";
+                draggedElement.style.transform = "none";
+            }
+        }
+
+        function dragEnd() {
+            initialX = currentX;
+            initialY = currentY;
+            draggedElement = null;
+            document.removeEventListener('mousemove', drag);
+            document.removeEventListener('mouseup', dragEnd);
+            document.removeEventListener('touchmove', dragTouch);
+            document.removeEventListener('touchend', dragEnd);
+        }
+
+    </script>
 </body>
 </html>
   
