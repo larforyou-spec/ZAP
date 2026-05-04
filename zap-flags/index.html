@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>ZAP FLAGS - Caça ao Tesouro (Opção A completa)</title>
+  <title>ZAP FLAGS - Caça ao Tesouro (Opção A)</title>
 
   <!-- Leaflet -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -18,11 +18,10 @@
     :root {
       --green: #0f0;
       --bg: #000;
-      --panel: rgba(0,0,0,0.9);
+      --panel: rgba(0,0,0,0.90);
       --border: 2px solid var(--green);
-      --accent: #00ff9d;
+      --accent: #00ff88;
     }
-
     * { box-sizing: border-box; }
     html, body { height: 100%; }
     body {
@@ -32,19 +31,21 @@
       color: var(--green);
       overflow: hidden;
       user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
     }
     .hidden { display: none !important; }
     button {
       background: var(--green);
       color: #000;
       border: none;
-      padding: 6px 10px; /* reduzido (~metade) */
+      padding: 6px 10px; /* reduzido (≈metade face ao anterior) */
       font-weight: bold;
       font-size: 14px;
       cursor: pointer;
       border-radius: 2px;
       transition: filter 0.15s ease, transform 0.08s ease;
-      touch-action: manipulation;
+      line-height: 1.1;
     }
     button:disabled { opacity: 0.45; cursor: not-allowed; filter: grayscale(0.2); }
     button:hover:not(:disabled) { filter: brightness(1.15); }
@@ -57,17 +58,16 @@
       border: 1px solid var(--green);
       padding: 8px;
       width: 100%;
-      margin-bottom: 10px;
+      margin-bottom: 8px;
       border-radius: 2px;
       font-family: 'Courier New', monospace;
+      font-size: 14px;
     }
     input::placeholder, textarea::placeholder { color: #6f6; }
-    label { display: block; margin-bottom: 4px; font-size: 13px; letter-spacing: 0.5px; }
-
-    small { opacity: 0.85; }
+    label { display: block; margin-bottom: 4px; font-size: 13px; color: var(--accent); }
 
     /* =========================
-       LANDING / AUTH SCREENS
+       PÁGINA INICIAL (LANDING)
     ========================= */
     #landing-screen {
       position: absolute; inset: 0; background: var(--bg);
@@ -77,59 +77,52 @@
     .landing-card {
       width: 100%; max-width: 520px;
       border: var(--border);
-      padding: 24px;
+      padding: 20px;
       background: rgba(0,0,0,0.95);
       box-shadow: 0 0 30px rgba(0,255,0,0.15) inset;
       display: flex; flex-direction: column; gap: 12px;
     }
     .landing-title {
-      font-size: 3rem; text-shadow: 0 0 10px var(--green);
+      font-size: 2.8rem; text-shadow: 0 0 10px var(--green);
       margin: 0 0 8px 0;
     }
     .landing-actions {
       display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;
     }
 
-    /* Janelas modais / arrastáveis (Auth, Skill, etc.) */
-    .draggable-window {
+    /* =========================
+       JANELAS MODAIS (DRAGGABLES)
+    ========================= */
+    .modal-window {
       position: absolute;
       background: var(--bg);
       border: 3px solid var(--green);
-      padding: 16px;
-      z-index: 20000;
+      padding: 0;
+      z-index: 3000;
       width: 90%; max-width: 560px;
-      max-height: 85vh; overflow-y: auto;
+      min-width: 280px;
+      min-height: 160px;
       box-shadow: 0 0 30px rgba(0,255,0,0.25);
-      color: var(--green);
-      resize: both; /* permite redimensionar */
-      min-width: 320px; min-height: 200px;
+      display: flex; flex-direction: column;
+      resize: both; overflow: auto;
+      max-height: 90vh; max-width: 95vw;
+    }
+    .modal-header {
+      display: flex; align-items: center; justify-content: space-between;
+      background: rgba(0,40,0,0.9);
+      border-bottom: 1px solid var(--green);
+      padding: 6px 10px;
       cursor: grab;
+      user-select: none;
     }
-    .draggable-window.dragging { opacity: 0.85; cursor: grabbing; }
-    .window-header {
-      display: flex; justify-content: space-between; align-items: center;
-      margin-bottom: 10px; border-bottom: 1px dashed var(--green); padding-bottom: 8px;
-      cursor: grab;
-    }
-    .window-title { font-weight: bold; letter-spacing: 1px; text-shadow: 0 0 6px var(--green); }
-    .window-close {
-      width: 28px; height: 28px; line-height: 26px; text-align: center;
-      border: 1px solid var(--green); background: #000; color: var(--green);
-      cursor: pointer; border-radius: 2px; font-weight: bold;
-    }
-    .window-close:hover { background: var(--green); color: #000; }
-    .form-grid {
-      display: grid; grid-template-columns: repeat(2, 1fr);
-      gap: 10px;
-    }
-    .form-grid .full { grid-column: 1 / -1; }
-    .avatar-preview {
-      width: 96px; height: 96px; border: 2px dashed var(--green);
+    .modal-header:active { cursor: grabbing; }
+    .modal-title { font-weight: bold; font-size: 15px; color: var(--accent); }
+    .modal-close {
+      background: #200; color: var(--green); border: 1px solid var(--green);
+      width: 28px; height: 28px; line-height: 1; font-size: 16px; padding: 0;
       display: flex; align-items: center; justify-content: center;
-      margin: 0 auto 10px auto; background: rgba(0,30,0,0.4);
-      font-size: 12px; text-align: center; padding: 4px;
     }
-    .hint { font-size: 12px; opacity: 0.8; margin-top: -6px; margin-bottom: 8px; }
+    .modal-body { padding: 12px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
 
     /* =========================
        MAPA
@@ -139,536 +132,573 @@
     }
 
     /* =========================
-       HUD REDESENHADO
-       - Barra de energia lateral fina (1/8) no canto superior esquerdo (vertical)
-       - Botões no topo reduzidos (~metade)
-       - Controlo de setas dentro do topo
+       HUD (TOPO + BARRA DE ENERGIA LATERAL PEQUENA)
     ========================= */
     #top-bar {
       position: absolute; top: 10px; left: 10px; right: 10px;
-      z-index: 1000;
-      display: flex; align-items: center; justify-content: space-between; gap: 10px;
+      z-index: 2000;
       background: var(--panel);
       border: var(--border);
-      padding: 6px 8px; /* menor */
+      padding: 6px 8px;
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 8px; flex-wrap: wrap;
       backdrop-filter: saturate(1.2) blur(1px);
-      flex-wrap: wrap;
     }
-    #top-left-group {
-      display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    .top-stats {
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+      font-size: 13px; font-weight: bold;
     }
-    #top-right-group {
-      display: flex; align-items: center; gap: 6px; flex-wrap: wrap; justify-content: flex-end;
-    }
-    .stat-pill {
-      border: 1px solid var(--green);
-      padding: 2px 6px;
-      font-size: 12px;
-      background: rgba(0,30,0,0.5);
-      display: inline-flex; align-items: center; gap: 4px;
-      white-space: nowrap;
+    .top-actions {
+      display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+      justify-content: flex-end;
     }
 
-    /* Barra de energia lateral fina (1/8) no canto superior esquerdo (VERTICAL) */
-    #energy-rail {
+    /* Barra de energia lateral (canto superior esquerdo) — 1/8 do tamanho anterior, fina e visível */
+    #energy-side {
       position: absolute;
-      top: 10px;
+      top: 70px; /* abaixo do top-bar */
       left: 10px;
-      width: calc((100vw / 8) * 0.125); /* 1/8 do comprimento “visual” -> muito fina */
-      height: 140px; /* reduzida */
-      background: #111;
+      width: 10px; /* largura reduzida (~1/8) */
+      height: 160px; /* comprimento reduzido (~1/8 do anterior) */
+      background: #222;
       border: 1px solid var(--green);
-      z-index: 1100;
+      z-index: 2000;
       display: flex; flex-direction: column-reverse; /* enche de baixo para cima */
-      padding: 2px;
-      box-shadow: 0 0 8px rgba(0,255,0,0.15) inset;
+      box-shadow: 0 0 6px rgba(0,255,0,0.15) inset;
     }
-    #energy-fill-vertical {
+    #energy-side-fill {
       width: 100%;
+      height: 100%;
       background: linear-gradient(180deg, var(--accent), var(--green));
       transition: height 0.3s ease;
-      border-radius: 1px;
-      height: 100%; /* será ajustado por JS */
     }
-    #energy-rail-label {
+    #energy-side-label {
       position: absolute;
-      top: 154px; /* abaixo da rail */
-      left: 10px;
-      font-size: 10px;
-      color: var(--green);
-      opacity: 0.85;
-      width: calc((100vw / 8) * 0.125);
-      text-align: center;
+      top: 70px; left: 24px;
+      font-size: 11px; color: var(--accent);
+      z-index: 2000;
+      text-shadow: 0 0 4px #000;
     }
 
-    /* Controlo de setas (dentro do topo) */
-    #nav-controls-top {
-      display: flex; flex-direction: column; align-items: center; gap: 4px;
-      border: 1px dashed var(--green);
-      padding: 4px 6px;
-      background: rgba(0,30,0,0.35);
-      border-radius: 2px;
+    /* Controlo de setas (mantido dentro do espaço, abaixo do top-bar) */
+    #nav-controls {
+      position: absolute;
+      top: 240px; /* abaixo da barra lateral */
+      left: 10px;
+      width: 180px;
+      background: var(--panel);
+      border: var(--border);
+      padding: 8px;
+      z-index: 2000;
+      display: flex; flex-direction: column; align-items: center; gap: 6px;
     }
     .nav-row {
-      display: flex; align-items: center; justify-content: center; gap: 4px;
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+      width: 100%;
     }
     .nav-btn {
-      min-width: 36px; min-height: 36px; /* reduzido */
-      font-size: 16px;
+      min-width: 46px; min-height: 46px;
+      font-size: 20px; line-height: 1;
       display: inline-flex; align-items: center; justify-content: center;
       border: 1px solid var(--green);
-      background: #000; color: var(--green);
-      border-radius: 2px;
+      box-shadow: 0 0 6px rgba(0,255,0,0.15) inset;
+      padding: 0;
     }
-    .nav-btn.small { min-width: 30px; min-height: 30px; font-size: 14px; }
-    .nav-label-small { font-size: 10px; opacity: 0.8; text-align: center; }
+    .nav-btn.small { min-width: 40px; min-height: 40px; font-size: 16px; }
 
     /* =========================
-       PAINEL EMPRESA / PACOTES
+       PAINEL EMPRESA & CATÁLOGO DE PACOTES
     ========================= */
     .pack-list {
-      display: flex; flex-direction: column; gap: 12px;
-      margin-top: 12px;
-    }
-    .pack-box {
+      display: flex; flex-direction: column; gap: 10px;
       border: 1px solid var(--green);
-      background: rgba(0,20,0,0.6);
-      padding: 10px;
-      display: flex; flex-direction: column; gap: 8px;
+      padding: 10px; background: rgba(0,20,0,0.5);
+      max-height: 360px; overflow-y: auto;
+    }
+    .pack-row {
+      border: 1px dashed var(--green);
+      padding: 8px;
+      display: flex; flex-direction: column; gap: 6px;
+      background: rgba(0,30,0,0.4);
     }
     .pack-header {
       display: flex; justify-content: space-between; align-items: center;
-      border-bottom: 1px dashed var(--green); padding-bottom: 6px;
+      font-weight: bold; color: var(--accent);
     }
-    .pack-grid-details {
-      display: grid; grid-template-columns: repeat(4, 1fr);
-      gap: 8px; font-size: 12px;
+    .pack-details {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 6px; font-size: 12px; opacity: 0.95;
     }
-    .pack-actions {
-      display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
-    }
-    .receipt-area {
-      border: 1px dashed var(--accent);
-      padding: 8px; font-size: 12px; background: rgba(0,40,20,0.4);
-      white-space: pre-wrap;
+    .receipt-box {
+      border: 1px solid var(--accent);
+      background: rgba(0,40,0,0.6);
+      padding: 10px; font-size: 12px;
+      white-space: pre-wrap; word-break: break-word;
     }
 
     /* =========================
-       MODAIS GERAIS (Mercado, QRs, etc.)
+       OUTROS
     ========================= */
-    .modal {
-      position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-      background: var(--bg);
-      border: 3px solid var(--green);
-      padding: 20px; z-index: 15000;
-      width: 90%; max-width: 480px;
-      text-align: center;
-      box-shadow: 0 0 30px rgba(0,255,0,0.2);
-      max-height: 85vh; overflow-y: auto;
+    .small-note { font-size: 11px; opacity: 0.75; }
+    .divider {
+      height: 1px; background: var(--green); opacity: 0.3; margin: 2px 0;
     }
-    .modal h2 { margin-top: 0; text-shadow: 0 0 6px var(--green); }
-    .modal .btn-group { justify-content: center; margin-top: 12px; flex-wrap: wrap; display: flex; gap: 8px; }
-
-    #flag-list {
-      max-height: 220px; overflow-y: auto; text-align: left;
-      margin: 10px 0; border: 1px solid var(--green);
-      padding: 6px; background: rgba(0,20,0,0.5);
-    }
-    .flag-item {
-      display: flex; justify-content: space-between; align-items: center;
-      padding: 6px; border-bottom: 1px solid #333; gap: 8px;
-      font-size: 13px;
-    }
-    .flag-item:last-child { border-bottom: none; }
-
-    .qr-card {
-      border: 1px dashed var(--green);
-      padding: 10px; margin: 12px 0;
-      background: rgba(0,30,0,0.4);
-      display: flex; flex-direction: column; align-items: center; gap: 8px;
-    }
-    .qr-canvas { width: 128px; height: 128px; background: #fff; padding: 4px; border-radius: 4px; }
-
-    /* Responsivo */
-    @media (max-width: 640px) {
-      .landing-title { font-size: 2.4rem; }
-      .form-grid { grid-template-columns: 1fr; }
-      .nav-btn { min-width: 32px; min-height: 32px; font-size: 14px; }
-      .nav-btn.small { min-width: 28px; min-height: 28px; font-size: 12px; }
-      #energy-rail { height: 110px; }
-      #energy-rail-label { top: 124px; }
-      button { padding: 5px 8px; font-size: 13px; }
+    .avatar-preview {
+      width: 64px; height: 64px; border: 1px solid var(--green);
+      background: #111; display: flex; align-items: center; justify-content: center;
+      margin-bottom: 8px; font-size: 28px; color: var(--accent);
     }
   </style>
 </head>
 <body>
 
   <!-- =========================
-       0) LANDING / AUTH
+       1) PÁGINA INICIAL (LANDING)
   ========================= -->
   <div id="landing-screen">
     <div class="landing-card">
       <h1 class="landing-title">ZAP FLAGS</h1>
-      <p style="margin:0 0 4px 0; opacity:0.9;">Escolhe como queres entrar:</p>
-      <div class="landing-actions">
-        <button onclick="openAuthWindow('login-player')">Entrar Jogador</button>
-        <button onclick="openAuthWindow('login-company')">Entrar Empresa</button>
-        <button onclick="openAuthWindow('register-choice')">Registar</button>
-      </div>
-      <p style="font-size:12px; margin:8px 0 0 0; opacity:0.75;">
-        Dica: para jogar precisas de ativar o GPS. Empresas podem comprar pacotes e gerir campanhas.
+      <p style="margin:0 0 4px 0; font-size:14px; opacity:0.9;">
+        Caça ao tesouro com bandeiras de energia e campanhas de empresas.  
+        Entra como <strong>Jogador</strong> ou <strong>Empresa</strong>, ou faz <strong>Registo</strong>.
       </p>
-    </div>
-  </div>
-
-  <!-- JANELAS AUTH (arrastáveis) -->
-  <!-- Registo: escolha -->
-  <div id="win-register-choice" class="draggable-window hidden" style="top:15%; left:50%; transform:translateX(-50%);">
-    <div class="window-header" data-window="win-register-choice">
-      <span class="window-title">Registar — Escolha o tipo de conta</span>
-      <span class="window-close" onclick="closeWindow('win-register-choice')">X</span>
-    </div>
-    <div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
-      <button onclick="closeWindow('win-register-choice'); openAuthWindow('register-player');">Registar como Jogador</button>
-      <button onclick="closeWindow('win-register-choice'); openAuthWindow('register-company');">Registar como Empresa</button>
-    </div>
-    <p class="hint">Cada e-mail dá acesso a apenas uma conta.</p>
-  </div>
-
-  <!-- Registo Jogador -->
-  <div id="win-register-player" class="draggable-window hidden" style="top:10%; left:50%; transform:translateX(-50%); max-width:620px;">
-    <div class="window-header" data-window="win-register-player">
-      <span class="window-title">Registar Jogador</span>
-      <span class="window-close" onclick="closeWindow('win-register-player')">X</span>
-    </div>
-    <div class="avatar-preview" id="avatar-preview-player">
-      Avatar obrigatório<br><small>(carrega abaixo)</small>
-    </div>
-    <div class="form-grid">
-      <div>
-        <label>Nome de utilizador (único)</label>
-        <input id="rp-username" type="text" placeholder="ex.: explorador123" aria-required="true" />
-        <div class="hint" id="rp-username-status">Verificando disponibilidade…</div>
+      <div class="landing-actions">
+        <button onclick="openAuthWindow('login-player')">ENTRAR JOGADOR</button>
+        <button onclick="openAuthWindow('login-company')">ENTRAR EMPRESA</button>
+        <button onclick="openAuthWindow('register')">REGISTAR</button>
       </div>
-      <div>
-        <label>Email (login único)</label>
-        <input id="rp-email" type="email" placeholder="exemplo@email.com" aria-required="true" />
-      </div>
-      <div>
-        <label>Senha</label>
-        <input id="rp-password" type="password" placeholder="mín. 8 caracteres" aria-required="true" />
-      </div>
-      <div>
-        <label>Confirmar senha</label>
-        <input id="rp-password2" type="password" placeholder="repete a senha" aria-required="true" />
-      </div>
-      <div>
-        <label>Avatar (obrigatório)</label>
-        <input id="rp-avatar" type="file" accept="image/*" aria-required="true" />
-      </div>
-      <div>
-        <label>Contacto telefónico (opcional)</label>
-        <input id="rp-phone" type="tel" placeholder="+351 9..." />
-      </div>
-      <div>
-        <label>Distrito</label>
-        <input id="rp-district" type="text" placeholder="ex.: Porto" />
-      </div>
-      <div>
-        <label>Localidade</label>
-        <input id="rp-locality" type="text" placeholder="ex.: Matosinhos" />
-      </div>
-      <div class="full" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-        <button onclick="registerPlayer()">Registar</button>
-        <button onclick="openAuthWindow('recover-player')">Recuperar senha</button>
-        <span class="hint">Ao registar, aceitas os termos do jogo.</span>
-      </div>
-    </div>
-  </div>
-
-  <!-- Login Jogador -->
-  <div id="win-login-player" class="draggable-window hidden" style="top:20%; left:50%; transform:translateX(-50%); max-width:480px;">
-    <div class="window-header" data-window="win-login-player">
-      <span class="window-title">Entrar como Jogador</span>
-      <span class="window-close" onclick="closeWindow('win-login-player')">X</span>
-    </div>
-    <div>
-      <label>Email</label>
-      <input id="lp-email" type="email" placeholder="exemplo@email.com" />
-      <label>Senha</label>
-      <input id="lp-password" type="password" placeholder="senha" />
-      <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:4px;">
-        <button onclick="loginPlayer()">Entrar</button>
-        <button onclick="openAuthWindow('recover-player')">Recuperar senha</button>
-      </div>
-      <p class="hint">Problemas? Usa “Recuperar senha” para receber um código de 6 dígitos por “MSN” (mock) e um link por email.</p>
-    </div>
-  </div>
-
-  <!-- Recuperação Jogador -->
-  <div id="win-recover-player" class="draggable-window hidden" style="top:18%; left:50%; transform:translateX(-50%); max-width:520px;">
-    <div class="window-header" data-window="win-recover-player">
-      <span class="window-title">Recuperar senha (Jogador)</span>
-      <span class="window-close" onclick="closeWindow('win-recover-player')">X</span>
-    </div>
-    <div class="form-grid">
-      <div class="full">
-        <label>Introduz o teu Email</label>
-        <input id="rec-email" type="email" placeholder="exemplo@email.com" />
-        <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-          <button onclick="requestPasswordRecovery('player')">Enviar código (6 dígitos) + link por email</button>
-        </div>
-        <p class="hint">Receberás um código “MSN” de 6 dígitos (simulado) e um link para criar nova senha.</p>
-      </div>
-      <div>
-        <label>Código de 6 dígitos recebido</label>
-        <input id="rec-code" type="text" maxlength="6" placeholder="123456" />
-      </div>
-      <div>
-        <label>Nova senha</label>
-        <input id="rec-newpass" type="password" placeholder="mín. 8 caracteres" />
-      </div>
-      <div class="full">
-        <button onclick="confirmPasswordRecovery('player')">Confirmar e criar nova senha</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Registo Empresa -->
-  <div id="win-register-company" class="draggable-window hidden" style="top:8%; left:50%; transform:translateX(-50%); max-width:680px;">
-    <div class="window-header" data-window="win-register-company">
-      <span class="window-title">Registar Empresa (PR)</span>
-      <span class="window-close" onclick="closeWindow('win-register-company')">X</span>
-    </div>
-    <div class="form-grid">
-      <div>
-        <label>Nome da empresa</label>
-        <input id="rc-name" type="text" placeholder="Nome comercial" aria-required="true" />
-      </div>
-      <div>
-        <label>NIF</label>
-        <input id="rc-nif" type="text" placeholder="NIF da empresa" aria-required="true" />
-      </div>
-      <div>
-        <label>Email (login único)</label>
-        <input id="rc-email" type="email" placeholder="empresa@email.com" aria-required="true" />
-      </div>
-      <div>
-        <label>Senha</label>
-        <input id="rc-password" type="password" placeholder="mín. 8 caracteres" aria-required="true" />
-      </div>
-      <div>
-        <label>Confirmar senha</label>
-        <input id="rc-password2" type="password" placeholder="repete a senha" aria-required="true" />
-      </div>
-      <div>
-        <label>Contacto telefónico</label>
-        <input id="rc-phone" type="tel" placeholder="+351 9..." />
-      </div>
-      <div>
-        <label>Morada</label>
-        <input id="rc-address" type="text" placeholder="Rua, nº, andar" aria-required="true" />
-      </div>
-      <div>
-        <label>Código Postal</label>
-        <input id="rc-postcode" type="text" placeholder="4000-123" aria-required="true" />
-      </div>
-      <div>
-        <label>Distrito</label>
-        <input id="rc-district" type="text" placeholder="Porto" />
-      </div>
-      <div>
-        <label>Localidade</label>
-        <input id="rc-locality" type="text" placeholder="Matosinhos" />
-      </div>
-      <div class="full">
-        <label>Dados de faturação (opcional / para emissão de recibos)</label>
-        <textarea id="rc-billing" rows="3" placeholder="Razão social, NIF, morada de faturação, etc."></textarea>
-      </div>
-      <div class="full">
-        <label>Modos de pagamento aceites (pode selecionar vários)</label>
-        <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
-          <label><input type="checkbox" id="pay-qr" checked /> QR</label>
-          <label><input type="checkbox" id="pay-mbway" /> MB Way</label>
-          <label><input type="checkbox" id="pay-transfer" /> Transferência</label>
-          <label><input type="checkbox" id="pay-multibanco" /> Multibanco</label>
-        </div>
-        <p class="hint">Após pagamento, será emitido um recibo automaticamente (simulado nesta demo).</p>
-      </div>
-      <div class="full" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-        <button onclick="registerCompany()">Registar Empresa</button>
-        <button onclick="openAuthWindow('recover-company')">Recuperar senha</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Login Empresa -->
-  <div id="win-login-company" class="draggable-window hidden" style="top:22%; left:50%; transform:translateX(-50%); max-width:480px;">
-    <div class="window-header" data-window="win-login-company">
-      <span class="window-title">Entrar como Empresa (PR)</span>
-      <span class="window-close" onclick="closeWindow('win-login-company')">X</span>
-    </div>
-    <div>
-      <label>Email</label>
-      <input id="lc-email" type="email" placeholder="empresa@email.com" />
-      <label>Senha</label>
-      <input id="lc-password" type="password" placeholder="senha" />
-      <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:4px;">
-        <button onclick="loginCompany()">Entrar</button>
-        <button onclick="openAuthWindow('recover-company')">Recuperar senha</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Recuperação Empresa -->
-  <div id="win-recover-company" class="draggable-window hidden" style="top:20%; left:50%; transform:translateX(-50%); max-width:520px;">
-    <div class="window-header" data-window="win-recover-company">
-      <span class="window-title">Recuperar senha (Empresa)</span>
-      <span class="window-close" onclick="closeWindow('win-recover-company')">X</span>
-    </div>
-    <div class="form-grid">
-      <div class="full">
-        <label>Introduz o Email da empresa</label>
-        <input id="rec-email-c" type="email" placeholder="empresa@email.com" />
-        <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-          <button onclick="requestPasswordRecovery('company')">Enviar código (6 dígitos) + link por email</button>
-        </div>
-      </div>
-      <div>
-        <label>Código de 6 dígitos recebido</label>
-        <input id="rec-code-c" type="text" maxlength="6" placeholder="123456" />
-      </div>
-      <div>
-        <label>Nova senha</label>
-        <input id="rec-newpass-c" type="password" placeholder="mín. 8 caracteres" />
-      </div>
-      <div class="full">
-        <button onclick="confirmPasswordRecovery('company')">Confirmar e criar nova senha</button>
+      <div class="small-note">
+        Dica mobile: ativa GPS e dá permissão de localização/câmara quando solicitado.
       </div>
     </div>
   </div>
 
   <!-- =========================
-       1) MAPA + HUD DO JOGO
+       2) MAPA
   ========================= -->
   <div id="map" aria-label="Mapa interativo da caça ao tesouro"></div>
 
-  <!-- Barra de energia lateral fina (1/8) no canto superior esquerdo -->
-  <div id="energy-rail" aria-label="Energia do jogador (barra vertical)">
-    <div id="energy-fill-vertical" style="height:100%;"></div>
-  </div>
-  <div id="energy-rail-label">ENERGIA</div>
-
-  <!-- Top bar (botões reduzidos, setas, stats) -->
-  <div id="top-bar">
-    <div id="top-left-group">
-      <div class="stat-pill">🏴 Bandeiras: <strong><span id="flag-count">0</span></strong></div>
-      <div class="stat-pill">⚡ Nível: <strong><span id="skill-level">1</span></strong> (<span id="vision-range">5</span>m)</div>
-      <div class="stat-pill">🎯 QR Prontos: <strong><span id="qr-count">0</span></strong></div>
-      <div class="stat-pill">👥 Jogadores (sim): <strong><span id="player-count-display">100</span></strong></div>
+  <!-- =========================
+       3) HUD SUPERIOR + BARRA LATERAL DE ENERGIA + SETAS
+  ========================= -->
+  <div id="top-bar" class="hidden">
+    <div class="top-stats">
+      <span>🏴 Bandeiras: <strong><span id="flag-count">0</span></strong></span>
+      <span>⚡ Nível: <strong><span id="skill-level">1</span></strong> (<span id="vision-range">5</span>m)</span>
+      <span>🎯 QR Prontos: <strong><span id="qr-count">0</span></strong></span>
+      <span>👥 Jogadores ativos (sim): <strong><span id="player-count-sim">100</span></strong></span>
     </div>
-
-    <div id="nav-controls-top" aria-label="Controlo de navegação do mapa">
-      <div class="nav-label-small">Navegação • Zoom: <strong><span id="zoom-level">7</span></strong></div>
-      <div class="nav-row">
-        <button class="nav-btn" data-dir="up" aria-label="Cima">▲</button>
-      </div>
-      <div class="nav-row">
-        <button class="nav-btn small" data-action="zoom-out" aria-label="A-">A-</button>
-        <button class="nav-btn" data-dir="forward" aria-label="Frente">▲</button>
-        <button class="nav-btn small" data-action="zoom-in" aria-label="A+">A+</button>
-      </div>
-      <div class="nav-row">
-        <button class="nav-btn" data-dir="left" aria-label="Esquerda">◀</button>
-        <button class="nav-btn" data-dir="down" aria-label="Baixo">▼</button>
-        <button class="nav-btn" data-dir="right" aria-label="Direita">▶</button>
-      </div>
-    </div>
-
-    <div id="top-right-group">
-      <button onclick="openWindow('win-skill-stats')">📊 Skill / Stats</button>
+    <div class="top-actions">
+      <button onclick="openSkillWindow()">📊 Skill / Passos / Tempo</button>
       <button onclick="toggleTrade()">🔄 Trocar</button>
       <button onclick="showMyQR()">🎫 Meus QRs</button>
+      <button onclick="openCompanyPanel()">🏢 Empresa</button>
       <button onclick="saveGameState()">💾 Guardar</button>
       <button onclick="confirmExit()">🚪 Sair</button>
-      <!-- Botão Empresa: só aparece se sessão empresa ativa -->
-      <button id="btn-company-panel" class="hidden" onclick="openCompanyPanel()">🏢 Painel Empresa</button>
     </div>
   </div>
+
+  <!-- Barra de energia lateral fina (1/8) -->
+  <div id="energy-side" class="hidden" aria-label="Energia do jogador (barra lateral)">
+    <div id="energy-side-fill" style="height:100%;"></div>
+  </div>
+  <div id="energy-side-label" class="hidden">Energia: <span id="energy-text">100%</span></div>
+
+  <!-- Controlo de setas (A+, A-, setas) -->
+  <section id="nav-controls" class="hidden" aria-label="Controlo de navegação do mapa">
+    <div class="small-note" style="text-align:center;">
+      Navegação • Zoom: <strong><span id="zoom-level">7</span></strong>
+    </div>
+    <div class="nav-row">
+      <button class="nav-btn" data-dir="up" aria-label="Mover para cima">▲</button>
+    </div>
+    <div class="nav-row">
+      <button class="nav-btn small" data-action="zoom-out" aria-label="Diminuir zoom (A-)">A-</button>
+      <button class="nav-btn" data-dir="forward" aria-label="Mover para a frente">▲</button>
+      <button class="nav-btn small" data-action="zoom-in" aria-label="Aumentar zoom (A+)">A+</button>
+    </div>
+    <div class="nav-row">
+      <button class="nav-btn" data-dir="left" aria-label="Mover para a esquerda">◀</button>
+      <button class="nav-btn" data-dir="down" aria-label="Mover para baixo">▼</button>
+      <button class="nav-btn" data-dir="right" aria-label="Mover para a direita">▶</button>
+    </div>
+    <div class="small-note">Mantém premido para mover continuamente.</div>
+  </section>
 
   <!-- =========================
-       2) JANELAS DO JOGO (arrastáveis / sobrepostas)
+       4) JANELAS MODAIS DRAGGÁVEIS (PADRÃO)
   ========================= -->
-  <!-- Skill / Stats -->
-  <div id="win-skill-stats" class="draggable-window hidden" style="top:15%; left:20%; width:360px; min-height:220px;">
-    <div class="window-header" data-window="win-skill-stats">
-      <span class="window-title">Skill / Estatísticas</span>
-      <span class="window-close" onclick="closeWindow('win-skill-stats')">X</span>
+
+  <!-- AUTH: Login Jogador -->
+  <div id="win-login-player" class="modal-window hidden" style="top:15%; left:10%; max-width:480px;">
+    <div class="modal-header" data-drag="win-login-player">
+      <span class="modal-title">Entrar — Jogador</span>
+      <button class="modal-close" onclick="closeWindow('win-login-player')">×</button>
     </div>
-    <div style="display:flex; flex-direction:column; gap:8px; font-size:13px;">
-      <div><strong>Skill:</strong> <span id="skill-percent">1.00%</span></div>
-      <div><strong>Passos dados (via GPS):</strong> <span id="steps-count">0</span></div>
-      <div><strong>Tempo de jogo:</strong> <span id="play-time">00:00:00</span></div>
-      <div><strong>Visão atual:</strong> <span id="vision-range-stats">5</span> m</div>
-      <div><strong>Bandeiras recolhidas:</strong> <span id="flags-stats">0</span></div>
-      <div><strong>QRs disponíveis:</strong> <span id="qrs-stats">0</span></div>
-      <p class="hint">Os passos baseiam-se em eventos de movimento do GPS (simulação aprimorada nesta demo). Para produção, usa sensor de passos + validação server-side.</p>
+    <div class="modal-body">
+      <div>
+        <label>Email</label>
+        <input id="login-player-email" type="email" placeholder="exemplo@email.com" />
+      </div>
+      <div>
+        <label>Senha</label>
+        <input id="login-player-password" type="password" placeholder="••••••••" />
+      </div>
+      <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+        <button onclick="doPlayerLogin()">Entrar</button>
+        <button onclick="openAuthWindow('recover-player')">Recuperar senha</button>
+        <button onclick="openAuthWindow('register')">Criar conta</button>
+      </div>
+      <div class="small-note">Apenas uma conta por email.</div>
     </div>
   </div>
 
-  <!-- Mercado -->
-  <div id="trade-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="trade-title">
-    <h2 id="trade-title">MERCADO DE BANDEIRAS</h2>
-    <p>Listar custa <strong>5% Energia</strong>. A listagem dura <strong>5 dias</strong>.</p>
-    <div id="flag-list" aria-live="polite"></div>
-    <div class="btn-group">
-      <button id="btn-list-flag" onclick="listFlagForTrade()">LISTAR BANDEIRA (-5% Energia)</button>
-      <button onclick="toggleTrade()">FECHAR</button>
+  <!-- AUTH: Login Empresa -->
+  <div id="win-login-company" class="modal-window hidden" style="top:18%; left:12%; max-width:520px;">
+    <div class="modal-header" data-drag="win-login-company">
+      <span class="modal-title">Entrar — Empresa</span>
+      <button class="modal-close" onclick="closeWindow('win-login-company')">×</button>
+    </div>
+    <div class="modal-body">
+      <div>
+        <label>Email</label>
+        <input id="login-company-email" type="email" placeholder="empresa@email.com" />
+      </div>
+      <div>
+        <label>Senha</label>
+        <input id="login-company-password" type="password" placeholder="••••••••" />
+      </div>
+      <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+        <button onclick="doCompanyLogin()">Entrar</button>
+        <button onclick="openAuthWindow('recover-company')">Recuperar senha</button>
+        <button onclick="openAuthWindow('register')">Criar conta Empresa</button>
+      </div>
+      <div class="small-note">Acesso à gestão de campanhas, compras e recibos.</div>
     </div>
   </div>
 
-  <!-- Meus QRs -->
-  <div id="qr-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="qr-title">
-    <h2 id="qr-title">OS TEUS QRs</h2>
-    <div id="my-qrs" aria-live="polite"></div>
-    <div class="btn-group">
-      <button onclick="toggleQR()">FECHAR</button>
+  <!-- AUTH: Registo (Jogador ou Empresa) -->
+  <div id="win-register" class="modal-window hidden" style="top:10%; left:8%; max-width:640px;">
+    <div class="modal-header" data-drag="win-register">
+      <span class="modal-title">Registo — Jogador ou Empresa</span>
+      <button class="modal-close" onclick="closeWindow('win-register')">×</button>
     </div>
-  </div>
-
-  <!-- Painel Empresa (PR) -->
-  <div id="win-company-panel" class="draggable-window hidden" style="top:6%; left:50%; transform:translateX(-50%); max-width:820px; width:95%;">
-    <div class="window-header" data-window="win-company-panel">
-      <span class="window-title">Painel Empresa (PR) — Campanhas & Pacotes</span>
-      <span class="window-close" onclick="closeWindow('win-company-panel')">X</span>
-    </div>
-    <div>
-      <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:8px;">
-        <button onclick="openWindow('win-company-edit')">✏️ Editar dados da empresa</button>
-        <span class="hint">Após compra, é emitido um recibo automaticamente.</span>
+    <div class="modal-body">
+      <div>
+        <label>Tipo de conta</label>
+        <select id="register-type">
+          <option value="player">Jogador</option>
+          <option value="company">Empresa</option>
+        </select>
       </div>
 
-      <h3 style="margin:8px 0;">Catálogo de Pacotes (comprar)</h3>
-      <div class="pack-list">
-        <!-- Pacote Mínimo -->
-        <div class="pack-box" data-pack="MIN">
-          <div class="pack-header">
-            <div><strong>🧩 Pacote Mínimo</strong> — 10€</div>
-            <div>
-              <button onclick="togglePackDetails('MIN')">Abrir</button>
-              <button onclick="openPurchase('MIN')">Comprar</button>
+      <!-- Campos comuns -->
+      <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:8px;">
+        <div>
+          <label>Email (único)</label>
+          <input id="reg-email" type="email" placeholder="exemplo@email.com" />
+        </div>
+        <div>
+          <label>Senha</label>
+          <input id="reg-password" type="password" placeholder="mín. 6 caracteres" />
+        </div>
+        <div>
+          <label>Confirmar senha</label>
+          <input id="reg-password2" type="password" placeholder="repetir senha" />
+        </div>
+        <div>
+          <label>Contacto telefónico (opcional)</label>
+          <input id="reg-phone" type="tel" placeholder="+351 9..." />
+        </div>
+        <div>
+          <label>Distrito</label>
+          <input id="reg-district" type="text" placeholder="ex.: Porto" />
+        </div>
+        <div>
+          <label>Localidade</label>
+          <input id="reg-locality" type="text" placeholder="ex.: Matosinhos" />
+        </div>
+      </div>
+
+      <!-- Campos Jogador -->
+      <div id="reg-player-fields">
+        <div class="divider"></div>
+        <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:8px; align-items:end;">
+          <div>
+            <label>Nome de utilizador (único)</label>
+            <div style="display:flex; gap:6px; align-items:center;">
+              <input id="reg-username" type="text" placeholder="ex.: ninja_verde" />
+              <button onclick="checkUsernameAvailability()">Verificar</button>
+            </div>
+            <div id="username-availability" class="small-note">Verifica disponibilidade antes de registar.</div>
+          </div>
+          <div>
+            <label>Avatar (obrigatório)</label>
+            <div style="display:flex; gap:8px; align-items:center;">
+              <div id="avatar-preview" class="avatar-preview">🙂</div>
+              <div style="display:flex; flex-direction:column; gap:4px; width:100%;">
+                <select id="reg-avatar">
+                  <option value="🙂">🙂 Sorridente</option>
+                  <option value="😎">😎 Descontraído</option>
+                  <option value="🤖">🤖 Robô</option>
+                  <option value="🧭">🧭 Explorador</option>
+                  <option value="🎯">🎯 Atirador</option>
+                </select>
+                <div class="small-note">Escolhe o teu avatar para começar.</div>
+              </div>
             </div>
           </div>
-          <div class="pack-grid-details">
-            <div><strong>Bandeiras:</strong> 1.000</div>
-            <div><strong>Raio de ação:</strong> 5 km</div>
-            <div><strong>Duração (simulada):</strong> 30 dias</div>
-            <div><strong>PRs criados:</strong> 2 por pacote + 1 com 2 pacotes/lote (por defeito)</div>
+        </div>
+      </div>
+
+      <!-- Campos Empresa -->
+      <div id="reg-company-fields" class="hidden">
+        <div class="divider"></div>
+        <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:8px;">
+          <div>
+            <label>Nome da Empresa</label>
+            <input id="reg-company-name" type="text" placeholder="Ex.: Café Central Lda." />
           </div>
-          <div id="pack-details-MIN" class="hidden" style="border-top:1px dashed var(--green); padding-top:8px;">
-            <p class="hint">Ao comprar, a campanha é ativada automaticamente na tua localização atual (ou centro PT se indisponível). 
-            As bandeiras dos teus PRs aparecem <strong>com a mesma cor (roxo)</strong> para criar “efeito surpresa”.</p>
-            <div class="pack-actions">
+          <div>
+            <label>NIF</label>
+            <input id="reg-company-nif" type="text" placeholder="PT123456789" />
+          </div>
+          <div>
+            <label>Código Postal</label>
+            <input id="reg-company-postal" type="text" placeholder="4000-123" />
+          </div>
+          <div>
+            <label>Morada</label>
+            <input id="reg-company-address" type="text" placeholder="Rua, nº, andar..." />
+          </div>
+          <div style="grid-column:1/-1;">
+            <label>Dados de Faturação (opcional)</label>
+            <textarea id="reg-company-billing" rows="3" placeholder="Razão social, endereço de faturação, observações..."></textarea>
+          </div>
+          <div style="grid-column:1/-1;">
+            <label>Modos de pagamento aceites</label>
+            <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+              <label style="display:flex; align-items:center; gap:4px;">
+                <input type="checkbox" id="pay-qr" checked /> QR
+              </label>
+              <label style="display:flex; align-items:center; gap:4px;">
+                <input type="checkbox" id="pay-mbway" /> MB WAY
+              </label>
+              <label style="display:flex; align-items:center; gap:4px;">
+                <input type="checkbox" id="pay-transfer" /> Transferência
+              </label>
+              <label style="display:flex; align-items:center; gap:4px;">
+                <input type="checkbox" id="pay-multibanco" /> Multibanco
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+        <button onclick="doRegister()">Registar</button>
+        <button onclick="openAuthWindow('recover-player')">Recuperar senha (Jogador)</button>
+        <button onclick="openAuthWindow('recover-company')">Recuperar senha (Empresa)</button>
+      </div>
+      <div class="small-note">
+        Após registo, receberás (simulação) um email com link de confirmação / recuperação quando aplicável.
+      </div>
+    </div>
+  </div>
+
+  <!-- AUTH: Recuperação Jogador (MSN 6 dígitos + link) -->
+  <div id="win-recover-player" class="modal-window hidden" style="top:22%; left:15%; max-width:520px;">
+    <div class="modal-header" data-drag="win-recover-player">
+      <span class="modal-title">Recuperar senha — Jogador</span>
+      <button class="modal-close" onclick="closeWindow('win-recover-player')">×</button>
+    </div>
+    <div class="modal-body">
+      <div>
+        <label>Email da conta</label>
+        <input id="recover-player-email" type="email" placeholder="exemplo@email.com" />
+      </div>
+      <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+        <button onclick="sendPlayerRecovery()">Enviar código MSN (6 dígitos) + link</button>
+      </div>
+      <div class="divider"></div>
+      <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:8px;">
+        <div>
+          <label>Código MSN (6 dígitos)</label>
+          <input id="recover-player-code" type="text" maxlength="6" placeholder="123456" />
+        </div>
+        <div>
+          <label>Nova senha</label>
+          <input id="recover-player-newpass" type="password" placeholder="••••••••" />
+        </div>
+        <div>
+          <label>Confirmar nova senha</label>
+          <input id="recover-player-newpass2" type="password" placeholder="••••••••" />
+        </div>
+      </div>
+      <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+        <button onclick="confirmPlayerRecovery()">Confirmar e criar nova senha</button>
+      </div>
+      <div class="small-note">
+        Simulação: o “código MSN” e o “link por email” são apresentados como toast/alert para testes.
+      </div>
+    </div>
+  </div>
+
+  <!-- AUTH: Recuperação Empresa -->
+  <div id="win-recover-company" class="modal-window hidden" style="top:24%; left:17%; max-width:520px;">
+    <div class="modal-header" data-drag="win-recover-company">
+      <span class="modal-title">Recuperar senha — Empresa</span>
+      <button class="modal-close" onclick="closeWindow('win-recover-company')">×</button>
+    </div>
+    <div class="modal-body">
+      <div>
+        <label>Email da empresa</label>
+        <input id="recover-company-email" type="email" placeholder="empresa@email.com" />
+      </div>
+      <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+        <button onclick="sendCompanyRecovery()">Enviar link por email</button>
+      </div>
+      <div class="divider"></div>
+      <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:8px;">
+        <div>
+          <label>Nova senha</label>
+          <input id="recover-company-newpass" type="password" placeholder="••••••••" />
+        </div>
+        <div>
+          <label>Confirmar nova senha</label>
+          <input id="recover-company-newpass2" type="password" placeholder="••••••••" />
+        </div>
+      </div>
+      <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+        <button onclick="confirmCompanyRecovery()">Confirmar nova senha (via link simulado)</button>
+      </div>
+      <div class="small-note">Simulação: link “mágico” exibido em toast para testes locais.</div>
+    </div>
+  </div>
+
+  <!-- SKILL / PASSOS / TEMPO (DRAGGABLE) -->
+  <div id="win-skill" class="modal-window hidden" style="top:12%; right:8%; left:auto; max-width:420px;">
+    <div class="modal-header" data-drag="win-skill">
+      <span class="modal-title">Skill / Passos / Tempo no Jogo</span>
+      <button class="modal-close" onclick="closeWindow('win-skill')">×</button>
+    </div>
+    <div class="modal-body">
+      <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:8px;">
+        <div>
+          <label>Skill (%)</label>
+          <div style="border:1px solid var(--green); padding:8px; background:rgba(0,30,0,0.5); text-align:center; font-size:20px;">
+            <strong><span id="skill-percent">1%</span></strong>
+          </div>
+        </div>
+        <div>
+          <label>Passos dados (via GPS)</label>
+          <div style="border:1px solid var(--green); padding:8px; background:rgba(0,30,0,0.5); text-align:center; font-size:20px;">
+            <strong><span id="steps-count">0</span></strong>
+          </div>
+        </div>
+        <div>
+          <label>Tempo no jogo</label>
+          <div style="border:1px solid var(--green); padding:8px; background:rgba(0,30,0,0.5); text-align:center; font-size:16px;">
+            <strong><span id="play-time">00:00:00</span></strong>
+          </div>
+        </div>
+      </div>
+      <div class="small-note">
+        Os passos são estimados por movimento GPS (plausível). Em produção, reforça com sensor de passo e anti-cheat.
+      </div>
+    </div>
+  </div>
+
+  <!-- MERCADO DE TROCAS -->
+  <div id="win-trade" class="modal-window hidden" style="top:20%; left:20%; max-width:520px;">
+    <div class="modal-header" data-drag="win-trade">
+      <span class="modal-title">Mercado de Bandeiras</span>
+      <button class="modal-close" onclick="closeWindow('win-trade')">×</button>
+    </div>
+    <div class="modal-body">
+      <p class="small-note">Listar custa <strong>5% Energia</strong>. A listagem dura <strong>5 dias</strong>.</p>
+      <div id="flag-list" style="border:1px solid var(--green); padding:6px; background:rgba(0,20,0,0.5); max-height:220px; overflow-y:auto;">
+        <em>Sem listagens no momento. Sê o primeiro a vender!</em>
+      </div>
+      <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+        <button id="btn-list-flag" onclick="listFlagForTrade()">LISTAR BANDEIRA (-5% Energia)</button>
+        <button onclick="closeWindow('win-trade')">FECHAR</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MEUS QRs -->
+  <div id="win-qrs" class="modal-window hidden" style="top:18%; right:10%; left:auto; max-width:520px;">
+    <div class="modal-header" data-drag="win-qrs">
+      <span class="modal-title">Os Teus QRs</span>
+      <button class="modal-close" onclick="closeWindow('win-qrs')">×</button>
+    </div>
+    <div class="modal-body">
+      <div id="my-qrs" style="border:1px solid var(--green); padding:6px; background:rgba(0,20,0,0.5); max-height:360px; overflow-y:auto;">
+        <em>Ainda não tens QRs. Recolhe 10 bandeiras para gerar um!</em>
+      </div>
+      <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+        <button onclick="closeWindow('win-qrs')">FECHAR</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAINEL EMPRESA -->
+  <div id="win-company" class="modal-window hidden" style="top:8%; left:5%; width:95%; max-width:1000px; height:85vh;">
+    <div class="modal-header" data-drag="win-company">
+      <span class="modal-title">Painel da Empresa — Campanhas, Pacotes e Recibos</span>
+      <button class="modal-close" onclick="closeWindow('win-company')">×</button>
+    </div>
+    <div class="modal-body" style="gap:12px;">
+      <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:10px;">
+        <div style="border:1px solid var(--green); padding:10px; background:rgba(0,20,0,0.5);">
+          <strong>Dados da Empresa (sessão simulada)</strong>
+          <div class="small-note">Nome: <span id="company-name-display">—</span></div>
+          <div class="small-note">NIF: <span id="company-nif-display">—</span></div>
+          <div class="small-note">Email: <span id="company-email-display">—</span></div>
+          <div class="small-note">Morada: <span id="company-address-display">—</span></div>
+          <div class="small-note">Código Postal: <span id="company-postal-display">—</span></div>
+          <div class="small-note">Pagamentos: <span id="company-payments-display">QR, MB WAY, Transferência, Multibanco</span></div>
+          <div style="margin-top:8px; display:flex; gap:6px; flex-wrap:wrap;">
+            <button onclick="openCompanyEditWindow()">Editar dados</button>
+            <button onclick="openPackCatalog()">Comprar pacotes</button>
+          </div>
+        </div>
+        <div style="border:1px solid var(--green); padding:10px; background:rgba(0,20,0,0.5);">
+          <strong>As Minhas Campanhas (PRs criados)</strong>
+          <div id="company-campaigns" style="max-height:160px; overflow-y:auto; margin-top:6px;">
+            <em>Ainda sem campanhas. Compra um pacote para criar PRs.</em>
+          </div>
+        </div>
+        <div style="border:1px solid var(--green); padding:10px; background:rgba(0,20,0,0.5);">
+          <strong>Recibos recentes (simulação)</strong>
+          <div id="company-receipts" style="max-height:160px; overflow-y:auto; margin-top:6px;">
+            <em>Sem recibos ainda.</em>
+          </div>
+        </div>
+      </div>
+
+      <!-- Catálogo de pacotes (abre/fecha dentro do painel) -->
+      <div>
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <strong>Catálogo de Pacotes (mínimo, médio e existentes)</strong>
+          <button onclick="togglePackCatalog()">Mostrar / Ocultar Catálogo</button>
+        </div>
+        <div id="pack-catalog" class="pack-list hidden">
+          <!-- Pacote Mínimo -->
+          <div class="pack-row" data-pack="MIN">
+            <div class="pack-header">
+              <span>🧩 Pacote MÍNIMO</span>
+              <span>10€</span>
+            </div>
+            <div class="pack-details">
+              <div><strong>Bandeiras:</strong> 1.000</div>
+              <div><strong>Raio de ação:</strong> 5 km</div>
+              <div><strong>PRs incluídos (por defeito):</strong> 2 PRs</div>
+              <div><strong>Duração/Validade (sim):</strong> 30 dias</div>
+            </div>
+            <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+              <button onclick="openPackDetail('MIN')">Abrir detalhes</button>
               <label>Quantidade:
                 <select id="qty-MIN">
                   <option value="1">1</option>
@@ -676,38 +706,24 @@
                   <option value="15">15</option>
                 </select>
               </label>
-              <label>Método de pagamento:
-                <select id="pay-MIN">
-                  <option value="QR">QR</option>
-                  <option value="MBWAY">MB Way</option>
-                  <option value="TRANSFERENCIA">Transferência</option>
-                  <option value="MULTIBANCO">Multibanco</option>
-                </select>
-              </label>
-              <span><strong>Valor:</strong> <span id="value-MIN">10€</span></span>
-              <button onclick="confirmPurchase('MIN')">Confirmar compra e gerar recibo</button>
+              <button onclick="buyPackFlow('MIN')">Comprar</button>
             </div>
-            <div id="receipt-MIN" class="receipt-area hidden"></div>
           </div>
-        </div>
 
-        <!-- Pacote Médio (existente adaptado) -->
-        <div class="pack-box" data-pack="MED">
-          <div class="pack-header">
-            <div><strong>🥈 Pacote Médio</strong> — 15€</div>
-            <div>
-              <button onclick="togglePackDetails('MED')">Abrir</button>
-              <button onclick="openPurchase('MED')">Comprar</button>
+          <!-- Pacote Médio -->
+          <div class="pack-row" data-pack="MED">
+            <div class="pack-header">
+              <span>⚙️ Pacote MÉDIO</span>
+              <span>15€</span>
             </div>
-          </div>
-          <div class="pack-grid-details">
-            <div><strong>Bandeiras:</strong> 2.500</div>
-            <div><strong>Raio de ação:</strong> 15 km</div>
-            <div><strong>Duração (simulada):</strong> 45 dias</div>
-            <div><strong>PRs criados:</strong> 2 por pacote + 1 com 2 pacotes/lote</div>
-          </div>
-          <div id="pack-details-MED" class="hidden" style="border-top:1px dashed var(--green); padding-top:8px;">
-            <div class="pack-actions">
+            <div class="pack-details">
+              <div><strong>Bandeiras:</strong> 2.500</div>
+              <div><strong>Raio de ação:</strong> 15 km</div>
+              <div><strong>PRs incluídos (por defeito):</strong> 2 PRs</div>
+              <div><strong>Duração/Validade (sim):</strong> 45 dias</div>
+            </div>
+            <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+              <button onclick="openPackDetail('MED')">Abrir detalhes</button>
               <label>Quantidade:
                 <select id="qty-MED">
                   <option value="1">1</option>
@@ -715,207 +731,510 @@
                   <option value="15">15</option>
                 </select>
               </label>
-              <label>Método de pagamento:
-                <select id="pay-MED">
-                  <option value="QR">QR</option>
-                  <option value="MBWAY">MB Way</option>
-                  <option value="TRANSFERENCIA">Transferência</option>
-                  <option value="MULTIBANCO">Multibanco</option>
+              <button onclick="buyPackFlow('MED')">Comprar</button>
+            </div>
+          </div>
+
+          <!-- Pacotes existentes (mantidos) + regra: 1 PR com dois pacotes de cada lote -->
+          <div class="pack-row" data-pack="BRONZE">
+            <div class="pack-header">
+              <span>🥉 BRONZE (existente)</span>
+              <span>5€</span>
+            </div>
+            <div class="pack-details">
+              <div><strong>Bandeiras:</strong> 50.000</div>
+              <div><strong>Raio de ação:</strong> 5 km</div>
+              <div><strong>PRs incluídos (por defeito):</strong> 2 PRs</div>
+              <div><strong>Regra extra:</strong> 1 PR adicional ao comprar 2× este lote</div>
+            </div>
+            <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+              <button onclick="openPackDetail('BRONZE')">Abrir detalhes</button>
+              <label>Quantidade:
+                <select id="qty-BRONZE">
+                  <option value="1">1</option>
+                  <option value="2">2</option>
+                  <option value="10">10</option>
+                  <option value="15">15</option>
                 </select>
               </label>
-              <span><strong>Valor:</strong> <span id="value-MED">15€</span></span>
-              <button onclick="confirmPurchase('MED')">Confirmar compra e gerar recibo</button>
+              <button onclick="buyPackFlow('BRONZE')">Comprar</button>
             </div>
-            <div id="receipt-MED" class="receipt-area hidden"></div>
           </div>
-        </div>
 
-        <!-- Pacotes existentes (OURO/PLATINA) mantidos -->
-        <div class="pack-box" data-pack="OURO">
-          <div class="pack-header">
-            <div><strong>🥇 Pacote Ouro</strong> — 50€</div>
-            <div>
-              <button onclick="togglePackDetails('OURO')">Abrir</button>
-              <button onclick="openPurchase('OURO')">Comprar</button>
+          <div class="pack-row" data-pack="PRATA">
+            <div class="pack-header">
+              <span>🥈 PRATA (existente)</span>
+              <span>15€</span>
+            </div>
+            <div class="pack-details">
+              <div><strong>Bandeiras:</strong> 150.000</div>
+              <div><strong>Raio de ação:</strong> 20 km</div>
+              <div><strong>PRs incluídos (por defeito):</strong> 2 PRs</div>
+              <div><strong>Regra extra:</strong> 1 PR adicional ao comprar 2× este lote</div>
+            </div>
+            <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+              <button onclick="openPackDetail('PRATA')">Abrir detalhes</button>
+              <label>Quantidade:
+                <select id="qty-PRATA">
+                  <option value="1">1</option>
+                  <option value="2">2</option>
+                  <option value="10">10</option>
+                  <option value="15">15</option>
+                </select>
+              </label>
+              <button onclick="buyPackFlow('PRATA')">Comprar</button>
             </div>
           </div>
-          <div class="pack-grid-details">
-            <div><strong>Bandeiras:</strong> 500.000</div>
-            <div><strong>Raio de ação:</strong> 50 km</div>
-            <div><strong>Duração (simulada):</strong> 60 dias</div>
-            <div><strong>PRs criados:</strong> 2 por pacote + 1 com 2 pacotes/lote</div>
-          </div>
-          <div id="pack-details-OURO" class="hidden" style="border-top:1px dashed var(--green); padding-top:8px;">
-            <div class="pack-actions">
+
+          <div class="pack-row" data-pack="OURO">
+            <div class="pack-header">
+              <span>🥇 OURO (existente)</span>
+              <span>50€</span>
+            </div>
+            <div class="pack-details">
+              <div><strong>Bandeiras:</strong> 500.000</div>
+              <div><strong>Raio de ação:</strong> 50 km</div>
+              <div><strong>PRs incluídos (por defeito):</strong> 2 PRs</div>
+              <div><strong>Regra extra:</strong> 1 PR adicional ao comprar 2× este lote</div>
+            </div>
+            <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+              <button onclick="openPackDetail('OURO')">Abrir detalhes</button>
               <label>Quantidade:
                 <select id="qty-OURO">
                   <option value="1">1</option>
+                  <option value="2">2</option>
                   <option value="10">10</option>
                   <option value="15">15</option>
                 </select>
               </label>
-              <label>Método de pagamento:
-                <select id="pay-OURO">
-                  <option value="QR">QR</option>
-                  <option value="MBWAY">MB Way</option>
-                  <option value="TRANSFERENCIA">Transferência</option>
-                  <option value="MULTIBANCO">Multibanco</option>
-                </select>
-              </label>
-              <span><strong>Valor:</strong> <span id="value-OURO">50€</span></span>
-              <button onclick="confirmPurchase('OURO')">Confirmar compra e gerar recibo</button>
+              <button onclick="buyPackFlow('OURO')">Comprar</button>
             </div>
-            <div id="receipt-OURO" class="receipt-area hidden"></div>
           </div>
-        </div>
 
-        <div class="pack-box" data-pack="PLATINA">
-          <div class="pack-header">
-            <div><strong>💎 Pacote Platina</strong> — 100€</div>
-            <div>
-              <button onclick="togglePackDetails('PLATINA')">Abrir</button>
-              <button onclick="openPurchase('PLATINA')">Comprar</button>
+          <div class="pack-row" data-pack="PLATINA">
+            <div class="pack-header">
+              <span>💎 PLATINA (existente)</span>
+              <span>100€</span>
             </div>
-          </div>
-          <div class="pack-grid-details">
-            <div><strong>Bandeiras:</strong> 2.000.000</div>
-            <div><strong>Raio de ação:</strong> 150 km</div>
-            <div><strong>Duração (simulada):</strong> 90 dias</div>
-            <div><strong>PRs criados:</strong> 2 por pacote + 1 com 2 pacotes/lote</div>
-          </div>
-          <div id="pack-details-PLATINA" class="hidden" style="border-top:1px dashed var(--green); padding-top:8px;">
-            <div class="pack-actions">
+            <div class="pack-details">
+              <div><strong>Bandeiras:</strong> 2.000.000</div>
+              <div><strong>Raio de ação:</strong> 150 km</div>
+              <div><strong>PRs incluídos (por defeito):</strong> 2 PRs</div>
+              <div><strong>Regra extra:</strong> 1 PR adicional ao comprar 2× este lote</div>
+            </div>
+            <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+              <button onclick="openPackDetail('PLATINA')">Abrir detalhes</button>
               <label>Quantidade:
                 <select id="qty-PLATINA">
                   <option value="1">1</option>
+                  <option value="2">2</option>
                   <option value="10">10</option>
                   <option value="15">15</option>
                 </select>
               </label>
-              <label>Método de pagamento:
-                <select id="pay-PLATINA">
-                  <option value="QR">QR</option>
-                  <option value="MBWAY">MB Way</option>
-                  <option value="TRANSFERENCIA">Transferência</option>
-                  <option value="MULTIBANCO">Multibanco</option>
-                </select>
-              </label>
-              <span><strong>Valor:</strong> <span id="value-PLATINA">100€</span></span>
-              <button onclick="confirmPurchase('PLATINA')">Confirmar compra e gerar recibo</button>
+              <button onclick="buyPackFlow('PLATINA')">Comprar</button>
             </div>
-            <div id="receipt-PLATINA" class="receipt-area hidden"></div>
           </div>
         </div>
-      </div>
-
-      <h3 style="margin:16px 0 8px 0;">As Minhas Campanhas (PRs ativos)</h3>
-      <div class="campaign-list" id="pr-campaigns-list">
-        <em>Ainda não tens campanhas. Compra um pack para começar.</em>
       </div>
     </div>
   </div>
 
-  <!-- Editar dados empresa -->
-  <div id="win-company-edit" class="draggable-window hidden" style="top:12%; left:50%; transform:translateX(-50%); max-width:640px;">
-    <div class="window-header" data-window="win-company-edit">
-      <span class="window-title">Editar dados da Empresa</span>
-      <span class="window-close" onclick="closeWindow('win-company-edit')">X</span>
+  <!-- Detalhe do Pacote (DRAGGABLE) -->
+  <div id="win-pack-detail" class="modal-window hidden" style="top:25%; left:25%; max-width:560px;">
+    <div class="modal-header" data-drag="win-pack-detail">
+      <span class="modal-title">Detalhes do Pacote — <span id="pack-detail-name">—</span></span>
+      <button class="modal-close" onclick="closeWindow('win-pack-detail')">×</button>
     </div>
-    <div class="form-grid">
-      <div>
-        <label>Nome da empresa</label>
-        <input id="ce-name" type="text" />
+    <div class="modal-body">
+      <div style="border:1px solid var(--green); padding:10px; background:rgba(0,20,0,0.5); display:flex; flex-direction:column; gap:6px;">
+        <div><strong>Preço:</strong> <span id="pack-detail-price">—</span></div>
+        <div><strong>Bandeiras:</strong> <span id="pack-detail-flags">—</span></div>
+        <div><strong>Raio de ação:</strong> <span id="pack-detail-radius">—</span></div>
+        <div><strong>PRs incluídos (por defeito):</strong> <span id="pack-detail-prs">2 PRs</span></div>
+        <div><strong>Regra extra:</strong> <span id="pack-detail-rule">1 PR adicional ao comprar 2× este lote</span></div>
+        <div><strong>Validade (simulação):</strong> <span id="pack-detail-validity">—</span></div>
+        <div class="small-note">Nota: em produção, os PRs são criados no backend e associados à empresa autenticada.</div>
       </div>
-      <div>
-        <label>NIF</label>
-        <input id="ce-nif" type="text" />
+      <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+        <label>Quantidade:
+          <select id="pack-detail-qty">
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="10">10</option>
+            <option value="15">15</option>
+          </select>
+        </label>
+        <label>Modo de pagamento:
+          <select id="pack-detail-pay">
+            <option value="QR">QR</option>
+            <option value="MBWAY">MB WAY</option>
+            <option value="TRANSFERENCIA">Transferência</option>
+            <option value="MULTIBANCO">Multibanco</option>
+          </select>
+        </label>
+        <button onclick="buyPackFromDetail()">Comprar agora</button>
+        <button onclick="closeWindow('win-pack-detail')">Fechar</button>
       </div>
-      <div>
-        <label>Morada</label>
-        <input id="ce-address" type="text" />
-      </div>
-      <div>
-        <label>Código Postal</label>
-        <input id="ce-postcode" type="text" />
-      </div>
-      <div>
-        <label>Distrito</label>
-        <input id="ce-district" type="text" />
-      </div>
-      <div>
-        <label>Localidade</label>
-        <input id="ce-locality" type="text" />
-      </div>
-      <div class="full">
-        <label>Dados de faturação</label>
-        <textarea id="ce-billing" rows="3"></textarea>
-      </div>
-      <div class="full">
-        <label>Modos de pagamento aceites</label>
-        <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
-          <label><input type="checkbox" id="ce-pay-qr" /> QR</label>
-          <label><input type="checkbox" id="ce-pay-mbway" /> MB Way</label>
-          <label><input type="checkbox" id="ce-pay-transfer" /> Transferência</label>
-          <label><input type="checkbox" id="ce-pay-multibanco" /> Multibanco</label>
+      <div id="pack-detail-receipt" class="receipt-box hidden"></div>
+    </div>
+  </div>
+
+  <!-- Editar dados da Empresa (DRAGGABLE) -->
+  <div id="win-company-edit" class="modal-window hidden" style="top:15%; left:15%; max-width:640px;">
+    <div class="modal-header" data-drag="win-company-edit">
+      <span class="modal-title">Editar dados da Empresa</span>
+      <button class="modal-close" onclick="closeWindow('win-company-edit')">×</button>
+    </div>
+    <div class="modal-body">
+      <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:8px;">
+        <div>
+          <label>Nome da Empresa</label>
+          <input id="edit-company-name" type="text" />
+        </div>
+        <div>
+          <label>NIF</label>
+          <input id="edit-company-nif" type="text" />
+        </div>
+        <div>
+          <label>Código Postal</label>
+          <input id="edit-company-postal" type="text" />
+        </div>
+        <div>
+          <label>Morada</label>
+          <input id="edit-company-address" type="text" />
+        </div>
+        <div style="grid-column:1/-1;">
+          <label>Dados de Faturação</label>
+          <textarea id="edit-company-billing" rows="3"></textarea>
+        </div>
+        <div style="grid-column:1/-1;">
+          <label>Modos de pagamento aceites</label>
+          <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+            <label style="display:flex; align-items:center; gap:4px;">
+              <input type="checkbox" id="edit-pay-qr" /> QR
+            </label>
+            <label style="display:flex; align-items:center; gap:4px;">
+              <input type="checkbox" id="edit-pay-mbway" /> MB WAY
+            </label>
+            <label style="display:flex; align-items:center; gap:4px;">
+              <input type="checkbox" id="edit-pay-transfer" /> Transferência
+            </label>
+            <label style="display:flex; align-items:center; gap:4px;">
+              <input type="checkbox" id="edit-pay-multibanco" /> Multibanco
+            </label>
+          </div>
         </div>
       </div>
-      <div class="full">
-        <button onclick="saveCompanyEdit()">Guardar alterações</button>
+      <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+        <button onclick="saveCompanyEdits()">Guardar alterações</button>
+        <button onclick="closeWindow('win-company-edit')">Cancelar</button>
       </div>
     </div>
   </div>
 
   <!-- =========================
-       3) SCRIPTS (ESTADO + AUTH + JOGO + UI WINDOWS)
+       SCRIPTS (ESTADO + LÓGICA COMPLETA OPÇÃO A)
   ========================= -->
   <script>
-    // =========================
-    // ESTADO GLOBAL
-    // =========================
-    const STORAGE_KEY_STATE = "zapFlagsState_v2_optionA";
-    const STORAGE_KEY_AUTH = "zapFlagsAuth_v2_optionA";
+    // =========================================================================
+    // 🧠 ESTADO GLOBAL (SIMULAÇÃO LOCAL + PERSISTÊNCIA)
+    // =========================================================================
+    const STORAGE_KEY_STATE = "zapFlagsState_v1_optionA";
+    const STORAGE_KEY_USERS = "zapFlagsUsers_v1_optionA";
+    const STORAGE_KEY_COMPANIES = "zapFlagsCompanies_v1_optionA";
+    const STORAGE_KEY_SESSION = "zapFlagsSession_v1_optionA";
 
     const DEFAULT_STATE = {
       player: {
         name: "",
-        username: "",
         email: "",
+        avatar: "🙂",
         lat: null,
         lng: null,
         energy: 100,
         flags: 0,
-        qrs: [],
-        skill: 1,
-        vision: 5,
-        inventory: [],
-        avatarDataUrl: "",
+        qrs: [],                // {id, pr_id, date, used}
+        skill: 1,               // nível
+        vision: 5,              // metros
+        inventory: [],          // pr_ids apanhados
         steps: 0,
-        playTimeSeconds: 0,
-        playStartTimestamp: null
+        playStartTs: Date.now(),
+        lastPosition: { lat: null, lng: null, ts: null }
       },
+      // PRs ativos no mundo (apenas dos pacotes comprados)
       prs: [
-        // PRs padrão por lote (2 PRs por pacote + 1 PR com 2 pacotes por lote) — 3 campanhas iniciais
+        // PRs padrão iniciais (podem ser removidos se preferires começar vazio; aqui deixo 3 como demo)
         {
           id: 101,
-          name: "Campanha Demo A1",
+          name: "Café Central (Demo)",
           lat: 41.1496, lng: -8.6109,
-          pack: "MIN",
+          pack: "BRONZE",
           radius: 5000,
-          flagsLeft: 1000,
-          color: "purple", // PRs sempre da mesma cor (surpresa)
-          ownerEmail: "demo@empresa.com"
+          flagsLeft: 50000,
+          companyEmail: "demo@empresa.pt",
+          colorSurprise: "#FF00DD" // mesma cor para todas PRs (surpresa)
         },
         {
           id: 102,
-          name: "Campanha Demo A2",
-          lat: 41.1550, lng: -8.6150,
-          pack: "MIN",
-          radius: 5000,
-          flagsLeft: 1000,
-          color: "purple",
-          ownerEmail: "demo@empresa.com"
+          name: "Ginásio Fit (Demo)",
+          lat: 38.7223, lng: -9.1393,
+          pack: "PRATA",
+          radius: 20000,
+          flagsLeft: 150000,
+          companyEmail: "demo@empresa.pt",
+          colorSurprise: "#FF00DD"
         },
         {
           id: 103,
-          name: "Campanha Demo
-  
+          name: "Pastelaria Doce (Demo)",
+          lat: 41.5595, lng: -8.4218,
+          pack: "OURO",
+          radius: 50000,
+          flagsLeft: 500000,
+          companyEmail: "demo@empresa.pt",
+          colorSurprise: "#FF00DD"
+        }
+      ],
+      marketListings: [], // {owner, pr_id, expires}
+      // mapa e timers
+      map: null,
+      playerMarker: null,
+      allMarkers: [],
+      watchId: null,
+      gameLoopTimer: null,
+      energyRegenTimer: null,
+      marketCleanupTimer: null,
+      timeUpdateTimer: null,
+      lastPositionUpdateTs: 0,
+      // navegação
+      navMoveInterval: null,
+      navMoveStepMeters: 20,
+      navMoveDelayMs: 80,
+      // simulação de jogadores ativos (para frequência de bandeiras do jogo)
+      simulatedPlayerCount: 100,
+      // recuperação
+      recoveryCodes: {} // {email: {code, expires}}
+    };
+
+    let state = structuredClone(DEFAULT_STATE);
+
+    // ---------------- Persistência ----------------
+    function saveState() {
+      try {
+        const toSave = {
+          player: { ...state.player },
+          prs: state.prs,
+          marketListings: state.marketListings,
+          simulatedPlayerCount: state.simulatedPlayerCount,
+          recoveryCodes: state.recoveryCodes
+        };
+        localStorage.setItem(STORAGE_KEY_STATE, JSON.stringify(toSave));
+      } catch (e) { console.error("saveState", e); }
+    }
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY_STATE);
+        if (!raw) return false;
+        const saved = JSON.parse(raw);
+        if (saved.player) {
+          state.player = {
+            ...DEFAULT_STATE.player,
+            ...saved.player,
+            qrs: Array.isArray(saved.player.qrs) ? saved.player.qrs : [],
+            inventory: Array.isArray(saved.player.inventory) ? saved.player.inventory : [],
+            lastPosition: saved.player.lastPosition || { lat: null, lng: null, ts: null },
+            steps: saved.player.steps || 0,
+            playStartTs: saved.player.playStartTs || Date.now()
+          };
+          if (state.player.energy > 100) state.player.energy = 100;
+          if (state.player.energy < 0) state.player.energy = 0;
+          recalcSkillFromFlags();
+        }
+        if (Array.isArray(saved.prs)) state.prs = saved.prs;
+        if (Array.isArray(saved.marketListings)) state.marketListings = saved.marketListings;
+        if (typeof saved.simulatedPlayerCount === "number") state.simulatedPlayerCount = saved.simulatedPlayerCount;
+        if (saved.recoveryCodes) state.recoveryCodes = saved.recoveryCodes;
+        cleanupMarketListings();
+        return true;
+      } catch (e) { console.error("loadState", e); return false; }
+    }
+    function saveUsers(usersMap) {
+      localStorage.setItem(STORAGE_KEY_USERS, JSON.stringify(usersMap));
+    }
+    function loadUsers() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY_USERS);
+        return raw ? JSON.parse(raw) : {};
+      } catch { return {}; }
+    }
+    function saveCompanies(compMap) {
+      localStorage.setItem(STORAGE_KEY_COMPANIES, JSON.stringify(compMap));
+    }
+    function loadCompanies() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY_COMPANIES);
+        return raw ? JSON.parse(raw) : {};
+      } catch { return {}; }
+    }
+    function saveSession(session) {
+      localStorage.setItem(STORAGE_KEY_SESSION, JSON.stringify(session));
+    }
+    function loadSession() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY_SESSION);
+        return raw ? JSON.parse(raw) : null;
+      } catch { return null; }
+    }
+    function clearSession() {
+      localStorage.removeItem(STORAGE_KEY_SESSION);
+    }
+
+    // ---------------- Utilitários gerais ----------------
+    function showToast(msg) {
+      const toast = document.createElement("div");
+      toast.textContent = msg;
+      toast.style.position = "fixed";
+      toast.style.bottom = "20px";
+      toast.style.left = "50%";
+      toast.style.transform = "translateX(-50%)";
+      toast.style.background = "rgba(0,0,0,0.95)";
+      toast.style.border = "1px solid #0f0";
+      toast.style.color = "#0f0";
+      toast.style.padding = "10px 16px";
+      toast.style.zIndex = "6000";
+      toast.style.borderRadius = "2px";
+      toast.style.boxShadow = "0 0 10px rgba(0,255,0,0.3)";
+      toast.style.maxWidth = "90vw";
+      toast.style.wordBreak = "break-word";
+      document.body.appendChild(toast);
+      setTimeout(() => {
+        toast.style.transition = "opacity 0.3s ease";
+        toast.style.opacity = "0";
+        setTimeout(() => toast.remove(), 350);
+      }, 2200);
+    }
+    function escapeHtml(text) {
+      if (text == null) return "";
+      return String(text)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+    function getDistanceMeters(lat1, lon1, lat2, lon2) {
+      const R = 6371e3;
+      const φ1 = lat1 * Math.PI / 180;
+      const φ2 = lat2 * Math.PI / 180;
+      const Δφ = (lat2 - lat1) * Math.PI / 180;
+      const Δλ = (lon2 - lon1) * Math.PI / 180;
+      const a = Math.sin(Δφ/2)*Math.sin(Δφ/2) + Math.cos(φ1)*Math.cos(φ2)*Math.sin(Δλ/2)*Math.sin(Δλ/2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      return R * c;
+    }
+    function getPointOffsetMeters(lat, lng, dxMeters, dyMeters) {
+      const deltaLat = dyMeters / 111000;
+      const deltaLng = dxMeters / (111000 * Math.cos((lat * Math.PI) / 180));
+      return { lat: lat + deltaLat, lng: lng + deltaLng };
+    }
+    function getRandomPointAround(lat, lng, minMeters, maxMeters) {
+      const angle = Math.random() * 2 * Math.PI;
+      const dist = minMeters + Math.random() * Math.max(0, maxMeters - minMeters);
+      const dx = Math.cos(angle) * dist;
+      const dy = Math.sin(angle) * dist;
+      return getPointOffsetMeters(lat, lng, dx, dy);
+    }
+
+    // ---------------- Janelas DRAGGABLES ----------------
+    function openWindow(id) {
+      const win = document.getElementById(id);
+      if (!win) return;
+      win.classList.remove("hidden");
+      bringToFront(win);
+    }
+    function closeWindow(id) {
+      const win = document.getElementById(id);
+      if (!win) return;
+      win.classList.add("hidden");
+    }
+    function bringToFront(winEl) {
+      // coloca a janela no topo (maior z-index)
+      const allWindows = document.querySelectorAll(".modal-window:not(.hidden)");
+      let maxZ = 3000;
+      for (let i = 0; i < allWindows.length; i++) {
+        const z = parseInt(getComputedStyle(allWindows[i]).zIndex || "3000");
+        if (z > maxZ) maxZ = z;
+      }
+      winEl.style.zIndex = (maxZ + 1).toString();
+    }
+    function initDraggableWindows() {
+      const headers = document.querySelectorAll(".modal-header[data-drag]");
+      for (let i = 0; i < headers.length; i++) {
+        const header = headers[i];
+        const winId = header.dataset.drag;
+        const winEl = document.getElementById(winId);
+        if (!winEl) continue;
+        let isDragging = false;
+        let offsetX = 0, offsetY = 0;
+        header.addEventListener("mousedown", function (e) {
+          isDragging = true;
+          bringToFront(winEl);
+          const rect = winEl.getBoundingClientRect();
+          offsetX = e.clientX - rect.left;
+          offsetY = e.clientY - rect.top;
+          winEl.style.transition = "none";
+          e.preventDefault();
+        });
+        document.addEventListener("mousemove", function (e) {
+          if (!isDragging) return;
+          let left = e.clientX - offsetX;
+          let top = e.clientY - offsetY;
+          // limitar à viewport
+          const maxLeft = window.innerWidth - winEl.offsetWidth;
+          const maxTop = window.innerHeight - winEl.offsetHeight;
+          if (left < 0) left = 0;
+          if (top < 0) top = 0;
+          if (left > maxLeft) left = maxLeft;
+          if (top > maxTop) top = maxTop;
+          winEl.style.left = left + "px";
+          winEl.style.top = top + "px";
+          winEl.style.right = "auto";
+        });
+        document.addEventListener("mouseup", function () {
+          if (isDragging) {
+            isDragging = false;
+            winEl.style.transition = "";
+          }
+        });
+        // touch
+        header.addEventListener("touchstart", function (e) {
+          const t = e.touches[0];
+          isDragging = true;
+          bringToFront(winEl);
+          const rect = winEl.getBoundingClientRect();
+          offsetX = t.clientX - rect.left;
+          offsetY = t.clientY - rect.top;
+          winEl.style.transition = "none";
+          e.preventDefault();
+        }, {passive:false});
+        document.addEventListener("touchmove", function (e) {
+          if (!isDragging) return;
+          const t = e.touches[0];
+          let left = t.clientX - offsetX;
+          let top = t.clientY - offsetY;
+          const maxLeft = window.innerWidth - winEl.offsetWidth;
+          const maxTop = window.innerHeight - winEl.offsetHeight;
+          if (left < 0) left = 0;
+          if (top < 0) top = 0;
+          if (left > maxLeft) left = maxLeft;
+          if (top > maxTop) top = maxTop;
+          winEl.style.left = left + "px";
+          winEl.style.top = top + "px";
+          winEl.style.right = "auto";
+          e.preventDefault();
+        }, {passive:false});
+        document.addEventListener("touchend", function () {
+          if (isDragging) {
+            isDragging = false;
+            win
