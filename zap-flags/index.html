@@ -1,704 +1,921 @@
 <!DOCTYPE html>
 <html lang="pt">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ZAP FLAGS - Opção A (Simplificado)</title>
-    
-    <!-- MAPAS (Leaflet) -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    
-    <!-- QR CODE -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ZAP FLAGS - Caça ao Tesouro (Opção A completa)</title>
 
-    <style>
-        /* --- ESTILOS GERAIS --- */
-        body { 
-            margin: 0; padding: 0; font-family: 'Courier New', monospace; background: #000; color: #0f0; overflow: hidden; user-select: none;
-        }
-        .hidden { display: none !important; }
-        
-        /* Botões Gerais */
-        button { 
-            background: #000; color: #0f0; border: 2px solid #0f0; padding: 12px 20px; font-weight: bold; font-size: 16px; cursor: pointer; text-transform: uppercase; box-shadow: 0 0 5px #0f0; transition: all 0.2s; margin: 5px; width: 100%;
-        }
-        button:active { background: #0f0; color: #000; }
-        button.secondary { border-color: #555; color: #aaa; box-shadow: none; }
-        button.secondary:active { background: #555; color: #fff; }
+  <!-- Leaflet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
-        /* Botões Miniatura (HUD) */
-        .mini-btn {
-            padding: 4px 8px !important;
-            font-size: 10px !important;
-            width: auto !important;
-            margin: 2px !important;
-            display: inline-block;
-        }
+  <!-- QR Code -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
-        input { 
-            background: #111; color: #0f0; border: 1px solid #0f0; padding: 15px; width: 80%; margin-bottom: 15px; font-family: inherit; font-size: 16px;
-        }
+  <style>
+    /* =========================
+       VARIÁVEIS & RESET
+    ========================= */
+    :root {
+      --green: #0f0;
+      --bg: #000;
+      --panel: rgba(0,0,0,0.9);
+      --border: 2px solid var(--green);
+      --accent: #00ff9d;
+    }
 
-        /* --- ECRÃ DE LOGIN --- */
-        #login-screen { 
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #000; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; padding: 20px; box-sizing: border-box;
-        }
-        #login-screen h1 { font-size: 3rem; text-shadow: 0 0 15px #0f0; margin-bottom: 30px; text-align: center; }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0; padding: 0;
+      font-family: 'Courier New', monospace;
+      background: var(--bg);
+      color: var(--green);
+      overflow: hidden;
+      user-select: none;
+    }
+    .hidden { display: none !important; }
+    button {
+      background: var(--green);
+      color: #000;
+      border: none;
+      padding: 6px 10px; /* reduzido (~metade) */
+      font-weight: bold;
+      font-size: 14px;
+      cursor: pointer;
+      border-radius: 2px;
+      transition: filter 0.15s ease, transform 0.08s ease;
+      touch-action: manipulation;
+    }
+    button:disabled { opacity: 0.45; cursor: not-allowed; filter: grayscale(0.2); }
+    button:hover:not(:disabled) { filter: brightness(1.15); }
+    button:active:not(:disabled) { transform: translateY(1px); }
+    button:focus-visible { outline: 2px dashed var(--green); outline-offset: 3px; }
 
-        /* --- MAPA --- */
-        #map { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; background: #111; }
-        
-        /* --- HUD (MINIATURIZADO NO TOPO) --- */
-        #hud { 
-            position: absolute; top: 0; left: 0; width: 100%; z-index: 1000; background: rgba(0,0,0,0.6); padding: 5px; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; pointer-events: none;
-        }
-        .hud-content { pointer-events: auto; display: flex; align-items: center; gap: 10px; width: 100%; justify-content: space-between; }
-        .hud-left { display: flex; align-items: center; gap: 5px; }
-        .hud-center { display: flex; gap: 5px; flex-wrap: wrap; justify-content: center; }
-        .hud-right { display: flex; align-items: center; }
+    input, select, textarea {
+      background: #222;
+      color: var(--green);
+      border: 1px solid var(--green);
+      padding: 8px;
+      width: 100%;
+      margin-bottom: 10px;
+      border-radius: 2px;
+      font-family: 'Courier New', monospace;
+    }
+    input::placeholder, textarea::placeholder { color: #6f6; }
+    label { display: block; margin-bottom: 4px; font-size: 13px; letter-spacing: 0.5px; }
 
-        /* Barra de Energia Miniatura */
-        .mini-bar-container { width: 60px; height: 8px; background: #333; border: 1px solid #0f0; position: relative; }
-        #energy-fill { height: 100%; background: #0f0; width: 100%; transition: width 0.5s; }
-        #energy-fill.low { background: #f00; animation: pulse 1s infinite; }
-        
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+    small { opacity: 0.85; }
 
-        .stat-text { font-size: 10px; font-weight: bold; color: #fff; text-shadow: 1px 1px 0 #000; }
+    /* =========================
+       LANDING / AUTH SCREENS
+    ========================= */
+    #landing-screen {
+      position: absolute; inset: 0; background: var(--bg);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      z-index: 10000; padding: 20px; text-align: center;
+    }
+    .landing-card {
+      width: 100%; max-width: 520px;
+      border: var(--border);
+      padding: 24px;
+      background: rgba(0,0,0,0.95);
+      box-shadow: 0 0 30px rgba(0,255,0,0.15) inset;
+      display: flex; flex-direction: column; gap: 12px;
+    }
+    .landing-title {
+      font-size: 3rem; text-shadow: 0 0 10px var(--green);
+      margin: 0 0 8px 0;
+    }
+    .landing-actions {
+      display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;
+    }
 
-        /* --- MENUS FLUTUANTES (DRAGGABLE) --- */
-        .modal { 
-            position: absolute; top: 15%; left: 15%; width: 70%; max-width: 350px; max-height: 80vh; background: #000; border: 3px solid #0f0; z-index: 2000; box-shadow: 0 0 20px rgba(0, 255, 0, 0.2); display: flex; flex-direction: column; overflow: hidden;
-        }
-        .modal-header { background: #0f0; color: #000; padding: 5px 10px; font-weight: bold; cursor: move; display: flex; justify-content: space-between; align-items: center; user-select: none; }
-        .close-btn { background: none; border: none; color: #000; font-weight: bold; font-size: 18px; cursor: pointer; padding: 0; margin: 0; width: auto; box-shadow: none; line-height: 1; }
-        .modal-body { padding: 15px; overflow-y: auto; flex-grow: 1; }
-        
-        /* --- LISTA DE BANDEIRAS --- */
-        #flag-list { max-height: 200px; overflow-y: auto; text-align: left; margin: 10px 0; border: 1px solid #0f0; padding: 5px; background: #050505; }
-        .flag-item { display: flex; justify-content: space-between; padding: 8px; border-bottom: 1px solid #333; align-items: center; }
-        .flag-item button { padding: 5px 10px; font-size: 12px; width: auto; margin: 0; }
+    /* Janelas modais / arrastáveis (Auth, Skill, etc.) */
+    .draggable-window {
+      position: absolute;
+      background: var(--bg);
+      border: 3px solid var(--green);
+      padding: 16px;
+      z-index: 20000;
+      width: 90%; max-width: 560px;
+      max-height: 85vh; overflow-y: auto;
+      box-shadow: 0 0 30px rgba(0,255,0,0.25);
+      color: var(--green);
+      resize: both; /* permite redimensionar */
+      min-width: 320px; min-height: 200px;
+      cursor: grab;
+    }
+    .draggable-window.dragging { opacity: 0.85; cursor: grabbing; }
+    .window-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 10px; border-bottom: 1px dashed var(--green); padding-bottom: 8px;
+      cursor: grab;
+    }
+    .window-title { font-weight: bold; letter-spacing: 1px; text-shadow: 0 0 6px var(--green); }
+    .window-close {
+      width: 28px; height: 28px; line-height: 26px; text-align: center;
+      border: 1px solid var(--green); background: #000; color: var(--green);
+      cursor: pointer; border-radius: 2px; font-weight: bold;
+    }
+    .window-close:hover { background: var(--green); color: #000; }
+    .form-grid {
+      display: grid; grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+    .form-grid .full { grid-column: 1 / -1; }
+    .avatar-preview {
+      width: 96px; height: 96px; border: 2px dashed var(--green);
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 10px auto; background: rgba(0,30,0,0.4);
+      font-size: 12px; text-align: center; padding: 4px;
+    }
+    .hint { font-size: 12px; opacity: 0.8; margin-top: -6px; margin-bottom: 8px; }
 
-        /* --- PR DASHBOARD (SIMPLIFICADO) --- */
-        #pr-dashboard { width: 80%; height: 80%; top: 10%; left: 10%; }
-        #pr-campaigns { text-align: left; font-size: 12px; margin-bottom: 20px; }
-        .pr-item { border: 1px solid #0f0; padding: 5px; margin: 5px 0; background: #050505; }
+    /* =========================
+       MAPA
+    ========================= */
+    #map {
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1;
+    }
 
-        /* --- QR STYLES --- */
-        .qr-container { border: 1px solid #fff; padding: 10px; display: inline-block; background: #fff; margin: 10px auto; }
+    /* =========================
+       HUD REDESENHADO
+       - Barra de energia lateral fina (1/8) no canto superior esquerdo (vertical)
+       - Botões no topo reduzidos (~metade)
+       - Controlo de setas dentro do topo
+    ========================= */
+    #top-bar {
+      position: absolute; top: 10px; left: 10px; right: 10px;
+      z-index: 1000;
+      display: flex; align-items: center; justify-content: space-between; gap: 10px;
+      background: var(--panel);
+      border: var(--border);
+      padding: 6px 8px; /* menor */
+      backdrop-filter: saturate(1.2) blur(1px);
+      flex-wrap: wrap;
+    }
+    #top-left-group {
+      display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    }
+    #top-right-group {
+      display: flex; align-items: center; gap: 6px; flex-wrap: wrap; justify-content: flex-end;
+    }
+    .stat-pill {
+      border: 1px solid var(--green);
+      padding: 2px 6px;
+      font-size: 12px;
+      background: rgba(0,30,0,0.5);
+      display: inline-flex; align-items: center; gap: 4px;
+      white-space: nowrap;
+    }
 
-        /* --- ZOOM BOX (A+ / A-) --- */
-        .custom-zoom-box {
-            background: #000; border: 2px solid #0f0; border-radius: 5px; box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
-            display: flex; flex-direction: column; overflow: hidden; margin-bottom: 10px;
-            position: absolute; bottom: 20px; right: 10px; width: 60px; z-index: 1000;
-        }
-        .zoom-btn-custom {
-            background: #000; color: #0f0; border: none; border-bottom: 1px solid #0f0;
-            padding: 10px 0; font-family: 'Courier New', monospace; font-weight: bold; font-size: 16px;
-            cursor: pointer; display: flex; justify-content: center; align-items: center; width: 100%; margin: 0; box-shadow: none;
-        }
-        .zoom-btn-custom:last-child { border-bottom: none; }
-        .zoom-btn-custom:active { background: #0f0; color: #000; }
+    /* Barra de energia lateral fina (1/8) no canto superior esquerdo (VERTICAL) */
+    #energy-rail {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      width: calc((100vw / 8) * 0.125); /* 1/8 do comprimento “visual” -> muito fina */
+      height: 140px; /* reduzida */
+      background: #111;
+      border: 1px solid var(--green);
+      z-index: 1100;
+      display: flex; flex-direction: column-reverse; /* enche de baixo para cima */
+      padding: 2px;
+      box-shadow: 0 0 8px rgba(0,255,0,0.15) inset;
+    }
+    #energy-fill-vertical {
+      width: 100%;
+      background: linear-gradient(180deg, var(--accent), var(--green));
+      transition: height 0.3s ease;
+      border-radius: 1px;
+      height: 100%; /* será ajustado por JS */
+    }
+    #energy-rail-label {
+      position: absolute;
+      top: 154px; /* abaixo da rail */
+      left: 10px;
+      font-size: 10px;
+      color: var(--green);
+      opacity: 0.85;
+      width: calc((100vw / 8) * 0.125);
+      text-align: center;
+    }
 
-    </style>
+    /* Controlo de setas (dentro do topo) */
+    #nav-controls-top {
+      display: flex; flex-direction: column; align-items: center; gap: 4px;
+      border: 1px dashed var(--green);
+      padding: 4px 6px;
+      background: rgba(0,30,0,0.35);
+      border-radius: 2px;
+    }
+    .nav-row {
+      display: flex; align-items: center; justify-content: center; gap: 4px;
+    }
+    .nav-btn {
+      min-width: 36px; min-height: 36px; /* reduzido */
+      font-size: 16px;
+      display: inline-flex; align-items: center; justify-content: center;
+      border: 1px solid var(--green);
+      background: #000; color: var(--green);
+      border-radius: 2px;
+    }
+    .nav-btn.small { min-width: 30px; min-height: 30px; font-size: 14px; }
+    .nav-label-small { font-size: 10px; opacity: 0.8; text-align: center; }
+
+    /* =========================
+       PAINEL EMPRESA / PACOTES
+    ========================= */
+    .pack-list {
+      display: flex; flex-direction: column; gap: 12px;
+      margin-top: 12px;
+    }
+    .pack-box {
+      border: 1px solid var(--green);
+      background: rgba(0,20,0,0.6);
+      padding: 10px;
+      display: flex; flex-direction: column; gap: 8px;
+    }
+    .pack-header {
+      display: flex; justify-content: space-between; align-items: center;
+      border-bottom: 1px dashed var(--green); padding-bottom: 6px;
+    }
+    .pack-grid-details {
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      gap: 8px; font-size: 12px;
+    }
+    .pack-actions {
+      display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+    }
+    .receipt-area {
+      border: 1px dashed var(--accent);
+      padding: 8px; font-size: 12px; background: rgba(0,40,20,0.4);
+      white-space: pre-wrap;
+    }
+
+    /* =========================
+       MODAIS GERAIS (Mercado, QRs, etc.)
+    ========================= */
+    .modal {
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      background: var(--bg);
+      border: 3px solid var(--green);
+      padding: 20px; z-index: 15000;
+      width: 90%; max-width: 480px;
+      text-align: center;
+      box-shadow: 0 0 30px rgba(0,255,0,0.2);
+      max-height: 85vh; overflow-y: auto;
+    }
+    .modal h2 { margin-top: 0; text-shadow: 0 0 6px var(--green); }
+    .modal .btn-group { justify-content: center; margin-top: 12px; flex-wrap: wrap; display: flex; gap: 8px; }
+
+    #flag-list {
+      max-height: 220px; overflow-y: auto; text-align: left;
+      margin: 10px 0; border: 1px solid var(--green);
+      padding: 6px; background: rgba(0,20,0,0.5);
+    }
+    .flag-item {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 6px; border-bottom: 1px solid #333; gap: 8px;
+      font-size: 13px;
+    }
+    .flag-item:last-child { border-bottom: none; }
+
+    .qr-card {
+      border: 1px dashed var(--green);
+      padding: 10px; margin: 12px 0;
+      background: rgba(0,30,0,0.4);
+      display: flex; flex-direction: column; align-items: center; gap: 8px;
+    }
+    .qr-canvas { width: 128px; height: 128px; background: #fff; padding: 4px; border-radius: 4px; }
+
+    /* Responsivo */
+    @media (max-width: 640px) {
+      .landing-title { font-size: 2.4rem; }
+      .form-grid { grid-template-columns: 1fr; }
+      .nav-btn { min-width: 32px; min-height: 32px; font-size: 14px; }
+      .nav-btn.small { min-width: 28px; min-height: 28px; font-size: 12px; }
+      #energy-rail { height: 110px; }
+      #energy-rail-label { top: 124px; }
+      button { padding: 5px 8px; font-size: 13px; }
+    }
+  </style>
 </head>
 <body>
 
-    <!-- 1. ECRÃ DE LOGIN -->
-    <div id="login-screen">
-        <h1>ZAP FLAGS</h1>
-        <input type="text" id="player-name" placeholder="Nome do Agente">
-        <input type="email" id="player-email" placeholder="Email (ID da Conta)">
-        <button onclick="startGame()">INICIAR MISSÃO</button>
-        <button class="secondary" onclick="showPRDashboard()">MODO LOJISTA (PR)</button>
+  <!-- =========================
+       0) LANDING / AUTH
+  ========================= -->
+  <div id="landing-screen">
+    <div class="landing-card">
+      <h1 class="landing-title">ZAP FLAGS</h1>
+      <p style="margin:0 0 4px 0; opacity:0.9;">Escolhe como queres entrar:</p>
+      <div class="landing-actions">
+        <button onclick="openAuthWindow('login-player')">Entrar Jogador</button>
+        <button onclick="openAuthWindow('login-company')">Entrar Empresa</button>
+        <button onclick="openAuthWindow('register-choice')">Registar</button>
+      </div>
+      <p style="font-size:12px; margin:8px 0 0 0; opacity:0.75;">
+        Dica: para jogar precisas de ativar o GPS. Empresas podem comprar pacotes e gerir campanhas.
+      </p>
+    </div>
+  </div>
+
+  <!-- JANELAS AUTH (arrastáveis) -->
+  <!-- Registo: escolha -->
+  <div id="win-register-choice" class="draggable-window hidden" style="top:15%; left:50%; transform:translateX(-50%);">
+    <div class="window-header" data-window="win-register-choice">
+      <span class="window-title">Registar — Escolha o tipo de conta</span>
+      <span class="window-close" onclick="closeWindow('win-register-choice')">X</span>
+    </div>
+    <div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
+      <button onclick="closeWindow('win-register-choice'); openAuthWindow('register-player');">Registar como Jogador</button>
+      <button onclick="closeWindow('win-register-choice'); openAuthWindow('register-company');">Registar como Empresa</button>
+    </div>
+    <p class="hint">Cada e-mail dá acesso a apenas uma conta.</p>
+  </div>
+
+  <!-- Registo Jogador -->
+  <div id="win-register-player" class="draggable-window hidden" style="top:10%; left:50%; transform:translateX(-50%); max-width:620px;">
+    <div class="window-header" data-window="win-register-player">
+      <span class="window-title">Registar Jogador</span>
+      <span class="window-close" onclick="closeWindow('win-register-player')">X</span>
+    </div>
+    <div class="avatar-preview" id="avatar-preview-player">
+      Avatar obrigatório<br><small>(carrega abaixo)</small>
+    </div>
+    <div class="form-grid">
+      <div>
+        <label>Nome de utilizador (único)</label>
+        <input id="rp-username" type="text" placeholder="ex.: explorador123" aria-required="true" />
+        <div class="hint" id="rp-username-status">Verificando disponibilidade…</div>
+      </div>
+      <div>
+        <label>Email (login único)</label>
+        <input id="rp-email" type="email" placeholder="exemplo@email.com" aria-required="true" />
+      </div>
+      <div>
+        <label>Senha</label>
+        <input id="rp-password" type="password" placeholder="mín. 8 caracteres" aria-required="true" />
+      </div>
+      <div>
+        <label>Confirmar senha</label>
+        <input id="rp-password2" type="password" placeholder="repete a senha" aria-required="true" />
+      </div>
+      <div>
+        <label>Avatar (obrigatório)</label>
+        <input id="rp-avatar" type="file" accept="image/*" aria-required="true" />
+      </div>
+      <div>
+        <label>Contacto telefónico (opcional)</label>
+        <input id="rp-phone" type="tel" placeholder="+351 9..." />
+      </div>
+      <div>
+        <label>Distrito</label>
+        <input id="rp-district" type="text" placeholder="ex.: Porto" />
+      </div>
+      <div>
+        <label>Localidade</label>
+        <input id="rp-locality" type="text" placeholder="ex.: Matosinhos" />
+      </div>
+      <div class="full" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+        <button onclick="registerPlayer()">Registar</button>
+        <button onclick="openAuthWindow('recover-player')">Recuperar senha</button>
+        <span class="hint">Ao registar, aceitas os termos do jogo.</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Login Jogador -->
+  <div id="win-login-player" class="draggable-window hidden" style="top:20%; left:50%; transform:translateX(-50%); max-width:480px;">
+    <div class="window-header" data-window="win-login-player">
+      <span class="window-title">Entrar como Jogador</span>
+      <span class="window-close" onclick="closeWindow('win-login-player')">X</span>
+    </div>
+    <div>
+      <label>Email</label>
+      <input id="lp-email" type="email" placeholder="exemplo@email.com" />
+      <label>Senha</label>
+      <input id="lp-password" type="password" placeholder="senha" />
+      <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:4px;">
+        <button onclick="loginPlayer()">Entrar</button>
+        <button onclick="openAuthWindow('recover-player')">Recuperar senha</button>
+      </div>
+      <p class="hint">Problemas? Usa “Recuperar senha” para receber um código de 6 dígitos por “MSN” (mock) e um link por email.</p>
+    </div>
+  </div>
+
+  <!-- Recuperação Jogador -->
+  <div id="win-recover-player" class="draggable-window hidden" style="top:18%; left:50%; transform:translateX(-50%); max-width:520px;">
+    <div class="window-header" data-window="win-recover-player">
+      <span class="window-title">Recuperar senha (Jogador)</span>
+      <span class="window-close" onclick="closeWindow('win-recover-player')">X</span>
+    </div>
+    <div class="form-grid">
+      <div class="full">
+        <label>Introduz o teu Email</label>
+        <input id="rec-email" type="email" placeholder="exemplo@email.com" />
+        <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+          <button onclick="requestPasswordRecovery('player')">Enviar código (6 dígitos) + link por email</button>
+        </div>
+        <p class="hint">Receberás um código “MSN” de 6 dígitos (simulado) e um link para criar nova senha.</p>
+      </div>
+      <div>
+        <label>Código de 6 dígitos recebido</label>
+        <input id="rec-code" type="text" maxlength="6" placeholder="123456" />
+      </div>
+      <div>
+        <label>Nova senha</label>
+        <input id="rec-newpass" type="password" placeholder="mín. 8 caracteres" />
+      </div>
+      <div class="full">
+        <button onclick="confirmPasswordRecovery('player')">Confirmar e criar nova senha</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Registo Empresa -->
+  <div id="win-register-company" class="draggable-window hidden" style="top:8%; left:50%; transform:translateX(-50%); max-width:680px;">
+    <div class="window-header" data-window="win-register-company">
+      <span class="window-title">Registar Empresa (PR)</span>
+      <span class="window-close" onclick="closeWindow('win-register-company')">X</span>
+    </div>
+    <div class="form-grid">
+      <div>
+        <label>Nome da empresa</label>
+        <input id="rc-name" type="text" placeholder="Nome comercial" aria-required="true" />
+      </div>
+      <div>
+        <label>NIF</label>
+        <input id="rc-nif" type="text" placeholder="NIF da empresa" aria-required="true" />
+      </div>
+      <div>
+        <label>Email (login único)</label>
+        <input id="rc-email" type="email" placeholder="empresa@email.com" aria-required="true" />
+      </div>
+      <div>
+        <label>Senha</label>
+        <input id="rc-password" type="password" placeholder="mín. 8 caracteres" aria-required="true" />
+      </div>
+      <div>
+        <label>Confirmar senha</label>
+        <input id="rc-password2" type="password" placeholder="repete a senha" aria-required="true" />
+      </div>
+      <div>
+        <label>Contacto telefónico</label>
+        <input id="rc-phone" type="tel" placeholder="+351 9..." />
+      </div>
+      <div>
+        <label>Morada</label>
+        <input id="rc-address" type="text" placeholder="Rua, nº, andar" aria-required="true" />
+      </div>
+      <div>
+        <label>Código Postal</label>
+        <input id="rc-postcode" type="text" placeholder="4000-123" aria-required="true" />
+      </div>
+      <div>
+        <label>Distrito</label>
+        <input id="rc-district" type="text" placeholder="Porto" />
+      </div>
+      <div>
+        <label>Localidade</label>
+        <input id="rc-locality" type="text" placeholder="Matosinhos" />
+      </div>
+      <div class="full">
+        <label>Dados de faturação (opcional / para emissão de recibos)</label>
+        <textarea id="rc-billing" rows="3" placeholder="Razão social, NIF, morada de faturação, etc."></textarea>
+      </div>
+      <div class="full">
+        <label>Modos de pagamento aceites (pode selecionar vários)</label>
+        <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
+          <label><input type="checkbox" id="pay-qr" checked /> QR</label>
+          <label><input type="checkbox" id="pay-mbway" /> MB Way</label>
+          <label><input type="checkbox" id="pay-transfer" /> Transferência</label>
+          <label><input type="checkbox" id="pay-multibanco" /> Multibanco</label>
+        </div>
+        <p class="hint">Após pagamento, será emitido um recibo automaticamente (simulado nesta demo).</p>
+      </div>
+      <div class="full" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+        <button onclick="registerCompany()">Registar Empresa</button>
+        <button onclick="openAuthWindow('recover-company')">Recuperar senha</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Login Empresa -->
+  <div id="win-login-company" class="draggable-window hidden" style="top:22%; left:50%; transform:translateX(-50%); max-width:480px;">
+    <div class="window-header" data-window="win-login-company">
+      <span class="window-title">Entrar como Empresa (PR)</span>
+      <span class="window-close" onclick="closeWindow('win-login-company')">X</span>
+    </div>
+    <div>
+      <label>Email</label>
+      <input id="lc-email" type="email" placeholder="empresa@email.com" />
+      <label>Senha</label>
+      <input id="lc-password" type="password" placeholder="senha" />
+      <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:4px;">
+        <button onclick="loginCompany()">Entrar</button>
+        <button onclick="openAuthWindow('recover-company')">Recuperar senha</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recuperação Empresa -->
+  <div id="win-recover-company" class="draggable-window hidden" style="top:20%; left:50%; transform:translateX(-50%); max-width:520px;">
+    <div class="window-header" data-window="win-recover-company">
+      <span class="window-title">Recuperar senha (Empresa)</span>
+      <span class="window-close" onclick="closeWindow('win-recover-company')">X</span>
+    </div>
+    <div class="form-grid">
+      <div class="full">
+        <label>Introduz o Email da empresa</label>
+        <input id="rec-email-c" type="email" placeholder="empresa@email.com" />
+        <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+          <button onclick="requestPasswordRecovery('company')">Enviar código (6 dígitos) + link por email</button>
+        </div>
+      </div>
+      <div>
+        <label>Código de 6 dígitos recebido</label>
+        <input id="rec-code-c" type="text" maxlength="6" placeholder="123456" />
+      </div>
+      <div>
+        <label>Nova senha</label>
+        <input id="rec-newpass-c" type="password" placeholder="mín. 8 caracteres" />
+      </div>
+      <div class="full">
+        <button onclick="confirmPasswordRecovery('company')">Confirmar e criar nova senha</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================
+       1) MAPA + HUD DO JOGO
+  ========================= -->
+  <div id="map" aria-label="Mapa interativo da caça ao tesouro"></div>
+
+  <!-- Barra de energia lateral fina (1/8) no canto superior esquerdo -->
+  <div id="energy-rail" aria-label="Energia do jogador (barra vertical)">
+    <div id="energy-fill-vertical" style="height:100%;"></div>
+  </div>
+  <div id="energy-rail-label">ENERGIA</div>
+
+  <!-- Top bar (botões reduzidos, setas, stats) -->
+  <div id="top-bar">
+    <div id="top-left-group">
+      <div class="stat-pill">🏴 Bandeiras: <strong><span id="flag-count">0</span></strong></div>
+      <div class="stat-pill">⚡ Nível: <strong><span id="skill-level">1</span></strong> (<span id="vision-range">5</span>m)</div>
+      <div class="stat-pill">🎯 QR Prontos: <strong><span id="qr-count">0</span></strong></div>
+      <div class="stat-pill">👥 Jogadores (sim): <strong><span id="player-count-display">100</span></strong></div>
     </div>
 
-    <!-- 2. MAPA -->
-    <div id="map"></div>
-
-    <!-- 3. HUD (MINIATURIZADO NO TOPO) -->
-    <div id="hud" class="hidden">
-        <div class="hud-content">
-            <!-- Esquerda: Energia e Stats -->
-            <div class="hud-left">
-                <div class="mini-bar-container">
-                    <div id="energy-fill"></div>
-                </div>
-                <span class="stat-text">⚡<span id="energy-text">100</span>%</span>
-            </div>
-
-            <!-- Centro: Botões de Ação -->
-            <div class="hud-center">
-                <button class="mini-btn" onclick="toggleTrade()">🔄 Mercado</button>
-                <button class="mini-btn" onclick="showMyQR()">🎫 QRs</button>
-                <button class="mini-btn" onclick="toggleStats()">📊 Skills</button>
-                <button class="mini-btn" style="border-color: #f00; color: #f00;" onclick="confirmExit()">🚪 Sair</button>
-            </div>
-
-            <!-- Direita: Contador de Passos -->
-            <div class="hud-right">
-                <span class="stat-text">👣 <span id="step-count">0</span></span>
-            </div>
-        </div>
+    <div id="nav-controls-top" aria-label="Controlo de navegação do mapa">
+      <div class="nav-label-small">Navegação • Zoom: <strong><span id="zoom-level">7</span></strong></div>
+      <div class="nav-row">
+        <button class="nav-btn" data-dir="up" aria-label="Cima">▲</button>
+      </div>
+      <div class="nav-row">
+        <button class="nav-btn small" data-action="zoom-out" aria-label="A-">A-</button>
+        <button class="nav-btn" data-dir="forward" aria-label="Frente">▲</button>
+        <button class="nav-btn small" data-action="zoom-in" aria-label="A+">A+</button>
+      </div>
+      <div class="nav-row">
+        <button class="nav-btn" data-dir="left" aria-label="Esquerda">◀</button>
+        <button class="nav-btn" data-dir="down" aria-label="Baixo">▼</button>
+        <button class="nav-btn" data-dir="right" aria-label="Direita">▶</button>
+      </div>
     </div>
 
-    <!-- 4. JANELA DE TROCA (DRAGGABLE) -->
-    <div id="trade-modal" class="modal hidden">
-        <div class="modal-header" onmousedown="dragStart(event, 'trade-modal')">
-            <span>MERCADO NEGRO</span>
-            <button class="close-btn" onclick="toggleTrade()">X</button>
-        </div>
-        <div class="modal-body">
-            <p style="font-size: 12px; color: #aaa;">Listar custa 5% Energia. Dura 5 dias.</p>
-            <div id="flag-list"></div>
-            <div class="btn-group">
-                <button onclick="listFlagForTrade()">VENDER (-5% E)</button>
-                <button class="secondary" onclick="toggleTrade()">FECHAR</button>
+    <div id="top-right-group">
+      <button onclick="openWindow('win-skill-stats')">📊 Skill / Stats</button>
+      <button onclick="toggleTrade()">🔄 Trocar</button>
+      <button onclick="showMyQR()">🎫 Meus QRs</button>
+      <button onclick="saveGameState()">💾 Guardar</button>
+      <button onclick="confirmExit()">🚪 Sair</button>
+      <!-- Botão Empresa: só aparece se sessão empresa ativa -->
+      <button id="btn-company-panel" class="hidden" onclick="openCompanyPanel()">🏢 Painel Empresa</button>
+    </div>
+  </div>
+
+  <!-- =========================
+       2) JANELAS DO JOGO (arrastáveis / sobrepostas)
+  ========================= -->
+  <!-- Skill / Stats -->
+  <div id="win-skill-stats" class="draggable-window hidden" style="top:15%; left:20%; width:360px; min-height:220px;">
+    <div class="window-header" data-window="win-skill-stats">
+      <span class="window-title">Skill / Estatísticas</span>
+      <span class="window-close" onclick="closeWindow('win-skill-stats')">X</span>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:8px; font-size:13px;">
+      <div><strong>Skill:</strong> <span id="skill-percent">1.00%</span></div>
+      <div><strong>Passos dados (via GPS):</strong> <span id="steps-count">0</span></div>
+      <div><strong>Tempo de jogo:</strong> <span id="play-time">00:00:00</span></div>
+      <div><strong>Visão atual:</strong> <span id="vision-range-stats">5</span> m</div>
+      <div><strong>Bandeiras recolhidas:</strong> <span id="flags-stats">0</span></div>
+      <div><strong>QRs disponíveis:</strong> <span id="qrs-stats">0</span></div>
+      <p class="hint">Os passos baseiam-se em eventos de movimento do GPS (simulação aprimorada nesta demo). Para produção, usa sensor de passos + validação server-side.</p>
+    </div>
+  </div>
+
+  <!-- Mercado -->
+  <div id="trade-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="trade-title">
+    <h2 id="trade-title">MERCADO DE BANDEIRAS</h2>
+    <p>Listar custa <strong>5% Energia</strong>. A listagem dura <strong>5 dias</strong>.</p>
+    <div id="flag-list" aria-live="polite"></div>
+    <div class="btn-group">
+      <button id="btn-list-flag" onclick="listFlagForTrade()">LISTAR BANDEIRA (-5% Energia)</button>
+      <button onclick="toggleTrade()">FECHAR</button>
+    </div>
+  </div>
+
+  <!-- Meus QRs -->
+  <div id="qr-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="qr-title">
+    <h2 id="qr-title">OS TEUS QRs</h2>
+    <div id="my-qrs" aria-live="polite"></div>
+    <div class="btn-group">
+      <button onclick="toggleQR()">FECHAR</button>
+    </div>
+  </div>
+
+  <!-- Painel Empresa (PR) -->
+  <div id="win-company-panel" class="draggable-window hidden" style="top:6%; left:50%; transform:translateX(-50%); max-width:820px; width:95%;">
+    <div class="window-header" data-window="win-company-panel">
+      <span class="window-title">Painel Empresa (PR) — Campanhas & Pacotes</span>
+      <span class="window-close" onclick="closeWindow('win-company-panel')">X</span>
+    </div>
+    <div>
+      <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:8px;">
+        <button onclick="openWindow('win-company-edit')">✏️ Editar dados da empresa</button>
+        <span class="hint">Após compra, é emitido um recibo automaticamente.</span>
+      </div>
+
+      <h3 style="margin:8px 0;">Catálogo de Pacotes (comprar)</h3>
+      <div class="pack-list">
+        <!-- Pacote Mínimo -->
+        <div class="pack-box" data-pack="MIN">
+          <div class="pack-header">
+            <div><strong>🧩 Pacote Mínimo</strong> — 10€</div>
+            <div>
+              <button onclick="togglePackDetails('MIN')">Abrir</button>
+              <button onclick="openPurchase('MIN')">Comprar</button>
             </div>
-        </div>
-    </div>
-
-    <!-- 5. JANELA MEUS QRs (DRAGGABLE) -->
-    <div id="qr-modal" class="modal hidden">
-        <div class="modal-header" onmousedown="dragStart(event, 'qr-modal')">
-            <span>SEUS QRS</span>
-            <button class="close-btn" onclick="toggleQR()">X</button>
-        </div>
-        <div class="modal-body">
-            <div id="my-qrs"></div>
-            <button class="secondary" onclick="toggleQR()">FECHAR</button>
-        </div>
-    </div>
-
-    <!-- 6. JANELA SKILLS/STATS (DRAGGABLE) -->
-    <div id="stats-modal" class="modal hidden">
-        <div class="modal-header" onmousedown="dragStart(event, 'stats-modal')">
-            <span>PERFIL DO AGENTE</span>
-            <button class="close-btn" onclick="toggleStats()">X</button>
-        </div>
-        <div class="modal-body">
-            <div style="text-align: left; margin-bottom: 15px;">
-                <p>Nível: <span id="stat-level" style="color:#fff">1</span></p>
-                <p>Visão: <span id="stat-vision" style="color:#fff">5m</span></p>
-                <p>Bandeiras: <span id="stat-flags" style="color:#fff">0</span></p>
-                <hr style="border-color: #333">
-                <p>Passos Totais: <span id="stat-steps" style="color:#fff">0</span></p>
-                <p>Tempo de Jogo: <span id="stat-time" style="color:#fff">00:00</span></p>
-                <p>Skill Bonus: <span id="stat-skill" style="color:#0f0">0%</span></p>
+          </div>
+          <div class="pack-grid-details">
+            <div><strong>Bandeiras:</strong> 1.000</div>
+            <div><strong>Raio de ação:</strong> 5 km</div>
+            <div><strong>Duração (simulada):</strong> 30 dias</div>
+            <div><strong>PRs criados:</strong> 2 por pacote + 1 com 2 pacotes/lote (por defeito)</div>
+          </div>
+          <div id="pack-details-MIN" class="hidden" style="border-top:1px dashed var(--green); padding-top:8px;">
+            <p class="hint">Ao comprar, a campanha é ativada automaticamente na tua localização atual (ou centro PT se indisponível). 
+            As bandeiras dos teus PRs aparecem <strong>com a mesma cor (roxo)</strong> para criar “efeito surpresa”.</p>
+            <div class="pack-actions">
+              <label>Quantidade:
+                <select id="qty-MIN">
+                  <option value="1">1</option>
+                  <option value="10">10</option>
+                  <option value="15">15</option>
+                </select>
+              </label>
+              <label>Método de pagamento:
+                <select id="pay-MIN">
+                  <option value="QR">QR</option>
+                  <option value="MBWAY">MB Way</option>
+                  <option value="TRANSFERENCIA">Transferência</option>
+                  <option value="MULTIBANCO">Multibanco</option>
+                </select>
+              </label>
+              <span><strong>Valor:</strong> <span id="value-MIN">10€</span></span>
+              <button onclick="confirmPurchase('MIN')">Confirmar compra e gerar recibo</button>
             </div>
-            <button class="secondary" onclick="toggleStats()">FECHAR</button>
+            <div id="receipt-MIN" class="receipt-area hidden"></div>
+          </div>
         </div>
-    </div>
 
-    <!-- 7. PAINEL DO PR (SIMPLIFICADO - DRAGGABLE) -->
-    <div id="pr-dashboard" class="modal hidden">
-        <div class="modal-header" onmousedown="dragStart(event, 'pr-dashboard')">
-            <span>PAINEL DO LOJISTA</span>
-            <button class="close-btn" onclick="location.reload()">X</button>
-        </div>
-        <div class="modal-body">
-            <button class="secondary" onclick="location.reload()">VOLTAR AO JOGO</button>
-            
-            <h3>Comprar Campanhas</h3>
-            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                <button onclick="buyPack('BRONZE', 5)" style="width: 45%;">🥉 BRONZE (5€)</button>
-                <button onclick="buyPack('PRATA', 15)" style="width: 45%;">🥈 PRATA (15€)</button>
-                <button onclick="buyPack('OURO', 50)" style="width: 45%;">🥇 OURO (50€)</button>
-                <button onclick="buyPack('PLATINA', 100)" style="width: 45%;">💎 PLATINA (100€)</button>
+        <!-- Pacote Médio (existente adaptado) -->
+        <div class="pack-box" data-pack="MED">
+          <div class="pack-header">
+            <div><strong>🥈 Pacote Médio</strong> — 15€</div>
+            <div>
+              <button onclick="togglePackDetails('MED')">Abrir</button>
+              <button onclick="openPurchase('MED')">Comprar</button>
             </div>
-            
-            <h3>Minhas Campanhas</h3>
-            <div id="pr-campaigns"></div>
-            <button onclick="openScanner()">📸 ESCANEAR QR CLIENTE</button>
-            <div id="scanner-result"></div>
+          </div>
+          <div class="pack-grid-details">
+            <div><strong>Bandeiras:</strong> 2.500</div>
+            <div><strong>Raio de ação:</strong> 15 km</div>
+            <div><strong>Duração (simulada):</strong> 45 dias</div>
+            <div><strong>PRs criados:</strong> 2 por pacote + 1 com 2 pacotes/lote</div>
+          </div>
+          <div id="pack-details-MED" class="hidden" style="border-top:1px dashed var(--green); padding-top:8px;">
+            <div class="pack-actions">
+              <label>Quantidade:
+                <select id="qty-MED">
+                  <option value="1">1</option>
+                  <option value="10">10</option>
+                  <option value="15">15</option>
+                </select>
+              </label>
+              <label>Método de pagamento:
+                <select id="pay-MED">
+                  <option value="QR">QR</option>
+                  <option value="MBWAY">MB Way</option>
+                  <option value="TRANSFERENCIA">Transferência</option>
+                  <option value="MULTIBANCO">Multibanco</option>
+                </select>
+              </label>
+              <span><strong>Valor:</strong> <span id="value-MED">15€</span></span>
+              <button onclick="confirmPurchase('MED')">Confirmar compra e gerar recibo</button>
+            </div>
+            <div id="receipt-MED" class="receipt-area hidden"></div>
+          </div>
         </div>
+
+        <!-- Pacotes existentes (OURO/PLATINA) mantidos -->
+        <div class="pack-box" data-pack="OURO">
+          <div class="pack-header">
+            <div><strong>🥇 Pacote Ouro</strong> — 50€</div>
+            <div>
+              <button onclick="togglePackDetails('OURO')">Abrir</button>
+              <button onclick="openPurchase('OURO')">Comprar</button>
+            </div>
+          </div>
+          <div class="pack-grid-details">
+            <div><strong>Bandeiras:</strong> 500.000</div>
+            <div><strong>Raio de ação:</strong> 50 km</div>
+            <div><strong>Duração (simulada):</strong> 60 dias</div>
+            <div><strong>PRs criados:</strong> 2 por pacote + 1 com 2 pacotes/lote</div>
+          </div>
+          <div id="pack-details-OURO" class="hidden" style="border-top:1px dashed var(--green); padding-top:8px;">
+            <div class="pack-actions">
+              <label>Quantidade:
+                <select id="qty-OURO">
+                  <option value="1">1</option>
+                  <option value="10">10</option>
+                  <option value="15">15</option>
+                </select>
+              </label>
+              <label>Método de pagamento:
+                <select id="pay-OURO">
+                  <option value="QR">QR</option>
+                  <option value="MBWAY">MB Way</option>
+                  <option value="TRANSFERENCIA">Transferência</option>
+                  <option value="MULTIBANCO">Multibanco</option>
+                </select>
+              </label>
+              <span><strong>Valor:</strong> <span id="value-OURO">50€</span></span>
+              <button onclick="confirmPurchase('OURO')">Confirmar compra e gerar recibo</button>
+            </div>
+            <div id="receipt-OURO" class="receipt-area hidden"></div>
+          </div>
+        </div>
+
+        <div class="pack-box" data-pack="PLATINA">
+          <div class="pack-header">
+            <div><strong>💎 Pacote Platina</strong> — 100€</div>
+            <div>
+              <button onclick="togglePackDetails('PLATINA')">Abrir</button>
+              <button onclick="openPurchase('PLATINA')">Comprar</button>
+            </div>
+          </div>
+          <div class="pack-grid-details">
+            <div><strong>Bandeiras:</strong> 2.000.000</div>
+            <div><strong>Raio de ação:</strong> 150 km</div>
+            <div><strong>Duração (simulada):</strong> 90 dias</div>
+            <div><strong>PRs criados:</strong> 2 por pacote + 1 com 2 pacotes/lote</div>
+          </div>
+          <div id="pack-details-PLATINA" class="hidden" style="border-top:1px dashed var(--green); padding-top:8px;">
+            <div class="pack-actions">
+              <label>Quantidade:
+                <select id="qty-PLATINA">
+                  <option value="1">1</option>
+                  <option value="10">10</option>
+                  <option value="15">15</option>
+                </select>
+              </label>
+              <label>Método de pagamento:
+                <select id="pay-PLATINA">
+                  <option value="QR">QR</option>
+                  <option value="MBWAY">MB Way</option>
+                  <option value="TRANSFERENCIA">Transferência</option>
+                  <option value="MULTIBANCO">Multibanco</option>
+                </select>
+              </label>
+              <span><strong>Valor:</strong> <span id="value-PLATINA">100€</span></span>
+              <button onclick="confirmPurchase('PLATINA')">Confirmar compra e gerar recibo</button>
+            </div>
+            <div id="receipt-PLATINA" class="receipt-area hidden"></div>
+          </div>
+        </div>
+      </div>
+
+      <h3 style="margin:16px 0 8px 0;">As Minhas Campanhas (PRs ativos)</h3>
+      <div class="campaign-list" id="pr-campaigns-list">
+        <em>Ainda não tens campanhas. Compra um pack para começar.</em>
+      </div>
     </div>
+  </div>
 
-    <script>
-        // =========================================================================
-        // 🧠 CÉREBRO DO JOGO (LÓGICA)
-        // =========================================================================
+  <!-- Editar dados empresa -->
+  <div id="win-company-edit" class="draggable-window hidden" style="top:12%; left:50%; transform:translateX(-50%); max-width:640px;">
+    <div class="window-header" data-window="win-company-edit">
+      <span class="window-title">Editar dados da Empresa</span>
+      <span class="window-close" onclick="closeWindow('win-company-edit')">X</span>
+    </div>
+    <div class="form-grid">
+      <div>
+        <label>Nome da empresa</label>
+        <input id="ce-name" type="text" />
+      </div>
+      <div>
+        <label>NIF</label>
+        <input id="ce-nif" type="text" />
+      </div>
+      <div>
+        <label>Morada</label>
+        <input id="ce-address" type="text" />
+      </div>
+      <div>
+        <label>Código Postal</label>
+        <input id="ce-postcode" type="text" />
+      </div>
+      <div>
+        <label>Distrito</label>
+        <input id="ce-district" type="text" />
+      </div>
+      <div>
+        <label>Localidade</label>
+        <input id="ce-locality" type="text" />
+      </div>
+      <div class="full">
+        <label>Dados de faturação</label>
+        <textarea id="ce-billing" rows="3"></textarea>
+      </div>
+      <div class="full">
+        <label>Modos de pagamento aceites</label>
+        <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
+          <label><input type="checkbox" id="ce-pay-qr" /> QR</label>
+          <label><input type="checkbox" id="ce-pay-mbway" /> MB Way</label>
+          <label><input type="checkbox" id="ce-pay-transfer" /> Transferência</label>
+          <label><input type="checkbox" id="ce-pay-multibanco" /> Multibanco</label>
+        </div>
+      </div>
+      <div class="full">
+        <button onclick="saveCompanyEdit()">Guardar alterações</button>
+      </div>
+    </div>
+  </div>
 
-        // --- 1. DADOS INICIAIS ---
-        let player = {
-            name: "",
-            email: "",
-            lat: 0,
-            lng: 0,
-            energy: 100,
-            flags: 0,
-            qrs: [], 
-            skill: 1,
-            vision: 5, // metros
-            inventory: [], // IDs de bandeiras
-            steps: 0,
-            startTime: 0
-        };
+  <!-- =========================
+       3) SCRIPTS (ESTADO + AUTH + JOGO + UI WINDOWS)
+  ========================= -->
+  <script>
+    // =========================
+    // ESTADO GLOBAL
+    // =========================
+    const STORAGE_KEY_STATE = "zapFlagsState_v2_optionA";
+    const STORAGE_KEY_AUTH = "zapFlagsAuth_v2_optionA";
 
-        // PRs Fictícios Iniciais
-        let prs = [
-            { id: 1, name: "Café Central (Porto)", lat: 41.1496, lng: -8.6109, pack: "BRONZE", radius: 5000, flagsLeft: 50000, color: "orange" },
-            { id: 2, name: "Ginásio Fit (Lisboa)", lat: 38.7223, lng: -9.1393, pack: "PRATA", radius: 20000, flagsLeft: 150000, color: "orange" },
-        ];
-
-        let map, playerMarker, watchId;
-        let allMarkers = [];
-        let lastPos = null; // Para calcular passos
-
-        // --- 2. INICIALIZAÇÃO ---
-        function startGame() {
-            const name = document.getElementById('player-name').value;
-            const email = document.getElementById('player-email').value;
-            if(!name || !email) { alert("Identificação necessária!"); return; }
-
-            player.name = name;
-            player.email = email;
-            player.startTime = Date.now();
-
-            document.getElementById('login-screen').classList.add('hidden');
-            document.getElementById('hud').classList.remove('hidden');
-
-            initMap();
-        }
-
-        function initMap() {
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(
-                    (pos) => {
-                        player.lat = pos.coords.latitude;
-                        player.lng = pos.coords.longitude;
-                        lastPos = { lat: player.lat, lng: player.lng };
-                        map.setView([player.lat, player.lng], 16);
-                        createPlayerMarker();
-                    },
-                    () => {
-                        map.setView([38.7223, -9.1393], 13);
-                        alert("GPS desligado. Usando localização simulada.");
-                    }
-                );
-            }
-
-            map = L.map('map', { zoomControl: false, attributionControl: false });
-            
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '© OpenStreetMap'
-            }).addTo(map);
-
-            // Controlo de Zoom Personalizado (A+ / A-)
-            var ZoomControl = L.Control.extend({
-                onAdd: function(map) {
-                    var container = L.DomUtil.create('div', 'custom-zoom-box');
-                    var btnIn = L.DomUtil.create('button', 'zoom-btn-custom', container);
-                    btnIn.innerHTML = 'A+ <span class="zoom-symbol">+</span>'; 
-                    btnIn.onclick = function() { map.zoomIn(); };
-                    var btnOut = L.DomUtil.create('button', 'zoom-btn-custom', container);
-                    btnOut.innerHTML = 'A- <span class="zoom-symbol">-</span>';
-                    btnOut.onclick = function() { map.zoomOut(); };
-                    return container;
-                }
-            });
-            map.addControl(new ZoomControl());
-
-            // Loop de GPS
-            if (navigator.geolocation) {
-                watchId = navigator.geolocation.watchPosition(updatePosition, handleError, { 
-                    enableHighAccuracy: true, maximumAge: 0, timeout: 5000
-                });
-            }
-
-            setInterval(gameLoop, 3000); 
-            
-            // Regeneração de Energia
-            setInterval(() => {
-                if(player.energy < 100) {
-                    player.energy = Math.min(100, player.energy + 1);
-                    updateHUD();
-                }
-            }, 60000); 
-
-            // Atualizar tempo de jogo
-            setInterval(updateGameTime, 1000);
-        }
-
-        function createPlayerMarker() {
-            if (!playerMarker) {
-                playerMarker = L.marker([player.lat, player.lng], {
-                    icon: L.divIcon({
-                        className: 'player-icon',
-                        html: `<div style="background:#0f0; width:15px; height:15px; border-radius:50%; border:3px solid #fff; box-shadow: 0 0 10px #0f0;"></div>`
-                    })
-                }).addTo(map);
-            } else {
-                playerMarker.setLatLng([player.lat, player.lng]);
-            }
-            map.panTo([player.lat, player.lng]);
-        }
-
-        function updatePosition(position) {
-            const newLat = position.coords.latitude;
-            const newLng = position.coords.longitude;
-            
-            // Calcular passos
-            if (lastPos) {
-                const dist = getDistance(lastPos.lat, lastPos.lng, newLat, newLng);
-                if (dist > 1) { // Ignorar ruído de GPS (< 1 metro)
-                    const stepsAdded = Math.floor(dist / 0.762);
-                    player.steps += stepsAdded;
-                    document.getElementById('step-count').innerText = player.steps;
-                }
-            }
-            
-            player.lat = newLat;
-            player.lng = newLng;
-            lastPos = { lat: newLat, lng: newLng };
-            createPlayerMarker();
-        }
-
-        function handleError(error) { console.warn("GPS Error:", error); }
-
-        // --- 3. LÓGICA DE SPAWN ---
-        function gameLoop() {
-            clearMarkers();
-            spawnGameFlag();
-
-            prs.forEach(pr => {
-                const dist = getDistance(player.lat, player.lng, pr.lat, pr.lng);
-                if (dist < pr.radius) {
-                    let chance = 20 - (dist / 1000 * 2); 
-                    if (chance < 1) chance = 1; 
-                    if (Math.random() * 100 < chance) {
-                        spawnPRFlag(pr);
-                    }
-                }
-            });
-        }
-
-        function spawnGameFlag() {
-            const angle = Math.random() * 2 * Math.PI;
-            const dist = 80 + Math.random() * 40; 
-            
-            const newLat = player.lat + (dist / 111000) * Math.cos(angle) * 180/Math.PI;
-            const newLng = player.lng + (dist / (111000 * Math.cos(player.lat * Math.PI/180))) * Math.sin(angle) * 180/Math.PI;
-
-            if (getDistance(player.lat, player.lng, newLat, newLng) <= player.vision) {
-                let energyReward = 5;
-                let typeText = "+5%";
-                let color = "#006400";
-
-                const rng = Math.random();
-                if (rng > 0.90) { energyReward = 50; typeText = "BINGO! +50%"; color = "#00FF00"; } 
-                else if (rng > 0.60) { energyReward = 15; typeText = "+15%"; color = "#32CD32"; }
-
-                const marker = L.marker([newLat, newLng], { icon: getIcon(color) })
-                .addTo(map)
-                .bindPopup(`⚡ Bandeira ZAP (${typeText})`)
-                .on('click', () => collectGameFlag(energyReward));
-                
-                allMarkers.push(marker);
-            }
-        }
-
-        function spawnPRFlag(pr) {
-            const angle = Math.random() * 2 * Math.PI;
-            const dist = Math.random() * 100; 
-            const newLat = pr.lat + (dist / 111000) * Math.cos(angle) * 180/Math.PI;
-            const newLng = pr.lng + (dist / (111000 * Math.cos(pr.lat * Math.PI/180))) * Math.sin(angle) * 180/Math.PI;
-
-            if (getDistance(player.lat, player.lng, newLat, newLng) <= player.vision) {
-                const marker = L.marker([newLat, newLng], { icon: getIcon('orange') })
-                    .addTo(map)
-                    .bindPopup(`🎯 Bandeira Misteriosa (+1 Ponto QR)`)
-                    .on('click', () => collectFlag('PR', pr));
-                allMarkers.push(marker);
-            }
-        }
-
-        function collectGameFlag(energy) {
-            if (player.energy <= 0) { alert("⚠️ SEM ENERGIA!"); return; }
-            player.energy -= 1;
-            player.energy = Math.min(100, player.energy + energy);
-            updateHUD();
-            gameLoop(); 
-        }
-
-        function collectFlag(type, pr = null) {
-            if (player.energy <= 0) { alert("⚠️ SEM ENERGIA!"); return; }
-            player.energy -= 1;
-
-            if (type === 'PR') {
-                player.flags++;
-                player.inventory.push(pr.id);
-                if (player.flags % 10 === 0) {
-                    player.qrs.push({ id: Date.now(), pr_id: pr.id, date: Date.now() + (15 * 24 * 60 * 60 * 1000) });
-                }
-            }
-            calculateSkill();
-            updateHUD();
-            gameLoop(); 
-        }
-
-        // --- 4. SISTEMA DE SKILL & STATS ---
-        function calculateSkill() {
-            const points = player.flags;
-            let newVision = 5 + Math.sqrt(points / 100);
-            player.vision = Math.floor(newVision);
-            if (player.vision > 100) player.vision = 100; 
-            player.skill = 1 + Math.floor(points / 100);
-        }
-
-        function updateHUD() {
-            document.getElementById('energy-text').innerText = Math.floor(player.energy);
-            const fill = document.getElementById('energy-fill');
-            fill.style.width = player.energy + "%";
-            if (player.energy < 20) fill.classList.add('low');
-            else fill.classList.remove('low');
-        }
-
-        function updateGameTime() {
-            const now = Date.now();
-            const diff = Math.floor((now - player.startTime) / 1000);
-            const mins = Math.floor(diff / 60).toString().padStart(2, '0');
-            const secs = (diff % 60).toString().padStart(2, '0');
-            document.getElementById('stat-time').innerText = `${mins}:${secs}`;
-        }
-
-        function toggleStats() {
-            const el = document.getElementById('stats-modal');
-            el.classList.toggle('hidden');
-            if (!el.classList.contains('hidden')) {
-                document.getElementById('stat-level').innerText = player.skill;
-                document.getElementById('stat-vision').innerText = player.vision + "m";
-                document.getElementById('stat-flags').innerText = player.flags;
-                document.getElementById('stat-steps').innerText = player.steps;
-                const skillBonus = Math.min(50, Math.floor(player.steps / 100)); 
-                document.getElementById('stat-skill').innerText = skillBonus + "%";
-            }
-        }
-
-        // --- 5. SAÍDA DO JOGO ---
-        function confirmExit() {
-            if(confirm("⚠️ ATENÇÃO: Quer mesmo sair do jogo?")) {
-                location.reload();
-            }
-        }
-
-        // --- 6. MERCADO ---
-        let marketListings = []; 
-
-        function toggleTrade() {
-            const el = document.getElementById('trade-modal');
-            el.classList.toggle('hidden');
-            if (!el.classList.contains('hidden')) renderMarket();
-        }
-
-        function listFlagForTrade() {
-            if (player.inventory.length === 0) { alert("Inventário vazio!"); return; }
-            if (player.energy < 5) { alert("Energia insuficiente (5%)!"); return; }
-            const index = Math.floor(Math.random() * player.inventory.length);
-            const prId = player.inventory[index];
-            player.inventory.splice(index, 1); 
-            marketListings.push({ owner: player.name, pr_id: prId, expires: Date.now() + (5 * 24 * 60 * 60 * 1000) });
-            player.energy -= 5;
-            updateHUD();
-            renderMarket();
-        }
-
-        function renderMarket() {
-            const list = document.getElementById('flag-list');
-            list.innerHTML = "";
-            if(marketListings.length === 0) {
-                list.innerHTML = "<div style='padding:10px; text-align:center; color:#555;'>Mercado vazio.</div>";
-                return;
-            }
-            marketListings.forEach((item, index) => {
-                const prName = prs.find(p => p.id === item.pr_id)?.name || "Loja Desconhecida";
-                list.innerHTML += `
-                    <div class="flag-item">
-                        <span>${prName}</span>
-                        <button onclick="buyFromMarket(${index})">COMPRAR</button>
-                    </div>
-                `;
-            });
-        }
-
-        function buyFromMarket(index) {
-            const item = marketListings[index];
-            if (player.energy < 2) { alert("Energia insuficiente."); return; }
-            player.energy -= 2;
-            player.flags++;
-            player.inventory.push(item.pr_id);
-            if (player.flags % 10 === 0) player.qrs.push({ id: Date.now(), pr_id: item.pr_id });
-            marketListings.splice(index, 1); 
-            updateHUD();
-            renderMarket();
-        }
-
-        // --- 7. QR CODE ---
-        function showMyQR() {
-            const el = document.getElementById('qr-modal');
-            const container = document.getElementById('my-qrs');
-            el.classList.toggle('hidden');
-            container.innerHTML = "";
-            if (player.qrs.length === 0) { 
-                container.innerHTML = "<p style='color:#aaa'>Ainda não tens QRs. Apanha 10 bandeiras!</p>"; 
-                return; 
-            }
-            player.qrs.forEach((qr, index) => {
-                const prName = prs.find(p => p.id === qr.pr_id)?.name || "Loja";
-                const div = document.createElement('div');
-                div.style.borderBottom = "1px solid #333";
-                div.style.paddingBottom = "10px";
-                div.innerHTML = `<b>${prName}</b> (Expira em ${new Date(qr.date).toLocaleDateString()})`;
-                const qrDiv = document.createElement('div');
-                qrDiv.className = "qr-container";
-                div.appendChild(qrDiv);
-                new QRCode(qrDiv, {
-                    text: `ZAP_QR_${qr.id}_${player.email}`,
-                    width: 128, height: 128,
-                    colorDark : "#000000", colorLight : "#ffffff",
-                    correctLevel : QRCode.CorrectLevel.H
-                });
-                const useBtn = document.createElement('button');
-                useBtn.innerText = "MOSTRAR AO LOJISTA";
-                useBtn.onclick = () => alert("Aponta a câmara do Lojista para este código!");
-                div.appendChild(useBtn);
-                container.appendChild(div);
-            });
-        }
-        function toggleQR() { document.getElementById('qr-modal').classList.toggle('hidden'); }
-
-        // --- 8. PAINEL DO PR (SIMPLIFICADO) ---
-        function showPRDashboard() {
-            document.getElementById('login-screen').classList.add('hidden');
-            document.getElementById('pr-dashboard').classList.remove('hidden');
-            renderPRDashboard();
-        }
-
-        function buyPack(type, value) {
-            let radius, count;
-            if (type === 'BRONZE') { radius = 5000; count = 50000; }
-            if (type === 'PRATA') { radius = 20000; count = 150000; }
-            if (type === 'OURO') { radius = 50000; count = 500000; }
-            if (type === 'PLATINA') { radius = 150000; count = 2000000; }
-
-            // Simples: Cria 2 PRs por pacote
-            for(let i=0; i<2; i++) {
-                const newPr = { 
-                    id: Date.now() + i, 
-                    name: "Minha Loja " + type + " #" + (i+1), 
-                    lat: 39.3999 + (Math.random()-0.5), 
-                    lng: -8.2245 + (Math.random()-0.5),
-                    pack: type, radius: radius, flagsLeft: count, color: "orange" 
-                };
-                prs.push(newPr);
-            }
-            alert(`Pack ${type} ativado! Criados 2 novos pontos.`);
-            renderPRDashboard();
-        }
-
-        function renderPRDashboard() {
-            const div = document.getElementById('pr-campaigns');
-            div.innerHTML = "";
-            prs.forEach(pr => {
-                div.innerHTML += `
-                    <div class="pr-item">
-                        <b>${pr.name}</b> (${pr.pack})<br>
-                        Bandeiras: ${pr.flagsLeft.toLocaleString()}<br>
-                        Raio: ${pr.radius/1000}km
-                    </div>
-                `;
-            });
-        }
-
-        function openScanner() {
-            const resultDiv = document.getElementById('scanner-result');
-            resultDiv.innerHTML = "📸 A apontar...";
-            setTimeout(() => {
-                const hasQr = player.qrs.length > 0;
-                if (hasQr) {
-                    resultDiv.innerHTML = "<span style='color:#0f0'>✅ SUCESSO! Cliente verificado.</span>";
-                    player.qrs.shift(); 
-                } else {
-                    resultDiv.innerHTML = "<span style='color:#f00'>❌ QR Inválido.</span>";
-                }
-            }, 1500);
-        }
-
-        // --- UTILS ---
-        function clearMarkers() { allMarkers.forEach(m => map.removeLayer(m)); allMarkers = []; }
-        
-        function getDistance(lat1, lon1, lat2, lon2) {
-            const R = 6371e3; 
-            const φ1 = lat1 * Math.PI/180; const φ2 = lat2 * Math.PI/180;
-            const Δφ = (lat2-lat1) * Math.PI/180; const Δλ = (lon2-lon1) * Math.PI/180;
-            const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ/2) * Math.sin(Δλ/2);
-            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-            return R * c; 
-        }
-        
-        function getIcon(color) {
-            let hexColor = color;
-            if(color === 'orange') hexColor = '#FFA500';
-            return L.divIcon({ 
-                className: 'custom-icon', 
-                html: `<div style="background:${hexColor}; width:20px; height:20px; border-radius:50%; border:2px solid white; box-shadow:0 0 5px ${hexColor};"></div>` 
-            });
-        }
-
-        // --- DRAG FUNCTIONALITY FOR MODALS ---
-        let draggedElement = null;
-        let initialX, initialY, currentX, currentY;
-        let xOffset = 0, yOffset = 0;
-
-        function dragStart(e, id) {
-            draggedElement = document.getElementById(id);
-            const rect = draggedElement.getBoundingClientRect();
-            xOffset = e.clientX - rect.left;
-            yOffset = e.clientY - rect.top;
-
-            document.addEventListener('mousemove', drag);
-            document.addEventListener('mouseup', dragEnd);
-            document.addEventListener('touchmove', dragTouch, {passive: false});
-            document.addEventListener('touchend', dragEnd);
-        }
-
-        function drag(e) {
-            if (draggedElement) {
-                e.preventDefault();
-                currentX = e.clientX - xOffset;
-                currentY = e.clientY - yOffset;
-                if(currentY < 0) currentY = 0;
-                draggedElement.style.left = currentX + "px";
-                draggedElement.style.top = currentY + "px";
-                draggedElement.style.transform = "none";
-            }
-        }
-
-        function dragTouch(e) {
-            if (draggedElement) {
-                e.preventDefault();
-                const touch = e.touches[0];
-                currentX = touch.clientX - xOffset;
-                currentY = touch.clientY - yOffset;
-                if(currentY < 0) currentY = 0;
-                draggedElement.style.left = currentX + "px";
-                draggedElement.style.top = currentY + "px";
-                draggedElement.style.transform = "none";
-            }
-        }
-
-        function dragEnd() {
-            initialX = currentX;
-            initialY = currentY;
-            draggedElement = null;
-            document.removeEventListener('mousemove', drag);
-            document.removeEventListener('mouseup', dragEnd);
-            document.removeEventListener('touchmove', dragTouch);
-            document.removeEventListener('touchend', dragEnd);
-        }
-
-    </script>
-</body>
-</html>
+    const DEFAULT_STATE = {
+      player: {
+        name: "",
+        username: "",
+        email: "",
+        lat: null,
+        lng: null,
+        energy: 100,
+        flags: 0,
+        qrs: [],
+        skill: 1,
+        vision: 5,
+        inventory: [],
+        avatarDataUrl: "",
+        steps: 0,
+        playTimeSeconds: 0,
+        playStartTimestamp: null
+      },
+      prs: [
+        // PRs padrão por lote (2 PRs por pacote + 1 PR com 2 pacotes por lote) — 3 campanhas iniciais
+        {
+          id: 101,
+          name: "Campanha Demo A1",
+          lat: 41.1496, lng: -8.6109,
+          pack: "MIN",
+          radius: 5000,
+          flagsLeft: 1000,
+          color: "purple", // PRs sempre da mesma cor (surpresa)
+          ownerEmail: "demo@empresa.com"
+        },
+        {
+          id: 102,
+          name: "Campanha Demo A2",
+          lat: 41.1550, lng: -8.6150,
+          pack: "MIN",
+          radius: 5000,
+          flagsLeft: 1000,
+          color: "purple",
+          ownerEmail: "demo@empresa.com"
+        },
+        {
+          id: 103,
+          name: "Campanha Demo
   
