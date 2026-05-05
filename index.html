@@ -8,279 +8,209 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
-body{background:#000;color:#0f0;font-family:'Courier New',monospace;overflow:hidden;
-  width:100vw;height:100vh;}
+body{background:#111;overflow:hidden;width:100vw;height:100vh;font-family:'Courier New',monospace;}
 
-/* ======= MAPA ======= */
-#mapa{position:fixed;top:0;left:0;width:100%;height:100%;z-index:1;}
-
-/* Escurecer o mapa fora do círculo de visão */
-#overlay-escuro{
-  position:fixed;top:0;left:0;width:100%;height:100%;
-  z-index:2;pointer-events:none;
+/* MAPA ocupa tudo */
+#mapa{position:fixed;top:0;left:0;width:100%;height:100%;z-index:1;
+  /* desactivar eventos de toque no mapa — só via joystick */
 }
 
-/* ======= AVATAR FIXO NO CENTRO ======= */
-#avatar-container{
-  position:fixed;
-  top:50%;left:50%;
-  transform:translate(-50%,-50%);
-  z-index:10;
+/* OVERLAY ESCURO (fog of war) */
+#fog{position:fixed;top:0;left:0;width:100%;height:100%;z-index:2;pointer-events:none;}
+
+/* AVATAR — move-se pelo ecrã */
+#avatar-wrap{
+  position:fixed;z-index:10;
   pointer-events:none;
+  transition:left .08s linear, top .08s linear;
 }
 
-/* CÍRCULO DE VISÃO */
-#circulo-visao{
+/* CÍRCULO DE VISÃO à volta do avatar */
+#circulo{
   position:absolute;
   border-radius:50%;
-  border:2px solid rgba(0,255,0,.5);
-  box-shadow:
-    0 0 0 2000px rgba(0,0,0,.75),
-    inset 0 0 20px rgba(0,255,0,.1),
-    0 0 20px rgba(0,255,0,.3);
+  border:2px solid rgba(0,255,0,.6);
   transform:translate(-50%,-50%);
   top:50%;left:50%;
-  transition:width .8s ease,height .8s ease,
-    box-shadow .8s ease, border-color .8s ease;
   pointer-events:none;
+  transition:width .6s ease,height .6s ease;
+  box-shadow:0 0 0 4000px rgba(0,0,0,.72),
+             0 0 20px rgba(0,255,0,.3);
 }
 
-/* AVATAR SVG ANIMADO */
-#avatar{
+/* SVG AVATAR */
+#avt{
   position:absolute;
   top:50%;left:50%;
   transform:translate(-50%,-50%);
-  width:48px;height:48px;
-  filter:drop-shadow(0 0 8px #0f0);
+  width:52px;height:64px;
   z-index:11;
+  filter:drop-shadow(0 0 8px #0f0);
 }
 
-/* ANIMAÇÃO DE ANDAR */
-@keyframes caminhar{
-  0%,100%{transform:translate(-50%,-55%);}
-  50%{transform:translate(-50%,-45%);}
+/* ===== JOYSTICK / CAIXA DE CONTROLO ===== */
+#caixa-controlo{
+  position:fixed;z-index:100;
+  background:rgba(0,0,0,.82);
+  border:2px solid #0f0;
+  border-radius:12px;
+  padding:10px;
+  cursor:move;
+  user-select:none;
+  box-shadow:0 0 15px rgba(0,255,0,.3);
+  /* posição inicial */
+  bottom:20px;right:20px;
+  width:auto;
 }
-@keyframes bracoDireito{
-  0%,100%{transform:rotate(-20deg);}
-  50%{transform:rotate(20deg);}
+#caixa-titulo{
+  font-size:.7rem;color:#0aa;text-align:center;margin-bottom:8px;
+  display:flex;justify-content:space-between;align-items:center;gap:8px;
 }
-@keyframes bracoEsquerdo{
-  0%,100%{transform:rotate(20deg);}
-  50%{transform:rotate(-20deg);}
+#btns-dir{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:4px;
 }
-@keyframes pernaDireita{
-  0%,100%{transform:rotate(20deg);}
-  50%{transform:rotate(-20deg);}
+.btn-dir{
+  background:#0a1a0a;border:1px solid #0f0;color:#0f0;
+  border-radius:6px;font-size:1.1rem;font-weight:bold;
+  cursor:pointer;user-select:none;
+  display:flex;align-items:center;justify-content:center;
+  transition:all .1s;
+  /* tamanho dinâmico */
+  width:var(--tam-btn,44px);height:var(--tam-btn,44px);
 }
-@keyframes pernaEsquerda{
-  0%,100%{transform:rotate(-20deg);}
-  50%{transform:rotate(20deg);}
+.btn-dir:active,.btn-dir.ativo{background:#0f3a0f;border-color:#0ff;color:#0ff;
+  box-shadow:0 0 8px #0ff;}
+#btn-tamanho-mais,.btn-tam{
+  background:#001a1a;border:1px solid #0aa;color:#0aa;
+  border-radius:6px;font-size:.8rem;font-weight:bold;
+  cursor:pointer;padding:3px 8px;
 }
-@keyframes cabecaMover{
-  0%,100%{transform:translateY(0);}
-  50%{transform:translateY(-2px);}
-}
-@keyframes corpoOscilar{
-  0%,100%{transform:translate(-50%,-50%) rotate(-1deg);}
-  50%{transform:translate(-50%,-50%) rotate(1deg);}
-}
+.btn-tam:hover{background:#003a3a;border-color:#0ff;color:#0ff;}
 
-/* PULSAR quando parado */
-@keyframes pulsarParado{
-  0%,100%{filter:drop-shadow(0 0 8px #0f0);}
-  50%{filter:drop-shadow(0 0 15px #0ff);}
-}
+/* LINHA DE TAMANHO A+/A- */
+#linha-tam{display:flex;gap:4px;margin-top:6px;justify-content:center;align-items:center;}
 
-/* BRILHO DO CIRCULO */
-@keyframes brilhoCirculo{
-  0%,100%{box-shadow:0 0 0 2000px rgba(0,0,0,.75),inset 0 0 20px rgba(0,255,0,.1),0 0 20px rgba(0,255,0,.3);}
-  50%{box-shadow:0 0 0 2000px rgba(0,0,0,.75),inset 0 0 30px rgba(0,255,0,.2),0 0 35px rgba(0,255,0,.5);}
-}
-
-/* HUD */
+/* HUD TOPO */
 #hud{
-  position:fixed;top:0;left:0;right:0;z-index:20;
-  background:rgba(0,0,0,.85);border-bottom:2px solid #0f0;
-  padding:8px 12px;display:flex;justify-content:space-between;align-items:center;
+  position:fixed;top:0;left:0;right:0;z-index:50;
+  background:rgba(0,0,0,.88);border-bottom:2px solid #0f0;
+  padding:6px 12px;display:flex;justify-content:space-between;align-items:center;
 }
-#hud-dir{display:flex;gap:8px;align-items:center;}
+.hud-stat{font-size:.72rem;color:#0aa;text-align:center;}
+.hud-val{font-size:.9rem;color:#0ff;font-weight:bold;display:block;}
 
-/* INFO VISAO */
-#info-visao{
-  position:fixed;bottom:80px;left:50%;transform:translateX(-50%);
-  z-index:20;background:rgba(0,0,0,.85);border:1px solid #0f0;
-  border-radius:20px;padding:4px 12px;font-size:.72rem;
-  text-align:center;white-space:nowrap;
+/* PAINEL SKILL (lateral) */
+#painel-skill{
+  position:fixed;left:10px;top:50%;transform:translateY(-50%);
+  z-index:50;background:rgba(0,0,0,.88);border:1px solid #0f0;
+  border-radius:8px;padding:10px;font-size:.72rem;min-width:120px;
 }
+.ps-linha{display:flex;justify-content:space-between;
+  padding:3px 0;border-bottom:1px solid #0a1a0a;}
+.ps-linha:last-child{border-bottom:none;}
+.ps-l{color:#0aa;}.ps-v{color:#0ff;font-weight:bold;}
 
-/* BARRA SKILL */
-#barra-skill-wrap{
-  position:fixed;bottom:50px;left:50%;transform:translateX(-50%);
-  z-index:20;width:220px;text-align:center;
-}
-#barra-skill-label{font-size:.68rem;color:#0aa;margin-bottom:3px;}
-#barra-skill{height:8px;background:#111;border-radius:4px;border:1px solid #0f0;overflow:hidden;}
-#barra-skill-fill{height:100%;background:linear-gradient(90deg,#0f0,#0ff);border-radius:4px;transition:width .5s;}
+/* BARRA PROGRESSO SKILL */
+#barra-sk{height:8px;background:#111;border-radius:4px;border:1px solid #0f0;
+  overflow:hidden;margin-top:6px;}
+#barra-sk-fill{height:100%;background:linear-gradient(90deg,#0f0,#0ff);
+  border-radius:4px;transition:width .4s;}
+#barra-sk-label{font-size:.62rem;color:#555;margin-top:3px;text-align:center;}
 
-/* GPS INFO */
-#gps-info{
-  position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
-  z-index:20;font-size:.68rem;color:#555;
-  background:rgba(0,0,0,.7);border-radius:12px;padding:3px 10px;
-}
-
-/* BOTÃO */
-.btn-hud{
-  background:#0f0;color:#000;border:none;padding:5px 10px;
-  font-size:.72rem;font-weight:bold;cursor:pointer;border-radius:4px;
-  font-family:'Courier New',monospace;
-}
-.btn-hud:hover{background:#0ff;}
-.btn-cinza{background:#111;color:#0f0;border:1px solid #0f0;}
-.btn-cinza:hover{background:#0a0a0a;}
-
-/* NOTIFICAÇÃO SKILL */
-#notif-skill{
+/* NOTIFICAÇÃO */
+#notif{
   position:fixed;top:70px;left:50%;transform:translateX(-50%);
-  z-index:30;background:#000;border:2px solid #0ff;border-radius:10px;
-  padding:10px 20px;text-align:center;display:none;
-  animation:fadeInOut 3s ease forwards;
-}
-@keyframes fadeInOut{
-  0%{opacity:0;transform:translate(-50%,-10px);}
-  15%{opacity:1;transform:translate(-50%,0);}
-  75%{opacity:1;}
-  100%{opacity:0;transform:translate(-50%,-10px);}
+  z-index:200;background:#000;border:2px solid #0ff;border-radius:10px;
+  padding:10px 20px;text-align:center;display:none;pointer-events:none;
 }
 
-/* MARCADOR SKILL NO MAPA */
-.marcador-skill{
-  background:rgba(0,255,0,.2);border:2px solid #0f0;
-  border-radius:50%;cursor:pointer;
-  animation:pulsar-skill 1.5s ease-in-out infinite alternate;
-}
-@keyframes pulsar-skill{
-  from{transform:scale(1);box-shadow:0 0 5px #0f0;}
-  to{transform:scale(1.15);box-shadow:0 0 15px #0ff;}
+/* GPS */
+#gps-info{
+  position:fixed;bottom:5px;left:50%;transform:translateX(-50%);
+  z-index:50;font-size:.65rem;color:#555;
+  background:rgba(0,0,0,.7);border-radius:12px;padding:2px 8px;
 }
 
-/* PAINEL LATERAL (info do avatar) */
-#painel-avatar{
-  position:fixed;top:50%;right:10px;transform:translateY(-50%);
-  z-index:20;background:rgba(0,0,0,.88);border:1px solid #0f0;
-  border-radius:8px;padding:12px;font-size:.72rem;min-width:110px;
+/* SKILL LEVEL TAG */
+#skill-tag{
+  position:fixed;bottom:5px;left:10px;z-index:50;
+  background:rgba(0,0,0,.8);border:1px solid #0f0;border-radius:8px;
+  padding:4px 10px;font-size:.72rem;color:#0f0;
 }
-#painel-avatar .linha{
-  display:flex;justify-content:space-between;
-  margin:3px 0;border-bottom:1px solid #111;padding-bottom:3px;
-}
-#painel-avatar .linha:last-child{border-bottom:none;}
-.pa-label{color:#0aa;}
-.pa-val{color:#0ff;font-weight:bold;}
 
-/* LOADING GPS */
-#loading-gps{
-  position:fixed;top:0;left:0;right:0;bottom:0;z-index:100;
-  background:rgba(0,0,0,.9);display:flex;flex-direction:column;
-  align-items:center;justify-content:center;text-align:center;
-}
-#loading-gps.oculto{display:none;}
-@keyframes girar{from{transform:rotate(0)}to{transform:rotate(360deg)}}
-.spinner{width:40px;height:40px;border:3px solid #111;border-top-color:#0f0;
-  border-radius:50%;animation:girar 1s linear infinite;margin-bottom:15px;}
+/* MAPA não deve capturar eventos de teclado */
+.leaflet-container{outline:none;}
 </style>
 </head>
 <body>
 
-<!-- LOADING GPS -->
-<div id="loading-gps">
-  <div class="spinner"></div>
-  <p style="color:#0f0;font-size:1rem;margin-bottom:8px;">📡 A obter localização GPS...</p>
-  <p style="color:#0aa;font-size:.78rem;margin-bottom:15px;">Permite o acesso à localização para jogar</p>
-  <button class="btn-hud btn-cinza" onclick="usarPosicaoPadrao()" style="padding:8px 16px;">
-    Continuar sem GPS (posição demo)
-  </button>
-</div>
-
 <!-- MAPA -->
 <div id="mapa"></div>
 
-<!-- OVERLAY ESCURO (cria o efeito de "névoa de guerra") -->
-<canvas id="overlay-escuro"></canvas>
+<!-- FOG OF WAR -->
+<canvas id="fog"></canvas>
 
-<!-- AVATAR FIXO NO CENTRO DO ECRÃ -->
-<div id="avatar-container">
+<!-- AVATAR (move-se no ecrã) -->
+<div id="avatar-wrap">
   <!-- CÍRCULO DE VISÃO -->
-  <div id="circulo-visao"></div>
+  <div id="circulo"></div>
 
-  <!-- AVATAR SVG ANIMADO -->
-  <svg id="avatar" viewBox="0 0 48 60" xmlns="http://www.w3.org/2000/svg">
+  <!-- AVATAR SVG -->
+  <svg id="avt" viewBox="0 0 52 64" xmlns="http://www.w3.org/2000/svg">
     <!-- SOMBRA -->
-    <ellipse cx="24" cy="56" rx="10" ry="3" fill="rgba(0,0,0,.4)"/>
+    <ellipse cx="26" cy="61" rx="11" ry="3" fill="rgba(0,0,0,.5)"/>
 
-    <!-- GRUPO CORPO (oscila) -->
-    <g id="corpo-grupo" style="transform-origin:24px 30px;">
-
-      <!-- PERNA ESQUERDA -->
-      <g id="perna-esq" style="transform-origin:21px 38px;">
-        <rect x="18" y="38" width="6" height="14" rx="3" fill="#0a5a0a"/>
-        <!-- PÉ -->
-        <ellipse cx="20" cy="51" rx="5" ry="3" fill="#050"/>
+    <!-- CORPO GRUPO -->
+    <g id="g-corpo">
+      <!-- PERNAS -->
+      <g id="g-perna-e" style="transform-origin:23px 42px">
+        <rect x="19" y="40" width="7" height="16" rx="3.5" fill="#0a4a0a"/>
+        <ellipse cx="22" cy="55" rx="6" ry="3" fill="#083a08"/>
       </g>
-
-      <!-- PERNA DIREITA -->
-      <g id="perna-dir" style="transform-origin:27px 38px;">
-        <rect x="24" y="38" width="6" height="14" rx="3" fill="#0a5a0a"/>
-        <!-- PÉ -->
-        <ellipse cx="28" cy="51" rx="5" ry="3" fill="#050"/>
+      <g id="g-perna-d" style="transform-origin:29px 42px">
+        <rect x="26" y="40" width="7" height="16" rx="3.5" fill="#0a4a0a"/>
+        <ellipse cx="30" cy="55" rx="6" ry="3" fill="#083a08"/>
       </g>
-
       <!-- TORSO -->
-      <rect x="17" y="24" width="14" height="16" rx="4" fill="#0f6a0f"/>
-      <!-- DETALHE TORSO -->
-      <rect x="20" y="27" width="8" height="2" rx="1" fill="#0ff" opacity=".4"/>
-      <rect x="20" y="31" width="8" height="1" rx=".5" fill="#0ff" opacity=".3"/>
-
-      <!-- BRACO ESQUERDO -->
-      <g id="braco-esq" style="transform-origin:17px 26px;">
-        <rect x="10" y="24" width="7" height="10" rx="3" fill="#0d5a0d"/>
-        <!-- MÃO -->
-        <circle cx="13" cy="35" r="3" fill="#0a4a0a"/>
+      <rect x="17" y="26" width="18" height="16" rx="5" fill="#0d6a0d"/>
+      <rect x="21" y="29" width="10" height="2" rx="1" fill="#0ff" opacity=".5"/>
+      <rect x="21" y="33" width="10" height="1.5" rx=".75" fill="#0ff" opacity=".3"/>
+      <!-- BRAÇOS -->
+      <g id="g-braco-e" style="transform-origin:17px 28px">
+        <rect x="9" y="26" width="8" height="12" rx="4" fill="#0b5a0b"/>
+        <circle cx="13" cy="39" r="3.5" fill="#094a09"/>
       </g>
-
-      <!-- BRACO DIREITO -->
-      <g id="braco-dir" style="transform-origin:31px 26px;">
-        <rect x="31" y="24" width="7" height="10" rx="3" fill="#0d5a0d"/>
-        <!-- MÃO -->
-        <circle cx="35" cy="35" r="3" fill="#0a4a0a"/>
+      <g id="g-braco-d" style="transform-origin:35px 28px">
+        <rect x="35" y="26" width="8" height="12" rx="4" fill="#0b5a0b"/>
+        <circle cx="39" cy="39" r="3.5" fill="#094a09"/>
       </g>
-
       <!-- PESCOÇO -->
-      <rect x="22" y="20" width="4" height="6" rx="2" fill="#0d5a0d"/>
-
+      <rect x="23" y="22" width="6" height="6" rx="3" fill="#0b5a0b"/>
       <!-- CABEÇA -->
-      <g id="cabeca" style="transform-origin:24px 14px;">
-        <!-- Cabeça base -->
-        <circle cx="24" cy="14" r="10" fill="#0f6a0f"/>
-        <!-- Capacete/Boné -->
-        <ellipse cx="24" cy="5" rx="9" ry="4" fill="#050"/>
-        <rect x="15" y="5" width="18" height="4" rx="2" fill="#050"/>
+      <g id="g-cabeca" style="transform-origin:26px 15px">
+        <!-- Base -->
+        <circle cx="26" cy="15" r="11" fill="#0d6a0d"/>
+        <!-- Capacete -->
+        <ellipse cx="26" cy="5.5" rx="10" ry="4.5" fill="#050"/>
+        <rect x="16" y="5" width="20" height="5" rx="2" fill="#050"/>
         <!-- Viseira -->
-        <rect x="17" y="8" width="14" height="3" rx="1.5" fill="#0ff" opacity=".6"/>
-        <!-- OLHOS -->
-        <circle cx="20" cy="14" r="2.5" fill="#000"/>
-        <circle cx="28" cy="14" r="2.5" fill="#000"/>
-        <circle cx="20" cy="14" r="1.5" fill="#0ff"/>
-        <circle cx="28" cy="14" r="1.5" fill="#0ff"/>
-        <!-- BRILHO OLHOS -->
-        <circle cx="20.8" cy="13.2" r=".6" fill="#fff"/>
-        <circle cx="28.8" cy="13.2" r=".6" fill="#fff"/>
-        <!-- BOCA -->
-        <path d="M 21 18 Q 24 20 27 18" stroke="#0ff" stroke-width="1" fill="none" stroke-linecap="round" opacity=".6"/>
-        <!-- ANTENA -->
-        <line x1="24" y1="4" x2="24" y2="0" stroke="#0f0" stroke-width="1.5"/>
-        <circle cx="24" cy="0" r="2" fill="#0ff">
-          <animate attributeName="opacity" values="1;.3;1" dur="1.5s" repeatCount="indefinite"/>
+        <rect x="18" y="10" width="16" height="3.5" rx="1.75" fill="#0ff" opacity=".55"/>
+        <!-- Olhos -->
+        <circle cx="21" cy="16" r="3" fill="#000"/>
+        <circle cx="31" cy="16" r="3" fill="#000"/>
+        <circle cx="21" cy="16" r="1.8" fill="#0ff" id="olho-e"/>
+        <circle cx="31" cy="16" r="1.8" fill="#0ff" id="olho-d"/>
+        <circle cx="21.8" cy="15.2" r=".7" fill="#fff"/>
+        <circle cx="31.8" cy="15.2" r=".7" fill="#fff"/>
+        <!-- Boca -->
+        <path d="M 22 20 Q 26 22.5 30 20" stroke="#0ff" stroke-width="1.2" fill="none" stroke-linecap="round" opacity=".6"/>
+        <!-- Antena -->
+        <line x1="26" y1="4" x2="26" y2="0" stroke="#0f0" stroke-width="1.5"/>
+        <circle cx="26" cy="0" r="2.5" fill="#0ff">
+          <animate attributeName="opacity" values="1;.2;1" dur="1.4s" repeatCount="indefinite"/>
+          <animate attributeName="r" values="2.5;3.5;2.5" dur="1.4s" repeatCount="indefinite"/>
         </circle>
       </g>
     </g>
@@ -289,539 +219,622 @@ body{background:#000;color:#0f0;font-family:'Courier New',monospace;overflow:hid
 
 <!-- HUD -->
 <div id="hud">
-  <div>
-    <div style="font-weight:bold;font-size:.82rem;" id="hud-nome">👤 ---</div>
-    <div style="font-size:.62rem;color:#0aa;" id="hud-pos">📍 ---</div>
+  <div class="hud-stat">👤 <span class="hud-val" id="hud-nome">Jogador</span></div>
+  <div class="hud-stat">🏴 <span class="hud-val" id="hud-flags">0</span></div>
+  <div class="hud-stat">⚡ <span class="hud-val" id="hud-en">100%</span></div>
+  <div class="hud-stat">🎯 Skill <span class="hud-val" id="hud-skill">0</span></div>
+  <div class="hud-stat">👁️ <span class="hud-val" id="hud-visao">5m</span></div>
+</div>
+
+<!-- PAINEL SKILL -->
+<div id="painel-skill">
+  <div style="color:#0f0;font-weight:bold;text-align:center;margin-bottom:6px;font-size:.78rem;">📊 PROGRESSO</div>
+  <div class="ps-linha"><span class="ps-l">Nível</span><span class="ps-v" id="ps-nivel">1</span></div>
+  <div class="ps-linha"><span class="ps-l">Skill</span><span class="ps-v" id="ps-skill">0</span></div>
+  <div class="ps-linha"><span class="ps-l">Visão</span><span class="ps-v" id="ps-visao">5m</span></div>
+  <div class="ps-linha"><span class="ps-l">Flags</span><span class="ps-v" id="ps-flags">0</span></div>
+  <div class="ps-linha"><span class="ps-l">Prox. Skill</span><span class="ps-v" id="ps-prox">500</span></div>
+  <div id="barra-sk"><div id="barra-sk-fill" style="width:0%"></div></div>
+  <div id="barra-sk-label">0 / 500 flags</div>
+</div>
+
+<!-- CAIXA DE CONTROLO (arrastável) -->
+<div id="caixa-controlo">
+  <div id="caixa-titulo">
+    <span>🕹️ MOVIMENTO</span>
+    <span style="cursor:move;color:#555;" title="Arrasta para mover">⠿</span>
   </div>
-  <div id="hud-dir">
-    <button class="btn-hud btn-cinza" onclick="ganharSkill(10)" style="padding:5px 8px;font-size:.7rem;">+Skill (teste)</button>
-    <button class="btn-hud btn-cinza" id="btn-seguir" onclick="toggleSeguir()" style="padding:5px 8px;font-size:.7rem;">📍 Centrar</button>
-    <button class="btn-hud btn-cinza" onclick="togglePainel()" style="padding:5px 8px;font-size:.7rem;">📊</button>
+  <div id="btns-dir">
+    <div></div>
+    <div class="btn-dir" id="btn-cima"    data-dir="cima"    onpointerdown="pressDir('cima')"    onpointerup="soltarDir('cima')"   ontouchstart="pressDir('cima')" ontouchend="soltarDir('cima')">▲</div>
+    <div></div>
+    <div class="btn-dir" id="btn-esq"     data-dir="esq"     onpointerdown="pressDir('esq')"     onpointerup="soltarDir('esq')"    ontouchstart="pressDir('esq')"  ontouchend="soltarDir('esq')">◄</div>
+    <div class="btn-dir" id="btn-centro"  style="font-size:.65rem;color:#555;">STOP</div>
+    <div class="btn-dir" id="btn-dir"     data-dir="dir"     onpointerdown="pressDir('dir')"     onpointerup="soltarDir('dir')"    ontouchstart="pressDir('dir')"  ontouchend="soltarDir('dir')">►</div>
+    <div></div>
+    <div class="btn-dir" id="btn-baixo"   data-dir="baixo"   onpointerdown="pressDir('baixo')"   onpointerup="soltarDir('baixo')"  ontouchstart="pressDir('baixo')" ontouchend="soltarDir('baixo')">▼</div>
+    <div></div>
+  </div>
+  <div id="linha-tam">
+    <button class="btn-tam" onclick="mudarTamBtn(-1)" title="Diminuir botões">A−</button>
+    <span style="font-size:.65rem;color:#555;" id="tam-label">44px</span>
+    <button class="btn-tam" onclick="mudarTamBtn(+1)" title="Aumentar botões">A+</button>
   </div>
 </div>
 
-<!-- PAINEL LATERAL -->
-<div id="painel-avatar">
-  <div style="color:#0f0;font-weight:bold;text-align:center;margin-bottom:6px;">👤 AVATAR</div>
-  <div class="linha"><span class="pa-label">Nível</span><span class="pa-val" id="pa-nivel">1</span></div>
-  <div class="linha"><span class="pa-label">Skill</span><span class="pa-val" id="pa-skill">0</span></div>
-  <div class="linha"><span class="pa-label">Visão</span><span class="pa-val" id="pa-visao">5m</span></div>
-  <div class="linha"><span class="pa-label">Flags</span><span class="pa-val" id="pa-flags">0</span></div>
-  <div class="linha"><span class="pa-label">Energia</span><span class="pa-val" id="pa-energia">100%</span></div>
+<!-- NOTIFICAÇÃO -->
+<div id="notif">
+  <div style="font-size:1.1rem;" id="notif-ico">🎯</div>
+  <div style="color:#0ff;font-weight:bold;" id="notif-txt">---</div>
+  <div style="color:#0aa;font-size:.75rem;" id="notif-sub">---</div>
 </div>
 
-<!-- INFO VISÃO (por baixo do avatar) -->
-<div id="info-visao">
-  👁️ Visão: <b id="info-visao-val" style="color:#0ff;">5m</b>
-  &nbsp;·&nbsp;
-  🎯 Skill: <b id="info-skill-val" style="color:#ff0;">0</b>
-</div>
-
-<!-- BARRA SKILL -->
-<div id="barra-skill-wrap">
-  <div id="barra-skill-label">Próximo nível de visão: <span id="skill-prox">10</span> pts</div>
-  <div id="barra-skill">
-    <div id="barra-skill-fill" style="width:0%;"></div>
-  </div>
-</div>
-
-<!-- GPS INFO -->
+<!-- GPS -->
 <div id="gps-info">📡 GPS: a iniciar...</div>
-
-<!-- NOTIFICAÇÃO SKILL -->
-<div id="notif-skill">
-  <div style="font-size:1.2rem;margin-bottom:4px;">🎯</div>
-  <div id="notif-texto" style="color:#0ff;font-weight:bold;font-size:.88rem;"></div>
-  <div id="notif-sub" style="color:#0aa;font-size:.75rem;margin-top:2px;"></div>
-</div>
+<div id="skill-tag">👁️ 5m visão · Skill 0</div>
 
 <script>
 'use strict';
 
 // ============================================================
-// CONFIGURAÇÃO
+// SISTEMA DE SKILL / VISÃO
 // ============================================================
-const PASSO_SKILL = 10;    // pontos skill para +1m de visão
-const VISAO_MIN   = 5;     // metros mínimos de visão
-const VISAO_MAX   = 100;   // metros máximos de visão
-const METROS_POR_PIXEL = 1; // será calculado dinamicamente
+/*
+  REGRAS DO SKILL:
+  - Cada nível de skill requer o dobro de bandeiras com energia do anterior
+  - Nível 1:  500 bandeiras → +1 skill
+  - Nível 2: 1000 bandeiras → +1 skill
+  - Nível 3: 2000 bandeiras → +1 skill
+  - Nível 4: 4000 bandeiras → +1 skill
+  - ...sempre a dobrar
+
+  VISÃO:
+  - 10 skill = 1 metro de visão
+  - Começa em 5 metros (0 skill)
+  - Máximo 100 metros (950 skill)
+*/
+
+const VISAO_MIN = 5;
+const VISAO_MAX = 100;
+const SKILL_POR_METRO = 10; // 10 skill = 1 metro
+
+// Limites de flags por nível de skill (500, 1000, 2000, 4000...)
+function flagsParaProxSkill(skillAtual){
+  // Primeiro nível = 500, depois dobra sempre
+  return 500 * Math.pow(2, skillAtual);
+}
+
+function calcularVisao(skill){
+  const metros = VISAO_MIN + Math.floor(skill / SKILL_POR_METRO);
+  return Math.min(VISAO_MAX, metros);
+}
 
 // ============================================================
-// ESTADO DO AVATAR
+// ESTADO
 // ============================================================
-let avatar = {
-  nome:     'Jogador',
-  lat:      39.5,
-  lng:      -8.0,
-  skill:    0,
-  skillTotal:0,
-  nivel:    1,
-  visao:    VISAO_MIN,   // metros de visão actual
-  flags:    0,
-  energia:  100,
-  andando:  false,
+const G = id => document.getElementById(id);
+
+let av = {
+  // Posição no ECRÃ (px)
+  x: window.innerWidth  / 2,
+  y: window.innerHeight / 2,
+  // Posição no MUNDO (lat/lng)
+  lat: 39.5,
+  lng: -8.0,
+  // Stats
+  nome:       'Jogador',
+  flags:      0,          // total de flags apanhadas
+  flagsEnerg: 0,          // flags com energia (para skill)
+  skill:      0,
+  energia:    100,
+  visao:      VISAO_MIN,
+  nivel:      1,
+  // Movimento
+  vx: 0, vy: 0,
+  velocidade: 2,          // px por frame
+  andando: false,
+  dir: 1,                 // 1=dir, -1=esq
 };
 
-let mapaL       = null;
-let watchId     = null;
-let gpsFunciona = false;
-let seguirGPS   = true;
-let marcasBingo = [];
-let timerAnim   = null;
-let painelVisivel = true;
+// Threshold de flags para o próximo skill
+let flagsLimiteSkill = flagsParaProxSkill(0); // 500
 
 // ============================================================
-// INICIALIZAR MAPA
+// MAPA LEAFLET
 // ============================================================
+let mapaL    = null;
+let watchGPS = null;
+let gpsFunciona = false;
+
 function iniciarMapa(){
-  mapaL = L.map('mapa', {
-    center:       [avatar.lat, avatar.lng],
-    zoom:         18,       // zoom próximo para mostrar a área de visão
-    zoomControl:  true,
-    attributionControl: false,
+  mapaL = L.map('mapa',{
+    center:[av.lat, av.lng],
+    zoom:18,
+    zoomControl:true,
+    attributionControl:false,
+    // IMPORTANTE: desactivar interacções de toque/rato no mapa
+    // O avatar move-se → o mapa segue o avatar
+    dragging:false,
+    touchZoom:true,
+    scrollWheelZoom:true,
+    doubleClickZoom:false,
+    keyboard:false,
   });
 
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
-    attribution:'© OpenStreetMap',
-    maxZoom:20,
+    attribution:'© OpenStreetMap', maxZoom:20
   }).addTo(mapaL);
 
-  // Quando o mapa se move, actualizar posição se seguirGPS estiver off
-  mapaL.on('move', () => {
-    if(!seguirGPS){
-      const c = mapaL.getCenter();
-      avatar.lat = c.lat;
-      avatar.lng = c.lng;
-      actualizarOverlay();
-    }
-  });
+  // Colocar algumas bandeiras no mapa para apanhar
+  colocarBandeirasDemo();
 
-  mapaL.on('zoom', () => {
-    actualizarCirculoVisao();
-    actualizarOverlay();
-  });
-
-  // Iniciar GPS
+  // GPS
   iniciarGPS();
 }
 
 // ============================================================
-// GPS REAL
+// GPS (posição inicial)
 // ============================================================
 function iniciarGPS(){
   if(!navigator.geolocation){
-    G('gps-info').innerText='❌ GPS não suportado — modo demo';
-    usarPosicaoPadrao();
+    G('gps-info').innerText='❌ GPS não suportado — demo';
     return;
   }
-
-  watchId = navigator.geolocation.watchPosition(
-    pos => {
-      const lat = pos.coords.latitude;
-      const lng = pos.coords.longitude;
-      const acc = Math.round(pos.coords.accuracy);
-
-      // Esconder loading
-      G('loading-gps').classList.add('oculto');
-      gpsFunciona = true;
-
-      // Actualizar posição do avatar
-      avatar.lat = lat;
-      avatar.lng = lng;
-
-      // Seguir GPS
-      if(seguirGPS) mapaL.setView([lat, lng], mapaL.getZoom());
-
-      // Info GPS
-      G('gps-info').innerText = `📡 GPS: ${lat.toFixed(5)}, ${lng.toFixed(5)} (±${acc}m)`;
-      G('hud-pos').innerText  = `📍 ${lat.toFixed(4)}, ${lng.toFixed(4)}`;
-
-      actualizarCirculoVisao();
-      actualizarOverlay();
-      actualizarPainel();
+  navigator.geolocation.getCurrentPosition(
+    pos=>{
+      gpsFunciona=true;
+      av.lat=pos.coords.latitude;
+      av.lng=pos.coords.longitude;
+      mapaL.setView([av.lat,av.lng],18);
+      G('gps-info').innerText=`✅ GPS: ${av.lat.toFixed(5)}, ${av.lng.toFixed(5)}`;
+      // Recolocar bandeiras na posição real
+      mapaL.eachLayer(l=>{if(l._icone_bandeira) mapaL.removeLayer(l);});
+      colocarBandeirasDemo();
     },
-    err => {
-      gpsFunciona = false;
-      let m = '⚠️ GPS indisponível';
-      if(err.code===1) m='❌ GPS bloqueado — permite localização';
-      G('gps-info').innerText = m;
-      // Modo demo
-      usarPosicaoPadrao();
-    },
-    {enableHighAccuracy:true, maximumAge:2000, timeout:10000}
+    ()=>{ G('gps-info').innerText='⚠️ GPS indisponível — modo demo'; },
+    {enableHighAccuracy:true,timeout:8000}
   );
 }
 
-function usarPosicaoPadrao(){
-  G('loading-gps').classList.add('oculto');
-  avatar.lat = 38.7223; avatar.lng = -9.1393; // Lisboa
-  mapaL.setView([avatar.lat, avatar.lng], 18);
-  G('gps-info').innerText='📍 Modo demo — arrasta o mapa para "andar"';
-  G('hud-pos').innerText='📍 Demo (Lisboa)';
-  actualizarCirculoVisao();
-  actualizarOverlay();
+// ============================================================
+// BANDEIRAS DEMO NO MAPA
+// ============================================================
+const bandeirasNoMapa = [];
+
+function colocarBandeirasDemo(){
+  // Colocar 20 bandeiras em volta do ponto inicial
+  for(let i=0;i<20;i++){
+    const ang  = Math.random()*2*Math.PI;
+    const dist = 30+Math.random()*120; // metros
+    const dLat = (dist/111000)*Math.cos(ang);
+    const dLng = (dist/(111000*Math.cos(av.lat*Math.PI/180)))*Math.sin(ang);
+    const lat2 = av.lat+dLat;
+    const lng2 = av.lng+dLng;
+    const temEnergia = Math.random()>0.4;
+
+    criarBandeira(lat2,lng2,temEnergia);
+  }
+}
+
+function criarBandeira(lat,lng,temEnergia){
+  const cor  = temEnergia?'#0ff':'#f00';
+  const emj  = temEnergia?'⚡':'🏴';
+  const ic   = L.divIcon({className:'',
+    html:`<div style="background:${cor};color:#000;width:22px;height:22px;border-radius:50%;
+      display:flex;align-items:center;justify-content:center;font-size:.8rem;
+      border:2px solid #fff;box-shadow:0 0 8px ${cor};cursor:pointer;">${emj}</div>`,
+    iconSize:[22,22],iconAnchor:[11,11]
+  });
+  const m = L.marker([lat,lng],{icon:ic}).addTo(mapaL);
+  m._icone_bandeira = true;
+  m._temEnergia = temEnergia;
+  bandeirasNoMapa.push({marker:m,lat,lng,energia:temEnergia,apanhada:false});
+}
+
+// VERIFICAR SE O AVATAR APANHOU ALGUMA BANDEIRA
+function verificarApanharBandeiras(){
+  const raioApanhar = 15; // metros — avatar apanha bandeiras neste raio
+  bandeirasNoMapa.forEach(b=>{
+    if(b.apanhada) return;
+    const dx = (av.lng-b.lng)*111000*Math.cos(av.lat*Math.PI/180);
+    const dy = (av.lat-b.lat)*111000;
+    const dist = Math.sqrt(dx*dx+dy*dy);
+    if(dist<raioApanhar){
+      b.apanhada=true;
+      mapaL.removeLayer(b.marker);
+      av.flags++;
+      if(b.energia){
+        av.flagsEnerg++;
+        av.energia=Math.min(100,av.energia+5);
+        verificarSkill();
+      }
+      actualizarHUD();
+      // Repor nova bandeira após 5s
+      setTimeout(()=>{
+        const ang=Math.random()*2*Math.PI;
+        const d=40+Math.random()*100;
+        const la=av.lat+(d/111000)*Math.cos(ang);
+        const lo=av.lng+(d/(111000*Math.cos(av.lat*Math.PI/180)))*Math.sin(ang);
+        b.lat=la; b.lng=lo; b.apanhada=false; b.energia=Math.random()>0.4;
+        criarBandeiraNova(b);
+      },5000);
+    }
+  });
+}
+
+function criarBandeiraNova(b){
+  const cor=b.energia?'#0ff':'#f00';
+  const emj=b.energia?'⚡':'🏴';
+  const ic=L.divIcon({className:'',
+    html:`<div style="background:${cor};color:#000;width:22px;height:22px;border-radius:50%;
+      display:flex;align-items:center;justify-content:center;font-size:.8rem;
+      border:2px solid #fff;box-shadow:0 0 8px ${cor};">${emj}</div>`,
+    iconSize:[22,22],iconAnchor:[11,11]
+  });
+  b.marker=L.marker([b.lat,b.lng],{icon:ic}).addTo(mapaL);
+  b.marker._icone_bandeira=true;
+  b.marker._temEnergia=b.energia;
+}
+
+// ============================================================
+// SISTEMA DE SKILL (verificar progresso)
+// ============================================================
+function verificarSkill(){
+  if(av.flagsEnerg >= flagsLimiteSkill){
+    // Ganhar 1 ponto de skill
+    av.flagsEnerg -= flagsLimiteSkill;
+    av.skill++;
+    flagsLimiteSkill = flagsParaProxSkill(av.skill);
+    const novaVisao = calcularVisao(av.skill);
+    const visaoAnt  = av.visao;
+    av.visao = novaVisao;
+    av.nivel = Math.floor(av.skill/10)+1;
+
+    // Notificação
+    let txt = `🎯 Skill ${av.skill} alcançado!`;
+    let sub = `Próximo: ${flagsLimiteSkill.toLocaleString('pt-PT')} bandeiras`;
+    if(novaVisao > visaoAnt){
+      txt = `👁️ Visão aumentou para ${novaVisao}m!`;
+      sub = `Skill ${av.skill} · Próxima visão com mais ${SKILL_POR_METRO} skill`;
+    }
+    mostrarNotif('🎯',txt,sub);
+    actualizarCirculo();
+    actualizarFog();
+    G('skill-tag').innerText=`👁️ ${novaVisao}m visão · Skill ${av.skill}`;
+  }
   actualizarPainel();
 }
 
 // ============================================================
-// CÍRCULO DE VISÃO
+// MOVIMENTO DO AVATAR
 // ============================================================
-function actualizarCirculoVisao(){
-  if(!mapaL) return;
-  const visaoM   = avatar.visao; // metros
-  const pixeis   = calcularPixeisPorMetro() * visaoM;
-  const diam     = Math.max(80, pixeis * 2); // diâmetro em px, mínimo 80px
+const teclasPremidas = new Set();
+const dirAtiva = {cima:false,baixo:false,esq:false,dir:false};
 
-  const circ = G('circulo-visao');
+// Teclado
+document.addEventListener('keydown', e=>{
+  const m = {ArrowUp:'cima',ArrowDown:'baixo',ArrowLeft:'esq',ArrowRight:'dir',
+              'w':'cima','s':'baixo','a':'esq','d':'dir'};
+  if(m[e.key]){ dirAtiva[m[e.key]]=true; e.preventDefault(); }
+});
+document.addEventListener('keyup', e=>{
+  const m = {ArrowUp:'cima',ArrowDown:'baixo',ArrowLeft:'esq',ArrowRight:'dir',
+              'w':'cima','s':'baixo','a':'esq','d':'dir'};
+  if(m[e.key]){ dirAtiva[m[e.key]]=false; }
+});
 
-  // Cor varia com o nível de visão
-  const progresso = (visaoM - VISAO_MIN) / (VISAO_MAX - VISAO_MIN);
-  const r1 = Math.round(0 + progresso * 0);
-  const g1 = Math.round(255);
-  const b1 = Math.round(0 + progresso * 255);
-  const corBorda = `rgb(${r1},${g1},${b1})`;
+// Botões tácteis / rato
+function pressDir(d){ dirAtiva[d]=true;  G('btn-'+d)?.classList.add('ativo'); }
+function soltarDir(d){ dirAtiva[d]=false; G('btn-'+d)?.classList.remove('ativo'); }
 
-  circ.style.width  = diam + 'px';
-  circ.style.height = diam + 'px';
-  circ.style.borderColor = corBorda;
-  circ.style.boxShadow = `
-    0 0 0 2000px rgba(0,0,0,.78),
-    inset 0 0 ${20+progresso*30}px rgba(${r1},${g1},${b1},.15),
-    0 0 ${20+progresso*40}px rgba(${r1},${g1},${b1},.4)
-  `;
-  circ.style.animation = `brilhoCirculo ${2-progresso}s ease-in-out infinite`;
-}
-
-function calcularPixeisPorMetro(){
-  if(!mapaL) return 1;
-  // Calcular quantos pixéis = 1 metro no zoom actual
-  const zoom     = mapaL.getZoom();
-  const lat      = mapaL.getCenter().lat;
-  const ppm      = 156543.03392 * Math.cos(lat*Math.PI/180) / Math.pow(2,zoom);
-  return 1 / ppm; // pixéis por metro
+// Tamanho dos botões
+let tamBtn = 44;
+function mudarTamBtn(delta){
+  tamBtn = Math.max(32, Math.min(80, tamBtn+delta*6));
+  document.documentElement.style.setProperty('--tam-btn', tamBtn+'px');
+  G('tam-label').innerText = tamBtn+'px';
+  document.querySelectorAll('.btn-dir').forEach(b=>{ b.style.width=tamBtn+'px'; b.style.height=tamBtn+'px'; });
 }
 
 // ============================================================
-// OVERLAY ESCURO (fog of war)
+// LOOP PRINCIPAL
 // ============================================================
-function actualizarOverlay(){
-  const canvas = G('overlay-escuro');
-  const ctx    = canvas.getContext('2d');
-  const W      = window.innerWidth;
-  const H      = window.innerHeight;
-  canvas.width  = W;
-  canvas.height = H;
+let animT = 0;
+let ultimoFrame = 0;
 
-  const cx = W/2;
-  const cy = H/2;
+function loop(ts){
+  requestAnimationFrame(loop);
+  const dt = Math.min(ts-ultimoFrame, 50);
+  ultimoFrame = ts;
+  animT += dt * 0.001;
 
-  const visaoM  = avatar.visao;
-  const raio    = Math.max(40, calcularPixeisPorMetro() * visaoM);
+  // Calcular velocidade
+  const vel = av.velocidade * (dt/16);
+  let mx=0, my=0;
 
-  // Escurecer tudo
-  ctx.clearRect(0,0,W,H);
-  ctx.fillStyle = 'rgba(0,0,0,.78)';
-  ctx.fillRect(0,0,W,H);
+  if(dirAtiva.cima)  my -= vel;
+  if(dirAtiva.baixo) my += vel;
+  if(dirAtiva.esq)   mx -= vel;
+  if(dirAtiva.dir)   mx += vel;
 
-  // "Recortar" o círculo de visão com gradiente
-  const grad = ctx.createRadialGradient(cx,cy,raio*.6,cx,cy,raio);
-  grad.addColorStop(0,'rgba(0,0,0,1)');   // centro: apagar o escuro
-  grad.addColorStop(1,'rgba(0,0,0,0)');   // borda: manter o escuro
+  // Diagonal normalizada
+  if(mx!==0 && my!==0){ mx*=0.707; my*=0.707; }
 
-  ctx.save();
-  ctx.globalCompositeOperation = 'destination-out';
-  ctx.beginPath();
-  ctx.arc(cx,cy,raio,0,Math.PI*2);
-  ctx.fillStyle = 'rgba(0,0,0,1)';
-  ctx.fill();
-  ctx.restore();
+  const andando = mx!==0||my!==0;
+  av.andando=andando;
+  if(mx>0) av.dir=1;
+  else if(mx<0) av.dir=-1;
 
-  // Gradiente suave na borda do círculo
-  ctx.save();
-  ctx.globalCompositeOperation = 'source-over';
-  const gradBorda = ctx.createRadialGradient(cx,cy,raio*.7,cx,cy,raio*1.1);
-  gradBorda.addColorStop(0,'rgba(0,0,0,0)');
-  gradBorda.addColorStop(1,'rgba(0,0,0,.78)');
-  ctx.beginPath();
-  ctx.arc(cx,cy,raio*1.1,0,Math.PI*2);
-  ctx.fillStyle = gradBorda;
-  ctx.fill();
-  ctx.restore();
+  if(andando){
+    // Mover avatar no ECRÃ
+    av.x = Math.max(30, Math.min(window.innerWidth-30,  av.x+mx));
+    av.y = Math.max(60, Math.min(window.innerHeight-30, av.y+my));
+
+    // Converter movimento px → lat/lng e mover o mapa
+    const zoom   = mapaL.getZoom();
+    const lat    = av.lat;
+    const escala = 156543.03392*Math.cos(lat*Math.PI/180)/Math.pow(2,zoom);
+    // mx px → metros → graus
+    const dLng = (mx * escala) / 111319.9;
+    const dLat = (-my * escala) / 111319.9;
+    av.lat += dLat;
+    av.lng += dLng;
+
+    // MAPA segue o avatar
+    mapaL.panBy([-mx,-my],{animate:false});
+
+    verificarApanharBandeiras();
+  }
+
+  // Posicionar avatar-wrap no ecrã
+  const wrap = G('avatar-wrap');
+  wrap.style.left = av.x+'px';
+  wrap.style.top  = av.y+'px';
+
+  // Animação do avatar
+  animarAvatar(animT, andando);
+
+  // Fog of war
+  actualizarFogFrame();
 }
 
 // ============================================================
 // ANIMAÇÃO DO AVATAR
 // ============================================================
-let estadoAnim = 'parado';
-let dirAvatar  = 1; // 1=direita, -1=esquerda
-let posAnterior = null;
-let animFrame  = null;
-
-function iniciarAnimacaoAvatar(){
-  animarPasso();
-}
-
-let t = 0;
-function animarPasso(){
-  t += 0.08;
-
-  const andando = avatar.andando;
-  const svg     = G('avatar');
-  const bracoE  = G('braco-esq');
-  const bracoD  = G('braco-dir');
-  const pernaE  = G('perna-esq');
-  const pernaD  = G('perna-dir');
-  const cabeca  = G('cabeca');
-  const corpoG  = G('corpo-grupo');
+function animarAvatar(t, andando){
+  const svg = G('avt');
 
   if(andando){
-    // Animação de andar
-    const amp = 20;
-    const bracoAng = Math.sin(t) * amp;
-    const pernaAng = Math.sin(t) * amp;
-    const cabecaY  = Math.abs(Math.sin(t*2)) * -1;
-    const corpoAng = Math.sin(t) * 2;
-
-    bracoE.style.transform = `rotate(${bracoAng}deg)`;
-    bracoD.style.transform = `rotate(${-bracoAng}deg)`;
-    pernaE.style.transform = `rotate(${-pernaAng}deg)`;
-    pernaD.style.transform = `rotate(${pernaAng}deg)`;
-    cabeca.style.transform  = `translateY(${cabecaY}px)`;
-    corpoG.style.transform  = `translate(-50%,-50%) rotate(${corpoAng}deg)`;
-
-    // Direção (espelhar se for para a esquerda)
-    svg.style.transform = `translate(-50%,-50%) scaleX(${dirAvatar})`;
+    // Andar: braços e pernas alternam
+    const ang = Math.sin(t*8)*22;
+    G('g-braco-e').style.transform = `rotate(${ang}deg)`;
+    G('g-braco-d').style.transform = `rotate(${-ang}deg)`;
+    G('g-perna-e').style.transform = `rotate(${-ang}deg)`;
+    G('g-perna-d').style.transform = `rotate(${ang}deg)`;
+    G('g-cabeca').style.transform  = `translateY(${Math.abs(Math.sin(t*8))*-1.5}px)`;
+    G('g-corpo').style.transform   = `rotate(${Math.sin(t*8)*1.5}deg)`;
+    // Espelhar se for para a esquerda
+    svg.style.transform = `translate(-50%,-50%) scaleX(${av.dir})`;
     svg.style.filter    = 'drop-shadow(0 0 10px #0f0)';
   } else {
-    // Respiração suave quando parado
-    const amp = 1;
-    const resp = Math.sin(t*.5) * amp;
-
-    bracoE.style.transform = `rotate(${resp}deg)`;
-    bracoD.style.transform = `rotate(${-resp}deg)`;
-    pernaE.style.transform = `rotate(0deg)`;
-    pernaD.style.transform = `rotate(0deg)`;
-    cabeca.style.transform  = `translateY(${resp*.5}px)`;
-    corpoG.style.transform  = 'translate(-50%,-50%) rotate(0deg)';
-
-    // Pulsar suave
-    const escala = 1 + Math.sin(t*.8)*.02;
-    svg.style.transform = `translate(-50%,-50%) scale(${escala})`;
-    svg.style.filter    = `drop-shadow(0 0 ${8+Math.sin(t*.8)*4}px #0f0)`;
+    // Respiração suave
+    const resp = Math.sin(t*1.5)*1.5;
+    G('g-braco-e').style.transform = `rotate(${resp}deg)`;
+    G('g-braco-d').style.transform = `rotate(${-resp}deg)`;
+    G('g-perna-e').style.transform = 'rotate(0deg)';
+    G('g-perna-d').style.transform = 'rotate(0deg)';
+    G('g-cabeca').style.transform  = `translateY(${resp*.4}px)`;
+    G('g-corpo').style.transform   = 'rotate(0deg)';
+    // Pulsar
+    const s = 1+Math.sin(t*1.2)*.025;
+    svg.style.transform = `translate(-50%,-50%) scale(${s})`;
+    svg.style.filter    = `drop-shadow(0 0 ${8+Math.sin(t*1.2)*4}px #0f0)`;
   }
-
-  animFrame = requestAnimationFrame(animarPasso);
-}
-
-// Detectar movimento do GPS para activar animação de andar
-function verificarMovimento(novaLat, novaLng){
-  if(!posAnterior){
-    posAnterior = {lat:novaLat, lng:novaLng};
-    return;
-  }
-  const dx = novaLng - posAnterior.lng;
-  const dy = novaLat - posAnterior.lat;
-  const dist = Math.sqrt(dx*dx+dy*dy) * 111000; // metros aproximados
-
-  if(dist > 1){
-    avatar.andando = true;
-    dirAvatar = dx > 0 ? 1 : -1;
-    clearTimeout(timerAnim);
-    timerAnim = setTimeout(()=>{ avatar.andando=false; }, 2000);
-  }
-  posAnterior = {lat:novaLat, lng:novaLng};
 }
 
 // ============================================================
-// SISTEMA DE SKILL / VISÃO
+// CÍRCULO DE VISÃO
 // ============================================================
-/*
-  REGRA:
-  - Cada 10 pontos de skill → +1 metro de visão
-  - Visão começa em 5m e pode chegar a 100m
-  - O círculo no mapa expande-se visualmente
-*/
-
-function ganharSkill(pontos){
-  avatar.skill      += pontos;
-  avatar.skillTotal += pontos;
-
-  // Calcular nova visão
-  const visaoExtra  = Math.floor(avatar.skill / PASSO_SKILL);
-  const novaVisao   = Math.min(VISAO_MAX, VISAO_MIN + visaoExtra);
-
-  const visaoAnterior = avatar.visao;
-  avatar.visao = novaVisao;
-
-  // Calcular nível
-  avatar.nivel = Math.floor(avatar.skillTotal / 50) + 1;
-
-  // Mostrar notificação se a visão aumentou
-  if(novaVisao > visaoAnterior){
-    mostrarNotifSkill(
-      `👁️ Visão aumentou para ${novaVisao}m!`,
-      `+${novaVisao-visaoAnterior}m · Skill: ${avatar.skill}`
-    );
-  }
-
-  // Actualizar tudo
-  actualizarCirculoVisao();
-  actualizarOverlay();
-  actualizarPainel();
-  actualizarBarraSkill();
+function actualizarCirculo(){
+  const visaoM = av.visao;
+  const ppm    = calcPPM();
+  const raio   = Math.max(50, visaoM*ppm);
+  const diam   = raio*2;
+  const c = G('circulo');
+  c.style.width  = diam+'px';
+  c.style.height = diam+'px';
+  // Cor varia
+  const p = (visaoM-VISAO_MIN)/(VISAO_MAX-VISAO_MIN);
+  const g2 = 255;
+  const b2 = Math.round(p*255);
+  const cor = `rgb(0,${g2},${b2})`;
+  c.style.borderColor = cor;
+  c.style.boxShadow   = `0 0 0 4000px rgba(0,0,0,.72),0 0 ${20+p*30}px ${cor}`;
 }
 
-function actualizarBarraSkill(){
-  const skillNoNivel = avatar.skill % PASSO_SKILL;
-  const pct          = (skillNoNivel / PASSO_SKILL) * 100;
-  const proxVisao    = avatar.visao < VISAO_MAX ? avatar.visao + 1 : VISAO_MAX;
+function calcPPM(){
+  if(!mapaL) return 5;
+  const z   = mapaL.getZoom();
+  const lat = av.lat;
+  const esc = 156543.03392*Math.cos(lat*Math.PI/180)/Math.pow(2,z);
+  return 1/esc;
+}
 
-  G('barra-skill-fill').style.width = pct + '%';
-  G('barra-skill-label').innerText  = avatar.visao >= VISAO_MAX
-    ? `👁️ Visão máxima atingida! (${VISAO_MAX}m)`
-    : `Próxima visão ${proxVisao}m em ${PASSO_SKILL - skillNoNivel} skill`;
-  G('skill-prox').innerText = PASSO_SKILL - skillNoNivel;
+// ============================================================
+// FOG OF WAR (Canvas)
+// ============================================================
+let fogCtx=null;
+function iniciarFog(){
+  const c=G('fog');
+  fogCtx=c.getContext('2d');
+  redimensionarFog();
+  window.addEventListener('resize',redimensionarFog);
+}
+function redimensionarFog(){
+  G('fog').width=window.innerWidth;
+  G('fog').height=window.innerHeight;
+}
+function actualizarFog(){actualizarFogFrame();}
+function actualizarFogFrame(){
+  if(!fogCtx) return;
+  const W=window.innerWidth,H=window.innerHeight;
+  const cx=av.x,cy=av.y;
+  const raio=Math.max(50,av.visao*calcPPM());
+  fogCtx.clearRect(0,0,W,H);
+  // Escurecer tudo
+  fogCtx.fillStyle='rgba(0,0,0,.72)';
+  fogCtx.fillRect(0,0,W,H);
+  // Recortar círculo
+  fogCtx.save();
+  fogCtx.globalCompositeOperation='destination-out';
+  fogCtx.beginPath();
+  fogCtx.arc(cx,cy,raio,0,Math.PI*2);
+  fogCtx.fillStyle='rgba(0,0,0,1)';
+  fogCtx.fill();
+  fogCtx.restore();
+  // Borda suave
+  fogCtx.save();
+  fogCtx.globalCompositeOperation='source-over';
+  const gr=fogCtx.createRadialGradient(cx,cy,raio*.7,cx,cy,raio*1.15);
+  gr.addColorStop(0,'rgba(0,0,0,0)');
+  gr.addColorStop(1,'rgba(0,0,0,.72)');
+  fogCtx.beginPath();
+  fogCtx.arc(cx,cy,raio*1.15,0,Math.PI*2);
+  fogCtx.fillStyle=gr;
+  fogCtx.fill();
+  fogCtx.restore();
+}
 
-  // Info visão
-  G('info-visao-val').innerText  = avatar.visao + 'm';
-  G('info-skill-val').innerText  = avatar.skill;
+// ============================================================
+// HUD / PAINEL
+// ============================================================
+function actualizarHUD(){
+  G('hud-nome').innerText  = av.nome;
+  G('hud-flags').innerText = av.flags.toLocaleString('pt-PT');
+  G('hud-en').innerText    = Math.round(av.energia)+'%';
+  G('hud-skill').innerText = av.skill;
+  G('hud-visao').innerText = av.visao+'m';
 }
 
 function actualizarPainel(){
-  G('pa-nivel').innerText   = avatar.nivel;
-  G('pa-skill').innerText   = avatar.skill;
-  G('pa-visao').innerText   = avatar.visao + 'm';
-  G('pa-flags').innerText   = avatar.flags;
-  G('pa-energia').innerText = Math.round(avatar.energia) + '%';
-  G('hud-nome').innerText   = '👤 ' + avatar.nome;
-}
-
-function mostrarNotifSkill(texto, sub){
-  const n = G('notif-skill');
-  G('notif-texto').innerText = texto;
-  G('notif-sub').innerText   = sub || '';
-  n.style.display = 'flex';
-  n.style.flexDirection = 'column';
-  n.style.animation = 'none';
-  // Restart animation
-  void n.offsetWidth;
-  n.style.animation = 'fadeInOut 3s ease forwards';
-  setTimeout(()=>{ n.style.display='none'; }, 3000);
+  G('ps-nivel').innerText = av.nivel;
+  G('ps-skill').innerText = av.skill;
+  G('ps-visao').innerText = av.visao+'m';
+  G('ps-flags').innerText = av.flags.toLocaleString('pt-PT');
+  G('ps-prox').innerText  = flagsLimiteSkill.toLocaleString('pt-PT');
+  // Barra
+  const pct = Math.min(100,(av.flagsEnerg/flagsLimiteSkill)*100);
+  G('barra-sk-fill').style.width = pct+'%';
+  G('barra-sk-label').innerText  = av.flagsEnerg.toLocaleString('pt-PT')+' / '+flagsLimiteSkill.toLocaleString('pt-PT')+' flags';
+  actualizarHUD();
+  G('skill-tag').innerText=`👁️ ${av.visao}m visão · Skill ${av.skill}`;
 }
 
 // ============================================================
-// MARCADORES DE SKILL NO MAPA
+// NOTIFICAÇÃO
 // ============================================================
-function colocarMarcadoresSkill(){
-  // Colocar alguns marcadores de skill em volta
-  const raiosKm = [0.05, 0.1, 0.08, 0.12, 0.07];
-  const angulos  = [30, 110, 200, 280, 350];
+let notifTmr=null;
+function mostrarNotif(ico,txt,sub){
+  G('notif-ico').innerText=ico;
+  G('notif-txt').innerText=txt;
+  G('notif-sub').innerText=sub||'';
+  G('notif').style.display='flex';
+  G('notif').style.flexDirection='column';
+  G('notif').style.gap='4px';
+  if(notifTmr) clearTimeout(notifTmr);
+  notifTmr=setTimeout(()=>G('notif').style.display='none',3500);
+}
 
-  raiosKm.forEach((r,i) => {
-    const ang  = angulos[i] * Math.PI/180;
-    const lat2 = avatar.lat + (r/111.32)*Math.cos(ang);
-    const lng2 = avatar.lng + (r/(111.32*Math.cos(avatar.lat*Math.PI/180)))*Math.sin(ang);
+// ============================================================
+// ARRASTAR A CAIXA DE CONTROLO
+// ============================================================
+(function arrastarCaixa(){
+  const caixa=G('caixa-controlo');
+  let arrastando=false,ox=0,oy=0;
 
-    const ic = L.divIcon({
-      className:'',
-      html:`<div class="marcador-skill" style="width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:.8rem;">👁️</div>`,
-      iconSize:[20,20],iconAnchor:[10,10]
-    });
-
-    const m = L.marker([lat2,lng2],{icon:ic}).addTo(mapaL);
-    m.bindPopup(`<b>🎯 Cristal de Skill</b><br>Clica para ganhar +${5+i*2} skill!`);
-    m.on('click',()=>{
-      const pts = 5+i*2;
-      ganharSkill(pts);
-      avatar.flags++;
-      mapaL.removeLayer(m);
-      actualizarPainel();
-    });
-    marcasBingo.push(m);
+  caixa.addEventListener('pointerdown',e=>{
+    // Só arrastar se clicar no titulo/borda, não nos botões
+    if(e.target.classList.contains('btn-dir')||e.target.classList.contains('btn-tam')) return;
+    arrastando=true;
+    ox=e.clientX-caixa.getBoundingClientRect().left;
+    oy=e.clientY-caixa.getBoundingClientRect().top;
+    caixa.setPointerCapture(e.pointerId);
+    e.preventDefault();
   });
-}
+  caixa.addEventListener('pointermove',e=>{
+    if(!arrastando) return;
+    caixa.style.left  =(e.clientX-ox)+'px';
+    caixa.style.top   =(e.clientY-oy)+'px';
+    caixa.style.right ='auto';
+    caixa.style.bottom='auto';
+  });
+  caixa.addEventListener('pointerup',()=>arrastando=false);
+})();
 
 // ============================================================
-// TOGGLES
+// TESTE RÁPIDO (botão para ganhar skill)
 // ============================================================
-function toggleSeguir(){
-  seguirGPS = !seguirGPS;
-  const btn = G('btn-seguir');
-  if(seguirGPS){
-    btn.innerText = '📍 A seguir';
-    btn.style.background = '#0f0';
-    btn.style.color = '#000';
-    if(mapaL) mapaL.setView([avatar.lat, avatar.lng]);
-  } else {
-    btn.innerText = '📍 Centrar';
-    btn.style.background = '#111';
-    btn.style.color = '#0f0';
-  }
-}
+window.simularFlags=function(n){
+  av.flagsEnerg+=(n||500);
+  av.flags+=(n||500);
+  verificarSkill();
+  actualizarPainel();
+};
 
-function togglePainel(){
-  painelVisivel = !painelVisivel;
-  G('painel-avatar').style.display = painelVisivel ? 'block' : 'none';
-}
-
-// ============================================================
-// UTILS
-// ============================================================
-const G = id => document.getElementById(id);
-
-// Redimensionar overlay quando a janela muda de tamanho
-window.addEventListener('resize', ()=>{
-  actualizarOverlay();
-  actualizarCirculoVisao();
+// Atalho de teclado para teste: S+K = +500 flags com energia
+let keyBuf='';
+document.addEventListener('keypress',e=>{
+  keyBuf+=e.key;
+  if(keyBuf.endsWith('sk')){simularFlags(500);keyBuf='';}
+  if(keyBuf.length>10) keyBuf=keyBuf.slice(-10);
 });
 
 // ============================================================
 // INICIALIZAR
 // ============================================================
-function iniciar(){
-  // Carregar dados do localStorage se existirem
-  try {
-    const sj = JSON.parse(localStorage.getItem('zap_sj') || 'null');
+window.addEventListener('load',()=>{
+  // Posição inicial do avatar: centro do ecrã
+  av.x=window.innerWidth/2;
+  av.y=window.innerHeight/2;
+
+  // Carregar dados do jogador
+  try{
+    const sj=JSON.parse(localStorage.getItem('zap_sj')||'null');
     if(sj){
-      avatar.nome     = sj.nm   || 'Jogador';
-      avatar.flags    = sj.fl   || 0;
-      avatar.energia  = sj.en   || 100;
-      avatar.skill    = sj.skillPts || 0;
-      avatar.skillTotal= sj.skillPts || 0;
-      // Recalcular visão
-      const visaoExtra = Math.floor(avatar.skill / PASSO_SKILL);
-      avatar.visao     = Math.min(VISAO_MAX, VISAO_MIN + visaoExtra);
-      avatar.nivel     = Math.floor(avatar.skillTotal / 50) + 1;
+      av.nome  =sj.nm||'Jogador';
+      av.flags =sj.fl||0;
+      av.energia=sj.en||100;
+      av.skill  =sj.skillPts||0;
+      flagsLimiteSkill=flagsParaProxSkill(av.skill);
+      av.visao =calcularVisao(av.skill);
+      av.nivel =Math.floor(av.skill/10)+1;
     }
-  } catch(e){}
+  }catch(e){}
 
-  // Iniciar mapa
   iniciarMapa();
+  iniciarFog();
 
-  // Iniciar animação do avatar
-  iniciarAnimacaoAvatar();
+  // Posicionar avatar no centro
+  const w=G('avatar-wrap');
+  w.style.left=av.x+'px';
+  w.style.top =av.y+'px';
 
-  // Actualizar UI inicial
+  actualizarCirculo();
   actualizarPainel();
-  actualizarBarraSkill();
 
-  // Colocar marcadores de skill após breve delay
-  setTimeout(()=>{
-    actualizarCirculoVisao();
-    actualizarOverlay();
-    colocarMarcadoresSkill();
-  }, 500);
+  // Iniciar loop
+  requestAnimationFrame(loop);
 
-  // Actualizar overlay periodicamente (quando o mapa é arrastado)
+  // Actualizar círculo e fog regularmente
   setInterval(()=>{
-    actualizarOverlay();
-    actualizarCirculoVisao();
-  }, 100);
-}
+    actualizarCirculo();
+  },500);
 
-// Aguardar DOM
-window.addEventListener('load', iniciar);
+  // Info para o utilizador
+  setTimeout(()=>{
+    mostrarNotif('🕹️','Usa as setas/WASD para andar!','Apanha bandeiras ⚡ para ganhar Skill');
+  },1000);
+});
 </script>
 </body>
 </html>
-
