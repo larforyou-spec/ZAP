@@ -4,159 +4,247 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>ZAP FLAGS</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
-body{font-family:'Courier New',monospace;background:#000;color:#0f0;min-height:100vh;}
+body{font-family:'Courier New',monospace;background:#000;color:#0f0;min-height:100vh;overflow-x:hidden;}
+
+/* PÁGINAS */
 .page{display:none;min-height:100vh;}
 .page.ativa{display:block;}
-.caixa{max-width:460px;margin:0 auto;padding:20px;}
+
+/* CAIXA GERAL */
+.cx{max-width:460px;margin:0 auto;padding:20px;}
 
 /* INPUTS */
-input,select,textarea{
-  width:100%;background:#0a0a0a;color:#0f0;
-  border:1px solid #0f0;padding:12px;margin:4px 0;
-  font-size:.95rem;font-family:'Courier New',monospace;border-radius:6px;
-}
-input:focus,select:focus{outline:none;border-color:#0ff;box-shadow:0 0 8px rgba(0,255,255,.3);}
+input,select,textarea{width:100%;background:#0a0a0a;color:#0f0;border:1px solid #0f0;
+  padding:11px;margin:4px 0;font-size:.9rem;font-family:'Courier New',monospace;border-radius:5px;}
+input:focus,select:focus{outline:none;border-color:#0ff;box-shadow:0 0 6px rgba(0,255,255,.3);}
 select option{background:#0a0a0a;}
-.label{font-size:.8rem;color:#0aa;display:block;margin-top:10px;margin-bottom:2px;}
-.label span{color:#f00;}
+textarea{resize:vertical;min-height:60px;}
+.lbl{font-size:.78rem;color:#0aa;display:block;margin-top:9px;margin-bottom:2px;}
+.lbl span{color:#f00;}
 
 /* BOTÕES */
-.btn{display:inline-block;padding:12px 18px;margin:3px 2px;font-size:.9rem;
+.btn{display:inline-block;padding:11px 16px;margin:3px 2px;font-size:.88rem;
   font-weight:bold;cursor:pointer;font-family:'Courier New',monospace;
-  border:none;border-radius:6px;transition:all .2s;}
-.bb{display:block;width:100%;margin:6px 0;padding:14px;text-align:center;}
-.bv  {background:#0f0;color:#000;}.bv:hover{background:#0ff;}
-.bc  {background:#111;color:#0f0;border:1px solid #0f0;}.bc:hover{background:#1a1a1a;}
-.bo  {background:linear-gradient(45deg,#f80,#ff0);color:#000;}.bo:hover{background:#ff0;}
-.br  {background:#1a0000;color:#f00;border:1px solid #f00;}.br:hover{background:#300;}
+  border:none;border-radius:5px;transition:all .2s;}
+.bb{display:block;width:100%;margin:5px 0;padding:13px;text-align:center;}
+.bv {background:#0f0;color:#000;}.bv:hover{background:#0ff;}
+.bc {background:#111;color:#0f0;border:1px solid #0f0;}.bc:hover{background:#1a1a1a;}
+.bo {background:linear-gradient(45deg,#f80,#ff0);color:#000;}.bo:hover{background:#ff0;}
+.br {background:#1a0000;color:#f00;border:1px solid #f00;}.br:hover{background:#300;}
 .bvol{background:#000;color:#0aa;border:1px solid #0aa;}.bvol:hover{background:#0aa;color:#000;}
-.bsair{background:#1a0000;color:#f00;border:1px solid #f00;}.bsair:hover{background:#300;}
-.bbo {background:linear-gradient(135deg,#003,#006,#009);color:#0ff;border:2px solid #0ff;}
-.bbo:hover{background:#006;}
-.brec{background:#002;color:#0ff;border:1px solid #0ff;font-size:.82rem;padding:9px;}
-.brec:hover{background:#003;border-color:#0aa;}
+.bsair{background:#1a0000;color:#f00;border:1px solid #f00;font-size:.82rem;padding:7px 12px;}.bsair:hover{background:#300;}
+.bbo{background:linear-gradient(135deg,#003,#006,#009);color:#0ff;border:2px solid #0ff;}.bbo:hover{background:#006;}
+.bpw{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;
+  cursor:pointer;font-size:1rem;color:#555;padding:4px;}.bpw:hover{color:#0ff;}
 
 /* MENSAGENS */
-.msg{padding:12px;margin:8px 0;border-radius:6px;display:none;font-size:.84rem;}
+.msg{padding:11px;margin:7px 0;border-radius:5px;display:none;font-size:.83rem;}
 .msg.e{background:#200;border:1px solid #f00;color:#f00;display:block;}
 .msg.s{background:#020;border:1px solid #0f0;color:#0f0;display:block;}
 .msg.i{background:#002;border:1px solid #0ff;color:#0ff;display:block;}
 .msg.a{background:#220;border:1px solid #ff0;color:#ff0;display:block;}
 
-/* ÁREAS */
-.area-jog{background:#000a00;border:2px solid #0f0;border-radius:12px;padding:18px;margin:8px 0;}
-.area-jog h3{color:#0f0;margin-bottom:10px;font-size:.95rem;}
-.area-pr {background:#0a0800;border:2px solid #ff0;border-radius:12px;padding:18px;margin:8px 0;}
-.area-pr h3{color:#ff0;margin-bottom:10px;font-size:.95rem;}
-.area-bo {background:linear-gradient(135deg,#000510,#001020);border:2px solid #0ff;
-  border-radius:12px;padding:18px;margin:8px 0;position:relative;overflow:hidden;}
-.area-bo::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;
+/* ÁREAS COLORIDAS */
+.aj{background:#000a00;border:2px solid #0f0;border-radius:11px;padding:16px;margin:8px 0;}
+.aj h3{color:#0f0;margin-bottom:10px;}
+.apr{background:#0a0800;border:2px solid #ff0;border-radius:11px;padding:16px;margin:8px 0;}
+.apr h3{color:#ff0;margin-bottom:10px;}
+.abo{background:linear-gradient(135deg,#000510,#001020);border:2px solid #0ff;
+  border-radius:11px;padding:16px;margin:8px 0;position:relative;overflow:hidden;}
+.abo::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;
   background:linear-gradient(90deg,transparent,#0ff,transparent);
   animation:varre 3s linear infinite;}
 @keyframes varre{from{transform:translateX(-100%)}to{transform:translateX(100%)}}
-.area-bo h3{color:#0ff;margin-bottom:10px;font-size:.95rem;}
-.badge-bo{background:#0ff;color:#000;padding:2px 8px;border-radius:10px;
-  font-size:.65rem;font-weight:bold;margin-left:6px;}
+.abo h3{color:#0ff;margin-bottom:10px;}
+.bbo-badge{background:#0ff;color:#000;padding:2px 7px;border-radius:9px;font-size:.65rem;font-weight:bold;margin-left:5px;}
 
-/* SESSÃO ATIVA NA HOME */
-.barra-sessao{border-radius:12px;padding:14px 16px;margin:8px 0;
+/* SESSÃO NA HOME */
+.bsessao{border-radius:11px;padding:13px 15px;margin:8px 0;
   display:flex;justify-content:space-between;align-items:center;gap:10px;}
-.barra-j {background:#001a00;border:2px solid #0f0;}
-.barra-pr{background:#1a0e00;border:2px solid #ff0;}
+.bj {background:#001a00;border:2px solid #0f0;}
+.bpr{background:#1a0e00;border:2px solid #ff0;}
 
-/* CARTÃO DO UTILIZADOR */
-.user-card{background:#050505;border-radius:14px;padding:20px;
-  margin-bottom:16px;text-align:center;position:relative;}
-.user-card-j {border:2px solid #0f0;background:linear-gradient(135deg,#001a00,#000a00);}
-.user-card-pr{border:2px solid #ff0;background:linear-gradient(135deg,#1a0e00,#0a0800);}
-.user-avatar-big{width:80px;height:80px;border-radius:50%;margin:0 auto 12px;
-  display:flex;align-items:center;justify-content:center;font-size:2.2rem;
-  position:relative;}
-.user-avatar-j {background:#002000;border:3px solid #0f0;box-shadow:0 0 15px rgba(0,255,0,.3);}
-.user-avatar-pr{background:#1a0e00;border:3px solid #ff0;box-shadow:0 0 15px rgba(255,200,0,.3);}
-.user-avatar-big .online-dot{
-  position:absolute;bottom:4px;right:4px;
-  width:16px;height:16px;border-radius:50%;
-  background:#0f0;border:2px solid #000;
-  box-shadow:0 0 6px #0f0;
-  animation:piscar 2s ease-in-out infinite;
-}
-@keyframes piscar{0%,100%{opacity:1}50%{opacity:.4}}
-.user-nome-big{font-size:1.3rem;font-weight:bold;margin-bottom:4px;}
-.user-sub{font-size:.75rem;color:#555;margin-bottom:12px;}
-.user-stats-row{display:flex;justify-content:center;gap:16px;margin-bottom:4px;}
-.user-stat{text-align:center;}
-.user-stat-n{font-size:1rem;font-weight:bold;}
-.user-stat-l{font-size:.62rem;color:#555;margin-top:1px;}
+/* CARTÃO UTILIZADOR */
+.ucard{background:#050505;border-radius:13px;padding:18px;margin-bottom:14px;text-align:center;position:relative;}
+.ucard-j {border:2px solid #0f0;background:linear-gradient(135deg,#001a00,#000a00);}
+.ucard-pr{border:2px solid #ff0;background:linear-gradient(135deg,#1a0e00,#0a0800);}
+.uavt{width:76px;height:76px;border-radius:50%;margin:0 auto 10px;
+  display:flex;align-items:center;justify-content:center;font-size:2rem;position:relative;}
+.uavt-j {background:#002000;border:3px solid #0f0;box-shadow:0 0 12px rgba(0,255,0,.3);}
+.uavt-pr{background:#1a0e00;border:3px solid #ff0;box-shadow:0 0 12px rgba(255,200,0,.3);}
+.udot{position:absolute;bottom:3px;right:3px;width:14px;height:14px;border-radius:50%;
+  border:2px solid #000;animation:piscar 2s ease-in-out infinite;}
+.udot-j{background:#0f0;box-shadow:0 0 5px #0f0;}
+.udot-pr{background:#ff0;box-shadow:0 0 5px #ff0;}
+@keyframes piscar{0%,100%{opacity:1}50%{opacity:.3}}
+.unome{font-size:1.2rem;font-weight:bold;margin-bottom:3px;}
+.usub{font-size:.73rem;color:#555;margin-bottom:10px;}
+.ustats{display:flex;justify-content:center;gap:14px;}
+.ustat-n{font-size:.95rem;font-weight:bold;}
+.ustat-l{font-size:.6rem;color:#555;margin-top:1px;}
 
-/* CAMPO SENHA COM TOGGLE */
-.pass-wrap{position:relative;}
-.pass-wrap input{padding-right:48px;}
-.toggle-pw{position:absolute;right:12px;top:50%;transform:translateY(-50%);
-  background:none;border:none;cursor:pointer;font-size:1.1rem;color:#555;padding:4px;}
-.toggle-pw:hover{color:#0ff;}
+/* PASS WRAP */
+.pwrap{position:relative;}
+.pwrap input{padding-right:44px;}
 
 /* CHECKBOX */
-.check-label{display:flex;align-items:center;gap:10px;font-size:.82rem;
-  color:#0aa;cursor:pointer;margin:6px 0;line-height:1.4;}
-.check-label input[type=checkbox]{
-  width:18px;height:18px;flex-shrink:0;
-  accent-color:#0f0;cursor:pointer;}
+.ckl{display:flex;align-items:center;gap:9px;font-size:.82rem;color:#0aa;cursor:pointer;margin:6px 0;}
+.ckl input[type=checkbox]{width:17px;height:17px;flex-shrink:0;accent-color:#0f0;cursor:pointer;}
 
 /* SEPARADOR */
-.sep-linha{display:flex;align-items:center;gap:10px;margin:14px 0;}
-.sep-l{flex:1;border-top:1px solid #1a1a1a;}
-.sep-t{color:#333;font-size:.72rem;white-space:nowrap;}
-
-/* AÇÕES BAIXO */
-.acoes-baixo{display:flex;flex-direction:column;align-items:center;gap:8px;margin-top:16px;}
-.acoes-baixo-row{display:flex;gap:12px;align-items:center;flex-wrap:wrap;justify-content:center;}
+.seplinha{display:flex;align-items:center;gap:9px;margin:12px 0;}
+.sepl{flex:1;border-top:1px solid #1a1a1a;}
+.sept{color:#333;font-size:.7rem;white-space:nowrap;}
 
 /* FORÇA SENHA */
-.force-bar{height:4px;border-radius:2px;margin-top:4px;transition:all .3s;background:#333;width:0%;}
-.force-txt{font-size:.68rem;margin-top:2px;color:#555;height:14px;}
+.fbar{height:4px;border-radius:2px;margin-top:4px;transition:all .3s;background:#333;width:0%;}
+.ftxt{font-size:.67rem;margin-top:2px;color:#555;height:13px;}
 
 /* CARDS */
-.card{background:#080808;border:1px solid #222;border-radius:8px;padding:12px;margin:8px 0;}
-.card-b{border-color:#0ff;background:#00080a;}
+.card{background:#080808;border:1px solid #222;border-radius:7px;padding:11px;margin:7px 0;}
 .card-y{border-color:#ff0;background:#0a0800;}
 .card-v{border-color:#0f0;background:#050f05;}
-
-/* ROWS */
+.card-b{border-color:#0ff;background:#00080a;}
 .row{padding:5px 0;border-bottom:1px solid #111;font-size:.82rem;
   display:flex;justify-content:space-between;align-items:flex-start;gap:8px;}
 .row:last-child{border-bottom:none;}
 .rl{color:#0aa;font-size:.7rem;white-space:nowrap;padding-top:2px;flex-shrink:0;}
 .rv{text-align:right;font-size:.82rem;word-break:break-word;}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:7px 0;}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin:7px 0;}
+.stat{background:#080808;border:1px solid #0f0;border-radius:7px;padding:9px;text-align:center;}
+.statn{font-size:1.35rem;color:#0ff;font-weight:bold;}
+.statt{font-size:.67rem;color:#0aa;margin-top:3px;}
+
+/* TABS */
+.tabs{display:flex;gap:2px;overflow-x:auto;border-bottom:2px solid #ff0;}
+.tab{padding:6px 11px;background:#111;border:1px solid #333;color:#880;cursor:pointer;
+  font-family:'Courier New',monospace;font-size:.7rem;border-radius:4px 4px 0 0;white-space:nowrap;}
+.tab.on{background:#1a1000;border-color:#ff0;color:#ff0;font-weight:bold;}
+.tbo{color:#055;}.tbo.on{background:#001a2a;border-color:#0ff;color:#0ff;font-weight:bold;}
+.sec{display:none;padding:11px;}
+.sec.on{display:block;}
+
+/* HUD FIXO (jogo) */
+.hud{position:fixed;top:0;left:0;right:0;z-index:3000;padding:6px 10px;
+  display:flex;justify-content:space-between;align-items:center;}
+.hud-j  {background:rgba(0,10,0,.95);border-bottom:2px solid #0f0;}
+.hud-pr {background:rgba(15,10,0,.95);border-bottom:2px solid #ff0;}
+.hud-bo {background:rgba(0,5,20,.95);border-bottom:2px solid #0ff;}
+.hn{font-size:.68rem;color:#0aa;text-align:center;}
+.hv{font-size:.85rem;color:#0ff;font-weight:bold;display:block;}
+.hbtns{display:flex;gap:4px;}
+.hbtn{background:#111;color:#0f0;border:1px solid #0f0;padding:4px 8px;
+  font-size:.68rem;cursor:pointer;border-radius:4px;font-family:'Courier New',monospace;}
+.hbtn:hover{background:#0a2200;border-color:#0ff;color:#0ff;}
+.hbtn-s{border-color:#f00;color:#f00;}.hbtn-s:hover{background:#200;}
+
+/* MAPA DO JOGO */
+#mapa-jogo{position:fixed;top:0;left:0;width:100%;height:100%;z-index:1;}
+
+/* AVATAR FIXO NO CENTRO */
+#avatar-cx{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:500;pointer-events:none;}
+
+/* CÍRCULO VISÃO */
+#circ-vis{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  border-radius:50%;border:3px solid rgba(0,255,0,.7);pointer-events:none;
+  box-shadow:0 0 0 3000px rgba(0,0,0,.75),inset 0 0 30px rgba(0,255,0,.08),0 0 25px rgba(0,255,0,.4);
+  animation:pcir 3s ease-in-out infinite;}
+@keyframes pcir{
+  0%,100%{box-shadow:0 0 0 3000px rgba(0,0,0,.75),inset 0 0 30px rgba(0,255,0,.08),0 0 20px rgba(0,255,0,.3);}
+  50%{box-shadow:0 0 0 3000px rgba(0,0,0,.75),inset 0 0 50px rgba(0,255,0,.15),0 0 40px rgba(0,255,0,.5);}
+}
+
+/* CÍRCULO ALCANCE */
+#circ-alc{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  border-radius:50%;border:2px dashed #ff0;pointer-events:none;display:none;
+  animation:girar 3s linear infinite;}
+@keyframes girar{from{transform:translate(-50%,-50%) rotate(0)}to{transform:translate(-50%,-50%) rotate(360deg)}}
+
+/* AVISO APANHAR */
+#aviso-ap{position:absolute;left:50%;top:calc(50% - 78px);transform:translateX(-50%);
+  background:rgba(0,255,0,.95);color:#000;font-weight:bold;font-size:.83rem;
+  padding:5px 14px;border-radius:20px;display:none;z-index:502;cursor:pointer;
+  white-space:nowrap;pointer-events:all;
+  animation:salt .3s ease-in-out infinite alternate;}
+@keyframes salt{from{transform:translateX(-50%) translateY(0)}to{transform:translateX(-50%) translateY(-4px)}}
+
+/* SVG AVATAR */
+#avt-svg{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  width:54px;height:68px;z-index:501;filter:drop-shadow(0 0 10px #0f0);}
+
+/* JOYSTICK */
+#ctrl{position:fixed;z-index:3000;background:rgba(0,0,0,.88);
+  border:2px solid #0f0;border-radius:11px;padding:10px;
+  user-select:none;box-shadow:0 0 14px rgba(0,255,0,.2);
+  bottom:46px;right:10px;cursor:move;}
+#ctrl-grade{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-bottom:5px;}
+.cbtn{background:#0a1a0a;border:1px solid #0f0;color:#0f0;
+  border-radius:5px;font-size:.95rem;font-weight:bold;
+  cursor:pointer;user-select:none;width:44px;height:44px;
+  display:flex;align-items:center;justify-content:center;
+  transition:all .1s;-webkit-tap-highlight-color:transparent;touch-action:none;}
+.cbtn:active,.cbtn.on{background:#0f3a0f;border-color:#0ff;color:#0ff;box-shadow:0 0 8px #0ff;}
+#ctrl-tam{display:flex;gap:4px;justify-content:center;}
+.tbtn{background:#001a1a;border:1px solid #0aa;color:#0aa;border-radius:4px;
+  font-size:.72rem;font-weight:bold;cursor:pointer;padding:3px 8px;
+  font-family:'Courier New',monospace;}
+.tbtn:hover{background:#003a3a;border-color:#0ff;color:#0ff;}
+
+/* RODAPÉ TICKER */
+#rodape-jogo{position:fixed;bottom:0;left:0;right:0;z-index:3000;
+  background:rgba(0,0,0,.92);border-top:2px solid #ff0;
+  height:40px;overflow:hidden;display:flex;align-items:center;}
+#ticker{display:inline-flex;gap:80px;white-space:nowrap;
+  animation:rolar 28s linear infinite;padding-left:100vw;}
+@keyframes rolar{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+.tick{color:#ff0;font-size:.76rem;font-weight:bold;}
+.tick b{color:#0ff;}
+
+/* PAINEL SKILL */
+#pan-sk{position:fixed;left:8px;top:56px;z-index:3000;
+  background:rgba(0,0,0,.9);border:1px solid #0f0;
+  border-radius:7px;padding:9px;font-size:.7rem;min-width:112px;}
+.psk{display:flex;justify-content:space-between;padding:2px 0;border-bottom:1px solid #0a1a0a;}
+.psk:last-child{border-bottom:none;}
+.pskl{color:#0aa;}.pskv{color:#0ff;font-weight:bold;}
+#bsk{height:6px;background:#111;border-radius:3px;border:1px solid #0f0;overflow:hidden;margin-top:4px;}
+#bskf{height:100%;background:linear-gradient(90deg,#0f0,#0ff);border-radius:3px;transition:width .4s;}
+#bskt{font-size:.58rem;color:#555;text-align:center;margin-top:2px;}
+
+/* GPS */
+#gps-lbl{position:fixed;bottom:44px;left:50%;transform:translateX(-50%);
+  z-index:3000;font-size:.6rem;color:#444;
+  background:rgba(0,0,0,.7);border-radius:11px;padding:2px 8px;white-space:nowrap;}
+
+/* NOTIFICAÇÃO */
+#notif{position:fixed;top:64px;left:50%;transform:translateX(-50%);
+  z-index:4000;background:#000;border:2px solid #0ff;border-radius:10px;
+  padding:10px 18px;text-align:center;display:none;min-width:210px;pointer-events:none;}
+
+/* CONFIRMAÇÃO */
+#conf-ovl{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.88);z-index:9500;display:none;}
+#conf-box{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+  background:#000;border:3px solid #f00;border-radius:11px;padding:22px;
+  z-index:9501;width:90%;max-width:360px;text-align:center;display:none;}
 
 /* MODAL */
 #movl{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.92);z-index:9000;display:none;}
-#modal{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#000;
-  border:3px solid #ff0;border-radius:12px;padding:22px;z-index:9001;
-  width:95%;max-width:460px;max-height:90vh;overflow-y:auto;display:none;}
-#conf-ovl{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.88);z-index:9500;display:none;}
-#conf-box{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
-  background:#000;border:3px solid #f00;border-radius:12px;padding:22px;
-  z-index:9501;width:90%;max-width:360px;text-align:center;display:none;}
-
-/* RECUPERAR */
-.rec-opcoes{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0;}
-.rec-opcao{background:#0a0a0a;border:2px solid #333;border-radius:8px;padding:14px;
-  text-align:center;cursor:pointer;transition:all .2s;}
-.rec-opcao:hover{border-color:#0ff;}
-.rec-opcao.sel{border-color:#0ff;background:#001a2a;}
-.rec-opcao-ico{font-size:1.6rem;margin-bottom:5px;}
-.rec-opcao-txt{font-size:.78rem;color:#0aa;}
+#mdl{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#000;
+  border:3px solid #ff0;border-radius:11px;padding:20px;z-index:9001;
+  width:95%;max-width:500px;max-height:90vh;overflow-y:auto;display:none;}
 
 .scroll{max-height:55vh;overflow-y:auto;padding-right:3px;}
 .scroll::-webkit-scrollbar{width:3px;}
 .scroll::-webkit-scrollbar-thumb{background:#ff0;}
-.sep2{border:none;border-top:1px solid #1a1a1a;margin:12px 0;}
-.lnk{color:#0ff;cursor:pointer;text-decoration:underline;font-size:.85rem;}
+.sep2{border:none;border-top:1px solid #1a1a1a;margin:10px 0;}
+.lnk{color:#0ff;cursor:pointer;text-decoration:underline;font-size:.84rem;}
 .lnk:hover{color:#0aa;}
-h1{font-size:2.2rem;text-shadow:0 0 20px #0f0;}
+h1{font-size:2.1rem;text-shadow:0 0 20px #0f0;}
 </style>
 </head>
 <body>
@@ -164,264 +252,123 @@ h1{font-size:2.2rem;text-shadow:0 0 20px #0f0;}
 <!-- ============================================================ -->
 <!-- PÁGINA INÍCIO                                                -->
 <!-- ============================================================ -->
-<div id="p-inicio" class="page ativa">
-<div class="caixa" style="padding-top:25px;text-align:center;">
+<div id="p0" class="page ativa">
+<div class="cx" style="padding-top:22px;text-align:center;">
   <h1>🏴 ZAP FLAGS</h1>
-  <p style="color:#0aa;font-size:.85rem;margin-bottom:5px;">Caça ao Tesouro Digital</p>
+  <p style="color:#0aa;font-size:.84rem;margin-bottom:5px;">Caça ao Tesouro Digital</p>
   <div style="text-align:right;margin-bottom:12px;">
-    <button class="bsair btn" style="padding:5px 12px;font-size:.78rem;" onclick="fecharApp()">✖ FECHAR</button>
+    <button class="bsair btn" style="padding:5px 11px;font-size:.76rem;" onclick="fecharApp()">✖ FECHAR</button>
   </div>
 
-  <!-- SESSÃO JOGADOR ATIVA -->
+  <!-- SESSÃO JOGADOR -->
   <div id="home-j" style="display:none;">
-    <div class="barra-sessao barra-j">
+    <div class="bsessao bj">
       <div style="text-align:left;">
-        <div style="font-weight:bold;font-size:.92rem;color:#0f0;" id="home-j-nome">👤 ---</div>
-        <div style="font-size:.72rem;color:#0aa;margin-top:2px;" id="home-j-info">---</div>
+        <div style="font-weight:bold;font-size:.9rem;color:#0f0;" id="hj-nm">👤 ---</div>
+        <div style="font-size:.7rem;color:#0aa;margin-top:2px;" id="hj-inf">---</div>
       </div>
-      <div style="display:flex;gap:6px;">
-        <button class="btn bv" style="padding:8px 14px;font-size:.82rem;" onclick="reentrarJogo()">🎮 Continuar</button>
-        <button class="bsair btn" style="padding:8px 10px;font-size:.82rem;" onclick="confSair('j')" title="Sair da conta">🚪</button>
+      <div style="display:flex;gap:5px;">
+        <button class="btn bv" style="padding:7px 12px;font-size:.8rem;" onclick="reentrarJogo()">🎮 Jogar</button>
+        <button class="bsair btn" style="padding:7px 10px;font-size:.8rem;" onclick="cSair('j')" title="Sair">🚪</button>
       </div>
     </div>
   </div>
 
-  <!-- SESSÃO PR ATIVA -->
+  <!-- SESSÃO PR -->
   <div id="home-pr" style="display:none;">
-    <div class="barra-sessao barra-pr">
+    <div class="bsessao bpr">
       <div style="text-align:left;">
-        <div style="font-weight:bold;font-size:.92rem;color:#ff0;" id="home-pr-nome">🏪 ---</div>
-        <div style="font-size:.72rem;color:#0aa;margin-top:2px;" id="home-pr-info">---</div>
+        <div style="font-weight:bold;font-size:.9rem;color:#ff0;" id="hpr-nm">🏪 ---</div>
+        <div style="font-size:.7rem;color:#0aa;margin-top:2px;" id="hpr-inf">---</div>
       </div>
-      <div style="display:flex;gap:6px;">
-        <button class="btn bo" style="padding:8px 14px;font-size:.82rem;" onclick="reentrarPR()">🏪 Painel</button>
-        <button class="bsair btn" style="padding:8px 10px;font-size:.82rem;" onclick="confSair('pr')" title="Sair da conta">🚪</button>
+      <div style="display:flex;gap:5px;">
+        <button class="btn bo" style="padding:7px 12px;font-size:.8rem;" onclick="reentrarPR()">🏪 Painel</button>
+        <button class="bsair btn" style="padding:7px 10px;font-size:.8rem;" onclick="cSair('pr')" title="Sair">🚪</button>
       </div>
     </div>
   </div>
 
-  <div class="area-jog">
-    <h3>🎮 ÁREA DO JOGADOR</h3>
+  <div class="aj"><h3>🎮 ÁREA DO JOGADOR</h3>
     <button class="btn bv bb" onclick="ir('p-login')">▶ ENTRAR NO JOGO</button>
     <button class="btn bc bb" onclick="ir('p-reg')">📝 CRIAR CONTA DE JOGADOR</button>
   </div>
-
-  <div class="area-pr">
-    <h3>🏪 ÁREA DO LOJISTA</h3>
+  <div class="apr"><h3>🏪 ÁREA DO LOJISTA</h3>
     <button class="btn bv bb" onclick="ir('p-pr-login')">▶ ENTRAR NA MINHA CONTA</button>
     <button class="btn bo bb" onclick="ir('p-pr-reg')">📝 REGISTAR EMPRESA</button>
   </div>
-
-  <div class="area-bo">
-    <h3>🖥️ BACKOFFICE <span class="badge-bo">SISTEMA</span></h3>
-    <p style="color:#0aa;font-size:.78rem;margin-bottom:12px;line-height:1.6;">Gestão completa do sistema ZAP FLAGS.</p>
-    <button class="btn bbo bb" onclick="ir('p-bo-login')" style="font-size:.95rem;padding:14px;">🖥️ ACEDER AO BACKOFFICE</button>
+  <div class="abo"><h3>🖥️ BACKOFFICE <span class="bbo-badge">SISTEMA</span></h3>
+    <p style="color:#0aa;font-size:.77rem;margin-bottom:11px;line-height:1.6;">Gestão completa do sistema ZAP FLAGS.</p>
+    <button class="btn bbo bb" onclick="ir('p-bo-login')" style="font-size:.93rem;padding:13px;">🖥️ ACEDER AO BACKOFFICE</button>
   </div>
-  <p style="color:#111;font-size:.65rem;margin-top:12px;">v9.0 © 2025 ZAP FLAGS</p>
+  <p style="color:#111;font-size:.63rem;margin-top:11px;">v9.0 © 2025 ZAP FLAGS</p>
 </div>
 </div>
 
 <!-- ============================================================ -->
-<!-- LOGIN JOGADOR — NOME MEMORIZADO, SÓ PEDE SENHA              -->
+<!-- LOGIN JOGADOR — NOME MEMORIZADO                             -->
 <!-- ============================================================ -->
 <div id="p-login" class="page">
-<div class="caixa">
-  <button class="btn bvol bb" onclick="ir('p-inicio')" style="margin-bottom:15px;">← VOLTAR</button>
-
-  <div class="area-jog">
+<div class="cx">
+  <button class="btn bvol bb" onclick="ir('p0')" style="margin-bottom:14px;">← VOLTAR</button>
+  <div class="aj">
     <h3>🎮 ENTRAR NO JOGO</h3>
     <div id="m-login" class="msg"></div>
 
-    <!-- CARTÃO com nome memorizado -->
-    <div id="login-com-conta" style="display:none;">
-      <div class="user-card user-card-j">
-        <div class="user-avatar-big user-avatar-j">
-          <span id="login-avatar-emoji">🎮</span>
-          <div class="online-dot"></div>
-        </div>
-        <div class="user-nome-big" style="color:#0f0;" id="login-nome-big">---</div>
-        <div class="user-sub" id="login-nivel-big">Jogador · Nível 1</div>
-        <div class="user-stats-row">
-          <div class="user-stat"><div class="user-stat-n" style="color:#0ff;" id="login-stat-fl">0</div><div class="user-stat-l">🏴 Flags</div></div>
-          <div class="user-stat"><div class="user-stat-n" style="color:#0f0;" id="login-stat-en">100%</div><div class="user-stat-l">⚡ Energia</div></div>
-          <div class="user-stat"><div class="user-stat-n" style="color:#ff0;" id="login-stat-sk">0</div><div class="user-stat-l">🎯 Skill</div></div>
-          <div class="user-stat"><div class="user-stat-n" style="color:#0ff;" id="login-stat-vis">5m</div><div class="user-stat-l">👁️ Visão</div></div>
+    <!-- Com conta guardada: mostra nome, só pede senha -->
+    <div id="lj-com" style="display:none;">
+      <div class="ucard ucard-j">
+        <div class="uavt uavt-j"><span id="lj-emoji">🎮</span><div class="udot udot-j"></div></div>
+        <div class="unome" style="color:#0f0;" id="lj-nome">---</div>
+        <div class="usub" id="lj-sub">Jogador</div>
+        <div class="ustats">
+          <div class="ustat"><div class="ustat-n" style="color:#0ff;" id="lj-fl">0</div><div class="ustat-l">🏴 Flags</div></div>
+          <div class="ustat"><div class="ustat-n" style="color:#0f0;" id="lj-en">100%</div><div class="ustat-l">⚡ Energia</div></div>
+          <div class="ustat"><div class="ustat-n" style="color:#ff0;" id="lj-sk">0</div><div class="ustat-l">🎯 Skill</div></div>
+          <div class="ustat"><div class="ustat-n" style="color:#0ff;" id="lj-vis">5m</div><div class="ustat-l">👁️ Visão</div></div>
         </div>
       </div>
-
-      <!-- APENAS SENHA -->
-      <div class="label">🔑 Senha</div>
-      <div class="pass-wrap">
-        <input type="password" id="l-pw-r" placeholder="A tua senha"
-          autocomplete="current-password"
-          onkeydown="if(event.key==='Enter')loginRapidoJog()">
-        <button class="toggle-pw" onclick="tPW('l-pw-r',this)" title="Mostrar/esconder senha">👁️</button>
+      <div class="lbl">🔑 Senha</div>
+      <div class="pwrap">
+        <input type="password" id="lj-pw-r" placeholder="A tua senha" autocomplete="current-password"
+          onkeydown="if(event.key==='Enter')loginRapidoJ()">
+        <button class="bpw" onclick="tPW('lj-pw-r',this)">👁️</button>
       </div>
-
-      <!-- Lembrar senha -->
-      <label class="check-label" style="margin-top:8px;">
-        <input type="checkbox" id="l-lembrar-pw" onchange="gestaoPWGuardada()">
+      <label class="ckl" style="margin-top:7px;">
+        <input type="checkbox" id="lj-lembrar-pw" onchange="if(!this.checked)BD.delPwJ()">
         Lembrar senha neste dispositivo
       </label>
-
-      <button class="btn bv bb" onclick="loginRapidoJog()" style="margin-top:10px;font-size:.95rem;padding:14px;">
-        ▶ ENTRAR COMO <span id="login-btn-nm" style="text-transform:uppercase;">---</span>
+      <button class="btn bv bb" onclick="loginRapidoJ()" style="margin-top:9px;font-size:.93rem;padding:13px;">
+        ▶ ENTRAR COMO <span id="lj-btn-nm">---</span>
       </button>
-
-      <div class="sep-linha"><div class="sep-l"></div><span class="sep-t">não és tu?</span><div class="sep-l"></div></div>
-      <button class="btn bc bb" onclick="mudarConta('j')" style="font-size:.82rem;padding:9px;">
-        🔄 Entrar com outra conta
-      </button>
+      <div class="seplinha"><div class="sepl"></div><span class="sept">não és tu?</span><div class="sepl"></div></div>
+      <button class="btn bc bb" onclick="mudarConta('j')" style="font-size:.8rem;padding:8px;">🔄 Entrar com outra conta</button>
     </div>
 
-    <!-- FORMULÁRIO: quando não há conta guardada -->
-    <div id="login-sem-conta" style="display:none;">
-      <p style="color:#0aa;font-size:.82rem;margin-bottom:12px;text-align:center;">
-        Ainda não tens conta guardada neste dispositivo.
-      </p>
-      <div class="label">📧 Email</div>
-      <input type="email" id="l-em-manual" placeholder="email@exemplo.com"
-        autocomplete="email" oninput="verificarEmailLogin()"
-        onkeydown="if(event.key==='Enter')G('l-pw-manual').focus()">
-      <div id="l-em-info" style="display:none;background:#0a0a0a;border:1px solid #0f0;
-        border-radius:6px;padding:8px 12px;margin:4px 0;font-size:.78rem;color:#0aa;"></div>
-
-      <div class="label">🔑 Senha</div>
-      <div class="pass-wrap">
-        <input type="password" id="l-pw-manual" placeholder="A tua senha"
-          autocomplete="current-password"
-          onkeydown="if(event.key==='Enter')loginManualJog()">
-        <button class="toggle-pw" onclick="tPW('l-pw-manual',this)">👁️</button>
+    <!-- Sem conta guardada -->
+    <div id="lj-sem" style="display:none;">
+      <p style="color:#0aa;font-size:.8rem;margin-bottom:11px;text-align:center;">Ainda não tens conta guardada neste dispositivo.</p>
+      <div class="lbl">📧 Email</div>
+      <input type="email" id="lj-em" placeholder="email@exemplo.com" autocomplete="email"
+        oninput="verEmailJ()" onkeydown="if(event.key==='Enter')G('lj-pw-m').focus()">
+      <div id="lj-em-info" style="display:none;background:#0a0a0a;border:1px solid #0f0;
+        border-radius:5px;padding:7px 11px;margin:4px 0;font-size:.77rem;color:#0aa;"></div>
+      <div class="lbl">🔑 Senha</div>
+      <div class="pwrap">
+        <input type="password" id="lj-pw-m" placeholder="A tua senha" autocomplete="current-password"
+          onkeydown="if(event.key==='Enter')loginManualJ()">
+        <button class="bpw" onclick="tPW('lj-pw-m',this)">👁️</button>
       </div>
-
-      <label class="check-label" style="margin-top:8px;">
-        <input type="checkbox" id="l-lembrar-manual" checked>
+      <label class="ckl" style="margin-top:7px;">
+        <input type="checkbox" id="lj-lembrar-m" checked>
         Lembrar esta conta neste dispositivo
       </label>
-
-      <button class="btn bv bb" onclick="loginManualJog()" style="margin-top:10px;font-size:.95rem;padding:14px;">
-        ▶ ENTRAR NO JOGO
-      </button>
+      <button class="btn bv bb" onclick="loginManualJ()" style="margin-top:9px;font-size:.93rem;padding:13px;">▶ ENTRAR NO JOGO</button>
     </div>
 
-    <!-- AÇÕES EM BAIXO -->
-    <div class="acoes-baixo" style="margin-top:16px;">
-      <div class="sep-linha" style="width:100%;"><div class="sep-l"></div><span class="sep-t">conta nova ou esqueceste-te?</span><div class="sep-l"></div></div>
-      <div class="acoes-baixo-row">
-        <button class="btn bc brec" onclick="ir('p-reg')" style="padding:9px 14px;">
-          📝 Criar conta
-        </button>
-        <button class="btn bc brec" onclick="irRecuperarSenha('j')" style="padding:9px 14px;">
-          🔑 Recuperar senha
-        </button>
-      </div>
+    <div style="display:flex;gap:12px;justify-content:center;margin-top:15px;flex-wrap:wrap;">
+      <span class="lnk" onclick="ir('p-reg')">📝 Criar conta</span>
+      <span class="lnk" onclick="irRec('j')">🔑 Recuperar senha</span>
     </div>
-  </div>
-</div>
-</div>
-
-<!-- ============================================================ -->
-<!-- RECUPERAR SENHA                                              -->
-<!-- ============================================================ -->
-<div id="p-recuperar" class="page">
-<div class="caixa">
-  <button class="btn bvol bb" onclick="voltarDeRecuperacao()" style="margin-bottom:15px;">← VOLTAR</button>
-
-  <div id="area-rec-j" style="display:none;">
-    <div class="area-jog"><h3>🔑 RECUPERAR SENHA — JOGADOR</h3></div>
-  </div>
-  <div id="area-rec-pr" style="display:none;">
-    <div class="area-pr"><h3>🔑 RECUPERAR SENHA — LOJISTA</h3></div>
-  </div>
-
-  <div id="m-rec" class="msg"></div>
-
-  <!-- PASSO 1: escolher método -->
-  <div id="rec-passo1">
-    <div class="card card-b" style="text-align:center;padding:16px;margin-bottom:12px;">
-      <p style="color:#0ff;font-weight:bold;margin-bottom:6px;">Como queres receber o código?</p>
-      <p style="color:#0aa;font-size:.78rem;">Escolhe o método de recuperação:</p>
-    </div>
-
-    <div class="rec-opcoes">
-      <div class="rec-opcao" id="rec-opt-email" onclick="selMetodoRec('email')">
-        <div class="rec-opcao-ico">📧</div>
-        <div style="font-weight:bold;color:#0f0;margin-bottom:4px;">Email</div>
-        <div class="rec-opcao-txt">Recebe o código no teu email</div>
-      </div>
-      <div class="rec-opcao" id="rec-opt-sms" onclick="selMetodoRec('sms')">
-        <div class="rec-opcao-ico">📱</div>
-        <div style="font-weight:bold;color:#0f0;margin-bottom:4px;">SMS / MMS</div>
-        <div class="rec-opcao-txt">Recebe o código no telemóvel</div>
-      </div>
-    </div>
-
-    <div id="rec-campo-email" style="display:none;margin-top:10px;">
-      <div class="label">📧 O teu email registado</div>
-      <input type="email" id="rec-email" placeholder="email@exemplo.com">
-    </div>
-    <div id="rec-campo-sms" style="display:none;margin-top:10px;">
-      <div class="label">📱 O teu telemóvel registado</div>
-      <input type="tel" id="rec-tel" placeholder="912 345 678">
-    </div>
-
-    <button class="btn bv bb" id="btn-enviar-rec" onclick="enviarCodigoRec()" style="display:none;margin-top:12px;">
-      📨 ENVIAR CÓDIGO
-    </button>
-  </div>
-
-  <!-- PASSO 2: inserir código -->
-  <div id="rec-passo2" style="display:none;">
-    <div class="card card-b" style="text-align:center;padding:16px;margin-bottom:12px;">
-      <p style="color:#0ff;font-weight:bold;margin-bottom:4px;">Código enviado!</p>
-      <p style="color:#0aa;font-size:.78rem;" id="rec-enviado-para">---</p>
-    </div>
-
-    <!-- Código simulado (em produção viria por email/SMS real) -->
-    <div id="rec-codigo-simulado" class="card" style="text-align:center;background:#001a00;border-color:#0f0;margin-bottom:12px;">
-      <p style="color:#555;font-size:.72rem;margin-bottom:4px;">⚠️ SIMULAÇÃO — O teu código é:</p>
-      <p id="rec-codigo-show" style="font-size:2rem;color:#0ff;font-weight:bold;letter-spacing:8px;">----</p>
-      <p style="color:#555;font-size:.68rem;margin-top:4px;">Em produção chegaria ao teu email/telemóvel</p>
-    </div>
-
-    <div class="label">🔢 Inserir código de verificação</div>
-    <input type="number" id="rec-codigo-input" placeholder="Código de 4 dígitos"
-      style="text-align:center;font-size:1.3rem;letter-spacing:6px;"
-      maxlength="4" oninput="this.value=this.value.slice(0,4)">
-
-    <button class="btn bv bb" onclick="verificarCodigoRec()" style="margin-top:10px;">
-      ✅ VERIFICAR CÓDIGO
-    </button>
-    <button class="btn bc bb" onclick="reenviarCodigoRec()" style="font-size:.82rem;padding:9px;">
-      🔄 Reenviar código
-    </button>
-  </div>
-
-  <!-- PASSO 3: nova senha -->
-  <div id="rec-passo3" style="display:none;">
-    <div class="card card-v" style="text-align:center;padding:16px;margin-bottom:12px;">
-      <p style="color:#0f0;font-weight:bold;">✅ Identidade confirmada!</p>
-      <p style="color:#0aa;font-size:.78rem;margin-top:4px;">Define a tua nova senha:</p>
-    </div>
-
-    <div class="label">🔑 Nova Senha <span id="rec-force-txt" style="font-size:.68rem;color:#555;font-weight:normal;"></span></div>
-    <div class="pass-wrap">
-      <input type="password" id="rec-nova-pw" placeholder="Mínimo 4 caracteres"
-        oninput="calcForca(this.value,'rec-force-bar','rec-force-txt')">
-      <button class="toggle-pw" onclick="tPW('rec-nova-pw',this)">👁️</button>
-    </div>
-    <div id="rec-force-bar" class="force-bar" style="height:5px;border-radius:3px;"></div>
-
-    <div class="label">🔑 Confirmar Nova Senha</div>
-    <div class="pass-wrap">
-      <input type="password" id="rec-nova-pw2" placeholder="Repete a nova senha"
-        onkeydown="if(event.key==='Enter')guardarNovaSenha()">
-      <button class="toggle-pw" onclick="tPW('rec-nova-pw2',this)">👁️</button>
-    </div>
-
-    <button class="btn bv bb" onclick="guardarNovaSenha()" style="margin-top:12px;font-size:.95rem;padding:14px;">
-      💾 GUARDAR NOVA SENHA
-    </button>
   </div>
 </div>
 </div>
@@ -430,173 +377,305 @@ h1{font-size:2.2rem;text-shadow:0 0 20px #0f0;}
 <!-- REGISTO JOGADOR                                              -->
 <!-- ============================================================ -->
 <div id="p-reg" class="page">
-<div class="caixa">
-  <button class="btn bvol bb" onclick="ir('p-inicio')" style="margin-bottom:15px;">← VOLTAR</button>
-
-  <div class="area-jog">
+<div class="cx">
+  <button class="btn bvol bb" onclick="ir('p0')" style="margin-bottom:14px;">← VOLTAR</button>
+  <div class="aj">
     <h3>📝 CRIAR CONTA DE JOGADOR</h3>
-    <div class="card card-b" style="text-align:center;margin-bottom:14px;">
-      <p style="color:#0ff;font-weight:bold;font-size:.9rem;">🎁 OFERTA DE BOAS-VINDAS</p>
-      <p style="color:#0aa;font-size:.78rem;margin-top:5px;">
-        Recebes <b style="color:#0ff;">1.000 bandeiras GRÁTIS</b> ao criar conta!
-      </p>
+    <div class="card card-b" style="text-align:center;margin-bottom:13px;">
+      <p style="color:#0ff;font-weight:bold;">🎁 OFERTA DE BOAS-VINDAS</p>
+      <p style="color:#0aa;font-size:.77rem;margin-top:4px;">1.000 bandeiras GRÁTIS ao criar conta!</p>
     </div>
     <div id="m-reg" class="msg"></div>
-
-    <div class="label">👤 Nome de Jogador <span>*</span></div>
-    <input type="text" id="r-nm" placeholder="O teu nome no jogo" autocomplete="name" maxlength="30"
-      onkeydown="if(event.key==='Enter')G('r-em').focus()">
-
-    <div class="label">📧 Email <span>*</span></div>
-    <input type="email" id="r-em" placeholder="email@exemplo.com" autocomplete="email"
-      onkeydown="if(event.key==='Enter')G('r-tl').focus()">
-
-    <div class="label">📱 Telemóvel <span style="color:#555;font-weight:normal;">(para recuperação por SMS)</span></div>
-    <input type="tel" id="r-tl" placeholder="912 345 678" autocomplete="tel"
-      onkeydown="if(event.key==='Enter')G('r-pw').focus()">
-
-    <div class="label">🔑 Senha <span>*</span> <span id="r-force-txt" style="font-size:.68rem;color:#555;font-weight:normal;"></span></div>
-    <div class="pass-wrap">
-      <input type="password" id="r-pw" placeholder="Mín. 4 caracteres" autocomplete="new-password"
-        oninput="calcForca(this.value,'r-force-bar','r-force-txt')"
-        onkeydown="if(event.key==='Enter')G('r-pw2').focus()">
-      <button class="toggle-pw" onclick="tPW('r-pw',this)">👁️</button>
+    <div class="lbl">👤 Nome de Jogador <span>*</span></div>
+    <input type="text" id="r-nm" placeholder="O teu nome no jogo" autocomplete="name" maxlength="30">
+    <div class="lbl">📧 Email <span>*</span></div>
+    <input type="email" id="r-em" placeholder="email@exemplo.com" autocomplete="email">
+    <div class="lbl">📱 Telemóvel <span style="color:#555;font-weight:normal;">(para recuperação por SMS)</span></div>
+    <input type="tel" id="r-tl" placeholder="912 345 678" autocomplete="tel">
+    <div class="lbl">🔑 Senha <span>*</span> <span id="r-ft" style="font-size:.67rem;color:#555;font-weight:normal;"></span></div>
+    <div class="pwrap">
+      <input type="password" id="r-pw" placeholder="Mínimo 4 caracteres" autocomplete="new-password"
+        oninput="calcF(this.value,'r-fb','r-ft')">
+      <button class="bpw" onclick="tPW('r-pw',this)">👁️</button>
     </div>
-    <div id="r-force-bar" class="force-bar"></div>
-
-    <div class="label">🔑 Confirmar Senha <span>*</span></div>
-    <div class="pass-wrap">
+    <div id="r-fb" class="fbar"></div>
+    <div class="lbl">🔑 Confirmar Senha <span>*</span></div>
+    <div class="pwrap">
       <input type="password" id="r-pw2" placeholder="Repete a senha" autocomplete="new-password"
         onkeydown="if(event.key==='Enter')fazerRegisto()">
-      <button class="toggle-pw" onclick="tPW('r-pw2',this)">👁️</button>
+      <button class="bpw" onclick="tPW('r-pw2',this)">👁️</button>
     </div>
+    <label class="ckl" style="margin-top:9px;"><input type="checkbox" id="r-lembrar" checked>Lembrar conta e senha neste dispositivo</label>
+    <button class="btn bv bb" onclick="fazerRegisto()" style="margin-top:8px;font-size:.93rem;padding:13px;">✅ CRIAR CONTA GRÁTIS</button>
+  </div>
+  <div style="text-align:center;margin-top:11px;"><span class="lnk" onclick="ir('p-login')">Já tens conta? Entra aqui</span></div>
+</div>
+</div>
 
-    <label class="check-label" style="margin-top:10px;">
-      <input type="checkbox" id="r-lembrar" checked>
-      Lembrar a minha conta e senha neste dispositivo
-    </label>
+<!-- ============================================================ -->
+<!-- RECUPERAR SENHA                                              -->
+<!-- ============================================================ -->
+<div id="p-rec" class="page">
+<div class="cx">
+  <button class="btn bvol bb" onclick="ir(recVolta)" style="margin-bottom:14px;">← VOLTAR</button>
+  <div id="rec-aj" class="aj" style="display:none;"><h3>🔑 RECUPERAR SENHA — JOGADOR</h3></div>
+  <div id="rec-apr" class="apr" style="display:none;"><h3>🔑 RECUPERAR SENHA — LOJISTA</h3></div>
+  <div id="m-rec" class="msg"></div>
 
-    <button class="btn bv bb" onclick="fazerRegisto()" style="margin-top:8px;font-size:.95rem;padding:14px;">
-      ✅ CRIAR CONTA GRÁTIS
-    </button>
+  <!-- Passo 1: Escolher método -->
+  <div id="rec-p1">
+    <div class="card card-b" style="text-align:center;padding:14px;margin-bottom:11px;">
+      <p style="color:#0ff;font-weight:bold;margin-bottom:5px;">Como queres receber o código?</p>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0;">
+      <div id="rec-opt-em" onclick="selRec('email')" style="background:#0a0a0a;border:2px solid #333;
+        border-radius:8px;padding:13px;text-align:center;cursor:pointer;transition:all .2s;">
+        <div style="font-size:1.5rem;margin-bottom:5px;">📧</div>
+        <div style="font-weight:bold;color:#0f0;margin-bottom:3px;">Email</div>
+        <div style="font-size:.75rem;color:#0aa;">Recebe no email</div>
+      </div>
+      <div id="rec-opt-sms" onclick="selRec('sms')" style="background:#0a0a0a;border:2px solid #333;
+        border-radius:8px;padding:13px;text-align:center;cursor:pointer;transition:all .2s;">
+        <div style="font-size:1.5rem;margin-bottom:5px;">📱</div>
+        <div style="font-weight:bold;color:#0f0;margin-bottom:3px;">SMS / MMS</div>
+        <div style="font-size:.75rem;color:#0aa;">Recebe no telemóvel</div>
+      </div>
+    </div>
+    <div id="rec-f-em" style="display:none;">
+      <div class="lbl">📧 Email registado</div>
+      <input type="email" id="rec-em" placeholder="email@exemplo.com">
+    </div>
+    <div id="rec-f-sms" style="display:none;">
+      <div class="lbl">📱 Telemóvel registado</div>
+      <input type="tel" id="rec-tel" placeholder="912 345 678">
+    </div>
+    <button class="btn bv bb" id="rec-btn-env" onclick="enviarCodigo()" style="display:none;margin-top:11px;">📨 ENVIAR CÓDIGO</button>
   </div>
 
-  <div class="acoes-baixo">
-    <span class="lnk" onclick="ir('p-login')">Já tens conta? Entra aqui</span>
+  <!-- Passo 2: Inserir código -->
+  <div id="rec-p2" style="display:none;">
+    <div class="card card-b" style="text-align:center;padding:14px;margin-bottom:11px;">
+      <p style="color:#0ff;font-weight:bold;margin-bottom:4px;">Código enviado!</p>
+      <p style="color:#0aa;font-size:.77rem;" id="rec-dest">---</p>
+    </div>
+    <div class="card" style="text-align:center;background:#001a00;border-color:#0f0;margin-bottom:11px;">
+      <p style="color:#555;font-size:.7rem;margin-bottom:4px;">⚠️ SIMULAÇÃO — Código:</p>
+      <p id="rec-cod-show" style="font-size:2.2rem;color:#0ff;font-weight:bold;letter-spacing:8px;">----</p>
+      <p style="color:#555;font-size:.66rem;margin-top:3px;">Em produção chegaria por email/SMS</p>
+    </div>
+    <div class="lbl">🔢 Código de verificação (4 dígitos)</div>
+    <input type="number" id="rec-cod-in" placeholder="0000" style="text-align:center;font-size:1.3rem;letter-spacing:6px;"
+      maxlength="4" oninput="this.value=this.value.slice(0,4)"
+      onkeydown="if(event.key==='Enter')verificarCod()">
+    <button class="btn bv bb" onclick="verificarCod()" style="margin-top:10px;">✅ VERIFICAR CÓDIGO</button>
+    <button class="btn bc bb" onclick="reenviarCod()" style="font-size:.8rem;padding:8px;">🔄 Reenviar código</button>
+  </div>
+
+  <!-- Passo 3: Nova senha -->
+  <div id="rec-p3" style="display:none;">
+    <div class="card card-v" style="text-align:center;padding:14px;margin-bottom:11px;">
+      <p style="color:#0f0;font-weight:bold;">✅ Identidade confirmada!</p>
+      <p style="color:#0aa;font-size:.77rem;margin-top:4px;">Define a tua nova senha:</p>
+    </div>
+    <div class="lbl">🔑 Nova Senha <span id="rec-ft" style="font-size:.67rem;color:#555;font-weight:normal;"></span></div>
+    <div class="pwrap">
+      <input type="password" id="rec-np" placeholder="Mínimo 4 caracteres"
+        oninput="calcF(this.value,'rec-fb','rec-ft')">
+      <button class="bpw" onclick="tPW('rec-np',this)">👁️</button>
+    </div>
+    <div id="rec-fb" class="fbar"></div>
+    <div class="lbl">🔑 Confirmar</div>
+    <div class="pwrap">
+      <input type="password" id="rec-np2" placeholder="Repete" onkeydown="if(event.key==='Enter')guardarNovaSenha()">
+      <button class="bpw" onclick="tPW('rec-np2',this)">👁️</button>
+    </div>
+    <button class="btn bv bb" onclick="guardarNovaSenha()" style="margin-top:11px;font-size:.93rem;padding:13px;">💾 GUARDAR NOVA SENHA</button>
   </div>
 </div>
 </div>
 
 <!-- ============================================================ -->
-<!-- PR LOGIN — NOME DA EMPRESA MEMORIZADO, SÓ PEDE SENHA        -->
+<!-- JOGO (MAPA + AVATAR)                                        -->
+<!-- ============================================================ -->
+<div id="p-jogo" class="page" style="padding:0;overflow:hidden;height:100vh;">
+  <!-- MAPA -->
+  <div id="mapa-jogo"></div>
+
+  <!-- AVATAR FIXO NO CENTRO -->
+  <div id="avatar-cx">
+    <div id="circ-vis"></div>
+    <div id="circ-alc"></div>
+    <div id="aviso-ap" onclick="apanharManual()">👆 APANHAR!</div>
+    <svg id="avt-svg" viewBox="0 0 54 68" xmlns="http://www.w3.org/2000/svg">
+      <ellipse cx="27" cy="65" rx="11" ry="3" fill="rgba(0,0,0,.5)"/>
+      <g id="ag">
+        <g id="ape" style="transform-origin:23px 44px"><rect x="18" y="42" width="8" height="17" rx="4" fill="#0a4a0a"/><ellipse cx="22" cy="58" rx="7" ry="3.5" fill="#083808"/></g>
+        <g id="apd" style="transform-origin:31px 44px"><rect x="27" y="42" width="8" height="17" rx="4" fill="#0a4a0a"/><ellipse cx="31" cy="58" rx="7" ry="3.5" fill="#083808"/></g>
+        <rect x="18" y="27" width="19" height="17" rx="5" fill="#0d6a0d"/>
+        <rect x="22" y="30" width="11" height="2.5" rx="1.2" fill="#0ff" opacity=".5"/>
+        <rect x="22" y="35" width="11" height="1.5" rx=".75" fill="#0ff" opacity=".3"/>
+        <g id="abe" style="transform-origin:18px 29px"><rect x="9" y="27" width="9" height="13" rx="4.5" fill="#0b5a0b"/><circle cx="13.5" cy="41" r="4" fill="#094a09"/></g>
+        <g id="abd" style="transform-origin:37px 29px"><rect x="37" y="27" width="9" height="13" rx="4.5" fill="#0b5a0b"/><circle cx="41.5" cy="41" r="4" fill="#094a09"/></g>
+        <rect x="24" y="23" width="6" height="6" rx="3" fill="#0b5a0b"/>
+        <g id="acab" style="transform-origin:27px 14px">
+          <circle cx="27" cy="14" r="12" fill="#0d6a0d"/>
+          <ellipse cx="27" cy="4.5" rx="11" ry="5" fill="#050"/>
+          <rect x="16" y="4" width="22" height="6" rx="2.5" fill="#050"/>
+          <rect x="18" y="10" width="18" height="4" rx="2" fill="#0ff" opacity=".55"/>
+          <circle cx="22" cy="16" r="3.2" fill="#000"/><circle cx="32" cy="16" r="3.2" fill="#000"/>
+          <circle cx="22" cy="16" r="2" fill="#0ff"/><circle cx="32" cy="16" r="2" fill="#0ff"/>
+          <circle cx="22.9" cy="15.1" r=".8" fill="#fff"/><circle cx="32.9" cy="15.1" r=".8" fill="#fff"/>
+          <path d="M 23 20 Q 27 22.5 31 20" stroke="#0ff" stroke-width="1.3" fill="none" stroke-linecap="round" opacity=".6"/>
+          <line x1="27" y1="4" x2="27" y2="0" stroke="#0f0" stroke-width="2"/>
+          <circle cx="27" cy="0" r="3" fill="#0ff">
+            <animate attributeName="opacity" values="1;.2;1" dur="1.4s" repeatCount="indefinite"/>
+            <animate attributeName="r" values="3;4;3" dur="1.4s" repeatCount="indefinite"/>
+          </circle>
+        </g>
+      </g>
+    </svg>
+  </div>
+
+  <!-- HUD -->
+  <div class="hud hud-j" style="z-index:3000;">
+    <div>
+      <div style="font-weight:bold;font-size:.82rem;" id="j-hud-nm">👤 ---</div>
+      <div style="font-size:.6rem;color:#0aa;" id="j-hud-nv">Nível 1</div>
+    </div>
+    <div style="display:flex;gap:9px;font-size:.7rem;text-align:center;">
+      <div class="hn">🏴<span class="hv" id="h-fl">0</span></div>
+      <div class="hn">⚡<span class="hv" id="h-en">100%</span></div>
+      <div class="hn">🎯<span class="hv" id="h-sk">0</span></div>
+      <div class="hn">👁️<span class="hv" id="h-vis">5m</span></div>
+    </div>
+    <div class="hbtns">
+      <button class="hbtn" onclick="voltarHome()">← Início</button>
+      <button class="hbtn hbtn-s" onclick="cSair('j')">Sair</button>
+    </div>
+  </div>
+
+  <!-- PAINEL SKILL -->
+  <div id="pan-sk">
+    <div style="color:#0f0;font-weight:bold;text-align:center;margin-bottom:4px;font-size:.73rem;">📊 SKILL</div>
+    <div class="psk"><span class="pskl">Nível</span><span class="pskv" id="sk-nv">1</span></div>
+    <div class="psk"><span class="pskl">Skill</span><span class="pskv" id="sk-sk">0</span></div>
+    <div class="psk"><span class="pskl">Visão</span><span class="pskv" id="sk-vis">5m</span></div>
+    <div class="psk"><span class="pskl">Prox.</span><span class="pskv" id="sk-px">500</span></div>
+    <div id="bsk"><div id="bskf" style="width:0%"></div></div>
+    <div id="bskt">0/500</div>
+  </div>
+
+  <!-- JOYSTICK -->
+  <div id="ctrl">
+    <div style="font-size:.62rem;color:#0aa;text-align:center;margin-bottom:5px;">🕹️ MOVER (WASD/↑↓)</div>
+    <div id="ctrl-grade">
+      <div></div>
+      <div class="cbtn" id="bc-c" onpointerdown="pd('c')" onpointerup="pu('c')" ontouchstart="pd('c')" ontouchend="pu('c')">▲</div>
+      <div></div>
+      <div class="cbtn" id="bc-e" onpointerdown="pd('e')" onpointerup="pu('e')" ontouchstart="pd('e')" ontouchend="pu('e')">◄</div>
+      <div class="cbtn" style="font-size:.55rem;color:#222;cursor:default;">●</div>
+      <div class="cbtn" id="bc-d" onpointerdown="pd('d')" onpointerup="pu('d')" ontouchstart="pd('d')" ontouchend="pu('d')">►</div>
+      <div></div>
+      <div class="cbtn" id="bc-b" onpointerdown="pd('b')" onpointerup="pu('b')" ontouchstart="pd('b')" ontouchend="pu('b')">▼</div>
+      <div></div>
+    </div>
+    <div id="ctrl-tam">
+      <button class="tbtn" onclick="mudarTam(-1)">A−</button>
+      <span id="tam-lbl" style="font-size:.6rem;color:#555;align-self:center;">44px</span>
+      <button class="tbtn" onclick="mudarTam(1)">A+</button>
+    </div>
+  </div>
+
+  <!-- RODAPÉ -->
+  <div id="rodape-jogo"><div id="ticker"></div></div>
+  <div id="gps-lbl">📡 GPS: a iniciar...</div>
+  <div id="notif">
+    <div id="notif-ico" style="font-size:1.2rem;margin-bottom:4px;"></div>
+    <div id="notif-txt" style="color:#0ff;font-weight:bold;font-size:.86rem;"></div>
+    <div id="notif-sub" style="color:#0aa;font-size:.73rem;margin-top:2px;"></div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- PR LOGIN                                                     -->
 <!-- ============================================================ -->
 <div id="p-pr-login" class="page">
-<div class="caixa">
-  <button class="btn bvol bb" onclick="ir('p-inicio')" style="margin-bottom:15px;">← VOLTAR</button>
-
-  <div class="area-pr">
+<div class="cx">
+  <button class="btn bvol bb" onclick="ir('p0')" style="margin-bottom:14px;">← VOLTAR</button>
+  <div class="apr">
     <h3>🏪 ENTRAR COMO LOJISTA</h3>
     <div id="m-pr-l" class="msg"></div>
 
-    <!-- CARTÃO com nome da empresa memorizado -->
-    <div id="pr-com-conta" style="display:none;">
-      <div class="user-card user-card-pr">
-        <div class="user-avatar-big user-avatar-pr">
-          <span>🏪</span>
-          <div class="online-dot" style="background:#ff0;box-shadow:0 0 6px #ff0;"></div>
-        </div>
-        <div class="user-nome-big" style="color:#ff0;" id="pr-nome-big">---</div>
-        <div class="user-sub" id="pr-ativ-big">---</div>
-        <div class="user-stats-row">
-          <div class="user-stat"><div class="user-stat-n" style="color:#ff0;" id="pr-stat-loc">---</div><div class="user-stat-l">📍 Local</div></div>
-          <div class="user-stat"><div class="user-stat-n" style="color:#0ff;" id="pr-stat-packs">0</div><div class="user-stat-l">📦 Pacotes</div></div>
-          <div class="user-stat"><div class="user-stat-n" style="color:#0f0;" id="pr-stat-qrs">0</div><div class="user-stat-l">🎫 QRs</div></div>
+    <!-- Com conta guardada -->
+    <div id="lpr-com" style="display:none;">
+      <div class="ucard ucard-pr">
+        <div class="uavt uavt-pr"><span>🏪</span><div class="udot udot-pr"></div></div>
+        <div class="unome" style="color:#ff0;" id="lpr-nm">---</div>
+        <div class="usub" id="lpr-ativ">---</div>
+        <div class="ustats">
+          <div class="ustat"><div class="ustat-n" style="color:#ff0;" id="lpr-loc">---</div><div class="ustat-l">📍 Local</div></div>
+          <div class="ustat"><div class="ustat-n" style="color:#0ff;" id="lpr-packs">0</div><div class="ustat-l">📦 Pacotes</div></div>
+          <div class="ustat"><div class="ustat-n" style="color:#0f0;" id="lpr-qrs">0</div><div class="ustat-l">🎫 QRs</div></div>
         </div>
       </div>
-
-      <!-- APENAS SENHA -->
-      <div class="label">🔑 Senha</div>
-      <div class="pass-wrap">
-        <input type="password" id="pl-pw-r" placeholder="A senha da empresa"
-          autocomplete="current-password"
+      <div class="lbl">🔑 Senha</div>
+      <div class="pwrap">
+        <input type="password" id="lpr-pw-r" placeholder="A senha da empresa" autocomplete="current-password"
           onkeydown="if(event.key==='Enter')loginRapidoPR()">
-        <button class="toggle-pw" onclick="tPW('pl-pw-r',this)">👁️</button>
+        <button class="bpw" onclick="tPW('lpr-pw-r',this)">👁️</button>
       </div>
-
-      <label class="check-label" style="margin-top:8px;">
-        <input type="checkbox" id="pl-lembrar-pw" onchange="gestaoPWGuardadaPR()">
+      <label class="ckl" style="margin-top:7px;">
+        <input type="checkbox" id="lpr-lembrar-pw" onchange="if(!this.checked)BD.delPwPR()">
         Lembrar senha neste dispositivo
       </label>
-
-      <button class="btn bo bb" onclick="loginRapidoPR()" style="margin-top:10px;font-size:.95rem;padding:14px;">
-        ▶ ENTRAR COMO <span id="pr-btn-nm" style="text-transform:uppercase;">---</span>
+      <button class="btn bo bb" onclick="loginRapidoPR()" style="margin-top:9px;font-size:.93rem;padding:13px;">
+        ▶ ENTRAR COMO <span id="lpr-btn-nm">---</span>
       </button>
-
-      <div class="sep-linha"><div class="sep-l"></div><span class="sep-t">não é a tua empresa?</span><div class="sep-l"></div></div>
-      <button class="btn bc bb" onclick="mudarConta('pr')" style="font-size:.82rem;padding:9px;">
-        🔄 Entrar com outra conta
-      </button>
+      <div class="seplinha"><div class="sepl"></div><span class="sept">não é a tua empresa?</span><div class="sepl"></div></div>
+      <button class="btn bc bb" onclick="mudarConta('pr')" style="font-size:.8rem;padding:8px;">🔄 Entrar com outra conta</button>
     </div>
 
-    <!-- FORMULÁRIO: quando não há conta guardada -->
-    <div id="pr-sem-conta" style="display:none;">
-      <p style="color:#0aa;font-size:.82rem;margin-bottom:12px;text-align:center;">
-        Ainda não tens empresa guardada neste dispositivo.
-      </p>
-      <div class="label">📧 Email da Empresa</div>
-      <input type="email" id="pl-em-manual" placeholder="loja@email.com"
-        autocomplete="email" oninput="verificarEmailPR()"
-        onkeydown="if(event.key==='Enter')G('pl-pw-manual').focus()">
-      <div id="pl-em-info" style="display:none;background:#0a0a0a;border:1px solid #ff0;
-        border-radius:6px;padding:8px 12px;margin:4px 0;font-size:.78rem;"></div>
-
-      <div class="label">🔑 Senha</div>
-      <div class="pass-wrap">
-        <input type="password" id="pl-pw-manual" placeholder="A senha da empresa"
-          autocomplete="current-password"
+    <!-- Sem conta guardada -->
+    <div id="lpr-sem" style="display:none;">
+      <div class="lbl">📧 Email da Empresa</div>
+      <input type="email" id="lpr-em" placeholder="loja@email.com" autocomplete="email"
+        oninput="verEmailPR()" onkeydown="if(event.key==='Enter')G('lpr-pw-m').focus()">
+      <div id="lpr-em-info" style="display:none;background:#0a0a0a;border:1px solid #ff0;
+        border-radius:5px;padding:7px 11px;margin:4px 0;font-size:.77rem;"></div>
+      <div class="lbl">🔑 Senha</div>
+      <div class="pwrap">
+        <input type="password" id="lpr-pw-m" placeholder="A senha da empresa" autocomplete="current-password"
           onkeydown="if(event.key==='Enter')loginManualPR()">
-        <button class="toggle-pw" onclick="tPW('pl-pw-manual',this)">👁️</button>
+        <button class="bpw" onclick="tPW('lpr-pw-m',this)">👁️</button>
       </div>
-
-      <label class="check-label" style="margin-top:8px;">
-        <input type="checkbox" id="pl-lembrar-manual" checked>
+      <label class="ckl" style="margin-top:7px;">
+        <input type="checkbox" id="lpr-lembrar-m" checked>
         Lembrar esta empresa neste dispositivo
       </label>
-
-      <button class="btn bo bb" onclick="loginManualPR()" style="margin-top:10px;font-size:.95rem;padding:14px;">
-        ▶ ENTRAR NA MINHA CONTA
-      </button>
+      <button class="btn bo bb" onclick="loginManualPR()" style="margin-top:9px;font-size:.93rem;padding:13px;">▶ ENTRAR NA MINHA CONTA</button>
     </div>
 
-    <!-- AÇÕES EM BAIXO -->
-    <div class="acoes-baixo" style="margin-top:16px;">
-      <div class="sep-linha" style="width:100%;"><div class="sep-l"></div><span class="sep-t">empresa nova ou esqueceste-te?</span><div class="sep-l"></div></div>
-      <div class="acoes-baixo-row">
-        <button class="btn bc brec" onclick="ir('p-pr-reg')" style="padding:9px 14px;">
-          📝 Registar empresa
-        </button>
-        <button class="btn bc brec" onclick="irRecuperarSenha('pr')" style="padding:9px 14px;">
-          🔑 Recuperar senha
-        </button>
-      </div>
+    <div style="display:flex;gap:12px;justify-content:center;margin-top:15px;flex-wrap:wrap;">
+      <span class="lnk" onclick="ir('p-pr-reg')">📝 Registar empresa</span>
+      <span class="lnk" onclick="irRec('pr')">🔑 Recuperar senha</span>
     </div>
   </div>
 </div>
 </div>
 
 <!-- ============================================================ -->
-<!-- PR REGISTO (simplificado)                                    -->
+<!-- PR REGISTO                                                   -->
 <!-- ============================================================ -->
 <div id="p-pr-reg" class="page">
-<div class="caixa">
-  <button class="btn bvol bb" onclick="ir('p-inicio')" style="margin-bottom:15px;">← VOLTAR</button>
-  <div class="area-pr"><h3>📝 REGISTAR EMPRESA</h3></div>
+<div class="cx">
+  <button class="btn bvol bb" onclick="ir('p0')" style="margin-bottom:14px;">← VOLTAR</button>
+  <div class="apr"><h3>📝 REGISTAR EMPRESA</h3></div>
   <div id="m-pr-reg" class="msg"></div>
   <div class="scroll">
     <div class="card card-y">
       <h3 style="color:#ff0;margin-bottom:8px;">📍 MORADA</h3>
       <input type="text" id="pr-rua" placeholder="* Rua e Número">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+      <div class="g2">
         <input type="text" id="pr-cp" placeholder="* Código Postal">
         <input type="text" id="pr-loc" placeholder="* Localidade">
       </div>
@@ -626,140 +705,115 @@ h1{font-size:2.2rem;text-shadow:0 0 20px #0f0;}
       <h3 style="color:#ff0;margin-bottom:8px;">📞 CONTACTOS</h3>
       <input type="tel" id="pr-tel" placeholder="* Telefone da Empresa">
       <input type="email" id="pr-email" placeholder="* Email da Empresa">
-      <input type="tel" id="pr-tel-resp" placeholder="* Telemóvel do Responsável (para SMS)">
+      <input type="tel" id="pr-tel-r" placeholder="* Telemóvel do Responsável (SMS)">
     </div>
     <div class="card card-y">
       <h3 style="color:#ff0;margin-bottom:8px;">👤 RESPONSÁVEL</h3>
       <input type="text" id="pr-resp" placeholder="* Nome do Responsável">
-      <div class="label">🔑 Senha <span style="color:#f00;">*</span> <span id="pr-force-txt" style="font-size:.68rem;color:#555;font-weight:normal;"></span></div>
-      <div class="pass-wrap">
+      <div class="lbl">🔑 Senha <span style="color:#f00;">*</span> <span id="pr-ft" style="font-size:.67rem;color:#555;font-weight:normal;"></span></div>
+      <div class="pwrap">
         <input type="password" id="pr-pw" placeholder="Mín. 4 caracteres" autocomplete="new-password"
-          oninput="calcForca(this.value,'pr-force-bar','pr-force-txt')">
-        <button class="toggle-pw" onclick="tPW('pr-pw',this)">👁️</button>
+          oninput="calcF(this.value,'pr-fb','pr-ft')">
+        <button class="bpw" onclick="tPW('pr-pw',this)">👁️</button>
       </div>
-      <div id="pr-force-bar" class="force-bar"></div>
-      <div class="label">🔑 Confirmar Senha <span style="color:#f00;">*</span></div>
-      <div class="pass-wrap">
-        <input type="password" id="pr-pw2" placeholder="Repete a senha" autocomplete="new-password">
-        <button class="toggle-pw" onclick="tPW('pr-pw2',this)">👁️</button>
+      <div id="pr-fb" class="fbar"></div>
+      <div class="lbl">🔑 Confirmar Senha <span style="color:#f00;">*</span></div>
+      <div class="pwrap">
+        <input type="password" id="pr-pw2" placeholder="Repete" autocomplete="new-password">
+        <button class="bpw" onclick="tPW('pr-pw2',this)">👁️</button>
       </div>
     </div>
-    <div style="padding:8px 0;">
-      <label class="check-label">
-        <input type="checkbox" id="pr-trm">
-        Li e aceito os <span style="color:#0ff;">&nbsp;Termos e Condições&nbsp;</span> do ZAP FLAGS.
-      </label>
-      <label class="check-label">
-        <input type="checkbox" id="pr-lembrar" checked>
-        Lembrar esta empresa e senha neste dispositivo
-      </label>
+    <div style="padding:7px 0;">
+      <label class="ckl"><input type="checkbox" id="pr-trm">Li e aceito os <span style="color:#0ff;">&nbsp;Termos e Condições&nbsp;</span> do ZAP FLAGS.</label>
+      <label class="ckl"><input type="checkbox" id="pr-lembrar" checked>Lembrar esta empresa e senha neste dispositivo</label>
     </div>
-    <button class="btn bo bb" onclick="registarPR()" style="font-size:.95rem;padding:14px;">✅ REGISTAR EMPRESA</button>
-    <button class="btn bvol bb" onclick="ir('p-inicio')">← VOLTAR</button>
+    <button class="btn bo bb" onclick="registarPR()" style="font-size:.93rem;padding:13px;">✅ REGISTAR EMPRESA</button>
+    <button class="btn bvol bb" onclick="ir('p0')">← VOLTAR</button>
   </div>
 </div>
 </div>
 
 <!-- ============================================================ -->
-<!-- JOGO (placeholder)                                          -->
+<!-- PR PAINEL                                                    -->
 <!-- ============================================================ -->
-<div id="p-jogo" class="page">
-<div style="background:rgba(0,15,0,.97);border-bottom:2px solid #0f0;padding:8px 12px;
-  display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:100;">
-  <div>
-    <div style="font-weight:bold;font-size:.85rem;" id="j-hud-nm">👤 ---</div>
-    <div style="font-size:.63rem;color:#0aa;" id="j-hud-nv">Nível 1 · 👁️ 5m</div>
+<div id="p-pr" class="page" style="padding:0;">
+  <div class="hud hud-pr" style="padding:8px 11px;">
+    <div>
+      <div style="font-weight:bold;font-size:.8rem;color:#ff0;" id="pr-hud-n">🏪 ---</div>
+      <div style="font-size:.63rem;color:#0aa;" id="pr-hud-loc">---</div>
+    </div>
+    <div class="hbtns">
+      <button class="hbtn" onclick="ir('p0')">← Início</button>
+      <button class="hbtn hbtn-s" onclick="cSair('pr')">Sair</button>
+    </div>
   </div>
-  <div style="font-size:.75rem;text-align:center;">
-    <span style="color:#0ff;">🏴<span id="j-hud-fl">0</span></span>&nbsp;
-    <span style="color:#0f0;">⚡<span id="j-hud-en">100</span>%</span>&nbsp;
-    <span style="color:#ff0;">🎯<span id="j-hud-sk">0</span></span>
+  <div class="cx" style="padding-top:20px;">
+    <div class="card card-y" style="text-align:center;padding:18px;">
+      <div style="font-size:2.2rem;margin-bottom:8px;">🏪</div>
+      <p style="color:#ff0;font-weight:bold;font-size:1rem;margin-bottom:7px;" id="pr-painel-nm">---</p>
+      <p style="color:#0aa;font-size:.82rem;margin-bottom:12px;">Painel do Lojista</p>
+      <button class="btn bo" onclick="ir('p0')">← Voltar ao Início</button>
+    </div>
   </div>
-  <div style="display:flex;gap:5px;">
-    <button class="btn bvol" style="width:auto;padding:5px 10px;font-size:.72rem;" onclick="ir('p-inicio')">← Início</button>
-    <button class="bsair btn" style="width:auto;padding:5px 10px;font-size:.72rem;" onclick="confSair('j')">Sair</button>
-  </div>
-</div>
-<div style="display:flex;align-items:center;justify-content:center;
-  height:calc(100vh - 55px);background:#001100;flex-direction:column;gap:15px;text-align:center;padding:20px;">
-  <div style="font-size:4rem;">🗺️</div>
-  <p style="color:#0f0;font-size:1.1rem;font-weight:bold;" id="j-bem-vindo">Bem-vindo!</p>
-  <p style="color:#0aa;font-size:.85rem;">Mapa do jogo com avatar</p>
-</div>
-</div>
-
-<!-- ============================================================ -->
-<!-- PR PAINEL (placeholder)                                     -->
-<!-- ============================================================ -->
-<div id="p-pr" class="page">
-<div style="background:rgba(15,10,0,.97);border-bottom:2px solid #ff0;padding:8px 12px;
-  display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:100;">
-  <div>
-    <div style="font-weight:bold;font-size:.8rem;color:#ff0;" id="pr-hud-n">🏪 ---</div>
-    <div style="font-size:.65rem;color:#0aa;" id="pr-hud-loc">---</div>
-  </div>
-  <div style="display:flex;gap:4px;">
-    <button class="btn bvol" style="width:auto;padding:5px 8px;font-size:.72rem;" onclick="ir('p-inicio')">← Início</button>
-    <button class="bsair btn" style="width:auto;padding:5px 8px;font-size:.72rem;" onclick="confSair('pr')">Sair</button>
-  </div>
-</div>
-<div class="caixa" style="padding-top:20px;">
-  <div class="card card-y" style="text-align:center;padding:20px;">
-    <div style="font-size:2.5rem;margin-bottom:8px;">🏪</div>
-    <p style="color:#ff0;font-weight:bold;font-size:1rem;margin-bottom:8px;" id="pr-painel-nome">---</p>
-    <p style="color:#0aa;font-size:.82rem;">Painel do Lojista</p>
-  </div>
-</div>
 </div>
 
 <!-- ============================================================ -->
 <!-- BACKOFFICE LOGIN                                             -->
 <!-- ============================================================ -->
 <div id="p-bo-login" class="page">
-<div class="caixa">
-  <button class="btn bvol bb" onclick="ir('p-inicio')" style="margin-bottom:15px;">← VOLTAR</button>
-  <div class="area-bo">
-    <h3>🖥️ BACKOFFICE <span class="badge-bo">SISTEMA</span></h3>
+<div class="cx">
+  <button class="btn bvol bb" onclick="ir('p0')" style="margin-bottom:14px;">← VOLTAR</button>
+  <div class="abo">
+    <h3>🖥️ BACKOFFICE <span class="bbo-badge">SISTEMA</span></h3>
     <div id="m-bo-l" class="msg"></div>
-    <div class="label">🔑 Código de Acesso</div>
-    <div class="pass-wrap">
+    <div class="lbl">🔑 Código de Acesso</div>
+    <div class="pwrap">
       <input type="password" id="bo-pw" placeholder="Código de acesso"
         style="text-align:center;letter-spacing:6px;border-color:#0ff;color:#0ff;font-size:1.1rem;"
         onkeydown="if(event.key==='Enter')loginBO()">
-      <button class="toggle-pw" onclick="tPW('bo-pw',this)">👁️</button>
+      <button class="bpw" onclick="tPW('bo-pw',this)">👁️</button>
     </div>
     <button class="btn bbo bb" onclick="loginBO()" style="margin-top:8px;">🖥️ ENTRAR</button>
   </div>
 </div>
 </div>
 
-<!-- MODAL -->
-<div id="movl" onclick="fecharModal()"></div>
-<div id="modal">
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-    <h2 id="modal-tit" style="color:#ff0;border:none;margin:0;font-size:1rem;">---</h2>
-    <button class="btn bc" style="width:auto;padding:4px 10px;font-size:.78rem;" onclick="fecharModal()">✖</button>
-  </div>
-  <div id="modal-corpo"></div>
-  <div id="m-modal" class="msg"></div>
-  <button class="btn bvol bb" onclick="fecharModal()" style="margin-top:8px;">← FECHAR</button>
-</div>
-
 <!-- CONFIRMAÇÃO -->
 <div id="conf-ovl"></div>
 <div id="conf-box">
-  <div id="conf-ico" style="font-size:2.5rem;margin-bottom:8px;">❓</div>
-  <h2 id="conf-tit" style="color:#f00;border-color:#f00;margin-bottom:10px;font-size:1rem;"></h2>
-  <p id="conf-txt" style="color:#888;font-size:.82rem;margin-bottom:18px;line-height:1.5;"></p>
+  <div id="conf-ico" style="font-size:2.3rem;margin-bottom:7px;">❓</div>
+  <h2 id="conf-tit" style="color:#f00;margin-bottom:9px;font-size:1rem;"></h2>
+  <p id="conf-txt" style="color:#888;font-size:.8rem;margin-bottom:17px;line-height:1.5;"></p>
   <div style="display:flex;gap:8px;">
-    <button class="btn bvol" style="flex:1;padding:12px;" onclick="fecharConf()">❌ CANCELAR</button>
-    <button class="btn br"   style="flex:1;padding:12px;" onclick="execConf()">✅ CONFIRMAR</button>
+    <button class="btn bvol" style="flex:1;padding:11px;" onclick="fConf()">❌ CANCELAR</button>
+    <button class="btn br"   style="flex:1;padding:11px;" onclick="exConf()">✅ CONFIRMAR</button>
   </div>
+</div>
+
+<!-- MODAL -->
+<div id="movl" onclick="fMdl()"></div>
+<div id="mdl">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:11px;">
+    <h2 id="mdl-tit" style="color:#ff0;border:none;margin:0;font-size:1rem;">---</h2>
+    <button class="btn bc" style="width:auto;padding:4px 9px;font-size:.76rem;" onclick="fMdl()">✖</button>
+  </div>
+  <div id="mdl-corpo"></div>
+  <div id="m-mdl" class="msg"></div>
+  <button class="btn bvol bb" onclick="fMdl()" style="margin-top:8px;">← FECHAR</button>
 </div>
 
 <script>
 'use strict';
+// ============================================================
+// CONSTANTES
+// ============================================================
 const PASSE='321321';
+const CFG={
+  VISAO_MIN:5,VISAO_MAX:100,SKILL_P_METRO:10,QR_N:20,
+  APANHAR_RAIO:12,AVISO_RAIO:20,VEL_PX:2.5,N_BAND:25,SPAWN_RAIO:130
+};
+function flagsParaSk(sk){return 500*Math.pow(2,sk);}
+function calcVisao(sk){return Math.min(CFG.VISAO_MAX,CFG.VISAO_MIN+Math.floor(sk/CFG.SKILL_P_METRO));}
 
 // ============================================================
 // BASE DE DADOS
@@ -769,14 +823,12 @@ const BD={
   emps:   ()=>{try{return JSON.parse(localStorage.getItem('zap_emps')||'[]')}catch{return[]}},
   saveJ:  l=>localStorage.setItem('zap_jogs',JSON.stringify(l)),
   saveE:  l=>localStorage.setItem('zap_emps',JSON.stringify(l)),
-  // Sessão activa
   sessJ:  ()=>{try{return JSON.parse(localStorage.getItem('zap_sj')||'null')}catch{return null}},
   sessPR: ()=>{try{return JSON.parse(localStorage.getItem('zap_sp')||'null')}catch{return null}},
   setSJ:  u=>localStorage.setItem('zap_sj',JSON.stringify(u)),
   setSP:  p=>localStorage.setItem('zap_sp',JSON.stringify(p)),
   delSJ:  ()=>localStorage.removeItem('zap_sj'),
   delSP:  ()=>localStorage.removeItem('zap_sp'),
-  // Senhas guardadas (opção "Lembrar senha")
   pwJ:    ()=>localStorage.getItem('zap_pwj')||'',
   setPwJ: pw=>localStorage.setItem('zap_pwj',pw),
   delPwJ: ()=>localStorage.removeItem('zap_pwj'),
@@ -785,503 +837,626 @@ const BD={
   delPwPR:()=>localStorage.removeItem('zap_pwpr'),
 };
 
-const G   = id=>document.getElementById(id);
-const val = id=>G(id)?.value?.trim()||'';
-const vE  = e=>/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(e).toLowerCase());
-const vT  = t=>/^[0-9]{9,15}$/.test(String(t).replace(/[\s\-\+]/g,''));
-const vN  = n=>/^[0-9]{9}$/.test(String(n).replace(/\s/g,''));
-const fN  = n=>(n||0).toLocaleString('pt-PT');
-const fmt = ts=>ts?new Date(ts).toLocaleString('pt-PT',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'}):'---';
+// ============================================================
+// UTILS
+// ============================================================
+const G   =id=>document.getElementById(id);
+const val =id=>G(id)?.value?.trim()||'';
+const vE  =e=>/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(e).toLowerCase());
+const vT  =t=>/^[0-9]{9,15}$/.test(String(t).replace(/[\s\-\+]/g,''));
+const vN  =n=>/^[0-9]{9}$/.test(String(n).replace(/\s/g,''));
+const fN  =n=>(n||0).toLocaleString('pt-PT');
+const fmt =ts=>ts?new Date(ts).toLocaleString('pt-PT',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'}):'---';
 
 function msg(id,t,tp){const e=G(id);if(!e)return;e.className='msg '+tp;e.innerText=t;setTimeout(()=>{if(e){e.className='msg';e.innerText='';}},6000);}
 function tPW(id,btn){const i=G(id);if(!i)return;const v=i.type==='text';i.type=v?'password':'text';btn.innerText=v?'👁️':'🙈';}
-function fecharModal(){G('movl').style.display='none';G('modal').style.display='none';}
-
-// FORÇA DA SENHA
-function calcForca(pw,barId,txtId){
-  const bar=G(barId);const txt=G(txtId);if(!bar)return;
-  let s=0;
-  if(pw.length>=4)s++;if(pw.length>=8)s++;
-  if(/[0-9]/.test(pw))s++;if(/[^a-zA-Z0-9]/.test(pw))s++;
+function calcF(pw,bid,tid){
+  const b=G(bid),t=G(tid);if(!b)return;
+  let s=0;if(pw.length>=4)s++;if(pw.length>=8)s++;if(/[0-9]/.test(pw))s++;if(/[^a-zA-Z0-9]/.test(pw))s++;
   const ns=[{c:'#333',l:''},{c:'#f00',l:'Fraca'},{c:'#f80',l:'Razoável'},{c:'#ff0',l:'Boa'},{c:'#0f0',l:'Forte'}];
-  const n=ns[s];
-  bar.style.background=n.c;bar.style.width=(s/4*100)+'%';
-  if(txt)txt.innerText=n.l?`— ${n.l}`:'';
+  b.style.background=ns[s].c;b.style.width=(s/4*100)+'%';
+  if(t)t.innerText=ns[s].l?`— ${ns[s].l}`:'';
 }
+function fMdl(){G('movl').style.display='none';G('mdl').style.display='none';}
 
 // ============================================================
 // NAVEGAÇÃO
 // ============================================================
-let jogAtual=null, prAtual=null, confAcao=null;
-let recQuem='j', recMetodo='', recCodigoGerado='';
-let paginaAnteriorRec='p-login';
+let jogAtual=null,prAtual=null,confAcao=null;
+let recQuem='j',recVolta='p-login',recMetodo='',recCod='';
 
 function ir(id){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('ativa'));
   G(id)?.classList.add('ativa');
   document.querySelectorAll('.msg').forEach(m=>{m.className='msg';m.innerText='';});
   window.scrollTo(0,0);
-  if(id==='p-inicio')   atualizarHome();
-  if(id==='p-login')    prepararLoginJog();
-  if(id==='p-pr-login') prepararLoginPR();
+  if(id==='p0')       atualizarHome();
+  if(id==='p-login')  prepLoginJ();
+  if(id==='p-pr-login') prepLoginPR();
+  if(id==='p-jogo')   iniciarJogo();
 }
-
-function fecharApp(){
-  mostrConf('✖','FECHAR?','Tens a certeza que queres fechar a aplicação?','fechar');
-}
+function voltarHome(){ir('p0');}
+function fecharApp(){mConf('✖','FECHAR?','Tens a certeza que queres fechar?','fechar');}
 
 // ============================================================
-// HOME — SESSÕES
+// HOME
 // ============================================================
 function atualizarHome(){
-  const sj=BD.sessJ(), sp=BD.sessPR();
-  const dj=G('home-j'), dp=G('home-pr');
+  const sj=BD.sessJ(),sp=BD.sessPR();
+  const dj=G('home-j'),dp=G('home-pr');
   if(sj){
-    G('home-j-nome').innerText='👤 '+sj.nm;
-    G('home-j-info').innerText=`🏴 ${fN(sj.fl||0)} flags · 👁️ ${sj.visao||5}m · Nível ${sj.nivel||1}`;
+    G('hj-nm').innerText='👤 '+sj.nm;
+    G('hj-inf').innerText=`🏴 ${fN(sj.fl||0)} flags · 👁️ ${sj.visao||5}m · Nível ${sj.nivel||1}`;
     dj.style.display='block';
   } else dj.style.display='none';
   if(sp){
-    G('home-pr-nome').innerText='🏪 '+sp.ne;
-    G('home-pr-info').innerText=`📍 ${sp.loc||'-'} · ${sp.ativ||'-'}`;
+    G('hpr-nm').innerText='🏪 '+sp.ne;
+    G('hpr-inf').innerText=`📍 ${sp.loc||'-'} · ${sp.ativ||'-'}`;
     dp.style.display='block';
   } else dp.style.display='none';
 }
-
-function reentrarJogo(){
-  const sj=BD.sessJ();
-  if(!sj){ir('p-login');return;}
-  jogAtual=sj;entrarJogo(sj);
-}
-function reentrarPR(){
-  const sp=BD.sessPR();
-  if(!sp){ir('p-pr-login');return;}
-  prAtual=sp;entrarPR(sp);
-}
+function reentrarJogo(){const sj=BD.sessJ();if(!sj){ir('p-login');return;}jogAtual=sj;ir('p-jogo');}
+function reentrarPR(){const sp=BD.sessPR();if(!sp){ir('p-pr-login');return;}prAtual=sp;ir('p-pr');}
 
 // ============================================================
-// CONFIRMAÇÕES SAIR
+// CONFIRMAÇÕES
 // ============================================================
-function confSair(q){
-  const tits={j:'SAIR DO JOGO?',pr:'SAIR DA CONTA?'};
-  const txts={
-    j:'O teu progresso fica guardado.\nDa próxima vez, só precisas da senha.',
-    pr:'Os dados da empresa ficam guardados.\nDa próxima vez, só precisas da senha.'
-  };
-  mostrConf('🚪',tits[q],txts[q],`sair-${q}`);
+function cSair(q){
+  const t={j:'SAIR DO JOGO?',pr:'SAIR DA CONTA?'};
+  const x={j:'Progresso guardado. Volta com a tua senha.',pr:'Dados guardados. Volta com a tua senha.'};
+  mConf('🚪',t[q],x[q],`sair-${q}`);
 }
-function mostrConf(ico,tit,txt,acao){
-  confAcao=acao;
-  G('conf-ico').innerText=ico;G('conf-tit').innerText=tit;G('conf-txt').innerText=txt;
+function mConf(ico,tit,txt,acao){
+  confAcao=acao;G('conf-ico').innerText=ico;G('conf-tit').innerText=tit;G('conf-txt').innerText=txt;
   G('conf-ovl').style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.88);z-index:9500;display:block;';
-  G('conf-box').style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#000;border:3px solid #f00;border-radius:12px;padding:22px;z-index:9501;width:90%;max-width:360px;text-align:center;display:block;';
+  G('conf-box').style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#000;border:3px solid #f00;border-radius:11px;padding:22px;z-index:9501;width:90%;max-width:360px;text-align:center;display:block;';
 }
-function fecharConf(){confAcao=null;G('conf-ovl').style.display='none';G('conf-box').style.display='none';}
-function execConf(){
-  const a=confAcao;fecharConf();
-  if(a==='sair-j'){BD.delSJ();jogAtual=null;ir('p-inicio');}
-  else if(a==='sair-pr'){BD.delSP();prAtual=null;ir('p-inicio');}
-  else if(a==='fechar'){window.close();ir('p-inicio');}
+function fConf(){confAcao=null;G('conf-ovl').style.display='none';G('conf-box').style.display='none';}
+function exConf(){
+  const a=confAcao;fConf();
+  if(a==='sair-j'){BD.delSJ();jogAtual=null;pararJogo();ir('p0');}
+  else if(a==='sair-pr'){BD.delSP();prAtual=null;ir('p0');}
+  else if(a==='fechar'){window.close();ir('p0');}
 }
 
 // ============================================================
-// LOGIN JOGADOR — PREPARAR (mostra nome ou formulário)
+// LOGIN JOGADOR
 // ============================================================
-function prepararLoginJog(){
+function prepLoginJ(){
   const sj=BD.sessJ();
   if(sj){
-    // Há sessão guardada → mostrar cartão com nome
-    G('login-com-conta').style.display='block';
-    G('login-sem-conta').style.display='none';
-    G('login-nome-big').innerText=sj.nm;
-    G('login-btn-nm').innerText=sj.nm;
-    G('login-nivel-big').innerText=`Jogador · Nível ${sj.nivel||1}`;
-    G('login-stat-fl').innerText=fN(sj.fl||0);
-    G('login-stat-en').innerText=Math.round(sj.en||100)+'%';
-    G('login-stat-sk').innerText=sj.skill||0;
-    G('login-stat-vis').innerText=(sj.visao||5)+'m';
-    // Emoji avatar baseado no nível
-    const emojis=['🌱','🥉','🥈','🥇','💎','👑'];
-    const nv=Math.min(5,Math.floor((sj.skill||0)/10));
-    G('login-avatar-emoji').innerText=emojis[nv];
-    // Preencher senha guardada se existir
-    const pwGuardada=BD.pwJ();
-    const pwInput=G('l-pw-r');
-    if(pwGuardada&&pwInput){ pwInput.value=pwGuardada; G('l-lembrar-pw').checked=true; }
-    else { if(pwInput) pwInput.value=''; G('l-lembrar-pw').checked=false; }
-    setTimeout(()=>G('l-pw-r')?.focus(),150);
+    G('lj-com').style.display='block';G('lj-sem').style.display='none';
+    G('lj-nome').innerText=sj.nm;G('lj-btn-nm').innerText=sj.nm;
+    G('lj-sub').innerText=`Jogador · Nível ${sj.nivel||1}`;
+    G('lj-fl').innerText=fN(sj.fl||0);G('lj-en').innerText=Math.round(sj.en||100)+'%';
+    G('lj-sk').innerText=sj.sk||0;G('lj-vis').innerText=(sj.visao||5)+'m';
+    const emj=['🌱','🥉','🥈','🥇','💎','👑'];G('lj-emoji').innerText=emj[Math.min(5,Math.floor((sj.sk||0)/10))];
+    const pw=BD.pwJ();if(pw){G('lj-pw-r').value=pw;G('lj-lembrar-pw').checked=true;}
+    else{G('lj-pw-r').value='';G('lj-lembrar-pw').checked=false;}
+    setTimeout(()=>G('lj-pw-r')?.focus(),150);
   } else {
-    // Não há sessão → mostrar formulário manual
-    G('login-com-conta').style.display='none';
-    G('login-sem-conta').style.display='block';
-    G('l-em-manual').value='';
-    G('l-em-info').style.display='none';
-    setTimeout(()=>G('l-em-manual')?.focus(),150);
+    G('lj-com').style.display='none';G('lj-sem').style.display='block';
+    G('lj-em').value='';G('lj-em-info').style.display='none';
+    setTimeout(()=>G('lj-em')?.focus(),150);
   }
 }
-
-// Verificar email em tempo real
-function verificarEmailLogin(){
-  const em=val('l-em-manual').toLowerCase();
-  const div=G('l-em-info');
-  if(!div)return;
-  if(!vE(em)){div.style.display='none';return;}
-  const jog=BD.jogs().find(j=>j.em===em);
-  if(jog){
-    div.style.display='block';div.style.borderColor='#0f0';div.style.color='#0f0';
-    div.innerHTML=`✅ Conta encontrada: <b style="color:#0ff;">${jog.nm}</b>`;
-    setTimeout(()=>G('l-pw-manual')?.focus(),50);
-  } else {
-    div.style.display='block';div.style.borderColor='#f00';div.style.color='#f88';
-    div.innerHTML=`❌ Email não encontrado. <span class="lnk" onclick="ir('p-reg')">Criar conta</span>`;
-  }
+function verEmailJ(){
+  const em=val('lj-em').toLowerCase(),d=G('lj-em-info');if(!d)return;
+  if(!vE(em)){d.style.display='none';return;}
+  const j=BD.jogs().find(j=>j.em===em);
+  if(j){d.style.display='block';d.style.borderColor='#0f0';d.style.color='#0f0';d.innerHTML=`✅ Conta: <b style="color:#0ff;">${j.nm}</b>`;setTimeout(()=>G('lj-pw-m')?.focus(),50);}
+  else{d.style.display='block';d.style.borderColor='#f00';d.style.color='#f88';d.innerHTML=`❌ Email não encontrado. <span class="lnk" onclick="ir('p-reg')">Criar conta</span>`;}
 }
-
-// LOGIN RÁPIDO (com conta guardada — só senha)
-function loginRapidoJog(){
-  const sj=BD.sessJ();
-  if(!sj){ir('p-login');return;}
-  const pw=G('l-pw-r').value;
-  if(!pw){msg('m-login','❌ Insere a tua senha!','e');return;}
-
-  // Admin
-  if(pw===PASSE){gerarSessaoJog(sj);return;}
-
-  // Verificar senha
-  const jogs=BD.jogs();
-  const jog=jogs.find(j=>j.em===sj.em&&j.pw===pw);
-  if(!jog){msg('m-login','❌ Senha incorreta! Tenta novamente.','e');G('l-pw-r').value='';G('l-pw-r').focus();return;}
-
-  // Guardar/remover senha
-  if(G('l-lembrar-pw').checked) BD.setPwJ(pw);
-  else BD.delPwJ();
-
-  gerarSessaoJog(jog);
+function loginRapidoJ(){
+  const sj=BD.sessJ();if(!sj){ir('p-login');return;}
+  const pw=G('lj-pw-r').value;
+  if(!pw){msg('m-login','❌ Insere a senha!','e');return;}
+  if(pw===PASSE){gravarSessJ(sj);return;}
+  const j=BD.jogs().find(j=>j.em===sj.em&&j.pw===pw);
+  if(!j){msg('m-login','❌ Senha incorreta!','e');G('lj-pw-r').value='';G('lj-pw-r').focus();return;}
+  if(G('lj-lembrar-pw').checked)BD.setPwJ(pw);else BD.delPwJ();
+  gravarSessJ(j);
 }
-
-// LOGIN MANUAL (com email + senha)
-function loginManualJog(){
-  const em=val('l-em-manual').toLowerCase();
-  const pw=G('l-pw-manual').value;
-  if(!em)     {msg('m-login','❌ Insere o teu email!','e');return;}
-  if(!vE(em)) {msg('m-login','❌ Email inválido!','e');return;}
-  if(!pw)     {msg('m-login','❌ Insere a senha!','e');return;}
-
-  if(pw===PASSE){
-    const u={nm:'ADMIN',em,fl:0,en:100,qrs:[],skill:0,visao:5,nivel:1,flagsEnerg:0,flagsLimite:500,reg:Date.now(),ult:Date.now()};
-    gerarSessaoJog(u);return;
-  }
-
-  const jog=BD.jogs().find(j=>j.em===em&&j.pw===pw);
-  if(!jog){
-    const ex=BD.jogs().find(j=>j.em===em);
-    msg('m-login',ex?'❌ Senha incorreta!':'❌ Email não encontrado! Cria uma conta.','e');return;
-  }
-  if(G('l-lembrar-manual').checked) BD.setPwJ(pw);
-  else BD.delPwJ();
-  gerarSessaoJog(jog);
+function loginManualJ(){
+  const em=val('lj-em').toLowerCase(),pw=G('lj-pw-m').value;
+  if(!em){msg('m-login','❌ Insere o email!','e');return;}
+  if(!vE(em)){msg('m-login','❌ Email inválido!','e');return;}
+  if(!pw){msg('m-login','❌ Insere a senha!','e');return;}
+  if(pw===PASSE){const u={nm:'ADMIN',em,fl:0,en:100,sk:0,skTotal:0,flEnerg:0,flLimite:500,nivel:1,visao:5,reg:Date.now(),ult:Date.now()};gravarSessJ(u);return;}
+  const j=BD.jogs().find(j=>j.em===em&&j.pw===pw);
+  if(!j){const ex=BD.jogs().find(j=>j.em===em);msg('m-login',ex?'❌ Senha incorreta!':'❌ Email não encontrado!','e');return;}
+  if(G('lj-lembrar-m').checked)BD.setPwJ(pw);else BD.delPwJ();
+  gravarSessJ(j);
 }
-
-function gerarSessaoJog(jog){
-  jog.ult=Date.now();
-  if(!jog.isAdmin){
-    const jogs=BD.jogs();const idx=jogs.findIndex(j=>j.em===jog.em);
-    if(idx>=0)jogs[idx]=jog;else jogs.push(jog);BD.saveJ(jogs);
-  }
-  BD.setSJ(jog);jogAtual=jog;entrarJogo(jog);
+function gravarSessJ(j){
+  j.ult=Date.now();if(!j.isAdmin){const jogs=BD.jogs();const idx=jogs.findIndex(j2=>j2.em===j.em);if(idx>=0)jogs[idx]=j;else jogs.push(j);BD.saveJ(jogs);}
+  BD.setSJ(j);jogAtual=j;ir('p-jogo');
 }
-
-// Gerir checkbox "lembrar senha"
-function gestaoPWGuardada(){
-  if(!G('l-lembrar-pw').checked) BD.delPwJ();
-}
-
-// Mudar para outra conta (apaga sessão e mostra formulário)
-function mudarConta(q){
-  if(q==='j'){BD.delSJ();BD.delPwJ();prepararLoginJog();}
-  else{BD.delSP();BD.delPwPR();prepararLoginPR();}
-}
-
-// ============================================================
-// LOGIN PR — PREPARAR
-// ============================================================
-function prepararLoginPR(){
-  const sp=BD.sessPR();
-  if(sp){
-    G('pr-com-conta').style.display='block';
-    G('pr-sem-conta').style.display='none';
-    G('pr-nome-big').innerText=sp.ne;
-    G('pr-btn-nm').innerText=sp.ne;
-    G('pr-ativ-big').innerText=(sp.ativ||'-')+' · '+((sp.loc||'')+', '+(sp.dist||'')).replace(/^, |, $/g,'');
-    G('pr-stat-loc').innerText=sp.loc||'-';
-    G('pr-stat-packs').innerText=(sp.packs||[]).filter(pk=>pk.fim>Date.now()).length;
-    G('pr-stat-qrs').innerText=sp.qrsGerados||0;
-    const pwGuardada=BD.pwPR();
-    const pwInput=G('pl-pw-r');
-    if(pwGuardada&&pwInput){pwInput.value=pwGuardada;G('pl-lembrar-pw').checked=true;}
-    else{if(pwInput)pwInput.value='';G('pl-lembrar-pw').checked=false;}
-    setTimeout(()=>G('pl-pw-r')?.focus(),150);
-  } else {
-    G('pr-com-conta').style.display='none';
-    G('pr-sem-conta').style.display='block';
-    G('pl-em-manual').value='';
-    G('pl-em-info').style.display='none';
-    setTimeout(()=>G('pl-em-manual')?.focus(),150);
-  }
-}
-
-function verificarEmailPR(){
-  const em=val('pl-em-manual').toLowerCase();
-  const div=G('pl-em-info');if(!div)return;
-  if(!vE(em)){div.style.display='none';return;}
-  const pr=BD.emps().find(p=>p.em===em);
-  if(pr){
-    div.style.display='block';div.style.borderColor='#ff0';div.style.color='#ff0';
-    div.innerHTML=`✅ Empresa encontrada: <b style="color:#0ff;">${pr.ne}</b> · 📍 ${pr.loc||'-'}`;
-    setTimeout(()=>G('pl-pw-manual')?.focus(),50);
-  } else {
-    div.style.display='block';div.style.borderColor='#f00';div.style.color='#f88';
-    div.innerHTML=`❌ Empresa não encontrada. <span class="lnk" onclick="ir('p-pr-reg')">Registar</span>`;
-  }
-}
-
-function loginRapidoPR(){
-  const sp=BD.sessPR();if(!sp){ir('p-pr-login');return;}
-  const pw=G('pl-pw-r').value;
-  if(!pw){msg('m-pr-l','❌ Insere a senha!','e');return;}
-  if(pw===PASSE){gerarSessaoPR(sp);return;}
-  const pr=BD.emps().find(p=>p.em===sp.em&&p.pw===pw);
-  if(!pr){msg('m-pr-l','❌ Senha incorreta!','e');G('pl-pw-r').value='';G('pl-pw-r').focus();return;}
-  if(G('pl-lembrar-pw').checked)BD.setPwPR(pw);else BD.delPwPR();
-  gerarSessaoPR(pr);
-}
-
-function loginManualPR(){
-  const em=val('pl-em-manual').toLowerCase(),pw=G('pl-pw-manual').value;
-  if(!em){msg('m-pr-l','❌ Insere o email!','e');return;}
-  if(!vE(em)){msg('m-pr-l','❌ Email inválido!','e');return;}
-  if(!pw){msg('m-pr-l','❌ Insere a senha!','e');return;}
-  if(pw===PASSE){
-    const pr=BD.emps().find(p=>p.em===em)||{ne:'Admin PR',em,loc:'Lisboa',ativ:'Admin',packs:[],lotes:[],bingoFlags:[],qrsGerados:0,qrsUsados:0,pw:PASSE};
-    gerarSessaoPR(pr);return;
-  }
-  const pr=BD.emps().find(p=>p.em===em&&p.pw===pw);
-  if(!pr){const ex=BD.emps().find(p=>p.em===em);msg('m-pr-l',ex?'❌ Senha incorreta!':'❌ Email não encontrado!','e');return;}
-  if(G('pl-lembrar-manual').checked)BD.setPwPR(pw);else BD.delPwPR();
-  gerarSessaoPR(pr);
-}
-
-function gerarSessaoPR(pr){BD.setSP(pr);prAtual=pr;entrarPR(pr);}
-function gestaoPWGuardadaPR(){if(!G('pl-lembrar-pw').checked)BD.delPwPR();}
-
-// ============================================================
-// RECUPERAR SENHA
-// ============================================================
-function irRecuperarSenha(quem){
-  recQuem=quem;recMetodo='';recCodigoGerado='';
-  paginaAnteriorRec=quem==='j'?'p-login':'p-pr-login';
-  // Reset
-  ['rec-passo1','rec-passo2','rec-passo3'].forEach((id,i)=>G(id).style.display=i===0?'block':'none');
-  G('area-rec-j').style.display=quem==='j'?'block':'none';
-  G('area-rec-pr').style.display=quem==='pr'?'block':'none';
-  document.querySelectorAll('.rec-opcao').forEach(el=>el.classList.remove('sel'));
-  G('rec-campo-email').style.display='none';
-  G('rec-campo-sms').style.display='none';
-  G('btn-enviar-rec').style.display='none';
-  G('rec-email').value='';G('rec-tel').value='';
-  G('rec-codigo-input').value='';
-  G('rec-nova-pw').value='';G('rec-nova-pw2').value='';
-  G('rec-force-bar').style.width='0%';
-  ir('p-recuperar');
-}
-
-function voltarDeRecuperacao(){ir(paginaAnteriorRec);}
-
-function selMetodoRec(m){
-  recMetodo=m;
-  document.querySelectorAll('.rec-opcao').forEach(el=>el.classList.remove('sel'));
-  G('rec-opt-'+m).classList.add('sel');
-  G('rec-campo-email').style.display=m==='email'?'block':'none';
-  G('rec-campo-sms').style.display=m==='sms'?'block':'none';
-  G('btn-enviar-rec').style.display='block';
-}
-
-function enviarCodigoRec(){
-  if(!recMetodo){msg('m-rec','❌ Escolhe um método de recuperação!','e');return;}
-  const email=val('rec-email');const tel=val('rec-tel');
-  if(recMetodo==='email'&&!vE(email)){msg('m-rec','❌ Insere o email registado!','e');return;}
-  if(recMetodo==='sms'&&!vT(tel.replace(/\s/g,''))){msg('m-rec','❌ Insere o telemóvel registado!','e');return;}
-
-  // Verificar se existe na base de dados
-  let encontrado=false;
-  if(recQuem==='j'){
-    if(recMetodo==='email') encontrado=!!BD.jogs().find(j=>j.em===email.toLowerCase());
-    else encontrado=!!BD.jogs().find(j=>j.tl===tel.replace(/\s/g,''));
-  } else {
-    if(recMetodo==='email') encontrado=!!BD.emps().find(p=>p.em===email.toLowerCase());
-    else encontrado=!!BD.emps().find(p=>p.tel===tel.replace(/\s/g,''));
-  }
-
-  if(!encontrado){
-    msg('m-rec',recMetodo==='email'?'❌ Email não encontrado nos nossos registos!':'❌ Telemóvel não encontrado nos nossos registos!','e');
-    return;
-  }
-
-  // Gerar código de 4 dígitos
-  recCodigoGerado=String(Math.floor(1000+Math.random()*9000));
-  console.log('🔑 Código de recuperação (simulação):', recCodigoGerado);
-
-  // Mostrar passo 2
-  G('rec-passo1').style.display='none';
-  G('rec-passo2').style.display='block';
-  G('rec-codigo-show').innerText=recCodigoGerado;
-
-  const destino=recMetodo==='email'?`📧 ${email}`:`📱 ${tel}`;
-  G('rec-enviado-para').innerText=`Código enviado para: ${destino}`;
-
-  msg('m-rec',`✅ Código de recuperação gerado! (Simulação — código visível abaixo)`,'s');
-  setTimeout(()=>G('rec-codigo-input')?.focus(),200);
-}
-
-function verificarCodigoRec(){
-  const cod=val('rec-codigo-input');
-  if(!cod||cod.length!==4){msg('m-rec','❌ Insere o código de 4 dígitos!','e');return;}
-  if(cod!==recCodigoGerado){msg('m-rec','❌ Código incorreto! Tenta novamente.','e');G('rec-codigo-input').value='';G('rec-codigo-input').focus();return;}
-  // Código correto
-  G('rec-passo2').style.display='none';
-  G('rec-passo3').style.display='block';
-  msg('m-rec','✅ Código confirmado! Define a tua nova senha.','s');
-  setTimeout(()=>G('rec-nova-pw')?.focus(),200);
-}
-
-function reenviarCodigoRec(){
-  recCodigoGerado=String(Math.floor(1000+Math.random()*9000));
-  G('rec-codigo-show').innerText=recCodigoGerado;
-  G('rec-codigo-input').value='';
-  msg('m-rec','✅ Novo código gerado!','s');
-  console.log('🔑 Novo código:', recCodigoGerado);
-}
-
-function guardarNovaSenha(){
-  const pw=G('rec-nova-pw').value,pw2=G('rec-nova-pw2').value;
-  if(!pw||pw.length<4){msg('m-rec','❌ Senha mínimo 4 caracteres!','e');return;}
-  if(pw!==pw2){msg('m-rec','❌ As senhas não coincidem!','e');return;}
-
-  // Actualizar na base de dados
-  const email=val('rec-email').toLowerCase();const tel=val('rec-tel');
-  if(recQuem==='j'){
-    const jogs=BD.jogs();
-    let jog=jogs.find(j=>recMetodo==='email'?j.em===email:j.tl===tel.replace(/\s/g,''));
-    if(jog){jog.pw=pw;BD.saveJ(jogs);BD.setSJ(jog);BD.setPwJ(pw);}
-  } else {
-    const emps=BD.emps();
-    let pr=emps.find(p=>recMetodo==='email'?p.em===email:p.tel===tel.replace(/\s/g,''));
-    if(pr){pr.pw=pw;BD.saveE(emps);BD.setSP(pr);BD.setPwPR(pw);}
-  }
-
-  msg('m-rec','✅ Senha alterada com sucesso! A entrar...','s');
-  setTimeout(()=>{
-    if(recQuem==='j'){const sj=BD.sessJ();if(sj){jogAtual=sj;entrarJogo(sj);}}
-    else{const sp=BD.sessPR();if(sp){prAtual=sp;entrarPR(sp);}}
-  },1500);
-}
+function mudarConta(q){if(q==='j'){BD.delSJ();BD.delPwJ();prepLoginJ();}else{BD.delSP();BD.delPwPR();prepLoginPR();}}
 
 // ============================================================
 // REGISTO JOGADOR
 // ============================================================
 function fazerRegisto(){
   const nm=val('r-nm'),em=val('r-em').toLowerCase(),tl=val('r-tl'),pw=G('r-pw').value,p2=G('r-pw2').value;
-  if(!nm)             {msg('m-reg','❌ Insere o teu nome!','e');return;}
+  if(!nm)             {msg('m-reg','❌ Insere o nome!','e');return;}
   if(!em||!vE(em))    {msg('m-reg','❌ Email inválido!','e');return;}
-  if(!pw||pw.length<4){msg('m-reg','❌ Senha mínimo 4 caracteres!','e');return;}
-  if(pw!==p2)         {msg('m-reg','❌ As senhas não coincidem!','e');return;}
+  if(!pw||pw.length<4){msg('m-reg','❌ Senha mínimo 4 car.!','e');return;}
+  if(pw!==p2)         {msg('m-reg','❌ Senhas não coincidem!','e');return;}
   const jogs=BD.jogs();
-  if(jogs.find(j=>j.em===em)){msg('m-reg','❌ Email já registado! Faz login.','e');return;}
+  if(jogs.find(j=>j.em===em)){msg('m-reg','❌ Email já registado!','e');return;}
   if(BD.emps().find(p=>p.em===em)){msg('m-reg','❌ Email já existe como empresa!','e');return;}
-
-  const u={nm,em,tl:tl.replace(/\s/g,''),pw,fl:0,en:100,qrs:[],skill:0,skillTotal:0,
-    flagsEnerg:0,flagsLimite:500,nivel:1,visao:5,reg:Date.now(),ult:Date.now()};
+  const u={nm,em,tl:tl.replace(/\s/g,''),pw,fl:0,en:100,sk:0,skTotal:0,flEnerg:0,flLimite:500,nivel:1,visao:5,reg:Date.now(),ult:Date.now()};
   jogs.push(u);BD.saveJ(jogs);BD.setSJ(u);
   if(G('r-lembrar').checked)BD.setPwJ(pw);
-  jogAtual=u;entrarJogo(u);
+  jogAtual=u;ir('p-jogo');
 }
+
+// ============================================================
+// RECUPERAR SENHA
+// ============================================================
+function irRec(q){recQuem=q;recVolta=q==='j'?'p-login':'p-pr-login';recMetodo='';recCod='';
+  G('rec-aj').style.display=q==='j'?'block':'none';
+  G('rec-apr').style.display=q==='pr'?'block':'none';
+  ['rec-p1','rec-p2','rec-p3'].forEach((id,i)=>G(id).style.display=i===0?'block':'none');
+  ['rec-opt-em','rec-opt-sms'].forEach(id=>G(id).style.border='2px solid #333');
+  G('rec-f-em').style.display='none';G('rec-f-sms').style.display='none';
+  G('rec-btn-env').style.display='none';G('rec-em').value='';G('rec-tel').value='';
+  G('rec-cod-in').value='';G('rec-np').value='';G('rec-np2').value='';
+  G('rec-fb').style.width='0%';
+  ir('p-rec');
+}
+function selRec(m){recMetodo=m;
+  G('rec-opt-em').style.border=m==='email'?'2px solid #0ff':'2px solid #333';
+  G('rec-opt-sms').style.border=m==='sms'?'2px solid #0ff':'2px solid #333';
+  G('rec-f-em').style.display=m==='email'?'block':'none';
+  G('rec-f-sms').style.display=m==='sms'?'block':'none';
+  G('rec-btn-env').style.display='block';
+}
+function enviarCodigo(){
+  if(!recMetodo){msg('m-rec','❌ Escolhe um método!','e');return;}
+  const em=val('rec-em'),tel=val('rec-tel');
+  if(recMetodo==='email'&&!vE(em)){msg('m-rec','❌ Email inválido!','e');return;}
+  if(recMetodo==='sms'&&!vT(tel.replace(/\s/g,''))){msg('m-rec','❌ Telemóvel inválido!','e');return;}
+  let ok=false;
+  if(recQuem==='j'){ok=recMetodo==='email'?!!BD.jogs().find(j=>j.em===em.toLowerCase()):!!BD.jogs().find(j=>j.tl===tel.replace(/\s/g,''));}
+  else{ok=recMetodo==='email'?!!BD.emps().find(p=>p.em===em.toLowerCase()):!!BD.emps().find(p=>p.tel===tel.replace(/\s/g,''));}
+  if(!ok){msg('m-rec',recMetodo==='email'?'❌ Email não encontrado!':'❌ Telemóvel não encontrado!','e');return;}
+  recCod=String(Math.floor(1000+Math.random()*9000));
+  console.log('🔑 Código recuperação:',recCod);
+  G('rec-p1').style.display='none';G('rec-p2').style.display='block';
+  G('rec-cod-show').innerText=recCod;
+  G('rec-dest').innerText=`Enviado para: ${recMetodo==='email'?em:tel}`;
+  msg('m-rec','✅ Código gerado! (Simulação — visível abaixo)','s');
+  setTimeout(()=>G('rec-cod-in')?.focus(),200);
+}
+function verificarCod(){
+  const cod=val('rec-cod-in');
+  if(!cod||cod.length!==4){msg('m-rec','❌ Código de 4 dígitos!','e');return;}
+  if(cod!==recCod){msg('m-rec','❌ Código incorreto!','e');G('rec-cod-in').value='';G('rec-cod-in').focus();return;}
+  G('rec-p2').style.display='none';G('rec-p3').style.display='block';
+  msg('m-rec','✅ Código confirmado!','s');
+  setTimeout(()=>G('rec-np')?.focus(),200);
+}
+function reenviarCod(){recCod=String(Math.floor(1000+Math.random()*9000));G('rec-cod-show').innerText=recCod;G('rec-cod-in').value='';msg('m-rec','✅ Novo código!','s');}
+function guardarNovaSenha(){
+  const pw=G('rec-np').value,pw2=G('rec-np2').value;
+  if(!pw||pw.length<4){msg('m-rec','❌ Senha mínimo 4 car.!','e');return;}
+  if(pw!==pw2){msg('m-rec','❌ Senhas não coincidem!','e');return;}
+  const em=val('rec-em').toLowerCase(),tel=val('rec-tel').replace(/\s/g,'');
+  if(recQuem==='j'){
+    const jogs=BD.jogs();const j=jogs.find(j=>recMetodo==='email'?j.em===em:j.tl===tel);
+    if(j){j.pw=pw;BD.saveJ(jogs);BD.setSJ(j);BD.setPwJ(pw);}
+  } else {
+    const emps=BD.emps();const p=emps.find(p=>recMetodo==='email'?p.em===em:p.tel===tel);
+    if(p){p.pw=pw;BD.saveE(emps);BD.setSP(p);BD.setPwPR(pw);}
+  }
+  msg('m-rec','✅ Senha alterada! A entrar...','s');
+  setTimeout(()=>{if(recQuem==='j'){const sj=BD.sessJ();if(sj){jogAtual=sj;ir('p-jogo');}}else{const sp=BD.sessPR();if(sp){prAtual=sp;ir('p-pr');}}},1500);
+}
+
+// ============================================================
+// LOGIN PR
+// ============================================================
+function prepLoginPR(){
+  const sp=BD.sessPR();
+  if(sp){
+    G('lpr-com').style.display='block';G('lpr-sem').style.display='none';
+    G('lpr-nm').innerText=sp.ne;G('lpr-btn-nm').innerText=sp.ne;
+    G('lpr-ativ').innerText=(sp.ativ||'-')+' · '+(sp.loc||'-');
+    G('lpr-loc').innerText=sp.loc||'-';
+    G('lpr-packs').innerText=(sp.packs||[]).filter(pk=>pk.fim>Date.now()).length;
+    G('lpr-qrs').innerText=sp.qrsGerados||0;
+    const pw=BD.pwPR();if(pw){G('lpr-pw-r').value=pw;G('lpr-lembrar-pw').checked=true;}
+    else{G('lpr-pw-r').value='';G('lpr-lembrar-pw').checked=false;}
+    setTimeout(()=>G('lpr-pw-r')?.focus(),150);
+  } else {
+    G('lpr-com').style.display='none';G('lpr-sem').style.display='block';
+    G('lpr-em').value='';G('lpr-em-info').style.display='none';
+    setTimeout(()=>G('lpr-em')?.focus(),150);
+  }
+}
+function verEmailPR(){
+  const em=val('lpr-em').toLowerCase(),d=G('lpr-em-info');if(!d)return;
+  if(!vE(em)){d.style.display='none';return;}
+  const pr=BD.emps().find(p=>p.em===em);
+  if(pr){d.style.display='block';d.style.borderColor='#ff0';d.style.color='#ff0';d.innerHTML=`✅ <b style="color:#0ff;">${pr.ne}</b> · 📍 ${pr.loc||'-'}`;setTimeout(()=>G('lpr-pw-m')?.focus(),50);}
+  else{d.style.display='block';d.style.borderColor='#f00';d.style.color='#f88';d.innerHTML=`❌ Não encontrada. <span class="lnk" onclick="ir('p-pr-reg')">Registar</span>`;}
+}
+function loginRapidoPR(){
+  const sp=BD.sessPR();if(!sp){ir('p-pr-login');return;}
+  const pw=G('lpr-pw-r').value;if(!pw){msg('m-pr-l','❌ Insere a senha!','e');return;}
+  if(pw===PASSE){gravarSessPR(sp);return;}
+  const pr=BD.emps().find(p=>p.em===sp.em&&p.pw===pw);
+  if(!pr){msg('m-pr-l','❌ Senha incorreta!','e');G('lpr-pw-r').value='';G('lpr-pw-r').focus();return;}
+  if(G('lpr-lembrar-pw').checked)BD.setPwPR(pw);else BD.delPwPR();
+  gravarSessPR(pr);
+}
+function loginManualPR(){
+  const em=val('lpr-em').toLowerCase(),pw=G('lpr-pw-m').value;
+  if(!em){msg('m-pr-l','❌ Insere o email!','e');return;}
+  if(!vE(em)){msg('m-pr-l','❌ Email inválido!','e');return;}
+  if(!pw){msg('m-pr-l','❌ Insere a senha!','e');return;}
+  if(pw===PASSE){const pr=BD.emps().find(p=>p.em===em)||{ne:'Admin PR',em,loc:'Lisboa',ativ:'Admin',packs:[],lotes:[],bingoFlags:[],qrsGerados:0,qrsUsados:0,pw:PASSE};gravarSessPR(pr);return;}
+  const pr=BD.emps().find(p=>p.em===em&&p.pw===pw);
+  if(!pr){const ex=BD.emps().find(p=>p.em===em);msg('m-pr-l',ex?'❌ Senha incorreta!':'❌ Email não encontrado!','e');return;}
+  if(G('lpr-lembrar-m').checked)BD.setPwPR(pw);else BD.delPwPR();
+  gravarSessPR(pr);
+}
+function gravarSessPR(pr){BD.setSP(pr);prAtual=pr;ir('p-pr');}
 
 // ============================================================
 // REGISTO PR
 // ============================================================
 function registarPR(){
   const ne=val('pr-ne'),nif=val('pr-nif'),rua=val('pr-rua'),cp=val('pr-cp'),
-    loc=val('pr-loc'),dist=val('pr-dist'),ativ=val('pr-ativ'),
-    tel=val('pr-tel'),em=val('pr-email').toLowerCase(),
-    resp=val('pr-resp'),telResp=val('pr-tel-resp'),
-    pw=G('pr-pw').value,pw2=G('pr-pw2').value;
-
+    loc=val('pr-loc'),dist=val('pr-dist'),ativ=val('pr-ativ'),tel=val('pr-tel'),
+    em=val('pr-email').toLowerCase(),resp=val('pr-resp'),telR=val('pr-tel-r'),
+    pw=G('pr-pw').value,p2=G('pr-pw2').value;
   if(!rua)           {msg('m-pr-reg','❌ Morada obrigatória!','e');return;}
   if(!cp)            {msg('m-pr-reg','❌ Código postal obrigatório!','e');return;}
   if(!loc)           {msg('m-pr-reg','❌ Localidade obrigatória!','e');return;}
   if(!dist)          {msg('m-pr-reg','❌ Seleciona o distrito!','e');return;}
   if(!ne)            {msg('m-pr-reg','❌ Nome da empresa obrigatório!','e');return;}
-  if(!nif||!vN(nif)) {msg('m-pr-reg','❌ NIF inválido (9 dígitos)!','e');return;}
-  if(!ativ)          {msg('m-pr-reg','❌ Seleciona o setor de atividade!','e');return;}
-  if(!tel||!vT(tel)) {msg('m-pr-reg','❌ Telefone da empresa inválido!','e');return;}
-  if(!em||!vE(em))   {msg('m-pr-reg','❌ Email da empresa inválido!','e');return;}
-  if(!telResp||!vT(telResp)){msg('m-pr-reg','❌ Telemóvel do responsável inválido!','e');return;}
+  if(!nif||!vN(nif)) {msg('m-pr-reg','❌ NIF inválido!','e');return;}
+  if(!ativ)          {msg('m-pr-reg','❌ Seleciona o setor!','e');return;}
+  if(!tel||!vT(tel)) {msg('m-pr-reg','❌ Telefone inválido!','e');return;}
+  if(!em||!vE(em))   {msg('m-pr-reg','❌ Email inválido!','e');return;}
+  if(!telR||!vT(telR)){msg('m-pr-reg','❌ Telemóvel do responsável inválido!','e');return;}
   if(!resp)          {msg('m-pr-reg','❌ Nome do responsável obrigatório!','e');return;}
-  if(!pw||pw.length<4){msg('m-pr-reg','❌ Senha mínimo 4 caracteres!','e');return;}
-  if(pw!==pw2)       {msg('m-pr-reg','❌ As senhas não coincidem!','e');return;}
-  if(!G('pr-trm').checked){msg('m-pr-reg','❌ Aceita os Termos e Condições!','e');return;}
-
+  if(!pw||pw.length<4){msg('m-pr-reg','❌ Senha mínimo 4 car.!','e');return;}
+  if(pw!==p2)        {msg('m-pr-reg','❌ Senhas não coincidem!','e');return;}
+  if(!G('pr-trm').checked){msg('m-pr-reg','❌ Aceita os Termos!','e');return;}
   const emps=BD.emps();
   if(emps.find(p=>p.nif===nif)){msg('m-pr-reg','❌ NIF já registado!','e');return;}
   if(emps.find(p=>p.em===em))  {msg('m-pr-reg','❌ Email já registado!','e');return;}
   if(BD.jogs().find(j=>j.em===em)){msg('m-pr-reg','❌ Email já existe como jogador!','e');return;}
-
-  const pr={ne,nif,ativ,rua,cp,loc,dist,tel,em,resp,tel:tel.replace(/\s/g,''),telResp:telResp.replace(/\s/g,''),pw,
-    packs:[],lotes:[],bingoFlags:[],qrsGerados:0,qrsUsados:0,reg:Date.now()};
+  const pr={ne,nif,ativ,rua,cp,loc,dist,tel,em,resp,telR,pw,packs:[],lotes:[],bingoFlags:[],qrsGerados:0,qrsUsados:0,reg:Date.now()};
   emps.push(pr);BD.saveE(emps);BD.setSP(pr);
   if(G('pr-lembrar').checked)BD.setPwPR(pw);
-  prAtual=pr;entrarPR(pr);
+  prAtual=pr;ir('p-pr');
 }
 
 // ============================================================
-// ENTRAR NO JOGO / PR
+// PR PAINEL
 // ============================================================
-function entrarJogo(jog){
-  jogAtual=jog;
-  G('j-hud-nm').innerText='👤 '+jog.nm;
-  G('j-hud-nv').innerText=`Nível ${jog.nivel||1} · 👁️ ${jog.visao||5}m`;
-  G('j-hud-fl').innerText=fN(jog.fl||0);
-  G('j-hud-en').innerText=Math.round(jog.en||100);
-  G('j-hud-sk').innerText=jog.skill||0;
-  G('j-bem-vindo').innerText=`Bem-vindo de volta, ${jog.nm}! 👋`;
-  ir('p-jogo');
-}
-function entrarPR(pr){
-  prAtual=pr;
-  G('pr-hud-n').innerText='🏪 '+pr.ne;
-  G('pr-hud-loc').innerText=(pr.loc||'')+(pr.dist?', '+pr.dist:'');
-  G('pr-painel-nome').innerText=pr.ne;
-  ir('p-pr');
-}
+function entrarPR(pr){prAtual=pr;G('pr-hud-n').innerText='🏪 '+pr.ne;G('pr-hud-loc').innerText=(pr.loc||'')+(pr.dist?', '+pr.dist:'');G('pr-painel-nm').innerText=pr.ne;ir('p-pr');}
 
 // ============================================================
 // BACKOFFICE
 // ============================================================
-function loginBO(){
-  if(G('bo-pw').value!==PASSE){msg('m-bo-l','❌ Código incorreto!','e');return;}
-  const u={nm:'ADMIN BO',em:'admin@zapflags.com',fl:0,en:100,qrs:[],
-    skill:0,visao:5,nivel:1,flagsEnerg:0,flagsLimite:500,isBO:true,reg:Date.now(),ult:Date.now()};
-  BD.setSJ(u);jogAtual=u;entrarJogo(u);
+function loginBO(){if(G('bo-pw').value!==PASSE){msg('m-bo-l','❌ Código incorreto!','e');return;}const u={nm:'ADMIN BO',em:'admin@zap.pt',fl:0,en:100,sk:0,skTotal:0,flEnerg:0,flLimite:500,nivel:1,visao:5,isBO:true,reg:Date.now(),ult:Date.now()};BD.setSJ(u);jogAtual=u;ir('p-jogo');}
+
+// ============================================================
+// ========== JOGO: MAPA + AVATAR ============================
+// ============================================================
+let mapaJ=null,marcAvt=null,bandeiras=[],bandMaisProx=null;
+let jogoOk=false,animF=null,animT=0,ultimoF=0;
+let notifTmr=null;
+const dirs={c:false,b:false,e:false,d:false};
+let tamBtn=44;
+
+// AV: posição no mundo
+const AV={lat:39.5,lng:-8.0,dir:1,andando:false};
+
+function iniciarJogo(){
+  if(!jogAtual){ir('p-login');return;}
+  // Copiar dados do jogador
+  AV.lat=39.5;AV.lng=-8.0;
+  atualizarHUD();atualizarPainelSk();iniciarTicker();
+
+  if(jogoOk){
+    // Já iniciado: só actualizar HUD e tamanho do mapa
+    setTimeout(()=>{if(mapaJ)mapaJ.invalidateSize();atualizarCirculo();},200);
+    return;
+  }
+  jogoOk=true;
+
+  // Criar mapa
+  mapaJ=L.map('mapa-jogo',{
+    center:[AV.lat,AV.lng],zoom:18,
+    zoomControl:true,attributionControl:false,
+    // CRÍTICO: mapa NÃO arrasta — o avatar move-se
+    dragging:false,touchZoom:true,scrollWheelZoom:true,
+    doubleClickZoom:false,keyboard:false,
+  });
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:20}).addTo(mapaJ);
+  mapaJ.on('zoom',()=>{atualizarCirculo();});
+
+  // Marcador do avatar no MAPA (só para referência)
+  const icAvt=L.divIcon({className:'',
+    html:'<div style="width:14px;height:14px;background:#0f0;border-radius:50%;border:2px solid #fff;box-shadow:0 0 8px #0f0;"></div>',
+    iconSize:[14,14],iconAnchor:[7,7]});
+  marcAvt=L.marker([AV.lat,AV.lng],{icon:icAvt,zIndexOffset:1000}).addTo(mapaJ);
+
+  // GPS
+  iniciarGPSJogo();
+
+  // Bandeiras
+  setTimeout(spawnarBandeiras,700);
+
+  // Arrastar caixa controlos
+  arrastarCtrl();
+
+  // Loop
+  animF=requestAnimationFrame(loopJogo);
+}
+
+function pararJogo(){
+  if(animF){cancelAnimationFrame(animF);animF=null;}
+  jogoOk=false;
+  if(mapaJ){try{mapaJ.remove();}catch(e){}mapaJ=null;}
+  bandeiras=[];marcAvt=null;
+}
+
+// GPS
+function iniciarGPSJogo(){
+  if(!navigator.geolocation){G('gps-lbl').innerText='❌ GPS não suportado — usa joystick';return;}
+  navigator.geolocation.getCurrentPosition(pos=>{
+    AV.lat=pos.coords.latitude;AV.lng=pos.coords.longitude;
+    mapaJ?.setView([AV.lat,AV.lng],18,{animate:false});
+    marcAvt?.setLatLng([AV.lat,AV.lng]);
+    G('gps-lbl').innerText=`✅ GPS: ${AV.lat.toFixed(5)}, ${AV.lng.toFixed(5)}`;
+    bandeiras.forEach(b=>mapaJ?.removeLayer(b.m));bandeiras=[];
+    spawnarBandeiras();
+  },()=>G('gps-lbl').innerText='⚠️ GPS indisponível — usa o joystick',{enableHighAccuracy:true,timeout:8000});
+}
+
+// BANDEIRAS
+function spawnarBandeiras(){
+  if(!mapaJ)return;
+  const n=CFG.N_BAND-bandeiras.filter(b=>!b.apanhada).length;
+  for(let i=0;i<n;i++){
+    const ang=Math.random()*2*Math.PI,dist=20+Math.random()*CFG.SPAWN_RAIO;
+    const dLa=(dist/111000)*Math.cos(ang),dLn=(dist/(111000*Math.cos(AV.lat*Math.PI/180)))*Math.sin(ang);
+    criarBandeira(AV.lat+dLa,AV.lng+dLn,Math.random()>.4);
+  }
+}
+
+function criarBandeira(lat,lng,energ){
+  const cor=energ?'#0ff':'#f00',emj=energ?'⚡':'🏴';
+  const ic=L.divIcon({className:'',
+    html:`<div style="background:${cor};color:#000;width:26px;height:26px;border-radius:50%;
+      display:flex;align-items:center;justify-content:center;font-size:.83rem;
+      border:2px solid #fff;cursor:pointer;box-shadow:0 0 10px ${cor};">${emj}</div>`,
+    iconSize:[26,26],iconAnchor:[13,13]});
+  const m=L.marker([lat,lng],{icon:ic}).addTo(mapaJ);
+  const b={m,lat,lng,energ,apanhada:false};
+  bandeiras.push(b);
+  m.on('click',()=>tentarApanhar(b));
+}
+
+function verificarBandeiras(){
+  let minDist=Infinity;bandMaisProx=null;
+  bandeiras.forEach(b=>{
+    if(b.apanhada)return;
+    const d=calcDist(AV.lat,AV.lng,b.lat,b.lng);
+    if(d<minDist){minDist=d;bandMaisProx=b;}
+    // Auto-apanhar se contacto (≤4m)
+    if(d<=4)apanharB(b);
+  });
+  // Aviso
+  if(bandMaisProx&&minDist<=CFG.AVISO_RAIO&&!bandMaisProx.apanhada){
+    const av2=G('aviso-ap'),ca=G('circ-alc');
+    av2.style.display='block';
+    av2.style.background=minDist<=CFG.APANHAR_RAIO?'rgba(0,255,0,.95)':'rgba(255,200,0,.95)';
+    av2.innerText=minDist<=CFG.APANHAR_RAIO?'👆 APANHAR!':`📍 ${Math.round(minDist)}m`;
+    const rPx=Math.max(20,distParaPx(minDist));
+    ca.style.display='block';ca.style.width=(rPx*2)+'px';ca.style.height=(rPx*2)+'px';
+    ca.style.borderColor=minDist<=CFG.APANHAR_RAIO?'#0f0':'#ff0';
+  } else {G('aviso-ap').style.display='none';G('circ-alc').style.display='none';}
+}
+
+function tentarApanhar(b){
+  const d=calcDist(AV.lat,AV.lng,b.lat,b.lng);
+  if(d<=CFG.APANHAR_RAIO)apanharB(b);
+  else mostrarNotif('📍',`${Math.round(d)}m de distância`,`Aproxima-te mais (máx. ${CFG.APANHAR_RAIO}m)`);
+}
+function apanharManual(){if(bandMaisProx&&!bandMaisProx.apanhada)tentarApanhar(bandMaisProx);}
+
+function apanharB(b){
+  if(b.apanhada)return;b.apanhada=true;
+  try{const el=b.m.getElement();if(el){el.style.transition='all .3s';el.style.transform='scale(0)';el.style.opacity='0';}}catch(e){}
+  setTimeout(()=>{try{mapaJ?.removeLayer(b.m);}catch(e){}},300);
+  jogAtual.fl=(jogAtual.fl||0)+1;
+  if(b.energ){
+    jogAtual.en=Math.min(100,(jogAtual.en||100)+5);
+    jogAtual.flEnerg=(jogAtual.flEnerg||0)+1;
+    verificarSkill();
+    mostrarNotif('⚡','+5% Energia!',`🏴 ${fN(jogAtual.fl)} flags`);
+  } else {
+    mostrarNotif('🏴','Bandeira apanhada!',`🏴 ${fN(jogAtual.fl)} · ⚡ ${Math.round(jogAtual.en||100)}%`);
+  }
+  atualizarHUD();atualizarPainelSk();gravarJog();
+  setTimeout(()=>{
+    const ang=Math.random()*2*Math.PI,dist=30+Math.random()*CFG.SPAWN_RAIO;
+    const dLa=(dist/111000)*Math.cos(ang),dLn=(dist/(111000*Math.cos(AV.lat*Math.PI/180)))*Math.sin(ang);
+    b.lat=AV.lat+dLa;b.lng=AV.lng+dLn;b.energ=Math.random()>.4;b.apanhada=false;
+    const cor=b.energ?'#0ff':'#f00',emj=b.energ?'⚡':'🏴';
+    const ic=L.divIcon({className:'',html:`<div style="background:${cor};color:#000;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.83rem;border:2px solid #fff;cursor:pointer;box-shadow:0 0 10px ${cor};">${emj}</div>`,iconSize:[26,26],iconAnchor:[13,13]});
+    b.m=L.marker([b.lat,b.lng],{icon:ic}).addTo(mapaJ);b.m.on('click',()=>tentarApanhar(b));
+  },5000+Math.random()*5000);
+}
+
+// SKILL
+function verificarSkill(){
+  while((jogAtual.flEnerg||0)>=(jogAtual.flLimite||500)){
+    jogAtual.flEnerg-=(jogAtual.flLimite||500);
+    jogAtual.sk=(jogAtual.sk||0)+1;jogAtual.skTotal=(jogAtual.skTotal||0)+1;
+    jogAtual.flLimite=flagsParaSk(jogAtual.sk);
+    const nv=calcVisao(jogAtual.sk),ant=jogAtual.visao||5;
+    jogAtual.visao=nv;jogAtual.nivel=Math.floor(jogAtual.sk/10)+1;
+    if(nv>ant){mostrarNotif('👁️',`Visão: ${nv}m!`,`Skill ${jogAtual.sk} · Nível ${jogAtual.nivel}`);atualizarCirculo();}
+    else mostrarNotif('🎯',`Skill ${jogAtual.sk}!`,`Próximo: ${fN(jogAtual.flLimite)} flags`);
+  }
+  atualizarPainelSk();atualizarHUD();
+}
+
+function gravarJog(){
+  if(!jogAtual||!jogAtual.em)return;
+  jogAtual.ult=Date.now();
+  const jogs=BD.jogs();const idx=jogs.findIndex(j=>j.em===jogAtual.em);
+  if(idx>=0)jogs[idx]=jogAtual;else jogs.push(jogAtual);
+  BD.saveJ(jogs);BD.setSJ(jogAtual);
+}
+
+function atualizarHUD(){
+  if(!jogAtual)return;
+  G('j-hud-nm').innerText='👤 '+(jogAtual.nm||'---');
+  G('j-hud-nv').innerText=`Nível ${jogAtual.nivel||1} · Skill ${jogAtual.sk||0}`;
+  G('h-fl').innerText=fN(jogAtual.fl||0);
+  G('h-en').innerText=Math.round(jogAtual.en||100)+'%';
+  G('h-sk').innerText=jogAtual.sk||0;
+  G('h-vis').innerText=(jogAtual.visao||5)+'m';
+}
+function atualizarPainelSk(){
+  if(!jogAtual)return;
+  G('sk-nv').innerText=jogAtual.nivel||1;
+  G('sk-sk').innerText=jogAtual.sk||0;
+  G('sk-vis').innerText=(jogAtual.visao||5)+'m';
+  G('sk-px').innerText=fN(jogAtual.flLimite||500);
+  const pct=Math.min(100,((jogAtual.flEnerg||0)/(jogAtual.flLimite||500))*100);
+  G('bskf').style.width=pct+'%';
+  G('bskt').innerText=fN(jogAtual.flEnerg||0)+'/'+fN(jogAtual.flLimite||500);
+}
+
+// CÍRCULO VISÃO
+function atualizarCirculo(){
+  if(!mapaJ||!jogAtual)return;
+  const vis=jogAtual.visao||5;
+  const rPx=Math.max(60,distParaPx(vis));
+  const diam=rPx*2;
+  const c=G('circ-vis');c.style.width=diam+'px';c.style.height=diam+'px';
+  const p=(vis-CFG.VISAO_MIN)/(CFG.VISAO_MAX-CFG.VISAO_MIN);
+  const b2=Math.round(p*255);const cor=`rgb(0,255,${b2})`;
+  c.style.borderColor=cor;
+  c.style.boxShadow=`0 0 0 3000px rgba(0,0,0,.75),inset 0 0 ${20+p*40}px rgba(0,255,${b2},.12),0 0 ${20+p*40}px rgba(0,255,${b2},.4)`;
+}
+function distParaPx(metros){
+  if(!mapaJ)return metros*5;
+  const z=mapaJ.getZoom(),lat=AV.lat;
+  const esc=156543.03392*Math.cos(lat*Math.PI/180)/Math.pow(2,z);
+  return metros/esc;
+}
+function calcDist(la1,ln1,la2,ln2){
+  const dx=(ln2-ln1)*111000*Math.cos(la1*Math.PI/180);
+  const dy=(la2-la1)*111000;
+  return Math.sqrt(dx*dx+dy*dy);
+}
+
+// LOOP PRINCIPAL
+function loopJogo(ts){
+  animF=requestAnimationFrame(loopJogo);
+  const dt=Math.min(ts-ultimoF,50);ultimoF=ts;animT+=dt*.001;
+  const vel=CFG.VEL_PX*(dt/16);
+  let mx=0,my=0;
+  if(dirs.c)my-=vel;if(dirs.b)my+=vel;
+  if(dirs.e)mx-=vel;if(dirs.d)mx+=vel;
+  if(mx&&my){mx*=.707;my*=.707;}
+  AV.andando=!!(mx||my);
+  if(mx>0)AV.dir=1;else if(mx<0)AV.dir=-1;
+  if(AV.andando&&mapaJ){
+    const z=mapaJ.getZoom(),lat=AV.lat;
+    const esc=156543.03392*Math.cos(lat*Math.PI/180)/Math.pow(2,z);
+    AV.lat+=(-my*esc)/111319.9;AV.lng+=(mx*esc)/111319.9;
+    // MAPA move-se, AVATAR fica no centro
+    mapaJ.panTo([AV.lat,AV.lng],{animate:false,duration:0});
+    marcAvt?.setLatLng([AV.lat,AV.lng]);
+    atualizarCirculo();verificarBandeiras();
+  }
+  animarAvt(animT,AV.andando);
+}
+
+// ANIMAÇÃO AVATAR
+function animarAvt(t,and){
+  const svg=G('avt-svg');if(!svg)return;
+  if(and){
+    const a=Math.sin(t*8)*22;
+    G('ape')?.style.setProperty('transform',`rotate(${-a}deg)`);
+    G('apd')?.style.setProperty('transform',`rotate(${a}deg)`);
+    G('abe')?.style.setProperty('transform',`rotate(${a}deg)`);
+    G('abd')?.style.setProperty('transform',`rotate(${-a}deg)`);
+    G('acab')?.style.setProperty('transform',`translateY(${Math.abs(Math.sin(t*8))*-1.5}px)`);
+    svg.style.transform=`translate(-50%,-50%) scaleX(${AV.dir})`;
+    svg.style.filter='drop-shadow(0 0 12px #0f0)';
+  } else {
+    const r=Math.sin(t*1.5)*1.5;
+    G('ape')?.style.setProperty('transform','rotate(0deg)');
+    G('apd')?.style.setProperty('transform','rotate(0deg)');
+    G('abe')?.style.setProperty('transform',`rotate(${r}deg)`);
+    G('abd')?.style.setProperty('transform',`rotate(${-r}deg)`);
+    G('acab')?.style.setProperty('transform',`translateY(${r*.4}px)`);
+    const s=1+Math.sin(t*1.2)*.02;
+    svg.style.transform=`translate(-50%,-50%) scale(${s})`;
+    svg.style.filter=`drop-shadow(0 0 ${8+Math.sin(t*1.2)*4}px #0f0)`;
+  }
+}
+
+// CONTROLOS
+document.addEventListener('keydown',e=>{
+  const m={ArrowUp:'c',ArrowDown:'b',ArrowLeft:'e',ArrowRight:'d',w:'c',s:'b',a:'e',d:'d',W:'c',S:'b',A:'e',D:'d'};
+  if(m[e.key]){dirs[m[e.key]]=true;G('bc-'+m[e.key])?.classList.add('on');e.preventDefault();}
+  if(e.key===' '||e.key==='Enter')apanharManual();
+});
+document.addEventListener('keyup',e=>{
+  const m={ArrowUp:'c',ArrowDown:'b',ArrowLeft:'e',ArrowRight:'d',w:'c',s:'b',a:'e',d:'d',W:'c',S:'b',A:'e',D:'d'};
+  if(m[e.key]){dirs[m[e.key]]=false;G('bc-'+m[e.key])?.classList.remove('on');}
+});
+function pd(d){dirs[d]=true; G('bc-'+d)?.classList.add('on');}
+function pu(d){dirs[d]=false;G('bc-'+d)?.classList.remove('on');}
+function mudarTam(delta){
+  tamBtn=Math.max(32,Math.min(80,tamBtn+delta*6));
+  G('tam-lbl').innerText=tamBtn+'px';
+  document.querySelectorAll('.cbtn').forEach(b=>{b.style.width=tamBtn+'px';b.style.height=tamBtn+'px';});
+}
+
+// ARRASTAR CAIXA CONTROLOS
+function arrastarCtrl(){
+  const c=G('ctrl');if(!c)return;let ar=false,ox=0,oy=0;
+  c.addEventListener('pointerdown',e=>{if(e.target.classList.contains('cbtn')||e.target.classList.contains('tbtn'))return;ar=true;ox=e.clientX-c.getBoundingClientRect().left;oy=e.clientY-c.getBoundingClientRect().top;c.setPointerCapture(e.pointerId);e.preventDefault();});
+  c.addEventListener('pointermove',e=>{if(!ar)return;c.style.left=(e.clientX-ox)+'px';c.style.top=(e.clientY-oy)+'px';c.style.right='auto';c.style.bottom='auto';});
+  c.addEventListener('pointerup',()=>ar=false);
+}
+
+// TICKER
+function addTick(h){const t=G('ticker');[1,2].forEach(()=>{const s=document.createElement('span');s.className='tick';s.innerHTML=h+'   ';t.appendChild(s);});}
+function iniciarTicker(){G('ticker').innerHTML='';addTick('🏴 ZAP FLAGS — Caça ao Tesouro!');addTick('⚡ Apanha bandeiras ⚡ para ganhar Skill e aumentar a visão!');addTick('👆 Usa joystick/WASD para mover · chega perto e clica APANHAR!');addTick(`🎯 10 Skill = +1m de visão · começa em 5m até 100m máx!`);}
+
+// NOTIFICAÇÃO
+function mostrarNotif(ico,txt,sub){
+  G('notif-ico').innerText=ico;G('notif-txt').innerText=txt;G('notif-sub').innerText=sub||'';
+  G('notif').style.display='flex';G('notif').style.flexDirection='column';G('notif').style.gap='3px';
+  if(notifTmr)clearTimeout(notifTmr);
+  notifTmr=setTimeout(()=>G('notif').style.display='none',2700);
 }
 
 // ============================================================
-// INIT — SEMPRE NA HOME
+// AUTO-LOGIN — SEMPRE NA HOME
 // ============================================================
 (function init(){
   const sj=BD.sessJ(),sp=BD.sessPR();
-  if(sj)jogAtual=sj;
-  if(sp)prAtual=sp;
-  ir('p-inicio'); // SEMPRE começa na homepage
+  if(sj)jogAtual=sj;if(sp)prAtual=sp;
+  ir('p0'); // SEMPRE começa na homepage
 })();
 </script>
 </body>
