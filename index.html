@@ -4,90 +4,107 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ZAP FLAGS</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:'Courier New',monospace;background:#000;color:#0f0;min-height:100vh;}
 .page{display:none;min-height:100vh;}
 .page.ativa{display:block;}
-.box{max-width:500px;margin:0 auto;padding:20px;}
+.caixa{max-width:480px;margin:0 auto;padding:20px;}
 
-h1{font-size:2.2rem;text-shadow:0 0 20px #0f0;margin-bottom:5px;}
-h2{font-size:1.1rem;margin-bottom:10px;border-bottom:1px solid #0f0;padding-bottom:6px;}
-h3{font-size:.88rem;color:#0ff;margin:10px 0 6px;}
+/* TIPOGRAFIA */
+h1{font-size:2.2rem;text-shadow:0 0 20px #0f0;}
+h2{font-size:1.1rem;margin-bottom:12px;border-bottom:1px solid #0f0;padding-bottom:6px;}
+h3{font-size:.88rem;color:#0ff;margin:8px 0 5px;}
 
-input,select,textarea{width:100%;background:#0a0a0a;color:#0f0;border:1px solid #0f0;
-  padding:10px;margin:4px 0;font-size:.9rem;font-family:'Courier New',monospace;border-radius:4px;}
+/* INPUTS */
+input,select,textarea{
+  width:100%;background:#0a0a0a;color:#0f0;
+  border:1px solid #0f0;padding:10px;margin:4px 0;
+  font-size:.9rem;font-family:'Courier New',monospace;border-radius:4px;
+}
 input:focus,select:focus,textarea:focus{outline:none;border-color:#0ff;box-shadow:0 0 5px #0ff;}
 select option{background:#0a0a0a;}
 textarea{resize:vertical;min-height:60px;}
-input[type=range]{border:none;background:transparent;padding:6px 0;cursor:pointer;}
 
-.btn{display:inline-block;padding:11px 16px;margin:3px 2px;font-size:.88rem;font-weight:bold;
-  cursor:pointer;font-family:'Courier New',monospace;border:none;border-radius:4px;transition:all .2s;}
-.bb{display:block;width:100%;margin:5px 0;padding:12px;text-align:center;}
-.bv{background:#0f0;color:#000;}.bv:hover{background:#0ff;}
-.bc{background:#111;color:#0f0;border:1px solid #0f0;}.bc:hover{background:#1a1a1a;}
-.bo{background:linear-gradient(45deg,#f80,#ff0);color:#000;}.bo:hover{background:#ff0;}
-.br{background:#1a0000;color:#f00;border:1px solid #f00;}.br:hover{background:#300;}
-.bvol{background:#000;color:#0aa;border:1px solid #0aa;}.bvol:hover{background:#0aa;color:#000;}
-.bsair{background:#1a0000;color:#f00;border:1px solid #f00;}.bsair:hover{background:#300;}
-.badm{background:linear-gradient(45deg,#600,#f00);color:#fff;border:2px solid #f88;}
-.bbo{background:linear-gradient(135deg,#003,#006,#009);color:#0ff;border:2px solid #0ff;
-  box-shadow:0 0 15px rgba(0,150,255,.4);}.bbo:hover{background:#006;}
+/* BOTÕES */
+.btn{display:inline-block;padding:11px 16px;margin:3px 2px;font-size:.88rem;
+  font-weight:bold;cursor:pointer;font-family:'Courier New',monospace;
+  border:none;border-radius:4px;transition:all .2s;}
+.bloco{display:block;width:100%;margin:5px 0;padding:12px;text-align:center;}
+.verde{background:#0f0;color:#000;}.verde:hover{background:#0ff;}
+.cinza{background:#111;color:#0f0;border:1px solid #0f0;}.cinza:hover{background:#1a1a1a;}
+.laranja{background:linear-gradient(45deg,#f80,#ff0);color:#000;}.laranja:hover{background:#ff0;}
+.vermelho{background:#1a0000;color:#f00;border:1px solid #f00;}.vermelho:hover{background:#300;}
+.azul{background:#000;color:#0aa;border:1px solid #0aa;}.azul:hover{background:#0aa;color:#000;}
+.roxo{background:linear-gradient(135deg,#003,#006,#009);color:#0ff;border:2px solid #0ff;}
+.roxo:hover{background:#006;}
+.sair-btn{background:#1a0000;color:#f00;border:1px solid #f00;padding:7px 14px;
+  font-size:.8rem;font-weight:bold;cursor:pointer;font-family:'Courier New',monospace;border-radius:4px;}
+.sair-btn:hover{background:#300;}
+.voltar-btn{background:#000;color:#0aa;border:1px solid #0aa;padding:7px 14px;
+  font-size:.8rem;font-weight:bold;cursor:pointer;font-family:'Courier New',monospace;border-radius:4px;}
+.voltar-btn:hover{background:#0aa;color:#000;}
 
-.msg{padding:10px;margin:6px 0;border-radius:4px;display:none;font-size:.83rem;}
-.msg.e{background:#200;border:1px solid #f00;color:#f00;display:block;}
-.msg.s{background:#020;border:1px solid #0f0;color:#0f0;display:block;}
-.msg.i{background:#002;border:1px solid #0ff;color:#0ff;display:block;}
-.msg.a{background:#220;border:1px solid #ff0;color:#ff0;display:block;}
+/* MENSAGENS */
+.msg{padding:10px;margin:6px 0;border-radius:4px;display:none;font-size:.84rem;}
+.msg.erro  {background:#200;border:1px solid #f00;color:#f00;display:block;}
+.msg.ok    {background:#020;border:1px solid #0f0;color:#0f0;display:block;}
+.msg.info  {background:#002;border:1px solid #0ff;color:#0ff;display:block;}
+.msg.aviso {background:#220;border:1px solid #ff0;color:#ff0;display:block;}
 
-/* SECÇÕES HOMEPAGE */
-.jog-sec{background:#000a00;border:2px solid #0f0;border-radius:10px;padding:16px;margin:8px 0;}
-.jog-sec h3{color:#0f0;}
-.emp-sec{background:#0a0800;border:2px solid #ff0;border-radius:10px;padding:16px;margin:8px 0;}
-.emp-sec h3{color:#ff0;}
-.adm-sec{background:#0a0000;border:2px solid #f00;border-radius:10px;padding:16px;margin:8px 0;}
-.adm-sec h3{color:#f00;}
-.bo-sec{background:linear-gradient(135deg,#000510,#001020);border:2px solid #0ff;
-  border-radius:10px;padding:16px;margin:8px 0;box-shadow:0 0 20px rgba(0,200,255,.2);
-  position:relative;overflow:hidden;}
-.bo-sec::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;
+/* ÁREAS COLORIDAS */
+.area-jog{background:#000a00;border:2px solid #0f0;border-radius:10px;padding:16px;margin:8px 0;}
+.area-jog h3{color:#0f0;}
+.area-pr {background:#0a0800;border:2px solid #ff0;border-radius:10px;padding:16px;margin:8px 0;}
+.area-pr h3{color:#ff0;}
+.area-bo {background:linear-gradient(135deg,#000510,#001020);border:2px solid #0ff;
+  border-radius:10px;padding:16px;margin:8px 0;position:relative;overflow:hidden;}
+.area-bo::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;
   background:linear-gradient(90deg,transparent,#0ff,transparent);
-  animation:scanLine 3s linear infinite;}
-@keyframes scanLine{from{transform:translateX(-100%)}to{transform:translateX(100%)}}
-.bo-sec h3{color:#0ff;}
-.bo-badge{background:#0ff;color:#000;padding:2px 8px;border-radius:10px;font-size:.65rem;font-weight:bold;margin-left:6px;}
+  animation:varre 3s linear infinite;}
+@keyframes varre{from{transform:translateX(-100%)}to{transform:translateX(100%)}}
+.area-bo h3{color:#0ff;}
+.badge-bo{background:#0ff;color:#000;padding:2px 8px;border-radius:10px;
+  font-size:.65rem;font-weight:bold;margin-left:6px;}
 
-/* SESSÃO ATIVA NA HOMEPAGE */
-.sessao-bar{background:#001a00;border:2px solid #0f0;border-radius:10px;
-  padding:14px 16px;margin:8px 0;display:flex;justify-content:space-between;align-items:center;
-  box-shadow:0 0 10px rgba(0,200,0,.2);}
-.sessao-bar-pr{background:#0a0800;border-color:#ff0;box-shadow:0 0 10px rgba(255,200,0,.2);}
-.sessao-bar-bo{background:#000510;border-color:#0ff;box-shadow:0 0 10px rgba(0,200,255,.2);}
-.sessao-info{flex:1;}
-.sessao-nome{font-weight:bold;font-size:.92rem;}
-.sessao-sub{font-size:.72rem;color:#0aa;margin-top:2px;}
+/* SESSÃO ATIVA NA HOME */
+.barra-sessao{border-radius:10px;padding:12px 14px;margin:8px 0;
+  display:flex;justify-content:space-between;align-items:center;}
+.barra-j {background:#001a00;border:2px solid #0f0;}
+.barra-pr{background:#1a0e00;border:2px solid #ff0;}
 
-/* HUD */
-.hud{position:sticky;top:0;left:0;right:0;z-index:3000;padding:8px 12px;
+/* HUD TOPO */
+.hud{position:sticky;top:0;z-index:3000;padding:8px 12px;
   display:flex;justify-content:space-between;align-items:center;}
 .hud-j  {background:rgba(0,15,0,.97);border-bottom:2px solid #0f0;}
 .hud-pr {background:rgba(15,10,0,.97);border-bottom:2px solid #ff0;}
-.hud-adm{background:rgba(15,0,0,.97);border-bottom:2px solid #f00;}
 .hud-bo {background:rgba(0,5,20,.97);border-bottom:2px solid #0ff;}
-.hud-btns{display:flex;gap:5px;}
+
+/* MAPA */
+#mapa-jogo{position:fixed;top:52px;left:0;right:0;bottom:44px;z-index:1;}
+#rodape-jogo{position:fixed;bottom:0;left:0;right:0;z-index:3000;
+  background:rgba(0,0,0,.97);border-top:2px solid #ff0;height:44px;
+  overflow:hidden;display:flex;align-items:center;}
+#ticker{display:inline-flex;gap:80px;white-space:nowrap;
+  animation:rolar 30s linear infinite;padding-left:100vw;}
+@keyframes rolar{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+.tick{color:#ff0;font-size:.8rem;font-weight:bold;}
+.tick b{color:#0ff;}
+#gps-info{position:fixed;bottom:48px;right:8px;z-index:2000;
+  background:rgba(0,0,0,.9);border:1px solid #0f0;border-radius:20px;
+  padding:3px 8px;font-size:.68rem;}
 
 /* TABS */
-.tabs{display:flex;gap:2px;overflow-x:auto;}
-.tab{padding:7px 12px;background:#111;border:1px solid #333;cursor:pointer;
-  font-family:'Courier New',monospace;font-size:.72rem;border-radius:4px 4px 0 0;white-space:nowrap;}
-.tc{display:none;padding:12px;}
-.tc.on{display:block;}
-.tabs-pr{border-bottom:2px solid #ff0;}
-.tab-pr{color:#880;}.tab-pr.on{background:#1a1000;border-color:#ff0;color:#ff0;font-weight:bold;}
-.tabs-bo{border-bottom:2px solid #0ff;}
-.tab-bo{color:#055;}.tab-bo.on{background:#001a2a;border-color:#0ff;color:#0ff;font-weight:bold;}
+.abas{display:flex;gap:2px;overflow-x:auto;border-bottom:2px solid #ff0;}
+.aba{padding:7px 12px;background:#111;border:1px solid #333;cursor:pointer;
+  font-family:'Courier New',monospace;font-size:.72rem;border-radius:4px 4px 0 0;
+  white-space:nowrap;color:#880;}
+.aba.on{background:#1a1000;border-color:#ff0;color:#ff0;font-weight:bold;}
+.aba-bo{color:#055;}.aba-bo.on{background:#001a2a;border-color:#0ff;color:#0ff;font-weight:bold;}
+.sec-aba{display:none;padding:12px;}
+.sec-aba.on{display:block;}
 
 /* CARDS */
 .card{background:#080808;border:1px solid #222;border-radius:8px;padding:12px;margin:8px 0;}
@@ -95,337 +112,312 @@ input[type=range]{border:none;background:transparent;padding:6px 0;cursor:pointe
 .card-v{border-color:#0f0;background:#050f05;}
 .card-b{border-color:#0ff;background:#00080a;}
 .card-r{border-color:#f00;background:#0f0000;}
-.card-bo{border-color:#0ff;background:linear-gradient(135deg,#000510,#001020);}
+.linha{padding:5px 0;border-bottom:1px solid #111;font-size:.82rem;
+  display:flex;justify-content:space-between;align-items:flex-start;gap:8px;}
+.linha:last-child{border-bottom:none;}
+.label{color:#0aa;font-size:.7rem;white-space:nowrap;padding-top:2px;flex-shrink:0;}
+.valor{text-align:right;font-size:.82rem;word-break:break-word;}
 
-.row{padding:5px 0;border-bottom:1px solid #111;font-size:.82rem;display:flex;
-  justify-content:space-between;align-items:flex-start;gap:8px;}
-.row:last-child{border-bottom:none;}
-.rl{color:#0aa;font-size:.7rem;white-space:nowrap;padding-top:2px;flex-shrink:0;}
-.rv{text-align:right;font-size:.82rem;word-break:break-word;}
-
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0;}
-.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin:8px 0;}
-.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:8px 0;}
+/* STATS */
+.grelha2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0;}
+.grelha3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin:8px 0;}
+.grelha4{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:8px 0;}
 .stat{background:#080808;border:1px solid #0f0;border-radius:8px;padding:10px;text-align:center;}
 .stat-n{font-size:1.4rem;color:#0ff;font-weight:bold;}
 .stat-t{font-size:.68rem;color:#0aa;margin-top:3px;}
 .stat-bo{border-color:#0ff;background:#000a14;}
-.stat-bo .stat-n{color:#0ff;}
 .stat-pr{border-color:#ff0;background:#0a0800;}
-.stat-pr .stat-n{color:#ff0;}
 
 /* PACOTES */
-.pack-card{border:2px solid #333;border-radius:12px;padding:14px;cursor:pointer;
-  transition:all .2s;background:#0a0a0a;margin:8px 0;}
-.pack-card:hover{border-color:#0ff;transform:scale(1.01);}
-.pack-card.sel{border-color:#ff0;background:#1a1400;}
-
-/* LOTE */
-.lote-card{background:#0a0a0a;border:2px solid #333;border-radius:10px;padding:12px;margin:6px 0;position:relative;}
-.lote-card.ativo{border-color:#0f0;background:#050f05;}
-.lote-card.inativo{border-color:#555;}
-.lbadge{position:absolute;top:8px;right:8px;padding:2px 8px;border-radius:10px;font-size:.68rem;font-weight:bold;}
-.lb-v{background:#0a2200;color:#0f0;border:1px solid #0f0;}
-.lb-g{background:#111;color:#555;border:1px solid #333;}
+.pack{border:2px solid #333;border-radius:10px;padding:12px;cursor:pointer;
+  transition:all .2s;background:#0a0a0a;margin:6px 0;}
+.pack:hover{border-color:#0ff;}.pack.selecionado{border-color:#ff0;background:#1a1400;}
 
 /* BINGO */
-.bfc{border-radius:10px;padding:14px;margin:12px 0;position:relative;}
-.bfc.inativa{background:#0a0500;border:2px solid #333;}
-.bfc.ativa{background:#1a0800;border:2px solid #ff0;box-shadow:0 0 12px rgba(255,200,0,.3);}
-.bfc.encontrada{background:#001a00;border:2px solid #0f0;}
-.bfc.expirada{background:#0a0000;border:2px solid #333;opacity:.6;}
+.bingo-card{border-radius:10px;padding:14px;margin:10px 0;position:relative;}
+.bingo-card.inativa{background:#0a0500;border:2px solid #333;}
+.bingo-card.ativa{background:#1a0800;border:2px solid #ff0;box-shadow:0 0 12px rgba(255,200,0,.3);}
+.bingo-card.encontrada{background:#001a00;border:2px solid #0f0;}
+.bingo-card.expirada{background:#0a0000;border:2px solid #333;opacity:.6;}
+.badge-ativa{background:#1a0800;color:#ff0;border:1px solid #ff0;padding:3px 10px;border-radius:12px;font-size:.72rem;font-weight:bold;}
+.badge-inativa{background:#111;color:#555;border:1px solid #333;padding:3px 10px;border-radius:12px;font-size:.72rem;}
+.badge-enc{background:#001a00;color:#0f0;border:1px solid #0f0;padding:3px 10px;border-radius:12px;font-size:.72rem;font-weight:bold;}
+.timer-bingo{display:flex;flex-direction:column;align-items:center;background:#000;
+  border:3px solid #ff0;border-radius:12px;padding:12px;margin:10px 0;text-align:center;}
+.timer-n{font-size:2.8rem;color:#ff0;font-weight:bold;font-family:'Courier New',monospace;
+  text-shadow:0 0 15px #ff0;letter-spacing:4px;}
+.timer-ico{font-size:2rem;animation:tic 1s ease-in-out infinite alternate;display:inline-block;}
+@keyframes tic{from{transform:rotate(-12deg)}to{transform:rotate(12deg)}}
 
-.badge-ativa   {background:#1a0800;color:#ff0;border:1px solid #ff0;padding:3px 10px;border-radius:12px;font-size:.72rem;font-weight:bold;}
-.badge-inativa {background:#111;color:#555;border:1px solid #333;padding:3px 10px;border-radius:12px;font-size:.72rem;}
-.badge-enc     {background:#001a00;color:#0f0;border:1px solid #0f0;padding:3px 10px;border-radius:12px;font-size:.72rem;font-weight:bold;}
-.badge-exp     {background:#1a0000;color:#f00;border:1px solid #f00;padding:3px 10px;border-radius:12px;font-size:.72rem;}
+/* LOTES */
+.lote-card{background:#0a0a0a;border:2px solid #333;border-radius:8px;padding:12px;margin:5px 0;position:relative;}
+.lote-card.ativo{border-color:#0f0;background:#050f05;}
+.lote-card.inativo{border-color:#555;}
 
-.timer-grande{display:flex;flex-direction:column;align-items:center;background:#000;
-  border:3px solid #ff0;border-radius:12px;padding:14px;margin:10px 0;text-align:center;}
-.timer-display{font-size:2.8rem;color:#ff0;font-weight:bold;font-family:'Courier New',monospace;
-  text-shadow:0 0 15px #ff0;letter-spacing:4px;line-height:1;}
-.timer-label{font-size:.72rem;color:#0aa;margin-top:4px;}
-.timer-ico{font-size:2rem;animation:tick 1s ease-in-out infinite alternate;display:inline-block;}
-@keyframes tick{from{transform:rotate(-12deg)}to{transform:rotate(12deg)}}
+/* BO */
+.uc-j{background:#000a00;border:1px solid #0f0;border-radius:6px;padding:9px;margin:4px 0;font-size:.8rem;}
+.uc-pr{background:#0a0800;border:1px solid #ff0;border-radius:6px;padding:9px;margin:4px 0;font-size:.8rem;}
+.ponto-online{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:4px;}
+.ponto-on{background:#0f0;box-shadow:0 0 6px #0f0;}
+.ponto-off{background:#333;}
 
-.slider-wrapper{background:#0a0a0a;border:1px solid #ff0;border-radius:8px;padding:14px;margin:8px 0;}
-.slider-val{font-size:1.6rem;color:#ff0;font-weight:bold;text-align:center;margin:6px 0;}
-.slider-sub{display:flex;justify-content:space-between;font-size:.65rem;color:#555;margin-top:3px;}
+/* SLIDER */
+.slider-wrap{background:#0a0a0a;border:1px solid #ff0;border-radius:8px;padding:14px;margin:8px 0;}
+.slider-val{font-size:1.6rem;color:#ff0;font-weight:bold;text-align:center;margin:5px 0;}
 
-.foto-area{border:2px dashed #ff0;border-radius:8px;padding:20px;text-align:center;
-  cursor:pointer;background:#0a0800;transition:all .2s;margin:6px 0;}
-.foto-area:hover{background:#1a1000;border-color:#0ff;}
+/* FOTO */
+.foto-zona{border:2px dashed #ff0;border-radius:8px;padding:18px;
+  text-align:center;cursor:pointer;background:#0a0800;margin:6px 0;}
+.foto-zona:hover{background:#1a1000;border-color:#0ff;}
 
-.qr-wrap{background:#fff;padding:16px;border-radius:8px;text-align:center;margin:12px auto;max-width:240px;}
-.qr-info{background:#0a0a0a;border:1px solid #0f0;border-radius:8px;padding:12px;margin:10px 0;}
-.qr-info .row{border-color:#111;}
-.qr-premio-box{background:#1a0800;border:3px solid #ff0;border-radius:10px;padding:16px;text-align:center;margin:10px 0;}
-
-.edit-section{background:#080808;border:1px solid #333;border-radius:8px;padding:12px;margin:10px 0;}
-.edit-section h3{color:#ff0;margin-bottom:8px;}
-
-/* UC */
-.uc{background:#0a0a0a;border:1px solid #1a1a1a;border-radius:6px;padding:10px;margin:4px 0;font-size:.8rem;}
-.uc-j{border-color:#0f0;background:#000a00;}
-.uc-pr{border-color:#ff0;background:#0a0800;}
-.online-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:4px;}
-.dot-on{background:#0f0;box-shadow:0 0 6px #0f0;}
-.dot-off{background:#333;}
+/* QR */
+.qr-caixa{background:#fff;padding:14px;border-radius:8px;text-align:center;margin:10px auto;max-width:220px;}
 
 /* MODAL */
-#movl{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.92);z-index:9000;display:none;}
-#mdl{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#000;
+#movl{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.9);z-index:9000;display:none;}
+#modal{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#000;
   border:3px solid #ff0;border-radius:12px;padding:20px;z-index:9001;
-  width:95%;max-width:500px;max-height:90vh;overflow-y:auto;display:none;}
-
-/* CONFIRM */
+  width:94%;max-width:500px;max-height:90vh;overflow-y:auto;display:none;}
 #conf-ovl{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.88);z-index:9500;display:none;}
-#conf-box{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
-  background:#000;border:3px solid #f00;border-radius:12px;padding:24px;
+#conf-caixa{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+  background:#000;border:3px solid #f00;border-radius:12px;padding:22px;
   z-index:9501;width:90%;max-width:360px;text-align:center;display:none;}
 
-.pb{width:100%;height:10px;background:#222;border-radius:5px;margin:6px 0;overflow:hidden;}
-.pf{height:100%;border-radius:5px;transition:width .5s;}
 .scroll{max-height:55vh;overflow-y:auto;padding-right:3px;}
 .scroll::-webkit-scrollbar{width:3px;}
 .scroll::-webkit-scrollbar-thumb{background:#ff0;}
+.sep{border:none;border-top:1px solid #222;margin:10px 0;}
 .lnk{color:#0ff;cursor:pointer;text-decoration:underline;font-size:.85rem;}
-.sep{border:none;border-top:1px solid #222;margin:12px 0;}
+.pb{width:100%;height:10px;background:#222;border-radius:5px;margin:5px 0;overflow:hidden;}
+.pf{height:100%;border-radius:5px;transition:width .5s;}
 </style>
 </head>
 <body>
 
-<!-- ========================= -->
-<!-- PÁGINA INÍCIO             -->
-<!-- ========================= -->
-<div id="p0" class="page ativa">
-<div class="box" style="padding-top:25px;text-align:center;">
+<!-- ======== PÁGINA INÍCIO ======== -->
+<div id="p-inicio" class="page ativa">
+<div class="caixa" style="padding-top:25px;text-align:center;">
   <h1>🏴 ZAP FLAGS</h1>
-  <p style="color:#0aa;font-size:.85rem;margin-bottom:20px;">Caça ao Tesouro Digital</p>
+  <p style="color:#0aa;font-size:.85rem;margin-bottom:5px;">Caça ao Tesouro Digital</p>
 
-  <!-- SESSÃO ATIVA (aparece se estiver logado) -->
-  <div id="home-sessao-j" style="display:none;">
-    <div class="sessao-bar">
-      <div class="sessao-info">
-        <div class="sessao-nome" style="color:#0f0;" id="home-j-nome">👤 ---</div>
-        <div class="sessao-sub" id="home-j-info">Jogador ativo</div>
+  <!-- BOTÃO FECHAR/SAIR DA APP -->
+  <div style="text-align:right;margin-bottom:15px;">
+    <button class="sair-btn" onclick="fecharApp()" title="Fechar aplicação">✖ FECHAR</button>
+  </div>
+
+  <!-- SESSÕES ATIVAS (mostradas se logado) -->
+  <div id="home-sessao-jog" style="display:none;">
+    <div class="barra-sessao barra-j">
+      <div style="text-align:left;">
+        <div style="font-weight:bold;font-size:.9rem;color:#0f0;" id="home-j-nome">👤 ---</div>
+        <div style="font-size:.72rem;color:#0aa;" id="home-j-info">---</div>
       </div>
       <div style="display:flex;gap:6px;">
-        <button class="btn bv" style="padding:8px 14px;font-size:.8rem;" onclick="voltarJogoHome()">🎮 Jogar</button>
-        <button class="btn bsair" style="padding:8px 14px;font-size:.8rem;" onclick="confirmarSairJogador()">🚪 Sair</button>
+        <button class="btn verde" style="padding:7px 13px;font-size:.8rem;" onclick="reentrarJogo()">🎮 Continuar</button>
+        <button class="sair-btn" onclick="confirmarSair('jogador')">🚪 Sair</button>
       </div>
     </div>
   </div>
 
   <div id="home-sessao-pr" style="display:none;">
-    <div class="sessao-bar sessao-bar-pr">
-      <div class="sessao-info">
-        <div class="sessao-nome" style="color:#ff0;" id="home-pr-nome">🏪 ---</div>
-        <div class="sessao-sub" id="home-pr-info">Lojista ativo</div>
+    <div class="barra-sessao barra-pr">
+      <div style="text-align:left;">
+        <div style="font-weight:bold;font-size:.9rem;color:#ff0;" id="home-pr-nome">🏪 ---</div>
+        <div style="font-size:.72rem;color:#0aa;" id="home-pr-info">---</div>
       </div>
       <div style="display:flex;gap:6px;">
-        <button class="btn bo" style="padding:8px 14px;font-size:.8rem;" onclick="voltarPRHome()">🏪 Painel</button>
-        <button class="btn bsair" style="padding:8px 14px;font-size:.8rem;" onclick="confirmarSairPR()">🚪 Sair</button>
+        <button class="btn laranja" style="padding:7px 13px;font-size:.8rem;" onclick="reentrarPR()">🏪 Painel</button>
+        <button class="sair-btn" onclick="confirmarSair('pr')">🚪 Sair</button>
       </div>
     </div>
   </div>
 
-  <!-- JOGADOR -->
-  <div class="jog-sec">
+  <!-- ÁREA DO JOGADOR -->
+  <div class="area-jog">
     <h3>🎮 ÁREA DO JOGADOR</h3>
-    <button class="btn bv bb" onclick="ir('p-login')">▶ ENTRAR NO JOGO</button>
-    <button class="btn bc bb" onclick="ir('p-reg')">📝 CRIAR CONTA DE JOGADOR</button>
+    <button class="btn verde bloco" onclick="ir('p-login')">▶ ENTRAR NO JOGO</button>
+    <button class="btn cinza bloco" onclick="ir('p-registo')">📝 CRIAR CONTA DE JOGADOR</button>
   </div>
 
-  <!-- LOJISTA -->
-  <div class="emp-sec">
+  <!-- ÁREA DO LOJISTA -->
+  <div class="area-pr">
     <h3>🏪 ÁREA DO LOJISTA</h3>
-    <button class="btn bv bb" onclick="ir('p-pr-login')">▶ ENTRAR NA MINHA CONTA</button>
-    <button class="btn bo bb" onclick="ir('p-pr-reg')">📝 REGISTAR EMPRESA</button>
+    <button class="btn verde bloco" onclick="ir('p-pr-login')">▶ ENTRAR NA MINHA CONTA</button>
+    <button class="btn laranja bloco" onclick="ir('p-pr-registo')">📝 REGISTAR EMPRESA</button>
   </div>
 
   <!-- BACKOFFICE -->
-  <div class="bo-sec">
-    <h3>🖥️ BACKOFFICE <span class="bo-badge">SISTEMA</span></h3>
+  <div class="area-bo">
+    <h3>🖥️ BACKOFFICE <span class="badge-bo">SISTEMA</span></h3>
     <p style="color:#0aa;font-size:.78rem;margin-bottom:12px;line-height:1.6;">
       Gestão completa do sistema ZAP FLAGS.<br>
       Monitorização, utilizadores, empresas e configurações.
     </p>
-    <button class="btn bbo bb" onclick="ir('p-bo-login')" style="font-size:.95rem;padding:14px;">
+    <button class="btn roxo bloco" onclick="ir('p-bo-login')" style="font-size:.95rem;padding:14px;">
       🖥️ ACEDER AO BACKOFFICE
     </button>
   </div>
 
-  <!-- ADMIN -->
-  <div class="adm-sec">
-    <h3>⚙️ ADMINISTRADOR</h3>
-    <p style="color:#888;font-size:.75rem;margin-bottom:10px;">Para testar o jogo e detetar deficiências.</p>
-    <button class="btn badm bb" onclick="ir('p-adm-login')">⚙️ ACESSO ADMINISTRADOR</button>
-  </div>
-
-  <!-- BOTÃO SAIR GERAL (só aparece se há sessão) -->
-  <div id="home-btn-sair" style="display:none;margin-top:10px;">
-    <button class="btn bsair bb" onclick="pedirSairGeral()" style="opacity:.7;font-size:.82rem;">
-      🚪 TERMINAR TODAS AS SESSÕES
-    </button>
-  </div>
-
-  <p style="color:#111;font-size:.65rem;margin-top:15px;">v8.0 © 2025 ZAP FLAGS</p>
+  <p style="color:#111;font-size:.65rem;margin-top:12px;">v9.0 © 2025 ZAP FLAGS</p>
 </div>
 </div>
 
-<!-- ========================= -->
-<!-- LOGIN JOGADOR             -->
-<!-- ========================= -->
+<!-- ======== LOGIN JOGADOR ======== -->
 <div id="p-login" class="page">
-<div class="box">
-  <button class="btn bvol bb" onclick="ir('p0')">← VOLTAR</button>
-  <div class="jog-sec">
+<div class="caixa">
+  <button class="voltar-btn bloco" onclick="ir('p-inicio')">← VOLTAR</button>
+  <div class="area-jog">
     <h3>🎮 ENTRAR NO JOGO</h3>
     <div id="m-login" class="msg"></div>
-    <input type="email"    id="l-em" placeholder="📧 Email">
-    <input type="password" id="l-pw" placeholder="🔑 Senha">
-    <button class="btn bv bb" onclick="loginJog()">▶ ENTRAR</button>
+    <label style="font-size:.8rem;color:#0aa;">📧 Email</label>
+    <input type="email" id="login-em" placeholder="o-teu@email.com" autocomplete="email">
+    <label style="font-size:.8rem;color:#0aa;">🔑 Senha</label>
+    <input type="password" id="login-pw" placeholder="A tua senha" autocomplete="current-password">
+    <button class="btn verde bloco" onclick="fazerLogin()">▶ ENTRAR</button>
   </div>
   <div style="text-align:center;margin-top:10px;">
-    <span class="lnk" onclick="ir('p-reg')">Não tens conta? Regista-te</span>
+    <span class="lnk" onclick="ir('p-registo')">Não tens conta? Regista-te</span>
   </div>
 </div>
 </div>
 
-<!-- ========================= -->
-<!-- REGISTO JOGADOR           -->
-<!-- ========================= -->
-<div id="p-reg" class="page">
-<div class="box">
-  <button class="btn bvol bb" onclick="ir('p0')">← VOLTAR</button>
-  <div class="jog-sec">
+<!-- ======== REGISTO JOGADOR ======== -->
+<div id="p-registo" class="page">
+<div class="caixa">
+  <button class="voltar-btn bloco" onclick="ir('p-inicio')">← VOLTAR</button>
+  <div class="area-jog">
     <h3>📝 CRIAR CONTA DE JOGADOR</h3>
-    <div id="m-reg" class="msg"></div>
-    <input type="text"     id="r-nm"  placeholder="👤 Nome">
-    <input type="email"    id="r-em"  placeholder="📧 Email">
-    <input type="tel"      id="r-tl"  placeholder="📱 Telemóvel">
-    <input type="password" id="r-pw"  placeholder="🔑 Senha (mín. 4 car.)">
-    <input type="password" id="r-pw2" placeholder="🔑 Confirmar Senha">
-    <button class="btn bv bb" onclick="regJog()">✅ CRIAR CONTA</button>
+    <div class="card card-b" style="text-align:center;margin-bottom:10px;">
+      <p style="color:#0ff;font-weight:bold;">🎁 OFERTA DE BOAS-VINDAS</p>
+      <p style="color:#0aa;font-size:.78rem;margin-top:4px;">Recebes <b style="color:#0ff;">1.000 bandeiras GRÁTIS</b> ao criares conta!</p>
+    </div>
+    <div id="m-registo" class="msg"></div>
+    <label style="font-size:.8rem;color:#0aa;">👤 Nome</label>
+    <input type="text" id="reg-nm" placeholder="O teu nome" autocomplete="name">
+    <label style="font-size:.8rem;color:#0aa;">📧 Email</label>
+    <input type="email" id="reg-em" placeholder="email@exemplo.com" autocomplete="email">
+    <label style="font-size:.8rem;color:#0aa;">📱 Telemóvel</label>
+    <input type="tel" id="reg-tl" placeholder="912345678" autocomplete="tel">
+    <label style="font-size:.8rem;color:#0aa;">🔑 Senha (mín. 4 car.)</label>
+    <input type="password" id="reg-pw" placeholder="Cria uma senha" autocomplete="new-password">
+    <label style="font-size:.8rem;color:#0aa;">🔑 Confirmar Senha</label>
+    <input type="password" id="reg-pw2" placeholder="Repete a senha" autocomplete="new-password">
+    <button class="btn verde bloco" onclick="fazerRegisto()">✅ CRIAR CONTA GRÁTIS</button>
   </div>
   <div style="text-align:center;margin-top:10px;">
-    <span class="lnk" onclick="ir('p-login')">Já tens conta?</span>
+    <span class="lnk" onclick="ir('p-login')">Já tens conta? Entra aqui</span>
   </div>
 </div>
 </div>
 
-<!-- ========================= -->
-<!-- JOGO                      -->
-<!-- ========================= -->
-<div id="p-jogo" class="page">
-<div class="hud hud-j">
-  <div>
-    <div style="font-weight:bold;font-size:.85rem;" id="j-nm">👤 ---</div>
-    <div style="font-size:.65rem;color:#0aa;" id="j-em">📧 ---</div>
+<!-- ======== JOGO (MAPA) ======== -->
+<div id="p-jogo" class="page" style="padding:0;">
+  <div class="hud hud-j">
+    <div>
+      <div style="font-weight:bold;font-size:.82rem;" id="jog-nome">👤 ---</div>
+      <div style="font-size:.63rem;color:#0aa;" id="jog-email">📧 ---</div>
+    </div>
+    <div style="font-size:.75rem;text-align:center;">
+      <span style="color:#0ff;">🏴<span id="jog-flags">0</span></span>&nbsp;
+      <span style="color:#0f0;">⚡<span id="jog-en">100</span>%</span>&nbsp;
+      <span style="color:#ff0;">🎫<span id="jog-qrs">0</span></span>&nbsp;
+      <span style="color:#0ff;font-size:.62rem;">👁️<span id="jog-vis">5</span>m</span>
+    </div>
+    <div style="display:flex;gap:5px;">
+      <button class="voltar-btn" onclick="ir('p-inicio')">← Início</button>
+      <button class="sair-btn" onclick="confirmarSair('jogador')">Sair</button>
+    </div>
   </div>
-  <div style="font-size:.75rem;text-align:center;">
-    <span style="color:#0ff;">🏴<span id="j-fl">0</span></span>&nbsp;
-    <span style="color:#0f0;">⚡<span id="j-en">100</span>%</span>&nbsp;
-    <span style="color:#ff0;">🎫<span id="j-qr">0</span></span>
-    <span id="j-bdg"></span>
-  </div>
-  <div class="hud-btns">
-    <button class="btn bvol" style="width:auto;padding:5px 10px;font-size:.72rem;" onclick="voltarInicioDoJogo()">← Início</button>
-    <button class="btn bsair" style="width:auto;padding:5px 10px;font-size:.72rem;" onclick="confirmarSairJogador()">Sair</button>
-  </div>
-</div>
-<div class="box" style="padding-top:60px;text-align:center;">
-  <div style="font-size:4rem;margin:20px 0;">🗺️</div>
-  <p style="color:#0f0;font-size:1.1rem;font-weight:bold;" id="j-bem">Bem-vindo!</p>
-  <p style="color:#0aa;font-size:.85rem;margin:8px 0;">Mapa do jogo em desenvolvimento</p>
-  <div class="grid3" style="margin-top:20px;">
-    <div class="stat"><div class="stat-n" id="jg-fl">0</div><div class="stat-t">🏴 Flags</div></div>
-    <div class="stat"><div class="stat-n" id="jg-en" style="color:#0f0;">100</div><div class="stat-t">⚡ Energia</div></div>
-    <div class="stat"><div class="stat-n" id="jg-qr" style="color:#0ff;">0</div><div class="stat-t">🎫 QRs</div></div>
-  </div>
-  <div style="margin-top:20px;display:flex;gap:8px;">
-    <button class="btn bvol bb" onclick="voltarInicioDoJogo()" style="flex:1;">← Início</button>
-    <button class="btn bsair bb" onclick="confirmarSairJogador()" style="flex:1;">🚪 Sair</button>
-  </div>
-</div>
+  <div id="mapa-jogo"></div>
+  <div id="gps-info">📍 A localizar...</div>
+  <div id="rodape-jogo"><div id="ticker"></div></div>
 </div>
 
-<!-- ========================= -->
-<!-- PR LOGIN                  -->
-<!-- ========================= -->
+<!-- ======== PR LOGIN ======== -->
 <div id="p-pr-login" class="page">
-<div class="box">
-  <button class="btn bvol bb" onclick="ir('p0')">← VOLTAR</button>
-  <div class="emp-sec">
+<div class="caixa">
+  <button class="voltar-btn bloco" onclick="ir('p-inicio')">← VOLTAR</button>
+  <div class="area-pr">
     <h3>🏪 ENTRAR COMO LOJISTA</h3>
-    <div id="m-pr-l" class="msg"></div>
-    <input type="email"    id="pl-em" placeholder="📧 Email da empresa">
-    <input type="password" id="pl-pw" placeholder="🔑 Senha">
-    <button class="btn bo bb" onclick="loginPR()">▶ ENTRAR</button>
+    <div id="m-pr-login" class="msg"></div>
+    <label style="font-size:.8rem;color:#0aa;">📧 Email da Empresa</label>
+    <input type="email" id="pr-login-em" placeholder="loja@email.com" autocomplete="email">
+    <label style="font-size:.8rem;color:#0aa;">🔑 Senha</label>
+    <input type="password" id="pr-login-pw" placeholder="A tua senha" autocomplete="current-password">
+    <button class="btn laranja bloco" onclick="fazerLoginPR()">▶ ENTRAR</button>
   </div>
   <div style="text-align:center;margin-top:10px;">
-    <span class="lnk" onclick="ir('p-pr-reg')">Registar empresa nova</span>
+    <span class="lnk" onclick="ir('p-pr-registo')">Registar empresa nova</span>
   </div>
 </div>
 </div>
 
-<!-- ========================= -->
-<!-- PR REGISTO                -->
-<!-- ========================= -->
-<div id="p-pr-reg" class="page">
-<div class="box">
-  <button class="btn bvol bb" onclick="ir('p0')">← VOLTAR</button>
-  <div class="emp-sec"><h3>📝 REGISTAR EMPRESA</h3></div>
+<!-- ======== PR REGISTO ======== -->
+<div id="p-pr-registo" class="page">
+<div class="caixa">
+  <button class="voltar-btn bloco" onclick="ir('p-inicio')">← VOLTAR</button>
+  <div class="area-pr"><h3>📝 REGISTAR EMPRESA</h3></div>
   <div id="m-pr-reg" class="msg"></div>
   <div class="scroll">
-    <div style="background:#0a0800;border:1px solid #ff0;border-radius:8px;padding:12px;margin-bottom:12px;">
+    <div class="card card-y">
       <h3>📍 LOCALIZAÇÃO</h3>
-      <input type="text" id="pr-morada" placeholder="* Morada (rua e número)">
-      <div class="grid2">
+      <input type="text" id="pr-rua"    placeholder="* Rua e Número">
+      <div class="grelha2">
         <input type="text" id="pr-cp"  placeholder="* Código Postal">
         <input type="text" id="pr-loc" placeholder="* Localidade">
       </div>
       <select id="pr-dist">
         <option value="">* Distrito</option>
-        <option>Aveiro</option><option>Beja</option><option>Braga</option><option>Bragança</option>
-        <option>Castelo Branco</option><option>Coimbra</option><option>Évora</option><option>Faro</option>
-        <option>Guarda</option><option>Leiria</option><option>Lisboa</option><option>Portalegre</option>
+        <option>Aveiro</option><option>Beja</option><option>Braga</option>
+        <option>Bragança</option><option>Castelo Branco</option><option>Coimbra</option>
+        <option>Évora</option><option>Faro</option><option>Guarda</option>
+        <option>Leiria</option><option>Lisboa</option><option>Portalegre</option>
         <option>Porto</option><option>Santarém</option><option>Setúbal</option>
         <option>Viana do Castelo</option><option>Vila Real</option><option>Viseu</option>
         <option>Ilha da Madeira</option><option>Ilha dos Açores</option>
       </select>
     </div>
-    <div style="background:#0a0800;border:1px solid #ff0;border-radius:8px;padding:12px;margin-bottom:12px;">
+    <div class="card card-y">
       <h3>🏢 EMPRESA</h3>
       <input type="text" id="pr-ne"  placeholder="* Nome da Empresa">
       <input type="text" id="pr-nif" placeholder="* NIF (9 dígitos)" maxlength="9">
       <select id="pr-ativ">
         <option value="">* Setor de Atividade</option>
-        <optgroup label="🍽️ Restauração"><option>Restaurante</option><option>Café / Pastelaria</option><option>Bar / Pub</option><option>Hotel</option><option>Take-Away</option></optgroup>
-        <optgroup label="🛍️ Comércio"><option>Supermercado</option><option>Roupa / Moda</option><option>Eletrónica</option><option>Farmácia</option><option>Desporto</option><option>Outro Comércio</option></optgroup>
-        <optgroup label="💆 Serviços"><option>Cabeleireiro</option><option>Ginásio</option><option>Clínica</option><option>Estética</option><option>Outro Serviço</option></optgroup>
-        <optgroup label="🎭 Lazer"><option>Cinema</option><option>Escola</option><option>Outro</option></optgroup>
+        <optgroup label="🍽️ Restauração">
+          <option>Restaurante</option><option>Café / Pastelaria</option>
+          <option>Bar / Pub</option><option>Hotel</option><option>Take-Away</option>
+        </optgroup>
+        <optgroup label="🛍️ Comércio">
+          <option>Supermercado</option><option>Roupa / Moda</option>
+          <option>Eletrónica</option><option>Farmácia</option>
+          <option>Desporto</option><option>Outro Comércio</option>
+        </optgroup>
+        <optgroup label="💆 Serviços">
+          <option>Cabeleireiro</option><option>Ginásio</option>
+          <option>Clínica</option><option>Estética</option><option>Outro Serviço</option>
+        </optgroup>
+        <optgroup label="🎭 Lazer">
+          <option>Cinema</option><option>Escola</option><option>Outro</option>
+        </optgroup>
       </select>
     </div>
-    <div style="background:#0a0800;border:1px solid #ff0;border-radius:8px;padding:12px;margin-bottom:12px;">
+    <div class="card card-y">
       <h3>📞 CONTACTOS</h3>
-      <input type="tel"   id="pr-tel"   placeholder="* Telefone da Empresa">
+      <input type="tel"   id="pr-tel"   placeholder="* Telefone">
       <input type="email" id="pr-email" placeholder="* Email da Empresa">
       <input type="url"   id="pr-web"   placeholder="Website (opcional)">
       <input type="text"  id="pr-ig"    placeholder="Instagram (opcional)">
     </div>
-    <div style="background:#0a0800;border:1px solid #ff0;border-radius:8px;padding:12px;margin-bottom:12px;">
+    <div class="card card-y">
       <h3>👤 RESPONSÁVEL</h3>
-      <input type="text"     id="pr-resp"  placeholder="* Nome do Responsável">
-      <input type="tel"      id="pr-resp-tel" placeholder="* Telemóvel do Responsável">
-      <input type="email"    id="pr-resp-em"  placeholder="* Email do Responsável">
-      <input type="password" id="pr-pw"    placeholder="* Senha (mín. 4 car.)">
-      <input type="password" id="pr-pw2"   placeholder="* Confirmar Senha">
+      <input type="text"     id="pr-resp"   placeholder="* Nome do Responsável">
+      <input type="tel"      id="pr-resp-t" placeholder="* Telemóvel do Responsável">
+      <input type="password" id="pr-pw"     placeholder="* Senha (mín. 4 car.)" autocomplete="new-password">
+      <input type="password" id="pr-pw2"    placeholder="* Confirmar Senha" autocomplete="new-password">
     </div>
-    <div style="background:#0a0800;border:1px solid #ff0;border-radius:8px;padding:12px;margin-bottom:12px;">
+    <div class="card card-y">
       <h3>🕐 HORÁRIOS</h3>
-      <input type="text" id="h0" placeholder="Segunda (ex: 09:00-18:00)">
+      <input type="text" id="h0" placeholder="Segunda (ex: 09:00-18:00 ou Fechado)">
       <input type="text" id="h1" placeholder="Terça">
       <input type="text" id="h2" placeholder="Quarta">
       <input type="text" id="h3" placeholder="Quinta">
@@ -433,1112 +425,1558 @@ input[type=range]{border:none;background:transparent;padding:6px 0;cursor:pointe
       <input type="text" id="h5" placeholder="Sábado">
       <input type="text" id="h6" placeholder="Domingo">
     </div>
-    <div style="padding:10px;">
+    <div style="padding:8px;">
       <label style="display:flex;align-items:flex-start;gap:8px;font-size:.82rem;color:#0aa;cursor:pointer;">
         <input type="checkbox" id="pr-trm" style="width:auto;margin-top:3px;flex-shrink:0;">
         Li e aceito os <span style="color:#0ff;">&nbsp;Termos e Condições&nbsp;</span> do ZAP FLAGS.
       </label>
     </div>
-    <button class="btn bo bb" onclick="regPR()">✅ REGISTAR EMPRESA</button>
-    <button class="btn bvol bb" onclick="ir('p0')">← VOLTAR</button>
+    <button class="btn laranja bloco" onclick="fazerRegistoPR()">✅ REGISTAR EMPRESA</button>
+    <button class="voltar-btn bloco" onclick="ir('p-inicio')">← VOLTAR</button>
   </div>
 </div>
 </div>
 
-<!-- ========================= -->
-<!-- PR PAINEL COMPLETO        -->
-<!-- ========================= -->
+<!-- ======== PR PAINEL ======== -->
 <div id="p-pr" class="page" style="padding:0;">
-<div class="hud hud-pr" style="padding:8px 12px;">
-  <div>
-    <div style="font-weight:bold;font-size:.8rem;color:#ff0;" id="ph-n">🏪 ---</div>
-    <div style="font-size:.65rem;color:#0aa;" id="ph-loc">---</div>
+  <div class="hud hud-pr" style="padding:8px 12px;">
+    <div>
+      <div style="font-weight:bold;font-size:.8rem;color:#ff0;" id="pr-hud-nome">🏪 ---</div>
+      <div style="font-size:.65rem;color:#0aa;" id="pr-hud-loc">---</div>
+    </div>
+    <div style="font-size:.72rem;">
+      <span style="color:#0ff;">🏴<span id="pr-hud-f">0</span></span>&nbsp;
+      <span style="color:#0f0;">🎫<span id="pr-hud-q">0</span></span>
+    </div>
+    <div style="display:flex;gap:5px;">
+      <button class="voltar-btn" onclick="ir('p-inicio')">← Início</button>
+      <button class="sair-btn" onclick="confirmarSair('pr')">Sair</button>
+    </div>
   </div>
-  <div style="font-size:.72rem;text-align:center;">
-    <span style="color:#0ff;">🏴<span id="ph-f">0</span></span>&nbsp;
-    <span style="color:#0f0;">🎫<span id="ph-q">0</span></span>
+  <div class="abas" style="margin-top:52px;">
+    <div class="aba on"  onclick="tabPR(0)">📦 Pacotes</div>
+    <div class="aba"     onclick="tabPR(1)">🎰 BINGO</div>
+    <div class="aba"     onclick="tabPR(2)">📊 Resumo</div>
+    <div class="aba"     onclick="tabPR(3)">📸 Scanner</div>
+    <div class="aba"     onclick="tabPR(4)">🏢 Empresa</div>
   </div>
-  <div class="hud-btns">
-    <button class="btn bvol" style="width:auto;padding:5px 8px;font-size:.72rem;" onclick="voltarPRHome()">← Início</button>
-    <button class="btn bsair" style="width:auto;padding:5px 8px;font-size:.72rem;" onclick="confirmarSairPR()">Sair</button>
-  </div>
-</div>
-<div class="tabs tabs-pr" style="margin-top:52px;">
-  <div class="tab tab-pr on" onclick="tPR(0)">📦 Pacotes</div>
-  <div class="tab tab-pr"    onclick="tPR(1)">🎰 BINGO</div>
-  <div class="tab tab-pr"    onclick="tPR(2)">📊 Resumo</div>
-  <div class="tab tab-pr"    onclick="tPR(3)">📸 Scanner</div>
-  <div class="tab tab-pr"    onclick="tPR(4)">🏢 Empresa</div>
-</div>
 
-<!-- TAB 0: PACOTES -->
-<div id="pr-t0" class="tc on">
-  <div id="pr-sem-pack">
-    <div style="text-align:center;background:#0a0800;border:2px solid #ff0;border-radius:10px;padding:25px;margin-bottom:12px;">
-      <div style="font-size:2.5rem;margin-bottom:10px;">📦</div>
-      <p style="color:#ff0;font-weight:bold;font-size:1rem;margin-bottom:8px;">Sem pacote ativo</p>
-      <p style="color:#0aa;font-size:.82rem;margin-bottom:15px;">Compra um pacote de bandeiras para começar a aparecer no mapa e receber bandeiras BINGO.</p>
-      <button class="btn bo" onclick="abrirCompra()">🛒 COMPRAR PACOTE DE BANDEIRAS</button>
-    </div>
-    <!-- INFO sobre o que inclui -->
-    <div class="card card-b">
-      <p style="color:#0ff;font-size:.82rem;font-weight:bold;margin-bottom:8px;">📋 O QUE INCLUI CADA PACOTE?</p>
-      <div class="row"><div class="rl">🏴 Bandeiras</div><div class="rv">Para aparecer no mapa dos jogadores</div></div>
-      <div class="row"><div class="rl">🎰 Bandeiras BINGO</div><div class="rv">Especiais com prémio direto</div></div>
-      <div class="row"><div class="rl">📍 Raio de alcance</div><div class="rv">Área de cobertura no mapa</div></div>
-      <div class="row"><div class="rl">⏱️ Validade</div><div class="rv">Período de atividade</div></div>
-      <div class="row"><div class="rl">🎫 QR Codes</div><div class="rv">20 bandeiras = 1 QR com prémio</div></div>
-    </div>
-  </div>
-  <div id="pr-com-pack" style="display:none;">
-    <div id="pack-info-card" class="card card-y"></div>
-    <div style="display:flex;justify-content:space-between;align-items:center;margin:10px 0 6px;">
-      <h3 style="color:#0ff;margin:0;font-size:.88rem;">📦 LOTES DE QR</h3>
-      <button class="btn bv" style="padding:5px 12px;font-size:.78rem;" onclick="abrirCriarLote()">+ CRIAR LOTE</button>
-    </div>
-    <div id="m-lotes-pr" class="msg"></div>
-    <div id="lista-lotes-pr" class="scroll" style="max-height:35vh;"></div>
-    <button class="btn bc bb" style="margin-top:8px;font-size:.8rem;" onclick="abrirCompra()">+ Comprar mais bandeiras</button>
-  </div>
-</div>
-
-<!-- TAB 1: BINGO -->
-<div id="pr-t1" class="tc">
-  <div id="pr-bingo-sem">
-    <div style="text-align:center;background:linear-gradient(135deg,#1a0000,#1a0800);border:2px solid #ff0;border-radius:10px;padding:25px;margin-bottom:12px;">
-      <div style="font-size:2.5rem;margin-bottom:10px;">🎰</div>
-      <p style="color:#ff0;font-weight:bold;font-size:1rem;margin-bottom:8px;">Sem bandeiras BINGO</p>
-      <p style="color:#0aa;font-size:.82rem;margin-bottom:15px;">Compra um pacote para receber bandeiras BINGO especiais.</p>
-      <button class="btn bo" onclick="tPR(0);abrirCompra()">🛒 COMPRAR PACOTE</button>
-    </div>
-  </div>
-  <div id="pr-bingo-com" style="display:none;">
-    <div class="card card-bingo" style="background:linear-gradient(135deg,#1a0000,#1a0800);border:2px solid #ff0;margin-bottom:8px;">
-      <div class="grid3">
-        <div class="stat stat-pr"><div class="stat-n" id="bg-t">0</div><div class="stat-t">🎰 Total</div></div>
-        <div class="stat stat-pr"><div class="stat-n" id="bg-a" style="color:#0f0;">0</div><div class="stat-t">⚡ Ativas</div></div>
-        <div class="stat stat-pr"><div class="stat-n" id="bg-e" style="color:#0ff;">0</div><div class="stat-t">✅ Encontradas</div></div>
+  <!-- TAB PACOTES -->
+  <div id="pr-tab0" class="sec-aba on">
+    <div id="pr-sem-pack">
+      <div style="text-align:center;background:#0a0800;border:2px solid #ff0;border-radius:10px;padding:25px;margin-bottom:12px;">
+        <div style="font-size:2.5rem;margin-bottom:8px;">📦</div>
+        <p style="color:#ff0;font-weight:bold;margin-bottom:8px;">Sem pacote ativo</p>
+        <p style="color:#0aa;font-size:.82rem;margin-bottom:15px;">Compra um pacote para aparecer no mapa e receber bandeiras BINGO.</p>
+        <button class="btn laranja" onclick="abrirCompra()">🛒 COMPRAR PACOTE</button>
       </div>
     </div>
-    <div id="lista-bingo-flags" class="scroll" style="max-height:55vh;"></div>
+    <div id="pr-com-pack" style="display:none;">
+      <div id="pr-pack-info" class="card card-y"></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin:10px 0 5px;">
+        <h3 style="color:#0ff;margin:0;">📦 LOTES DE QR</h3>
+        <button class="btn verde" style="padding:5px 12px;font-size:.78rem;" onclick="abrirCriarLote()">+ CRIAR LOTE</button>
+      </div>
+      <div id="m-lotes" class="msg"></div>
+      <div id="lista-lotes" class="scroll" style="max-height:35vh;"></div>
+      <button class="btn cinza bloco" style="margin-top:8px;font-size:.8rem;" onclick="abrirCompra()">+ Comprar mais bandeiras</button>
+    </div>
   </div>
-</div>
 
-<!-- TAB 2: RESUMO -->
-<div id="pr-t2" class="tc">
-  <div class="card card-y" style="margin-bottom:10px;">
-    <p style="color:#ff0;font-size:.85rem;font-weight:bold;margin-bottom:8px;">📊 RESUMO DA EMPRESA</p>
-    <div id="resumo-pr"></div>
+  <!-- TAB BINGO -->
+  <div id="pr-tab1" class="sec-aba">
+    <div id="pr-sem-bingo">
+      <div style="text-align:center;background:linear-gradient(135deg,#1a0000,#1a0800);border:2px solid #ff0;border-radius:10px;padding:25px;margin-bottom:12px;">
+        <div style="font-size:2.5rem;margin-bottom:8px;">🎰</div>
+        <p style="color:#ff0;font-weight:bold;margin-bottom:8px;">Sem bandeiras BINGO</p>
+        <p style="color:#0aa;font-size:.82rem;margin-bottom:15px;">Compra um pacote para receberes bandeiras BINGO especiais.</p>
+        <button class="btn laranja" onclick="tabPR(0);abrirCompra()">🛒 COMPRAR PACOTE</button>
+      </div>
+    </div>
+    <div id="pr-com-bingo" style="display:none;">
+      <div class="grelha3" style="margin-bottom:8px;">
+        <div class="stat stat-pr"><div class="stat-n" id="bng-t">0</div><div class="stat-t">🎰 Total</div></div>
+        <div class="stat stat-pr"><div class="stat-n" id="bng-a" style="color:#0f0;">0</div><div class="stat-t">⚡ Ativas</div></div>
+        <div class="stat stat-pr"><div class="stat-n" id="bng-e" style="color:#0ff;">0</div><div class="stat-t">✅ Encontradas</div></div>
+      </div>
+      <div id="lista-bingo" class="scroll" style="max-height:55vh;"></div>
+    </div>
   </div>
-  <div class="card card-b">
-    <p style="color:#0ff;font-size:.82rem;font-weight:bold;margin-bottom:8px;">📈 ESTATÍSTICAS</p>
-    <div class="grid2">
-      <div class="stat stat-pr"><div class="stat-n" id="res-flags">0</div><div class="stat-t">🏴 Flags Total</div></div>
-      <div class="stat stat-pr"><div class="stat-n" id="res-qrs">0</div><div class="stat-t">🎫 QRs Gerados</div></div>
-      <div class="stat stat-pr"><div class="stat-n" id="res-lotes">0</div><div class="stat-t">📦 Lotes</div></div>
-      <div class="stat stat-pr"><div class="stat-n" id="res-bingo">0</div><div class="stat-t">🎰 BINGO Total</div></div>
+
+  <!-- TAB RESUMO -->
+  <div id="pr-tab2" class="sec-aba">
+    <div class="card card-y"><p style="color:#ff0;font-size:.85rem;font-weight:bold;margin-bottom:8px;">📊 RESUMO</p><div id="resumo-pr"></div></div>
+    <div class="grelha2">
+      <div class="stat stat-pr"><div class="stat-n" id="res-f">0</div><div class="stat-t">🏴 Flags</div></div>
+      <div class="stat stat-pr"><div class="stat-n" id="res-q">0</div><div class="stat-t">🎫 QRs</div></div>
+      <div class="stat stat-pr"><div class="stat-n" id="res-l">0</div><div class="stat-t">📦 Lotes</div></div>
+      <div class="stat stat-pr"><div class="stat-n" id="res-b">0</div><div class="stat-t">🎰 BINGO</div></div>
+    </div>
+  </div>
+
+  <!-- TAB SCANNER -->
+  <div id="pr-tab3" class="sec-aba" style="text-align:center;padding-top:20px;">
+    <div style="font-size:3rem;margin-bottom:10px;">📸</div>
+    <p style="color:#0aa;font-size:.85rem;margin-bottom:15px;">Escaneia o QR Code do cliente:</p>
+    <button class="btn verde bloco" onclick="scanner()">📸 ESCANEAR QR DO CLIENTE</button>
+    <div id="m-scan" class="msg" style="margin-top:8px;"></div>
+    <div id="scan-det" class="card card-v" style="display:none;margin-top:10px;">
+      <p style="color:#0f0;margin-bottom:8px;font-weight:bold;">✅ QR VÁLIDO!</p>
+      <div class="linha"><div class="label">Cliente</div><div class="valor" id="sc-c"></div></div>
+      <div class="linha"><div class="label">Prémio</div><div class="valor" id="sc-p" style="color:#0ff;font-weight:bold;"></div></div>
+      <div class="linha"><div class="label">Válido até</div><div class="valor" id="sc-v"></div></div>
+      <button class="btn verde bloco" onclick="validarQR()" style="margin-top:8px;">✅ ENTREGAR PRÉMIO</button>
+      <button class="btn cinza bloco" onclick="G('scan-det').style.display='none'">❌ RECUSAR</button>
+    </div>
+  </div>
+
+  <!-- TAB EMPRESA -->
+  <div id="pr-tab4" class="sec-aba">
+    <div id="pr-info-emp"></div>
+    <div class="sep"></div>
+    <div style="display:flex;gap:8px;margin-top:10px;">
+      <button class="voltar-btn" style="flex:1;padding:12px;" onclick="ir('p-inicio')">← Início</button>
+      <button class="sair-btn" style="flex:1;padding:12px;" onclick="confirmarSair('pr')">🚪 Sair da Conta</button>
     </div>
   </div>
 </div>
 
-<!-- TAB 3: SCANNER -->
-<div id="pr-t3" class="tc" style="text-align:center;padding-top:20px;">
-  <div style="font-size:3rem;margin-bottom:10px;">📸</div>
-  <p style="color:#0aa;font-size:.85rem;margin-bottom:15px;">Escaneia o QR Code do cliente para validar o prémio:</p>
-  <button class="btn bv bb" onclick="scanner()">📸 ESCANEAR QR DO CLIENTE</button>
-  <div id="m-scan" class="msg" style="margin-top:8px;"></div>
-  <div id="scan-det" style="display:none;" class="card card-v" style="margin-top:10px;">
-    <p style="color:#0f0;margin-bottom:8px;font-weight:bold;">✅ QR VÁLIDO!</p>
-    <div class="row"><div class="rl">Cliente</div><div class="rv" id="sc-c"></div></div>
-    <div class="row"><div class="rl">Prémio</div><div class="rv" id="sc-p" style="color:#0ff;font-weight:bold;"></div></div>
-    <div class="row"><div class="rl">Válido até</div><div class="rv" id="sc-v"></div></div>
-    <button class="btn bv bb" onclick="validarQR()" style="margin-top:8px;">✅ ENTREGAR PRÉMIO</button>
-    <button class="btn bc bb" onclick="$id('scan-det').style.display='none'">❌ RECUSAR</button>
-  </div>
-</div>
-
-<!-- TAB 4: EMPRESA -->
-<div id="pr-t4" class="tc">
-  <div id="pr-info-emp"></div>
-  <hr class="sep">
-  <div style="display:flex;gap:8px;margin-top:10px;">
-    <button class="btn bvol" style="flex:1;padding:12px;" onclick="voltarPRHome()">← Início</button>
-    <button class="btn bsair" style="flex:1;padding:12px;" onclick="confirmarSairPR()">🚪 Sair da Conta</button>
-  </div>
-</div>
-</div>
-
-<!-- ========================= -->
-<!-- ADMIN LOGIN               -->
-<!-- ========================= -->
-<div id="p-adm-login" class="page">
-<div class="box">
-  <button class="btn bvol bb" onclick="ir('p0')">← VOLTAR</button>
-  <div class="adm-sec">
-    <h3>⚙️ ADMINISTRADOR</h3>
-    <p style="color:#888;font-size:.78rem;margin-bottom:10px;">Para testar o jogo e detetar deficiências.</p>
-    <div id="m-adm-l" class="msg"></div>
-    <input type="password" id="adm-pw" placeholder="🔑 Código" style="text-align:center;letter-spacing:5px;border-color:#f00;color:#f00;">
-    <button class="btn badm bb" onclick="loginAdm()">⚙️ ENTRAR</button>
-  </div>
-</div>
-</div>
-
-<!-- ========================= -->
-<!-- ADMIN PAINEL              -->
-<!-- ========================= -->
-<div id="p-adm" class="page" style="padding:0;">
-<div class="hud hud-adm" style="padding:8px 12px;">
-  <div><div style="font-weight:bold;font-size:.8rem;color:#f00;">⚙️ ADMINISTRADOR</div><div style="font-size:.62rem;color:#f88;">Modo Teste</div></div>
-  <div class="hud-btns">
-    <button class="btn bvol" style="width:auto;padding:5px 8px;font-size:.72rem;" onclick="ir('p0')">← Início</button>
-    <button class="btn bsair" style="width:auto;padding:5px 8px;font-size:.72rem;" onclick="ir('p0')">Sair</button>
-  </div>
-</div>
-<div class="box" style="padding-top:60px;">
-  <div class="card card-r" style="text-align:center;padding:14px;margin-bottom:15px;">
-    <p style="color:#f88;font-size:.82rem;">⚠️ Modo teste para detetar deficiências no sistema.</p>
-  </div>
-  <div class="jog-sec" style="margin-bottom:8px;">
-    <h3>🎮 TESTAR COMO JOGADOR</h3>
-    <input type="text" id="adm-j-nm" value="ADMIN_TEST">
-    <button class="btn bv bb" onclick="admJogar()">🎮 ENTRAR NO JOGO</button>
-    <div id="adm-lista-j" class="scroll" style="max-height:20vh;margin-top:8px;"></div>
-  </div>
-  <div class="emp-sec">
-    <h3>🏪 TESTAR COMO LOJISTA</h3>
-    <input type="text" id="adm-pr-nm" value="LOJA_ADMIN_TEST">
-    <button class="btn bo bb" onclick="admEntrarPR()">🏪 ENTRAR COMO LOJISTA</button>
-    <div id="adm-lista-pr" class="scroll" style="max-height:15vh;margin-top:8px;"></div>
-  </div>
-  <div style="text-align:center;margin-top:15px;">
-    <button class="btn bbo bb" onclick="ir('p-bo-login')">🖥️ IR PARA O BACKOFFICE</button>
-  </div>
-</div>
-</div>
-
-<!-- ========================= -->
-<!-- BACKOFFICE LOGIN          -->
-<!-- ========================= -->
+<!-- ======== BACKOFFICE LOGIN ======== -->
 <div id="p-bo-login" class="page">
-<div class="box">
-  <button class="btn bvol bb" onclick="ir('p0')">← VOLTAR</button>
-  <div class="bo-sec">
-    <h3>🖥️ BACKOFFICE <span class="bo-badge">SISTEMA ZAP FLAGS</span></h3>
-    <p style="color:#0aa;font-size:.78rem;margin-bottom:15px;">Painel de gestão completo do sistema.</p>
+<div class="caixa">
+  <button class="voltar-btn bloco" onclick="ir('p-inicio')">← VOLTAR</button>
+  <div class="area-bo">
+    <h3>🖥️ BACKOFFICE <span class="badge-bo">SISTEMA ZAP FLAGS</span></h3>
+    <p style="color:#0aa;font-size:.78rem;margin-bottom:15px;">Painel de gestão completo.</p>
     <div id="m-bo-l" class="msg"></div>
     <input type="password" id="bo-pw" placeholder="Código de acesso" style="text-align:center;letter-spacing:6px;border-color:#0ff;color:#0ff;font-size:1.1rem;">
-    <button class="btn bbo bb" onclick="loginBO()" style="margin-top:8px;">🖥️ ENTRAR NO BACKOFFICE</button>
+    <button class="btn roxo bloco" onclick="loginBO()" style="margin-top:8px;">🖥️ ENTRAR NO BACKOFFICE</button>
   </div>
 </div>
 </div>
 
-<!-- ========================= -->
-<!-- BACKOFFICE PAINEL         -->
-<!-- ========================= -->
+<!-- ======== BACKOFFICE PAINEL ======== -->
 <div id="p-bo" class="page" style="padding:0;">
-<div class="hud hud-bo" style="padding:8px 12px;">
-  <div><div style="font-weight:bold;font-size:.82rem;color:#0ff;">🖥️ BACKOFFICE ZAP FLAGS</div><div style="font-size:.62rem;color:#0aa;">Gestão Completa</div></div>
-  <div style="display:flex;gap:10px;font-size:.75rem;text-align:center;">
-    <div><div style="color:#0f0;font-weight:bold;" id="bo-hud-j">0</div><div style="color:#555;font-size:.6rem;">Jogadores</div></div>
-    <div><div style="color:#ff0;font-weight:bold;" id="bo-hud-p">0</div><div style="color:#555;font-size:.6rem;">Empresas</div></div>
-  </div>
-  <div class="hud-btns">
-    <button class="btn bvol" style="width:auto;padding:5px 8px;font-size:.72rem;" onclick="ir('p0')">← Início</button>
-    <button class="btn bsair" style="width:auto;padding:5px 8px;font-size:.72rem;" onclick="ir('p0')">Sair</button>
-  </div>
-</div>
-<div class="tabs tabs-bo" style="margin-top:52px;">
-  <div class="tab tab-bo on" onclick="tBO(0)">📊 Dashboard</div>
-  <div class="tab tab-bo"    onclick="tBO(1)">👥 Jogadores</div>
-  <div class="tab tab-bo"    onclick="tBO(2)">🏪 Empresas</div>
-  <div class="tab tab-bo"    onclick="tBO(3)">🎰 BINGO</div>
-  <div class="tab tab-bo"    onclick="tBO(4)">⚙️ Sistema</div>
-  <div class="tab tab-bo"    onclick="tBO(5)">🔬 Testar</div>
-</div>
-<div id="bo-t0" class="tc on">
-  <div class="card card-bo" style="margin-bottom:12px;">
-    <p style="color:#0ff;font-size:.85rem;font-weight:bold;margin-bottom:10px;">📊 VISÃO GERAL</p>
-    <div class="grid4">
-      <div class="stat stat-bo"><div class="stat-n" id="dash-j">0</div><div class="stat-t">👥 Jogadores</div></div>
-      <div class="stat stat-bo"><div class="stat-n" id="dash-p">0</div><div class="stat-t">🏪 Empresas</div></div>
-      <div class="stat stat-bo"><div class="stat-n" id="dash-b">0</div><div class="stat-t">🎉 Bingos</div></div>
-      <div class="stat stat-bo"><div class="stat-n" id="dash-al" style="color:#f00;">0</div><div class="stat-t">⚠️ Alertas</div></div>
+  <div class="hud hud-bo" style="padding:8px 12px;">
+    <div>
+      <div style="font-weight:bold;font-size:.82rem;color:#0ff;">🖥️ BACKOFFICE ZAP FLAGS</div>
+      <div style="font-size:.62rem;color:#0aa;">Gestão Completa do Sistema</div>
     </div>
-    <div class="grid2" style="margin-top:8px;">
-      <div class="stat stat-bo"><div class="stat-n" id="dash-j-on" style="color:#0f0;">0</div><div class="stat-t">🟢 Online</div></div>
-      <div class="stat stat-bo"><div class="stat-n" id="dash-emp-a">0</div><div class="stat-t">✅ Emp. Ativas</div></div>
-      <div class="stat stat-bo"><div class="stat-n" id="dash-fl">0</div><div class="stat-t">🏴 Flags Total</div></div>
-      <div class="stat stat-bo"><div class="stat-n" id="dash-qr">0</div><div class="stat-t">🎫 QRs Total</div></div>
+    <div style="display:flex;gap:10px;font-size:.75rem;text-align:center;">
+      <div><div style="color:#0f0;font-weight:bold;" id="bo-hud-j">0</div><div style="color:#555;font-size:.6rem;">Jogadores</div></div>
+      <div><div style="color:#ff0;font-weight:bold;" id="bo-hud-p">0</div><div style="color:#555;font-size:.6rem;">Empresas</div></div>
+    </div>
+    <div style="display:flex;gap:5px;">
+      <button class="voltar-btn" onclick="ir('p-inicio')">← Início</button>
+      <button class="sair-btn" onclick="ir('p-inicio')">Sair</button>
     </div>
   </div>
-  <div class="card card-r" id="dash-al-card" style="display:none;">
-    <p style="color:#f00;font-size:.82rem;font-weight:bold;margin-bottom:8px;">⚠️ ALERTAS</p>
-    <div id="dash-al-lista"></div>
+  <div class="abas" style="margin-top:52px;border-color:#0ff;">
+    <div class="aba aba-bo on" onclick="tabBO(0)">📊 Dashboard</div>
+    <div class="aba aba-bo"    onclick="tabBO(1)">👥 Jogadores</div>
+    <div class="aba aba-bo"    onclick="tabBO(2)">🏪 Empresas</div>
+    <div class="aba aba-bo"    onclick="tabBO(3)">🎰 BINGO</div>
+    <div class="aba aba-bo"    onclick="tabBO(4)">⚙️ Sistema</div>
+    <div class="aba aba-bo"    onclick="tabBO(5)">🔬 Testar</div>
   </div>
-  <div class="card card-bo">
-    <p style="color:#0ff;font-size:.82rem;font-weight:bold;margin-bottom:8px;">🕐 ATIVIDADE RECENTE</p>
-    <div id="dash-atv"></div>
+
+  <div id="bo-tab0" class="sec-aba on">
+    <div class="card card-b" style="margin-bottom:10px;">
+      <p style="color:#0ff;font-size:.85rem;font-weight:bold;margin-bottom:10px;">📊 VISÃO GERAL</p>
+      <div class="grelha4">
+        <div class="stat stat-bo"><div class="stat-n" id="d-j">0</div><div class="stat-t">👥 Jogadores</div></div>
+        <div class="stat stat-bo"><div class="stat-n" id="d-p">0</div><div class="stat-t">🏪 Empresas</div></div>
+        <div class="stat stat-bo"><div class="stat-n" id="d-b">0</div><div class="stat-t">🎉 Bingos</div></div>
+        <div class="stat stat-bo"><div class="stat-n" id="d-al" style="color:#f00;">0</div><div class="stat-t">⚠️ Alertas</div></div>
+      </div>
+      <div class="grelha2" style="margin-top:8px;">
+        <div class="stat stat-bo"><div class="stat-n" id="d-on" style="color:#0f0;">0</div><div class="stat-t">🟢 Online</div></div>
+        <div class="stat stat-bo"><div class="stat-n" id="d-ea">0</div><div class="stat-t">✅ Emp.Ativas</div></div>
+        <div class="stat stat-bo"><div class="stat-n" id="d-fl">0</div><div class="stat-t">🏴 Flags Total</div></div>
+        <div class="stat stat-bo"><div class="stat-n" id="d-qr">0</div><div class="stat-t">🎫 QRs Total</div></div>
+      </div>
+    </div>
+    <div class="card card-r" id="d-al-card" style="display:none;">
+      <p style="color:#f00;font-size:.82rem;font-weight:bold;margin-bottom:6px;">⚠️ ALERTAS</p>
+      <div id="d-al-lista"></div>
+    </div>
+    <div class="card card-b">
+      <p style="color:#0ff;font-size:.82rem;font-weight:bold;margin-bottom:6px;">🕐 ATIVIDADE RECENTE</p>
+      <div id="d-atv"></div>
+    </div>
+    <button class="btn cinza bloco" style="font-size:.78rem;" onclick="carregarBO()">🔄 ATUALIZAR</button>
   </div>
-  <button class="btn bc bb" style="font-size:.78rem;" onclick="carregarBO()">🔄 ATUALIZAR</button>
-</div>
-<div id="bo-t1" class="tc">
-  <div class="card card-bo" style="margin-bottom:8px;">
-    <div class="grid3">
-      <div class="stat stat-bo"><div class="stat-n" id="j-total">0</div><div class="stat-t">Total</div></div>
-      <div class="stat stat-bo"><div class="stat-n" id="j-online" style="color:#0f0;">0</div><div class="stat-t">🟢 Online</div></div>
-      <div class="stat stat-bo"><div class="stat-n" id="j-novos">0</div><div class="stat-t">🆕 Hoje</div></div>
+  <div id="bo-tab1" class="sec-aba">
+    <div class="grelha3" style="margin-bottom:8px;">
+      <div class="stat stat-bo"><div class="stat-n" id="j-tot">0</div><div class="stat-t">Total</div></div>
+      <div class="stat stat-bo"><div class="stat-n" id="j-on" style="color:#0f0;">0</div><div class="stat-t">🟢 Online</div></div>
+      <div class="stat stat-bo"><div class="stat-n" id="j-hj">0</div><div class="stat-t">🆕 Hoje</div></div>
+    </div>
+    <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px;">
+      <button class="btn cinza" style="padding:5px 10px;font-size:.72rem;" onclick="filtrarJ('todos')">Todos</button>
+      <button class="btn cinza" style="padding:5px 10px;font-size:.72rem;" onclick="filtrarJ('online')">🟢 Online</button>
+      <button class="btn cinza" style="padding:5px 10px;font-size:.72rem;" onclick="filtrarJ('top')">🏆 Top</button>
+    </div>
+    <input type="text" id="pesq-j" placeholder="🔍 Pesquisar jogador..." oninput="pesquisarJ()" style="margin-bottom:8px;">
+    <div id="lista-j" class="scroll" style="max-height:50vh;"></div>
+  </div>
+  <div id="bo-tab2" class="sec-aba">
+    <div class="grelha3" style="margin-bottom:8px;">
+      <div class="stat stat-bo"><div class="stat-n" id="p-tot">0</div><div class="stat-t">Total</div></div>
+      <div class="stat stat-bo"><div class="stat-n" id="p-at" style="color:#ff0;">0</div><div class="stat-t">✅ Ativas</div></div>
+      <div class="stat stat-bo"><div class="stat-n" id="p-sp" style="color:#f00;">0</div><div class="stat-t">⚠️ Sem Pack</div></div>
+    </div>
+    <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px;">
+      <button class="btn cinza" style="padding:5px 10px;font-size:.72rem;" onclick="filtrarP('todas')">Todas</button>
+      <button class="btn cinza" style="padding:5px 10px;font-size:.72rem;" onclick="filtrarP('ativas')">✅ Ativas</button>
+      <button class="btn cinza" style="padding:5px 10px;font-size:.72rem;" onclick="filtrarP('sempack')">⚠️ Sem Pack</button>
+    </div>
+    <input type="text" id="pesq-p" placeholder="🔍 Pesquisar empresa..." oninput="pesquisarP()" style="margin-bottom:8px;">
+    <div id="lista-p" class="scroll" style="max-height:50vh;"></div>
+  </div>
+  <div id="bo-tab3" class="sec-aba">
+    <div class="card card-b" style="margin-bottom:8px;">
+      <p style="color:#0ff;font-size:.82rem;font-weight:bold;margin-bottom:8px;">🎰 BINGO GLOBAL</p>
+      <div class="grelha3">
+        <div class="stat stat-bo"><div class="stat-n" id="bg-tot">0</div><div class="stat-t">Total</div></div>
+        <div class="stat stat-bo"><div class="stat-n" id="bg-at" style="color:#0f0;">0</div><div class="stat-t">⚡ Ativas</div></div>
+        <div class="stat stat-bo"><div class="stat-n" id="bg-en" style="color:#0ff;">0</div><div class="stat-t">✅ Encontradas</div></div>
+      </div>
+    </div>
+    <p style="color:#ff0;font-size:.82rem;font-weight:bold;margin:8px 0 5px;">🎉 ÚLTIMOS BINGOS</p>
+    <div id="lista-bingos-bo" class="scroll" style="max-height:40vh;"></div>
+  </div>
+  <div id="bo-tab4" class="sec-aba">
+    <div class="card card-b" style="margin-bottom:10px;">
+      <p style="color:#0ff;font-size:.82rem;font-weight:bold;margin-bottom:8px;">⚙️ CONFIGURAÇÕES</p>
+      <div class="linha"><div class="label">Versão</div><div class="valor" style="color:#0ff;">v9.0 ZAP FLAGS</div></div>
+      <div class="linha"><div class="label">QR Code</div><div class="valor">20 bandeiras = 1 QR</div></div>
+      <div class="linha"><div class="label">Raio BINGO</div><div class="valor">250m</div></div>
+      <div class="linha"><div class="label">Bandeiras ZAP</div><div class="valor">1 por cada 5 jogadores · mín.100m</div></div>
+      <div class="linha"><div class="label">Energia ZAP</div><div class="valor">+10% por bandeira</div></div>
+    </div>
+    <div class="card card-r">
+      <p style="color:#f00;font-size:.82rem;font-weight:bold;margin-bottom:8px;">⚠️ FERRAMENTAS</p>
+      <button class="btn cinza bloco" onclick="exportar()" style="margin:3px 0;">📥 Exportar dados JSON</button>
+      <button class="btn cinza bloco" onclick="criarJTeste()" style="margin:3px 0;">➕ Criar jogador teste</button>
+      <button class="btn cinza bloco" onclick="criarPRTeste()" style="margin:3px 0;">➕ Criar empresa teste</button>
+      <div class="sep"></div>
+      <button class="btn vermelho bloco" onclick="pedirConf('del-j','Apagar TODOS os jogadores?')" style="margin:3px 0;">🗑️ Apagar todos os jogadores</button>
+      <button class="btn vermelho bloco" onclick="pedirConf('del-p','Apagar TODAS as empresas?')"  style="margin:3px 0;">🗑️ Apagar todas as empresas</button>
+      <button class="btn vermelho bloco" onclick="pedirConf('del-b','Apagar bingos?')"              style="margin:3px 0;">🗑️ Apagar bingos</button>
+    </div>
+    <div id="m-sistema" class="msg"></div>
+  </div>
+  <div id="bo-tab5" class="sec-aba">
+    <div class="card card-b" style="margin-bottom:10px;">
+      <p style="color:#0ff;font-size:.82rem;font-weight:bold;margin-bottom:6px;">🔬 MODO DE TESTE</p>
+      <p style="color:#0aa;font-size:.78rem;">Entra como jogador ou lojista para detetar problemas.</p>
+    </div>
+    <div class="area-jog" style="margin-bottom:8px;">
+      <h3>🎮 TESTAR COMO JOGADOR</h3>
+      <input type="text" id="bo-j-nm" value="BO_TESTE_JOGADOR">
+      <button class="btn verde bloco" onclick="boJogar()">🎮 ENTRAR NO JOGO</button>
+      <div class="sep"></div>
+      <p style="color:#555;font-size:.75rem;margin-bottom:5px;">Jogador existente:</p>
+      <div id="bo-lista-j" class="scroll" style="max-height:20vh;"></div>
+    </div>
+    <div class="area-pr">
+      <h3>🏪 TESTAR COMO LOJISTA</h3>
+      <input type="text" id="bo-pr-nm" value="BO_LOJA_TESTE">
+      <button class="btn laranja bloco" onclick="boPR()">🏪 ENTRAR COMO LOJISTA</button>
+      <div class="sep"></div>
+      <p style="color:#555;font-size:.75rem;margin-bottom:5px;">Empresa existente:</p>
+      <div id="bo-lista-pr" class="scroll" style="max-height:15vh;"></div>
     </div>
   </div>
-  <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px;">
-    <button class="btn bc" style="padding:5px 10px;font-size:.72rem;" onclick="filtrarJ('todos')">Todos</button>
-    <button class="btn bc" style="padding:5px 10px;font-size:.72rem;" onclick="filtrarJ('online')">🟢 Online</button>
-    <button class="btn bc" style="padding:5px 10px;font-size:.72rem;" onclick="filtrarJ('top')">🏆 Top</button>
-  </div>
-  <input type="text" id="search-j" placeholder="🔍 Pesquisar..." oninput="pesqJ()" style="margin-bottom:8px;">
-  <div id="lista-j" class="scroll" style="max-height:50vh;"></div>
-</div>
-<div id="bo-t2" class="tc">
-  <div class="card card-bo" style="margin-bottom:8px;">
-    <div class="grid3">
-      <div class="stat stat-bo"><div class="stat-n" id="p-total">0</div><div class="stat-t">Total</div></div>
-      <div class="stat stat-bo"><div class="stat-n" id="p-ativas" style="color:#ff0;">0</div><div class="stat-t">✅ Ativas</div></div>
-      <div class="stat stat-bo"><div class="stat-n" id="p-sem" style="color:#f00;">0</div><div class="stat-t">⚠️ Sem Pack</div></div>
-    </div>
-  </div>
-  <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px;">
-    <button class="btn bc" style="padding:5px 10px;font-size:.72rem;" onclick="filtrarP('todas')">Todas</button>
-    <button class="btn bc" style="padding:5px 10px;font-size:.72rem;" onclick="filtrarP('ativas')">✅ Ativas</button>
-    <button class="btn bc" style="padding:5px 10px;font-size:.72rem;" onclick="filtrarP('sempack')">⚠️ Sem Pack</button>
-  </div>
-  <input type="text" id="search-p" placeholder="🔍 Pesquisar..." oninput="pesqP()" style="margin-bottom:8px;">
-  <div id="lista-p" class="scroll" style="max-height:50vh;"></div>
-</div>
-<div id="bo-t3" class="tc">
-  <div class="card card-bo" style="margin-bottom:8px;">
-    <p style="color:#0ff;font-size:.82rem;font-weight:bold;margin-bottom:8px;">🎰 BINGO GLOBAL</p>
-    <div class="grid3">
-      <div class="stat stat-bo"><div class="stat-n" id="bg-t-bo">0</div><div class="stat-t">Total</div></div>
-      <div class="stat stat-bo"><div class="stat-n" id="bg-a-bo" style="color:#0f0;">0</div><div class="stat-t">⚡ Ativas</div></div>
-      <div class="stat stat-bo"><div class="stat-n" id="bg-e-bo" style="color:#0ff;">0</div><div class="stat-t">✅ Encontradas</div></div>
-    </div>
-  </div>
-  <p style="color:#ff0;font-size:.82rem;font-weight:bold;margin:10px 0 6px;">🎉 ÚLTIMOS BINGOS</p>
-  <div id="lista-bingos-bo" class="scroll" style="max-height:40vh;"></div>
-</div>
-<div id="bo-t4" class="tc">
-  <div class="card card-bo" style="margin-bottom:10px;">
-    <p style="color:#0ff;font-size:.82rem;font-weight:bold;margin-bottom:10px;">⚙️ CONFIGURAÇÕES</p>
-    <div class="row"><div class="rl">Versão</div><div class="rv" style="color:#0ff;">v8.0 ZAP FLAGS</div></div>
-    <div class="row"><div class="rl">QR Code</div><div class="rv">20 bandeiras = 1 QR</div></div>
-    <div class="row"><div class="rl">Raio BINGO</div><div class="rv">250m</div></div>
-    <div class="row"><div class="rl">Bandeiras ZAP</div><div class="rv">1 por cada 5 jogadores</div></div>
-    <div class="row"><div class="rl">Energia ZAP</div><div class="rv">+10% por bandeira</div></div>
-  </div>
-  <div class="card card-r">
-    <p style="color:#f00;font-size:.82rem;font-weight:bold;margin-bottom:8px;">⚠️ FERRAMENTAS</p>
-    <button class="btn bc bb" onclick="exportarDados()" style="margin:3px 0;">📥 Exportar dados JSON</button>
-    <button class="btn bc bb" onclick="criarJTeste()"   style="margin:3px 0;">➕ Criar jogador teste</button>
-    <button class="btn bc bb" onclick="criarPRTeste()"  style="margin:3px 0;">➕ Criar empresa teste</button>
-    <hr class="sep">
-    <button class="btn br bb" onclick="pedirConf('del-j','Apagar TODOS os jogadores?')" style="margin:3px 0;">🗑️ Apagar todos os jogadores</button>
-    <button class="btn br bb" onclick="pedirConf('del-p','Apagar TODAS as empresas?')"  style="margin:3px 0;">🗑️ Apagar todas as empresas</button>
-    <button class="btn br bb" onclick="pedirConf('del-b','Apagar histórico bingos?')"   style="margin:3px 0;">🗑️ Apagar bingos</button>
-  </div>
-  <div id="msg-sistema" class="msg"></div>
-</div>
-<div id="bo-t5" class="tc">
-  <div class="card card-bo" style="margin-bottom:10px;">
-    <p style="color:#0ff;font-size:.82rem;font-weight:bold;margin-bottom:8px;">🔬 MODO DE TESTE</p>
-    <p style="color:#0aa;font-size:.78rem;">Entra como jogador ou PR para detetar deficiências.</p>
-  </div>
-  <div class="jog-sec" style="margin-bottom:8px;">
-    <h3>🎮 TESTAR COMO JOGADOR</h3>
-    <input type="text" id="bo-j-nm" value="BO_TESTE">
-    <button class="btn bv bb" onclick="boJogar()">🎮 ENTRAR NO JOGO</button>
-    <div id="bo-lista-j" class="scroll" style="max-height:20vh;margin-top:6px;"></div>
-  </div>
-  <div class="emp-sec">
-    <h3>🏪 TESTAR COMO LOJISTA</h3>
-    <input type="text" id="bo-pr-nm" value="BO_LOJA_TESTE">
-    <button class="btn bo bb" onclick="boPR()">🏪 ENTRAR COMO LOJISTA</button>
-    <div id="bo-lista-pr" class="scroll" style="max-height:15vh;margin-top:6px;"></div>
-  </div>
-</div>
 </div>
 
 <!-- MODAL -->
-<div id="movl" onclick="fecharMdl()"></div>
-<div id="mdl">
+<div id="movl" onclick="fecharModal()"></div>
+<div id="modal">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-    <h2 id="mdl-tit" style="color:#ff0;border:none;margin:0;font-size:1rem;">---</h2>
-    <button class="btn bc" style="width:auto;padding:4px 10px;font-size:.78rem;" onclick="fecharMdl()">✖</button>
+    <h2 id="modal-tit" style="color:#ff0;border:none;margin:0;font-size:1rem;">---</h2>
+    <button class="btn cinza" style="width:auto;padding:4px 10px;font-size:.78rem;" onclick="fecharModal()">✖</button>
   </div>
-  <div id="mdl-corpo"></div>
-  <div id="mdl-m" class="msg"></div>
-  <button class="btn bvol bb" onclick="fecharMdl()" style="margin-top:8px;">← FECHAR</button>
+  <div id="modal-corpo"></div>
+  <div id="m-modal" class="msg"></div>
+  <button class="voltar-btn bloco" onclick="fecharModal()" style="margin-top:8px;">← FECHAR</button>
 </div>
 
-<!-- CONFIRMAÇÃO SAIR -->
+<!-- CONFIRMAÇÃO -->
 <div id="conf-ovl"></div>
-<div id="conf-box">
-  <div id="conf-ico" style="font-size:2.5rem;margin-bottom:8px;">🚪</div>
-  <h2 id="conf-tit" style="color:#f00;border-color:#f00;margin-bottom:10px;">Confirmar?</h2>
-  <p id="conf-txt" style="color:#888;font-size:.82rem;margin-bottom:20px;line-height:1.5;"></p>
+<div id="conf-caixa">
+  <div id="conf-ico" style="font-size:2.5rem;margin-bottom:8px;">❓</div>
+  <h2 id="conf-tit" style="color:#f00;border-color:#f00;margin-bottom:10px;font-size:1rem;">Confirmar?</h2>
+  <p id="conf-txt" style="color:#888;font-size:.82rem;margin-bottom:18px;line-height:1.5;"></p>
   <div style="display:flex;gap:8px;">
-    <button class="btn bvol" style="flex:1;padding:12px;" onclick="fecharConf()">❌ CANCELAR</button>
-    <button class="btn br"   style="flex:1;padding:12px;" id="conf-btn-ok" onclick="confirmarAcao()">✅ SIM, SAIR</button>
+    <button class="btn azul" style="flex:1;padding:12px;" onclick="fecharConf()">❌ CANCELAR</button>
+    <button class="btn vermelho" style="flex:1;padding:12px;" id="conf-ok" onclick="executarConf()">✅ CONFIRMAR</button>
   </div>
 </div>
 
 <script>
 'use strict';
+
 // ============================================================
-// CONFIG
+// CONFIGURAÇÃO
 // ============================================================
-const PASS='321321';
-const PACOTES={
-  GRATIS:  {id:'GRATIS',  emoji:'🎁',nome:'BOAS-VINDAS',  flags:1000,  preco:0,   precoStr:'GRÁTIS',raio:1000, raioStr:'1km', dias:15, bingo:0,  tipo:'gratis'},
-  MICRO:   {id:'MICRO',   emoji:'🥉',nome:'MICRO',         flags:2000,  preco:5,   precoStr:'5€',    raio:1000, raioStr:'1km', dias:30, bingo:1,  tipo:'pago'},
-  BASICO:  {id:'BASICO',  emoji:'🥈',nome:'BÁSICO',        flags:4000,  preco:10,  precoStr:'10€',   raio:5000, raioStr:'5km', dias:60, bingo:4,  tipo:'pago'},
-  STANDARD:{id:'STANDARD',emoji:'🥇',nome:'STANDARD',      flags:10000, preco:15,  precoStr:'15€',   raio:10000,raioStr:'10km',dias:90, bingo:10, tipo:'pago'},
-  PRO:     {id:'PRO',     emoji:'💎',nome:'PRO',            flags:25000, preco:20,  precoStr:'20€',   raio:25000,raioStr:'25km',dias:90, bingo:25, tipo:'pago'},
-  PREMIUM: {id:'PREMIUM', emoji:'👑',nome:'PREMIUM',        flags:75000, preco:50,  precoStr:'50€',   raio:50000,raioStr:'50km',dias:180,bingo:50, tipo:'pago'},
-  PUB24:   {id:'PUB24',   emoji:'📢',nome:'PUBLICIDADE 24H',flags:500,   preco:2.5, precoStr:'2.50€', raio:500,  raioStr:'500m',horas:24,bingo:2,  tipo:'publicidade'},
+const PASSE = '321321';
+const QR_N  = 20;     // bandeiras para 1 QR
+const BINGO_RAIO = 250; // metros
+
+const PACOTES = {
+  GRATIS:  {id:'GRATIS', e:'🎁',n:'BOAS-VINDAS',   f:1000,  p:0,   ps:'GRÁTIS', r:1000,  rs:'1km',  d:15, b:0,  t:'gratis'},
+  MICRO:   {id:'MICRO',  e:'🥉',n:'MICRO',          f:2000,  p:5,   ps:'5€',     r:1000,  rs:'1km',  d:30, b:1,  t:'pago'},
+  BASICO:  {id:'BASICO', e:'🥈',n:'BÁSICO',         f:4000,  p:10,  ps:'10€',    r:5000,  rs:'5km',  d:60, b:4,  t:'pago'},
+  STANDARD:{id:'STANDARD',e:'🥇',n:'STANDARD',      f:10000, p:15,  ps:'15€',    r:10000, rs:'10km', d:90, b:10, t:'pago'},
+  PRO:     {id:'PRO',    e:'💎',n:'PRO',             f:25000, p:20,  ps:'20€',    r:25000, rs:'25km', d:90, b:25, t:'pago'},
+  PREMIUM: {id:'PREMIUM',e:'👑',n:'PREMIUM',         f:75000, p:50,  ps:'50€',    r:50000, rs:'50km', d:180,b:50, t:'pago'},
+  PUB24:   {id:'PUB24',  e:'📢',n:'PUBLICIDADE 24H', f:500,   p:2.5, ps:'2.50€',  r:500,   rs:'500m', h:24, b:2,  t:'pub'},
 };
 
 // ============================================================
-// DB
+// BASE DE DADOS
 // ============================================================
-const DB={
-  jogs:   ()=>{try{return JSON.parse(localStorage.getItem('zap_j')||'[]')}catch{return[]}},
-  prs:    ()=>{try{return JSON.parse(localStorage.getItem('zap_p')||'[]')}catch{return[]}},
-  bingos: ()=>{try{return JSON.parse(localStorage.getItem('zap_bg')||'[]')}catch{return[]}},
-  atv:    ()=>{try{return JSON.parse(localStorage.getItem('zap_av')||'[]')}catch{return[]}},
-  saveJ:  l=>localStorage.setItem('zap_j',JSON.stringify(l)),
-  saveP:  l=>localStorage.setItem('zap_p',JSON.stringify(l)),
-  saveBG: l=>localStorage.setItem('zap_bg',JSON.stringify(l)),
-  saveAv: l=>localStorage.setItem('zap_av',JSON.stringify(l)),
-  sessJ:  ()=>{try{return JSON.parse(localStorage.getItem('zap_sj')||'null')}catch{return null}},
-  sessPR: ()=>{try{return JSON.parse(localStorage.getItem('zap_sp')||'null')}catch{return null}},
-  setSessJ: u=>localStorage.setItem('zap_sj',JSON.stringify(u)),
-  setSessPR:p=>localStorage.setItem('zap_sp',JSON.stringify(p)),
-  delSessJ: ()=>localStorage.removeItem('zap_sj'),
-  delSessPR:()=>localStorage.removeItem('zap_sp'),
+const BD = {
+  jogs:   ()=>{ try{ return JSON.parse(localStorage.getItem('zap_jogs')||'[]') }catch{ return [] } },
+  emps:   ()=>{ try{ return JSON.parse(localStorage.getItem('zap_emps')||'[]') }catch{ return [] } },
+  bings:  ()=>{ try{ return JSON.parse(localStorage.getItem('zap_bngs')||'[]') }catch{ return [] } },
+  atv:    ()=>{ try{ return JSON.parse(localStorage.getItem('zap_atv') ||'[]') }catch{ return [] } },
+  saveJ:  l => localStorage.setItem('zap_jogs', JSON.stringify(l)),
+  saveE:  l => localStorage.setItem('zap_emps', JSON.stringify(l)),
+  saveB:  l => localStorage.setItem('zap_bngs', JSON.stringify(l)),
+  saveA:  l => localStorage.setItem('zap_atv',  JSON.stringify(l)),
+  // SESSÕES (persistência com email e nome)
+  getSessJ:  ()=>{ try{ return JSON.parse(localStorage.getItem('zap_sj')||'null') }catch{ return null } },
+  getSessP:  ()=>{ try{ return JSON.parse(localStorage.getItem('zap_sp')||'null') }catch{ return null } },
+  setSessJ:  u => localStorage.setItem('zap_sj', JSON.stringify(u)),
+  setSessP:  p => localStorage.setItem('zap_sp', JSON.stringify(p)),
+  delSessJ:  ()=> localStorage.removeItem('zap_sj'),
+  delSessP:  ()=> localStorage.removeItem('zap_sp'),
 };
 
-function logAtv(a,d=''){const av=DB.atv();av.unshift({a,d,ts:Date.now()});if(av.length>100)av.pop();DB.saveAv(av);}
+function log(a, d=''){
+  const av = BD.atv();
+  av.unshift({a, d, ts: Date.now()});
+  if(av.length > 100) av.pop();
+  BD.saveA(av);
+}
 
 // ============================================================
-// UTILS
+// ATALHOS
 // ============================================================
-const $id=id=>document.getElementById(id);
-const val=id=>$id(id)?.value?.trim()||'';
-const vE=e=>/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(e).toLowerCase());
-function fmt(ts){return ts?new Date(ts).toLocaleString('pt-PT',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'}):'---';}
-function fmtN(n){return(n||0).toLocaleString('pt-PT');}
-function msg(id,t,tp){const e=$id(id);if(!e)return;e.className='msg '+tp;e.innerText=t;setTimeout(()=>{if(e){e.className='msg';e.innerText='';}},5000);}
-function fecharMdl(){$id('movl').style.display='none';$id('mdl').style.display='none';}
-function abrirMdl(tit,corpo){$id('mdl-tit').innerText=tit;$id('mdl-corpo').innerHTML=corpo;$id('movl').style.display='block';$id('mdl').style.display='block';}
+const G   = id => document.getElementById(id);
+const val = id => G(id)?.value?.trim() || '';
+const vE  = e  => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(e).toLowerCase());
+const vT  = t  => /^[0-9]{9,15}$/.test(String(t).replace(/[\s\-\+]/g,''));
+const vN  = n  => /^[0-9]{9}$/.test(String(n).replace(/\s/g,''));
+const fmt = ts => ts ? new Date(ts).toLocaleString('pt-PT',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'}) : '---';
+const fN  = n  => (n||0).toLocaleString('pt-PT');
+
+function msg(id, t, tp){
+  const e = G(id);
+  if(!e) return;
+  e.className = 'msg ' + tp;
+  e.innerText = t;
+  setTimeout(()=>{ if(e){ e.className='msg'; e.innerText=''; } }, 5000);
+}
 
 // ============================================================
 // NAVEGAÇÃO
 // ============================================================
 function ir(id){
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('ativa'));
-  $id(id)?.classList.add('ativa');
-  document.querySelectorAll('.msg').forEach(m=>{m.className='msg';m.innerText='';});
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('ativa'));
+  G(id)?.classList.add('ativa');
+  document.querySelectorAll('.msg').forEach(m => { m.className='msg'; m.innerText=''; });
   window.scrollTo(0,0);
-  if(id==='p0')    atualizarHomepage();
-  if(id==='p-adm') carregarAdm();
-  if(id==='p-bo')  carregarBO();
-  if(id==='p-pr')  atualizarPainelPR();
+  if(id === 'p-inicio') atualizarHome();
+  if(id === 'p-bo')     carregarBO();
+}
+
+// FECHAR APP
+function fecharApp(){
+  mostrarConf('✖','FECHAR APLICAÇÃO',
+    'Tens a certeza que queres fechar?\n\nOs teus dados ficam guardados.',
+    'fechar-app');
 }
 
 // ============================================================
-// HOMEPAGE — SESSÕES ATIVAS + BOTÃO SAIR
+// HOME — SESSÕES ATIVAS
 // ============================================================
-function atualizarHomepage(){
-  const sj=DB.sessJ();const sp=DB.sessPR();
-  const jDiv=$id('home-sessao-j');const pDiv=$id('home-sessao-pr');const sBtn=$id('home-btn-sair');
+function atualizarHome(){
+  const sj = BD.getSessJ();
+  const sp = BD.getSessP();
+  const divJ = G('home-sessao-jog');
+  const divP = G('home-sessao-pr');
 
-  // Sessão jogador
-  if(sj&&!sj.isAdm&&!sj.isBO){
-    $id('home-j-nome').innerText='👤 '+sj.nm;
-    $id('home-j-info').innerText=`📧 ${sj.em} · 🏴 ${sj.fl||0} flags · ⚡ ${Math.round(sj.en||100)}%`;
-    jDiv.style.display='block';
-  } else jDiv.style.display='none';
+  if(sj && !sj.isBO){
+    G('home-j-nome').innerText = '👤 ' + sj.nm;
+    G('home-j-info').innerText = `📧 ${sj.em} · 🏴 ${sj.fl||0} flags · ⚡ ${Math.round(sj.en||100)}%`;
+    divJ.style.display = 'block';
+  } else {
+    divJ.style.display = 'none';
+  }
 
-  // Sessão PR
-  if(sp&&!sp.isAdm&&!sp.isBO){
-    $id('home-pr-nome').innerText='🏪 '+sp.ne;
-    $id('home-pr-info').innerText=`📍 ${sp.loc||'-'} · 📧 ${sp.em}`;
-    pDiv.style.display='block';
-  } else pDiv.style.display='none';
-
-  // Botão sair geral (se há alguma sessão)
-  sBtn.style.display=(sj||sp)?'block':'none';
+  if(sp && !sp.isBO){
+    G('home-pr-nome').innerText = '🏪 ' + sp.ne;
+    G('home-pr-info').innerText = `📍 ${sp.loc||'-'} · 📧 ${sp.em}`;
+    divP.style.display = 'block';
+  } else {
+    divP.style.display = 'none';
+  }
 }
 
-function voltarJogoHome(){
-  const sj=DB.sessJ();if(!sj){ir('p-login');return;}
+function reentrarJogo(){
+  const sj = BD.getSessJ();
+  if(!sj){ ir('p-login'); return; }
   entrarJogo(sj);
 }
-function voltarPRHome(){
-  const sp=DB.sessPR();if(!sp){ir('p-pr-login');return;}
-  prAtual=sp;abrirPainelPR();
-}
 
-// CONFIRMAÇÕES DE SAIR
-let confAcao=null;
-
-function mostrarConf(ico,tit,txt,btnTxt,acao){
-  confAcao=acao;
-  $id('conf-ico').innerText=ico;
-  $id('conf-tit').innerText=tit;
-  $id('conf-txt').innerText=txt;
-  $id('conf-btn-ok').innerText=btnTxt;
-  $id('conf-ovl').style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.88);z-index:9500;display:block;';
-  $id('conf-box').style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#000;border:3px solid #f00;border-radius:12px;padding:24px;z-index:9501;width:90%;max-width:360px;text-align:center;display:block;';
-}
-function fecharConf(){confAcao=null;$id('conf-ovl').style.display='none';$id('conf-box').style.display='none';}
-function confirmarAcao(){
-  const a=confAcao;fecharConf();
-  if(a==='sair-jog')  {DB.delSessJ();logAtv('👤 Jogador saiu');atualizarHomepage();}
-  else if(a==='sair-pr')  {DB.delSessPR();prAtual=null;logAtv('🏪 PR saiu');atualizarHomepage();}
-  else if(a==='sair-geral'){DB.delSessJ();DB.delSessPR();prAtual=null;logAtv('🚪 Todas sessões terminadas');atualizarHomepage();}
-  else if(a==='del-j') {DB.saveJ([]);logAtv('⚠️ Todos jogadores apagados');carregarBO();msg('msg-sistema','✅ Jogadores apagados.','s');}
-  else if(a==='del-p') {DB.saveP([]);logAtv('⚠️ Todas empresas apagadas');carregarBO();msg('msg-sistema','✅ Empresas apagadas.','s');}
-  else if(a==='del-b') {DB.saveBG([]);DB.saveAv([]);carregarBO();msg('msg-sistema','✅ Bingos apagados.','s');}
-  else if(a?.startsWith('del-j-')){const i=parseInt(a.slice(6));const jogs=DB.jogs();logAtv(`🗑️ Jogador apagado: ${jogs[i]?.nm}`);jogs.splice(i,1);DB.saveJ(jogs);carregarBO();}
-  else if(a?.startsWith('del-p-')){const i=parseInt(a.slice(6));const prs=DB.prs();logAtv(`🗑️ Empresa apagada: ${prs[i]?.ne}`);prs.splice(i,1);DB.saveP(prs);carregarBO();}
-}
-
-function confirmarSairJogador(){mostrarConf('🎮','SAIR DO JOGO?','Tens a certeza que queres terminar a sessão de jogador?\n\nO teu progresso fica guardado.','✅ SIM, SAIR','sair-jog');}
-function confirmarSairPR(){mostrarConf('🏪','SAIR DA CONTA?','Tens a certeza que queres sair da conta da empresa?\n\nOs dados ficam guardados.','✅ SIM, SAIR','sair-pr');}
-function pedirSairGeral(){mostrarConf('🚪','TERMINAR TUDO?','Terminar TODAS as sessões ativas?\n\nJogador e lojista serão desligados.','✅ SIM, TERMINAR TUDO','sair-geral');}
-function pedirConf(a,txt){mostrarConf('⚠️','CONFIRMAR AÇÃO',txt,'✅ CONFIRMAR',a);}
-
-// ============================================================
-// JOGADOR
-// ============================================================
-function regJog(){
-  const nm=val('r-nm'),em=val('r-em').toLowerCase(),tl=val('r-tl'),pw=$id('r-pw').value,p2=$id('r-pw2').value;
-  if(!nm)             {msg('m-reg','❌ Insere o nome!','e');return;}
-  if(!em||!vE(em))    {msg('m-reg','❌ Email inválido!','e');return;}
-  if(!pw||pw.length<4){msg('m-reg','❌ Senha mínimo 4 car.!','e');return;}
-  if(pw!==p2)         {msg('m-reg','❌ Senhas não coincidem!','e');return;}
-  const jogs=DB.jogs();
-  if(jogs.find(j=>j.em===em)){msg('m-reg','❌ Email já registado!','e');return;}
-  const u={nm,em,tl,pw,fl:0,en:100,qrs:[],reg:Date.now(),ult:Date.now()};
-  jogs.push(u);DB.saveJ(jogs);DB.setSessJ(u);logAtv(`👤 Novo jogador: ${nm}`);entrarJogo(u);
-}
-
-function loginJog(){
-  const em=val('l-em').toLowerCase(),pw=$id('l-pw').value;
-  if(!em){msg('m-login','❌ Insere o email!','e');return;}
-  if(!pw){msg('m-login','❌ Insere a senha!','e');return;}
-  if(pw===PASS){msg('m-login','❌ Código Admin. Usa ⚙️ ADMINISTRADOR.','a');return;}
-  const jogs=DB.jogs();
-  const u=jogs.find(j=>j.em===em&&j.pw===pw);
-  if(!u){const ex=jogs.find(j=>j.em===em);msg('m-login',ex?'❌ Senha incorreta!':'❌ Email não encontrado!','e');return;}
-  u.ult=Date.now();const idx=jogs.findIndex(j2=>j2.em===em);jogs[idx]=u;DB.saveJ(jogs);
-  DB.setSessJ(u);logAtv(`👤 Login: ${u.nm}`);entrarJogo(u);
-}
-
-function entrarJogo(u){
-  $id('j-nm').innerText='👤 '+u.nm;
-  $id('j-em').innerText='📧 '+u.em;
-  $id('j-bdg').innerHTML=u.isBO?'<span style="background:#0ff;color:#000;padding:2px 6px;border-radius:8px;font-size:.6rem;font-weight:bold;">BO</span>':u.isAdm?'<span style="background:#f00;color:#fff;padding:2px 6px;border-radius:8px;font-size:.6rem;font-weight:bold;">ADM</span>':'';
-  $id('j-bem').innerText='Bem-vindo, '+u.nm+'!';
-  $id('j-fl').innerText=u.fl||0;$id('j-en').innerText=Math.round(u.en||100);$id('j-qr').innerText=(u.qrs||[]).length;
-  $id('jg-fl').innerText=u.fl||0;$id('jg-en').innerText=Math.round(u.en||100);$id('jg-qr').innerText=(u.qrs||[]).length;
-  ir('p-jogo');
-}
-
-function voltarInicioDoJogo(){ir('p0');}
-
-// ============================================================
-// PR
-// ============================================================
-let prAtual=null;
-
-function regPR(){
-  const ne=val('pr-ne'),nif=val('pr-nif'),morada=val('pr-morada');
-  const cp=val('pr-cp'),loc=val('pr-loc'),dist=val('pr-dist'),ativ=val('pr-ativ');
-  const tel=val('pr-tel'),em=val('pr-email').toLowerCase();
-  const resp=val('pr-resp'),pw=$id('pr-pw').value,p2=$id('pr-pw2').value;
-
-  if(!morada)         {msg('m-pr-reg','❌ Morada obrigatória!','e');return;}
-  if(!cp)             {msg('m-pr-reg','❌ Código postal obrigatório!','e');return;}
-  if(!loc)            {msg('m-pr-reg','❌ Localidade obrigatória!','e');return;}
-  if(!dist)           {msg('m-pr-reg','❌ Seleciona o distrito!','e');return;}
-  if(!ne)             {msg('m-pr-reg','❌ Nome da empresa obrigatório!','e');return;}
-  if(!nif||!/^[0-9]{9}$/.test(nif)){msg('m-pr-reg','❌ NIF inválido (9 dígitos)!','e');return;}
-  if(!ativ)           {msg('m-pr-reg','❌ Seleciona o setor de atividade!','e');return;}
-  if(!tel)            {msg('m-pr-reg','❌ Telefone obrigatório!','e');return;}
-  if(!em||!vE(em))    {msg('m-pr-reg','❌ Email inválido!','e');return;}
-  if(!resp)           {msg('m-pr-reg','❌ Nome do responsável obrigatório!','e');return;}
-  if(!pw||pw.length<4){msg('m-pr-reg','❌ Senha mínimo 4 car.!','e');return;}
-  if(pw!==p2)         {msg('m-pr-reg','❌ Senhas não coincidem!','e');return;}
-  if(!$id('pr-trm').checked){msg('m-pr-reg','❌ Aceita os Termos e Condições!','e');return;}
-
-  const prs=DB.prs();
-  if(prs.find(p=>p.nif===nif)){msg('m-pr-reg','❌ NIF já registado!','e');return;}
-  if(prs.find(p=>p.em===em))  {msg('m-pr-reg','❌ Email já registado!','e');return;}
-
-  const hrs=[val('h0'),val('h1'),val('h2'),val('h3'),val('h4'),val('h5'),val('h6')];
-  const pr={ne,nif,ativ,morada,cp,loc,dist,tel,em,web:val('pr-web'),ig:val('pr-ig'),
-    resp,respTel:val('pr-resp-tel'),respEm:val('pr-resp-em'),
-    pw,hrs,packs:[],lotes:[],bingoFlags:[],qrsGerados:0,qrsUsados:0,reg:Date.now()};
-  prs.push(pr);DB.saveP(prs);prAtual=pr;DB.setSessPR(pr);
-  logAtv(`🏪 Nova empresa: ${ne}`);
+function reentrarPR(){
+  const sp = BD.getSessP();
+  if(!sp){ ir('p-pr-login'); return; }
+  prAtual = sp;
   abrirPainelPR();
 }
 
-function loginPR(){
-  const em=val('pl-em').toLowerCase(),pw=$id('pl-pw').value;
-  if(!em){msg('m-pr-l','❌ Insere o email!','e');return;}
-  if(!pw){msg('m-pr-l','❌ Insere a senha!','e');return;}
-  if(pw===PASS){
-    const pr=DB.prs().find(p=>p.em===em)||criarPRTemp(em);
-    prAtual=pr;DB.setSessPR(pr);abrirPainelPR();return;
+// ============================================================
+// CONFIRMAÇÕES
+// ============================================================
+let confAcao = null;
+
+function mostrarConf(ico, tit, txt, acao){
+  confAcao = acao;
+  G('conf-ico').innerText = ico;
+  G('conf-tit').innerText = tit;
+  G('conf-txt').innerText = txt;
+  G('conf-ovl').style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.88);z-index:9500;display:block;';
+  G('conf-caixa').style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#000;border:3px solid #f00;border-radius:12px;padding:22px;z-index:9501;width:90%;max-width:360px;text-align:center;display:block;';
+}
+function fecharConf(){
+  confAcao = null;
+  G('conf-ovl').style.display = 'none';
+  G('conf-caixa').style.display = 'none';
+}
+function executarConf(){
+  const a = confAcao;
+  fecharConf();
+  if(a === 'sair-jogador'){ BD.delSessJ(); jogAtual=null; atualizarHome(); }
+  else if(a === 'sair-pr'){ BD.delSessP(); prAtual=null; atualizarHome(); }
+  else if(a === 'fechar-app'){ window.close(); ir('p-inicio'); }
+  else if(a === 'del-j'){ BD.saveJ([]); carregarBO(); msg('m-sistema','✅ Jogadores apagados.','ok'); }
+  else if(a === 'del-p'){ BD.saveE([]); carregarBO(); msg('m-sistema','✅ Empresas apagadas.','ok'); }
+  else if(a === 'del-b'){ BD.saveB([]); BD.saveA([]); carregarBO(); msg('m-sistema','✅ Bingos apagados.','ok'); }
+  else if(a?.startsWith('del-j-')){ const i=parseInt(a.slice(6)); const j=BD.jogs(); log(`🗑️ Jogador apagado: ${j[i]?.nm}`); j.splice(i,1); BD.saveJ(j); carregarBO(); }
+  else if(a?.startsWith('del-p-')){ const i=parseInt(a.slice(6)); const p=BD.emps(); log(`🗑️ Empresa apagada: ${p[i]?.ne}`); p.splice(i,1); BD.saveE(p); carregarBO(); }
+}
+
+function confirmarSair(quem){
+  if(quem === 'jogador'){
+    mostrarConf('🎮','SAIR DO JOGO?','Tens a certeza?\n\nO teu progresso fica guardado.\nPodes voltar com o teu email e senha.','sair-jogador');
+  } else {
+    mostrarConf('🏪','SAIR DA CONTA?','Tens a certeza que queres sair da conta da empresa?\n\nOs dados ficam guardados.','sair-pr');
   }
-  const pr=DB.prs().find(p=>p.em===em&&p.pw===pw);
-  if(!pr){const ex=DB.prs().find(p=>p.em===em);msg('m-pr-l',ex?'❌ Senha incorreta!':'❌ Email não encontrado!','e');return;}
-  prAtual=pr;DB.setSessPR(pr);logAtv(`🏪 Login PR: ${pr.ne}`);abrirPainelPR();
+}
+
+function pedirConf(a, txt){
+  mostrarConf('⚠️','CONFIRMAR AÇÃO', txt, a);
+}
+
+// ============================================================
+// MODAL
+// ============================================================
+function fecharModal(){ G('movl').style.display='none'; G('modal').style.display='none'; }
+function abrirModal(tit, corpo){
+  G('modal-tit').innerText = tit;
+  G('modal-corpo').innerHTML = corpo;
+  G('movl').style.display = 'block';
+  G('modal').style.display = 'block';
+}
+
+// ============================================================
+// REGISTO JOGADOR
+// ============================================================
+function fazerRegisto(){
+  const nm  = val('reg-nm');
+  const em  = val('reg-em').toLowerCase();
+  const tl  = val('reg-tl');
+  const pw  = G('reg-pw').value;
+  const pw2 = G('reg-pw2').value;
+
+  if(!nm)             { msg('m-registo','❌ Insere o teu nome!','erro'); return; }
+  if(!em || !vE(em))  { msg('m-registo','❌ Email inválido!','erro'); return; }
+  if(!pw || pw.length < 4){ msg('m-registo','❌ Senha mínimo 4 caracteres!','erro'); return; }
+  if(pw !== pw2)       { msg('m-registo','❌ Senhas não coincidem!','erro'); return; }
+
+  const jogs = BD.jogs();
+  if(jogs.find(j => j.em === em)){ msg('m-registo','❌ Email já registado! Faz login.','erro'); return; }
+  if(BD.emps().find(p => p.em === em)){ msg('m-registo','❌ Email já existe como empresa!','erro'); return; }
+
+  const u = {
+    nm, em, tl, pw,
+    fl: 0, en: 100, qrs: [], prog: 0,
+    skill: 1, visao: 5, skillPts: 0,
+    reg: Date.now(), ult: Date.now()
+  };
+  jogs.push(u);
+  BD.saveJ(jogs);
+  BD.setSessJ(u);
+  log(`👤 Novo jogador: ${nm}`);
+  entrarJogo(u);
+}
+
+// ============================================================
+// LOGIN JOGADOR (memoriza email, só precisa da senha)
+// ============================================================
+function fazerLogin(){
+  const em = val('login-em').toLowerCase();
+  const pw = G('login-pw').value;
+
+  if(!em){ msg('m-login','❌ Insere o teu email!','erro'); return; }
+  if(!pw){ msg('m-login','❌ Insere a senha!','erro'); return; }
+  if(pw === PASSE){ msg('m-login','❌ Código de Backoffice. Usa 🖥️ BACKOFFICE.','aviso'); return; }
+
+  const jogs = BD.jogs();
+  const u = jogs.find(j => j.em === em && j.pw === pw);
+  if(!u){
+    const ex = jogs.find(j => j.em === em);
+    msg('m-login', ex ? '❌ Senha incorreta!' : '❌ Email não encontrado! Regista-te primeiro.','erro');
+    return;
+  }
+  u.ult = Date.now();
+  const idx = jogs.findIndex(j2 => j2.em === em);
+  jogs[idx] = u;
+  BD.saveJ(jogs);
+  BD.setSessJ(u);
+  log(`👤 Login: ${u.nm}`);
+  entrarJogo(u);
+}
+
+// ============================================================
+// MAPA DO JOGO
+// ============================================================
+let mapaJ = null, marcJ = null, lgF = null, lgE = null;
+let jogAtual = null, spawnTmr = null, watchId = null;
+let posAtual = { lat: 39.5, lng: -8.0 };
+let gpsFunciona = false;
+
+function entrarJogo(u){
+  jogAtual = u;
+  G('jog-nome').innerText = '👤 ' + u.nm;
+  G('jog-email').innerText = '📧 ' + u.em;
+  atualizarHUDJogo();
+  ir('p-jogo');
+  iniciarTicker();
+  setTimeout(iniciarMapaJogo, 300);
+}
+
+function atualizarHUDJogo(){
+  if(!jogAtual) return;
+  G('jog-flags').innerText = jogAtual.fl || 0;
+  G('jog-en').innerText    = Math.round(jogAtual.en || 100);
+  G('jog-qrs').innerText   = (jogAtual.qrs || []).length;
+  G('jog-vis').innerText   = jogAtual.visao || 5;
+}
+
+function iniciarMapaJogo(){
+  if(mapaJ){ mapaJ.invalidateSize(); return; }
+
+  mapaJ = L.map('mapa-jogo', { center: [39.5,-8.0], zoom: 7, zoomControl: true });
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+    attribution: '© OpenStreetMap', maxZoom: 19
+  }).addTo(mapaJ);
+
+  lgF = L.layerGroup().addTo(mapaJ);
+  lgE = L.layerGroup().addTo(mapaJ);
+
+  mostrarEmpresasMapa();
+  spawnFlags();
+
+  // GPS
+  if(navigator.geolocation){
+    watchId = navigator.geolocation.watchPosition(
+      pos => {
+        gpsFunciona = true;
+        posAtual = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        G('gps-info').innerText = `✅ GPS: ${posAtual.lat.toFixed(4)}, ${posAtual.lng.toFixed(4)}`;
+
+        const icJog = L.divIcon({ className:'',
+          html:'<div style="background:#0f0;width:20px;height:20px;border-radius:50%;border:3px solid #fff;box-shadow:0 0 12px #0f0;"></div>',
+          iconSize:[20,20], iconAnchor:[10,10]
+        });
+        if(!marcJ){
+          marcJ = L.marker([posAtual.lat, posAtual.lng], {icon: icJog, zIndexOffset:1000})
+            .addTo(mapaJ).bindPopup(`<b>👤 ${jogAtual?.nm}</b>`);
+          mapaJ.setView([posAtual.lat, posAtual.lng], 16);
+        } else {
+          marcJ.setLatLng([posAtual.lat, posAtual.lng]);
+        }
+        spawnFlags();
+      },
+      () => {
+        gpsFunciona = false;
+        G('gps-info').innerText = '⚠️ GPS indisponível — posição padrão';
+        spawnFlags();
+      },
+      { enableHighAccuracy: true, maximumAge: 3000, timeout: 10000 }
+    );
+  } else {
+    G('gps-info').innerText = '❌ GPS não suportado';
+    spawnFlags();
+  }
+
+  // Refresh automático de bandeiras
+  if(spawnTmr) clearInterval(spawnTmr);
+  spawnTmr = setInterval(spawnFlags, 30000);
+}
+
+function mostrarEmpresasMapa(){
+  if(!mapaJ || !lgE) return;
+  lgE.clearLayers();
+  BD.emps().forEach(emp => {
+    const lat = parseFloat(emp.lat), lng = parseFloat(emp.lng);
+    if(!emp.lat || !emp.lng || isNaN(lat) || isNaN(lng)) return;
+    const packs = emp.packs || [];
+    const packA = packs.find(pk => pk.fim > Date.now());
+    const temBingo = (emp.bingoFlags || []).some(b => b.estado === 'ativa');
+    const cor = temBingo ? '#f0f' : packA ? '#ff0' : '#555';
+    const ic = L.divIcon({ className:'',
+      html: `<div style="background:${cor};color:#000;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-size:.95rem;border:2px solid #000;box-shadow:0 0 ${packA?'8px':'0px'} ${cor};">${temBingo?'📢':'🏪'}</div>`,
+      iconSize:[28,28], iconAnchor:[14,14]
+    });
+    const lotes = (emp.lotes || []).filter(l => l.estado === 'ativo' && l.n > l.usados);
+    L.marker([lat,lng], {icon:ic}).addTo(lgE)
+      .bindPopup(`<b>${emp.ne}</b><br>${emp.ativ||''}<br>📍 ${emp.loc||''}<br>${packA?`📦 ${packA.nome}`:'⚠️ Sem pacote'}<br>${lotes.length?`🎫 ${lotes.length} lote(s) ativo(s)`:''}`);
+    if(packA) L.circle([lat,lng],{radius:packA.raio,color:cor,fillColor:cor,fillOpacity:.05,weight:1,dashArray:'6,4'}).addTo(lgE);
+    // Raio BINGO
+    if(temBingo) L.circle([lat,lng],{radius:BINGO_RAIO,color:'#ff0',fillColor:'#ff0',fillOpacity:.15,weight:2}).addTo(lgE);
+  });
+}
+
+// Número de bandeiras ZAP (1 por cada 5 jogadores, mín 1, mín 100m entre elas)
+function nZAP(){ return Math.max(1, Math.min(20, Math.floor(BD.jogs().length/5))); }
+
+function spawnFlags(){
+  if(!lgF || !mapaJ) return;
+  lgF.clearLayers();
+  const la = posAtual.lat, ln = posAtual.lng;
+
+  // Bandeiras ZAP (mín 100m, distribuídas à volta do jogador)
+  const nZ = nZAP();
+  const posZ = [];
+  let t = 0;
+  while(posZ.length < nZ && t < 300){
+    t++;
+    const ang = Math.random()*2*Math.PI;
+    const d   = 100 + Math.random()*400;
+    const dLa = (d/111000)*Math.cos(ang);
+    const dLn = (d/(111000*Math.cos(la*Math.PI/180)))*Math.sin(ang);
+    const fLa = la+dLa, fLn = ln+dLn;
+    const ok = posZ.every(p => {
+      const dx=(fLa-p[0])*111000, dy=(fLn-p[1])*111000*Math.cos(la*Math.PI/180);
+      return Math.sqrt(dx*dx+dy*dy) >= 100;
+    });
+    if(ok){
+      posZ.push([fLa,fLn]);
+      const ic = L.divIcon({className:'',
+        html:'<div style="background:#0ff;color:#000;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1rem;border:2px solid #fff;cursor:pointer;box-shadow:0 0 8px #0ff;">⚡</div>',
+        iconSize:[28,28], iconAnchor:[14,14]
+      });
+      L.marker([fLa,fLn],{icon:ic}).addTo(lgF)
+        .bindPopup('<b>⚡ Bandeira ZAP</b><br>+10% Energia<br><small>1 por cada 5 jogadores · mín.100m</small>')
+        .on('click', () => apanharZAP());
+    }
+  }
+
+  // Bandeiras das empresas
+  BD.emps().forEach(emp => {
+    const lat = parseFloat(emp.lat), lng = parseFloat(emp.lng);
+    if(!emp.lat||!emp.lng||isNaN(lat)||isNaN(lng)) return;
+    const packs = emp.packs || [];
+    const packA = packs.find(pk => pk.fim>Date.now() && pk.t!=='pub');
+    if(!packA) return;
+    const dx=(la-lat)*111000, dy=(ln-lng)*111000*Math.cos(la*Math.PI/180);
+    const dist = Math.sqrt(dx*dx+dy*dy);
+    if(dist > packA.raio) return;
+
+    const nB = Math.min(8, 3+Math.floor(Math.random()*6));
+    for(let i=0;i<nB;i++){
+      const ang=Math.random()*2*Math.PI;
+      const dd=30+Math.random()*Math.min(200,packA.raio*.7);
+      const fLa=lat+(dd/111000)*Math.cos(ang);
+      const fLn=lng+(dd/(111000*Math.cos(lat*Math.PI/180)))*Math.sin(ang);
+      const tipo = calcTipoFlag(emp);
+      const cfg = {
+        QR:   {bg:'#f00',cor:'#fff',em:'🏴',pop:`<b>🏴 ${emp.ne}</b><br>🎫 +1 para QR (${QR_N}=1 QR)`},
+        E100: {bg:'#0f0',cor:'#000',em:'⚡⚡⚡',pop:`<b>⚡⚡⚡ 100% Energia</b><br>${emp.ne}`},
+        E10:  {bg:'#ff0',cor:'#000',em:'⚡⚡',pop:`<b>⚡⚡ 10% Energia</b><br>${emp.ne}`},
+        E5:   {bg:'#f80',cor:'#000',em:'⚡',pop:`<b>⚡ 5% Energia</b><br>${emp.ne}`},
+        SKILL:{bg:'#0aa',cor:'#000',em:'👁️',pop:`<b>👁️ Skill/Visão</b><br>Aumenta área de visão<br>${emp.ne}`},
+        BINGO:{bg:'linear-gradient(135deg,#f00,#ff0)',cor:'#fff',em:'🎰',pop:`<b>🎰 BINGO ESPECIAL!</b><br>${emp.ne}<br>Encontra para ganhar o prémio!`},
+      }[tipo];
+      const ic = L.divIcon({className:'',
+        html:`<div style="background:${cfg.bg};color:${cfg.cor};width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.8rem;border:2px solid #fff;cursor:pointer;">${cfg.em}</div>`,
+        iconSize:[26,26], iconAnchor:[13,13]
+      });
+      L.marker([fLa,fLn],{icon:ic}).addTo(lgF)
+        .bindPopup(cfg.pop)
+        .on('click', () => apanharFlag(tipo, emp));
+    }
+  });
+}
+
+function calcTipoFlag(emp){
+  const r = Math.random()*100;
+  const temLote = (emp.lotes||[]).some(l=>l.estado==='ativo'&&l.n>l.usados);
+  const temBingo = (emp.bingoFlags||[]).some(b=>b.estado==='ativa');
+  if(temBingo && r<5) return 'BINGO';
+  if(temLote && r<45) return 'QR';
+  if(r<46)  return 'E100';  // 1%
+  if(r<60)  return 'E10';   // 14%
+  if(r<95)  return 'E5';    // 35%
+  return 'SKILL';            // 50%
+}
+
+function apanharZAP(){
+  if(!jogAtual) return;
+  jogAtual.en = Math.min(100, (jogAtual.en||0)+10);
+  atualizarHUDJogo(); gravarJog(); spawnFlags();
+}
+
+function apanharFlag(tipo, emp){
+  if(!jogAtual) return;
+  switch(tipo){
+    case 'E100': jogAtual.en = Math.min(100,(jogAtual.en||0)+100); break;
+    case 'E10':  jogAtual.en = Math.min(100,(jogAtual.en||0)+10);  break;
+    case 'E5':   jogAtual.en = Math.min(100,(jogAtual.en||0)+5);   break;
+    case 'SKILL':
+      jogAtual.skillPts = (jogAtual.skillPts||0)+1;
+      const nv = Math.min(100, 5+Math.floor(jogAtual.skillPts/10));
+      if(nv > jogAtual.visao){ jogAtual.visao=nv; jogAtual.skill=Math.floor(jogAtual.skillPts/10)+1; addTick(`👁️ <b>${jogAtual.nm}</b> visão: ${nv}m!`); }
+      break;
+    case 'QR':
+      if((jogAtual.en||0) <= 0){ alert('⚡ Sem energia! Apanha bandeiras ZAP.'); return; }
+      jogAtual.en = Math.max(0,(jogAtual.en||100)-1);
+      jogAtual.fl = (jogAtual.fl||0)+1;
+      jogAtual.prog = (jogAtual.prog||0)+1;
+      // Descontar do lote da empresa
+      const emps = BD.emps();
+      const ie = emps.findIndex(p=>p.em===emp.em);
+      if(ie>=0){
+        const il = emps[ie].lotes?.findIndex(l=>l.estado==='ativo'&&l.n>l.usados);
+        if(il>=0) emps[ie].lotes[il].usados = (emps[ie].lotes[il].usados||0)+1;
+        BD.saveE(emps);
+      }
+      if(jogAtual.prog >= QR_N){
+        jogAtual.prog = 0;
+        jogAtual.qrs = jogAtual.qrs||[];
+        const la2 = (emp.lotes||[]).find(l=>l.estado==='ativo'&&l.n>l.usados);
+        const premio = la2?.premio||'';
+        jogAtual.qrs.push({id:Date.now(),emp:emp.em,ne:emp.ne,premio,data:Date.now(),val:Date.now()+30*24*60*60*1000});
+        dispararBingo(jogAtual.nm, emp.ne, premio);
+        const e2=BD.emps(); const i2=e2.findIndex(p=>p.em===emp.em);
+        if(i2>=0){e2[i2].qrsGerados=(e2[i2].qrsGerados||0)+1; BD.saveE(e2);}
+      }
+      break;
+    case 'BINGO':
+      const bf2 = (emp.bingoFlags||[]).find(b=>b.estado==='ativa');
+      if(bf2){ apanharBingoEspecial(bf2, emp); return; }
+      break;
+  }
+  atualizarHUDJogo(); gravarJog(); spawnFlags();
+}
+
+function apanharBingoEspecial(bf, emp){
+  if(!jogAtual) return;
+  bf.estado = 'encontrada';
+  bf.encontradaEm = Date.now();
+  bf.encontradaPor = jogAtual.nm;
+  const emps = BD.emps(); const ie = emps.findIndex(p=>p.em===emp.em);
+  if(ie>=0){ emps[ie].bingoFlags = emps[ie].bingoFlags.map(b=>b.id===bf.id?bf:b); BD.saveE(emps); }
+  jogAtual.qrs = jogAtual.qrs||[];
+  jogAtual.qrs.push({id:Date.now(),emp:emp.em,ne:emp.ne,premio:bf.premio,tipo:'BINGO',data:Date.now(),val:Date.now()+30*24*60*60*1000});
+  jogAtual.fl = (jogAtual.fl||0)+1;
+  gravarJog();
+  const bs = BD.bings(); bs.unshift({nm:jogAtual.nm,ne:emp.ne,premio:bf.premio,tipo:'BINGO',data:Date.now()});
+  if(bs.length>100) bs.pop(); BD.saveB(bs);
+  atualizarHUDJogo();
+  alert(`🎰 BINGO ESPECIAL!\n\n${jogAtual.nm} encontrou a bandeira BINGO!\n🎁 Prémio: ${bf.premio}\n🏪 ${emp.ne}\n\nVai à loja para reclamar!`);
+  addTick(`🎰 BINGO ESPECIAL! <b>${jogAtual.nm}</b> ganhou: <b>${bf.premio}</b> em ${emp.ne}! 🏆`);
+  mostrarEmpresasMapa(); spawnFlags();
+}
+
+function dispararBingo(nm, loja, premio){
+  const bs = BD.bings();
+  bs.unshift({nm,ne:loja,premio,tipo:'normal',data:Date.now()});
+  if(bs.length>100) bs.pop(); BD.saveB(bs);
+  addTick(`🎉 BINGO! <b>${nm}</b>${premio?' 🎁 '+premio:''} · ${loja}! 🏆`);
+}
+
+function gravarJog(){
+  if(!jogAtual || !jogAtual.em) return;
+  jogAtual.ult = Date.now();
+  const jogs = BD.jogs();
+  const idx = jogs.findIndex(j=>j.em===jogAtual.em);
+  if(idx>=0) jogs[idx]=jogAtual; else jogs.push(jogAtual);
+  BD.saveJ(jogs); BD.setSessJ(jogAtual);
+}
+
+// TICKER
+function addTick(html){
+  const t = G('ticker');
+  [1,2].forEach(()=>{ const s=document.createElement('span'); s.className='tick'; s.innerHTML=html+'&nbsp;&nbsp;&nbsp;'; t.appendChild(s); });
+}
+function iniciarTicker(){
+  G('ticker').innerHTML='';
+  addTick('🏴 ZAP FLAGS — Caça ao Tesouro Digital!');
+  addTick('👁️ Bandeiras de Skill aumentam a tua área de visão!');
+  addTick(`⚡ 1% bandeiras=100% energia · 14%=10% · 35%=5% · 50%=Skill`);
+  addTick(`🎫 ${QR_N} bandeiras de uma loja = 1 QR Code com prémio!`);
+  addTick('🎰 Encontra bandeiras BINGO para ganhar prémios especiais!');
+  BD.bings().slice(0,3).forEach(b=>addTick(`🎉 BINGO! <b>${b.nm}</b>${b.premio?' 🎁 '+b.premio:''}! 🏆`));
+}
+
+// ============================================================
+// PR — REGISTO (memoriza dados)
+// ============================================================
+function fazerRegistoPR(){
+  const ne   = val('pr-ne');
+  const nif  = val('pr-nif');
+  const rua  = val('pr-rua');
+  const cp   = val('pr-cp');
+  const loc  = val('pr-loc');
+  const dist = val('pr-dist');
+  const ativ = val('pr-ativ');
+  const tel  = val('pr-tel');
+  const em   = val('pr-email').toLowerCase();
+  const resp = val('pr-resp');
+  const respT= val('pr-resp-t');
+  const pw   = G('pr-pw').value;
+  const pw2  = G('pr-pw2').value;
+
+  if(!rua)           { msg('m-pr-reg','❌ Morada obrigatória!','erro'); return; }
+  if(!cp)            { msg('m-pr-reg','❌ Código postal obrigatório!','erro'); return; }
+  if(!loc)           { msg('m-pr-reg','❌ Localidade obrigatória!','erro'); return; }
+  if(!dist)          { msg('m-pr-reg','❌ Seleciona o distrito!','erro'); return; }
+  if(!ne)            { msg('m-pr-reg','❌ Nome da empresa obrigatório!','erro'); return; }
+  if(!nif||!vN(nif)) { msg('m-pr-reg','❌ NIF inválido (9 dígitos)!','erro'); return; }
+  if(!ativ)          { msg('m-pr-reg','❌ Seleciona o setor de atividade!','erro'); return; }
+  if(!tel||!vT(tel)) { msg('m-pr-reg','❌ Telefone inválido!','erro'); return; }
+  if(!em||!vE(em))   { msg('m-pr-reg','❌ Email inválido!','erro'); return; }
+  if(!resp)          { msg('m-pr-reg','❌ Nome do responsável obrigatório!','erro'); return; }
+  if(!pw||pw.length<4){ msg('m-pr-reg','❌ Senha mínimo 4 caracteres!','erro'); return; }
+  if(pw!==pw2)        { msg('m-pr-reg','❌ Senhas não coincidem!','erro'); return; }
+  if(!G('pr-trm').checked){ msg('m-pr-reg','❌ Aceita os Termos e Condições!','erro'); return; }
+
+  const emps = BD.emps();
+  if(emps.find(p=>p.nif===nif)) { msg('m-pr-reg','❌ NIF já registado!','erro'); return; }
+  if(emps.find(p=>p.em===em))   { msg('m-pr-reg','❌ Email já registado!','erro'); return; }
+  if(BD.jogs().find(j=>j.em===em)){ msg('m-pr-reg','❌ Email já existe como jogador!','erro'); return; }
+
+  const hrs = [val('h0'),val('h1'),val('h2'),val('h3'),val('h4'),val('h5'),val('h6')];
+  const pr = {
+    ne, nif, ativ, rua, cp, loc, dist, tel, em,
+    web:val('pr-web'), ig:val('pr-ig'),
+    resp, respT, pw, hrs,
+    packs:[], lotes:[], bingoFlags:[],
+    qrsGerados:0, qrsUsados:0, reg:Date.now()
+  };
+  emps.push(pr);
+  BD.saveE(emps);
+  prAtual = pr;
+  BD.setSessP(pr);
+  log(`🏪 Nova empresa: ${ne}`);
+  abrirPainelPR();
+}
+
+// ============================================================
+// PR — LOGIN (memoriza sessão)
+// ============================================================
+let prAtual = null;
+
+function fazerLoginPR(){
+  const em = val('pr-login-em').toLowerCase();
+  const pw = G('pr-login-pw').value;
+
+  if(!em){ msg('m-pr-login','❌ Insere o email!','erro'); return; }
+  if(!pw){ msg('m-pr-login','❌ Insere a senha!','erro'); return; }
+  if(pw===PASSE){
+    // Backoffice pode entrar como PR
+    const pr = BD.emps().find(p=>p.em===em) || criarPRTemp(em);
+    prAtual = pr; BD.setSessP(pr); abrirPainelPR(); return;
+  }
+  const pr = BD.emps().find(p=>p.em===em && p.pw===pw);
+  if(!pr){
+    const ex = BD.emps().find(p=>p.em===em);
+    msg('m-pr-login', ex ? '❌ Senha incorreta!' : '❌ Email não encontrado! Regista a tua empresa.','erro');
+    return;
+  }
+  prAtual = pr;
+  BD.setSessP(pr);
+  log(`🏪 Login PR: ${pr.ne}`);
+  abrirPainelPR();
 }
 
 function criarPRTemp(em){
-  return{ne:'Empresa Teste',nif:'000000000',morada:'Rua Teste',cp:'0000-000',loc:'Lisboa',dist:'Lisboa',ativ:'Outro',tel:'000000000',em,resp:'Admin',pw:PASS,packs:[],lotes:[],bingoFlags:[],qrsGerados:0,qrsUsados:0,reg:Date.now()};
+  return {ne:'Empresa Temp',nif:'000000000',ativ:'Outro',rua:'Rua Teste',cp:'0000-000',loc:'Lisboa',dist:'Lisboa',tel:'000000000',em,resp:'Admin',pw:PASSE,packs:[],lotes:[],bingoFlags:[],qrsGerados:0,qrsUsados:0};
 }
 
 function abrirPainelPR(){
-  $id('ph-n').innerText='🏪 '+(prAtual.ne||'---');
-  $id('ph-loc').innerText=(prAtual.loc||'')+(prAtual.dist?', '+prAtual.dist:'');
+  G('pr-hud-nome').innerText = '🏪 '+(prAtual.ne||'---');
+  G('pr-hud-loc').innerText  = (prAtual.loc||'')+(prAtual.dist?', '+prAtual.dist:'');
   atualizarPainelPR();
   ir('p-pr');
 }
 
 function atualizarPainelPR(){
   if(!prAtual) return;
-  const packs=prAtual.packs||[];
-  const lotes=prAtual.lotes||[];
-  const bfs=prAtual.bingoFlags||[];
-  const packAtivo=packs.find(pk=>pk.fim>Date.now());
-  const totalFlags=packs.reduce((s,pk)=>s+(pk.flags||0),0);
+  const packs  = prAtual.packs  || [];
+  const lotes  = prAtual.lotes  || [];
+  const bfs    = prAtual.bingoFlags || [];
+  const packA  = packs.find(pk=>pk.fim>Date.now()&&pk.t!=='pub');
+  const totalF = packs.reduce((s,pk)=>s+(pk.f||0),0);
 
-  $id('ph-f').innerText=fmtN(packAtivo?.flagsRestantes||0);
-  $id('ph-q').innerText=prAtual.qrsGerados||0;
+  G('pr-hud-f').innerText = fN(packA?.flagsRest||0);
+  G('pr-hud-q').innerText = prAtual.qrsGerados||0;
 
   // TAB PACOTES
-  const semPack=$id('pr-sem-pack'),comPack=$id('pr-com-pack');
-  if(packAtivo){
-    semPack.style.display='none';comPack.style.display='block';
-    renderPackInfo(packAtivo);renderLotes();
-  } else {
-    semPack.style.display='block';comPack.style.display='none';
-  }
+  const semP = G('pr-sem-pack'), comP = G('pr-com-pack');
+  if(packA){ semP.style.display='none'; comP.style.display='block'; renderPackInfo(packA); renderLotes(); }
+  else { semP.style.display='block'; comP.style.display='none'; }
 
   // TAB BINGO
-  const semBingo=$id('pr-bingo-sem'),comBingo=$id('pr-bingo-com');
+  const semB = G('pr-sem-bingo'), comB = G('pr-com-bingo');
   if(bfs.length>0){
-    semBingo.style.display='none';comBingo.style.display='block';
-    $id('bg-t').innerText=bfs.length;
-    $id('bg-a').innerText=bfs.filter(b=>b.estado==='ativa').length;
-    $id('bg-e').innerText=bfs.filter(b=>b.estado==='encontrada').length;
+    semB.style.display='none'; comB.style.display='block';
+    G('bng-t').innerText = bfs.length;
+    G('bng-a').innerText = bfs.filter(b=>b.estado==='ativa').length;
+    G('bng-e').innerText = bfs.filter(b=>b.estado==='encontrada').length;
     renderBingoList();
-  } else {
-    semBingo.style.display='block';comBingo.style.display='none';
-  }
+  } else { semB.style.display='block'; comB.style.display='none'; }
 
   // TAB RESUMO
-  $id('res-flags').innerText=fmtN(totalFlags);
-  $id('res-qrs').innerText=prAtual.qrsGerados||0;
-  $id('res-lotes').innerText=lotes.length;
-  $id('res-bingo').innerText=bfs.length;
-  renderResumoPR();
+  G('res-f').innerText = fN(totalF);
+  G('res-q').innerText = prAtual.qrsGerados||0;
+  G('res-l').innerText = lotes.length;
+  G('res-b').innerText = bfs.length;
+  G('resumo-pr').innerHTML = `
+    <div class="linha"><div class="label">Nome</div><div class="valor" style="color:#ff0;font-weight:bold;">${prAtual.ne||'-'}</div></div>
+    <div class="linha"><div class="label">Atividade</div><div class="valor">${prAtual.ativ||'-'}</div></div>
+    <div class="linha"><div class="label">Localidade</div><div class="valor">${prAtual.loc||'-'}${prAtual.dist?', '+prAtual.dist:''}</div></div>
+    <div class="linha"><div class="label">Pacote</div><div class="valor" style="color:${packA?'#0f0':'#f00'}">${packA?packA.nome:'⚠️ Sem pacote'}</div></div>`;
+
+  // TAB EMPRESA
   renderInfoEmpPR();
 }
 
 function renderPackInfo(pk){
-  const disp=Math.floor((pk.flagsRestantes||0)/2/20);
-  $id('pack-info-card').innerHTML=`
+  const disp = Math.floor((pk.flagsRest||0)/2/QR_N);
+  G('pr-pack-info').innerHTML = `
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-      <div><span style="font-size:1.2rem;">${pk.emoji||'📦'}</span> <b style="color:#ff0;font-size:.95rem;">${pk.nome}</b></div>
+      <div>${pk.e||'📦'} <b style="color:#ff0;font-size:.95rem;">${pk.nome}</b></div>
       <span style="background:#0a2200;color:#0f0;border:1px solid #0f0;padding:3px 10px;border-radius:10px;font-size:.72rem;">🟢 ATIVO</span>
     </div>
-    <div class="grid3">
-      <div class="stat stat-pr"><div class="stat-n" style="font-size:1rem;">${fmtN(pk.flags)}</div><div class="stat-t">🏴 Flags</div></div>
-      <div class="stat stat-pr"><div class="stat-n" style="font-size:1rem;">${fmtN(disp)}</div><div class="stat-t">🎫 QRs Disp.</div></div>
-      <div class="stat stat-pr"><div class="stat-n" style="font-size:1rem;">${PACOTES[pk.id]?.bingo||0}</div><div class="stat-t">🎰 BINGO</div></div>
+    <div class="grelha3">
+      <div class="stat stat-pr"><div class="stat-n" style="font-size:1rem;">${fN(pk.f)}</div><div class="stat-t">🏴 Flags</div></div>
+      <div class="stat stat-pr"><div class="stat-n" style="font-size:1rem;">${fN(disp)}</div><div class="stat-t">🎫 QRs Disp.</div></div>
+      <div class="stat stat-pr"><div class="stat-n" style="font-size:1rem;">${PACOTES[pk.id]?.b||0}</div><div class="stat-t">🎰 BINGO</div></div>
     </div>
-    <div class="row"><div class="rl">Raio</div><div class="rv">${pk.raioStr}</div></div>
-    <div class="row"><div class="rl">Expira</div><div class="rv" style="color:#ff0;font-size:.8rem;">${fmt(pk.fim)}</div></div>
-    <div class="row"><div class="rl">Dias restantes</div><div class="rv" style="color:#0f0;">${Math.max(0,Math.ceil((pk.fim-Date.now())/86400000))} dias</div></div>`;
+    <div class="linha"><div class="label">Raio</div><div class="valor">${pk.rs}</div></div>
+    <div class="linha"><div class="label">Expira</div><div class="valor" style="color:#ff0;font-size:.8rem;">${fmt(pk.fim)}</div></div>
+    <div class="linha"><div class="label">Dias restantes</div><div class="valor" style="color:#0f0;">${Math.max(0,Math.ceil((pk.fim-Date.now())/86400000))} dias</div></div>`;
 }
 
 function renderLotes(){
-  const lotes=prAtual.lotes||[];
-  const div=$id('lista-lotes-pr');
+  const lotes = prAtual.lotes || [];
+  const div = G('lista-lotes');
   if(lotes.length===0){
-    div.innerHTML='<div style="text-align:center;color:#555;padding:15px;font-size:.82rem;">Nenhum lote criado. Clica em "+ CRIAR LOTE" acima.</div>';
+    div.innerHTML = '<div style="text-align:center;color:#555;padding:15px;font-size:.82rem;">Sem lotes. Clica em "+ CRIAR LOTE" acima.</div>';
     return;
   }
-  div.innerHTML=lotes.slice().reverse().map(l=>{
-    const rest=l.n-(l.usados||0);
-    const pct=Math.round(((l.usados||0)/l.n)*100);
-    const cor=l.estado==='ativo'?'#0f0':'#555';
+  div.innerHTML = lotes.slice().reverse().map(l=>{
+    const rest = l.n-(l.usados||0);
+    const pct  = Math.round(((l.usados||0)/l.n)*100);
+    const cor  = l.estado==='ativo'?'#0f0':'#555';
     return `<div class="lote-card ${l.estado}">
-      <div class="lbadge ${l.estado==='ativo'?'lb-v':'lb-g'}">${l.estado==='ativo'?'✅ ATIVO':'💤 INATIVO'}</div>
+      <div style="position:absolute;top:8px;right:8px;">
+        ${l.estado==='ativo'?'<span style="background:#0a2200;color:#0f0;border:1px solid #0f0;padding:2px 8px;border-radius:10px;font-size:.68rem;font-weight:bold;">✅ ATIVO</span>':'<span style="background:#111;color:#555;border:1px solid #333;padding:2px 8px;border-radius:10px;font-size:.68rem;">💤 INATIVO</span>'}
+      </div>
       <div style="margin-right:80px;">
         <div style="color:${cor};font-weight:bold;font-size:.88rem;margin-bottom:5px;">${l.temPremio&&l.premio?`🎁 ${l.premio}`:'📦 Sem prémio'}</div>
         <div style="display:flex;gap:10px;font-size:.75rem;color:#0aa;margin-bottom:5px;">
-          <span>📦<b style="color:#0ff;">${fmtN(l.n)}</b></span>
-          <span>✔️<b style="color:#ff0;">${fmtN(l.usados||0)}</b></span>
-          <span>📬<b style="color:#0f0;">${fmtN(rest)}</b></span>
+          <span>📦<b style="color:#0ff;">${fN(l.n)}</b></span>
+          <span>✔️<b style="color:#ff0;">${fN(l.usados||0)}</b></span>
+          <span>📬<b style="color:#0f0;">${fN(rest)}</b></span>
         </div>
         <div class="pb"><div class="pf" style="width:${pct}%;background:linear-gradient(90deg,${cor},${cor}88);"></div></div>
         <div style="font-size:.68rem;color:#555;">${pct}% usado · ${fmt(l.criadoEm)}</div>
       </div>
       <div style="display:flex;gap:4px;margin-top:8px;flex-wrap:wrap;">
-        ${l.estado==='inativo'?`<button class="btn bv" style="padding:4px 9px;font-size:.72rem;" onclick="ativarLote(${l.id})">⚡ Ativar</button>`:''}
-        ${l.estado==='ativo'?`<button class="btn bc" style="padding:4px 9px;font-size:.72rem;" onclick="pausarLote(${l.id})">⏸️ Pausar</button>`:''}
-        <button class="btn br" style="padding:4px 9px;font-size:.72rem;" onclick="apagarLote(${l.id})">🗑️</button>
+        ${l.estado==='inativo'?`<button class="btn verde" style="padding:4px 9px;font-size:.72rem;" onclick="ativarLote(${l.id})">⚡ Ativar</button>`:''}
+        ${l.estado==='ativo'?`<button class="btn cinza" style="padding:4px 9px;font-size:.72rem;" onclick="pausarLote(${l.id})">⏸️ Pausar</button>`:''}
+        <button class="btn vermelho" style="padding:4px 9px;font-size:.72rem;" onclick="apagarLote(${l.id})">🗑️</button>
       </div>
     </div>`;
   }).join('');
 }
 
 function renderBingoList(){
-  const bfs=prAtual.bingoFlags||[];
-  const BADGES={inativa:'<span class="badge-inativa">💤 INATIVA</span>',ativa:'<span class="badge-ativa">⚡ ATIVA</span>',encontrada:'<span class="badge-enc">✅ ENCONTRADA</span>',expirada:'<span class="badge-exp">❌ EXPIRADA</span>'};
-  $id('lista-bingo-flags').innerHTML=bfs.map((bf,i)=>`
-    <div class="bfc ${bf.estado}">
+  const bfs = prAtual.bingoFlags || [];
+  const BADGES = {
+    inativa:   '<span class="badge-inativa">💤 INATIVA</span>',
+    ativa:     '<span class="badge-ativa">⚡ ATIVA</span>',
+    encontrada:'<span class="badge-enc">✅ ENCONTRADA</span>',
+    expirada:  '<span style="background:#1a0000;color:#f00;border:1px solid #f00;padding:3px 10px;border-radius:12px;font-size:.72rem;">❌ EXPIRADA</span>',
+  };
+  G('lista-bingo').innerHTML = bfs.map((bf,i)=>`
+    <div class="bingo-card ${bf.estado}">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
         <div><span style="font-size:1.2rem;">🎰</span> <b>Bandeira BINGO #${bf.num}</b></div>
         ${BADGES[bf.estado]||''}
       </div>
-      <div class="row"><div class="rl">🎁 Prémio</div><div class="rv" style="color:#ff0;font-weight:bold;">${bf.premio||'🎁 Prémio Surpresa'}</div></div>
-      ${bf.descricao?`<div class="row"><div class="rl">📝 Descrição</div><div class="rv" style="color:#0aa;font-size:.78rem;">${bf.descricao}</div></div>`:''}
-      <div class="row"><div class="rl">📍 Raio</div><div class="rv">250m</div></div>
-      <div class="row"><div class="rl">⏱️ Duração</div><div class="rv" style="color:#0ff;">${bf.duracaoMs?(bf.duracaoMs/3600000).toFixed(1)+'h':'Não definida'}</div></div>
+      <div class="linha"><div class="label">🎁 Prémio</div><div class="valor" style="color:#ff0;font-weight:bold;">${bf.premio||'🎁 Prémio Surpresa'}</div></div>
+      ${bf.descricao?`<div class="linha"><div class="label">📝 Desc.</div><div class="valor" style="color:#0aa;font-size:.78rem;">${bf.descricao}</div></div>`:''}
+      <div class="linha"><div class="label">🏢 Empresa</div><div class="valor">${bf.empNome||prAtual.ne||'-'}</div></div>
+      <div class="linha"><div class="label">📞 Tel.</div><div class="valor">${bf.empTel||prAtual.tel||'-'}</div></div>
+      <div class="linha"><div class="label">📍 Raio</div><div class="valor">${BINGO_RAIO}m</div></div>
+      <div class="linha"><div class="label">⏱️ Duração</div><div class="valor" style="color:#0ff;">${bf.duracaoMs?(bf.duracaoMs/3600000).toFixed(1)+'h':'Não definida'}</div></div>
       ${bf.estado==='ativa'&&bf.expiracaoAtivacao?`
-        <div style="background:#000;border:2px solid #ff0;border-radius:8px;padding:10px;text-align:center;margin:8px 0;">
-          <div style="font-size:2rem;color:#ff0;font-weight:bold;font-family:'Courier New',monospace;text-shadow:0 0 10px #ff0;" id="t-${bf.id}">${fmtTimer(bf.expiracaoAtivacao-Date.now())}</div>
+        <div class="timer-bingo">
+          <span class="timer-ico">⏱️</span>
+          <div class="timer-n" id="tb-${bf.id}">${fmtTimer(bf.expiracaoAtivacao-Date.now())}</div>
           <div style="font-size:.7rem;color:#0aa;">Tempo restante · Expira: ${fmt(bf.expiracaoAtivacao)}</div>
         </div>`:''}
-      ${bf.estado==='encontrada'?`<div class="row"><div class="rl">Encontrada por</div><div class="rv" style="color:#0f0;font-weight:bold;">${bf.encontradaPor||'---'}</div></div><div class="row"><div class="rl">Em</div><div class="rv">${fmt(bf.encontradaEm)}</div></div>`:''}
+      ${bf.estado==='encontrada'?`
+        <div class="card card-v" style="margin-top:8px;padding:10px;">
+          <div class="linha"><div class="label">Encontrada por</div><div class="valor" style="color:#0f0;font-weight:bold;">${bf.encontradaPor||'---'}</div></div>
+          <div class="linha"><div class="label">Data/Hora</div><div class="valor">${fmt(bf.encontradaEm)}</div></div>
+        </div>`:''}
       <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap;">
-        ${bf.estado==='inativa'?`<button class="btn bbingo" style="flex:2;padding:9px;background:linear-gradient(45deg,#600,#f00,#ff0);color:#fff;border:2px solid #ff0;border-radius:4px;" onclick="abrirAtivarBingo(${i})">🎰 CONFIGURAR E ATIVAR</button>`:''}
+        ${bf.estado==='inativa'?`<button style="flex:2;padding:10px;background:linear-gradient(45deg,#600,#f00,#ff0);color:#fff;border:2px solid #ff0;border-radius:4px;cursor:pointer;font-weight:bold;font-family:'Courier New',monospace;" onclick="abrirConfBingo(${i})">🎰 CONFIGURAR E ATIVAR</button>`:''}
         ${bf.estado==='ativa'?`
-          <button class="btn bdesativ" style="flex:1;padding:8px;font-size:.82rem;background:#1a0000;color:#f00;border:2px solid #f00;border-radius:4px;" onclick="desativarBingo(${i})">⏹️ DESATIVAR</button>
-          <button class="btn bo" style="flex:1;padding:8px;font-size:.82rem;" onclick="abrirAtivarBingo(${i})">✏️ EDITAR</button>`:''}
-        ${bf.estado==='encontrada'?`<button class="btn bv bb" onclick="alert('QR gerado! Implementar visualização.')">🎫 VER QR CODE</button>`:''}
+          <button class="btn vermelho" style="flex:1;padding:9px;font-size:.82rem;" onclick="desativarBingo(${i})">⏹️ DESATIVAR</button>
+          <button class="btn laranja"  style="flex:1;padding:9px;font-size:.82rem;" onclick="abrirConfBingo(${i})">✏️ EDITAR</button>
+          <button style="flex:1;padding:9px;background:#1a0020;color:#90f;border:1px solid #90f;border-radius:4px;cursor:pointer;font-size:.82rem;font-family:'Courier New',monospace;" onclick="abrirAlterarTempo(${i})">⏱️ TEMPO</button>`:''}
       </div>
     </div>`).join('');
   // Iniciar timers
-  bfs.forEach(bf=>{if(bf.estado==='ativa'&&bf.expiracaoAtivacao){iniciarTimerBingo(bf.id,bf.expiracaoAtivacao);}});
+  bfs.forEach(bf=>{ if(bf.estado==='ativa'&&bf.expiracaoAtivacao) iniciarTimerBingo(bf.id,bf.expiracaoAtivacao); });
 }
 
-function renderResumoPR(){
-  const d=prAtual;
-  $id('resumo-pr').innerHTML=`
-    <div class="row"><div class="rl">Nome</div><div class="rv" style="color:#ff0;font-weight:bold;">${d.ne||'-'}</div></div>
-    <div class="row"><div class="rl">Atividade</div><div class="rv">${d.ativ||'-'}</div></div>
-    <div class="row"><div class="rl">Localidade</div><div class="rv">${d.loc||'-'}${d.dist?', '+d.dist:''}</div></div>
-    <div class="row"><div class="rl">Pacote ativo</div><div class="rv" style="color:${(d.packs||[]).find(pk=>pk.fim>Date.now())?'#0f0':'#f00'}">${(d.packs||[]).find(pk=>pk.fim>Date.now())?.nome||'⚠️ Sem pacote'}</div></div>`;
+const TIMERS = {};
+function fmtTimer(ms){ const t=Math.max(0,ms); const h=Math.floor(t/3600000),m=Math.floor((t%3600000)/60000),s=Math.floor((t%60000)/1000); return`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`; }
+function iniciarTimerBingo(id,exTs){
+  if(TIMERS[id]) clearInterval(TIMERS[id]);
+  TIMERS[id]=setInterval(()=>{
+    const el=G(`tb-${id}`); if(!el){clearInterval(TIMERS[id]);delete TIMERS[id];return;}
+    const r=exTs-Date.now(); el.innerText=fmtTimer(r);
+    if(r<=0){clearInterval(TIMERS[id]);delete TIMERS[id];verificarExpBingo();}
+  },1000);
+}
+function verificarExpBingo(){
+  const bfs=prAtual?.bingoFlags||[]; let alt=false;
+  bfs.forEach(bf=>{ if(bf.estado==='ativa'&&bf.expiracaoAtivacao&&bf.expiracaoAtivacao<Date.now()){bf.estado='inativa';bf.ativadoEm=null;bf.expiracaoAtivacao=null;alt=true;} });
+  if(alt){ guardarPR(); atualizarPainelPR(); }
+}
+
+let imgBingo=null, durBingo=1;
+
+function abrirConfBingo(i){
+  const bf = prAtual.bingoFlags[i];
+  imgBingo = bf.foto||null;
+  durBingo = bf.duracaoMs/3600000||1;
+  abrirModal(`🎰 Configurar BINGO #${bf.num}`,`
+    <div class="card card-y">
+      <h3>🎁 PRÉMIO</h3>
+      <input type="text" id="bp-pr" value="${bf.premio||'🎁 Prémio Surpresa'}" placeholder="Nome do prémio">
+      <textarea id="bp-desc" placeholder="Descrição...">${bf.descricao||''}</textarea>
+      <div class="foto-zona" onclick="G('bp-fi').click()">
+        <div style="font-size:1.5rem;">📸</div>
+        <p style="color:#ff0;font-size:.82rem;margin-top:4px;">Foto do prémio (opcional)</p>
+      </div>
+      <input type="file" id="bp-fi" accept="image/*" style="display:none;" onchange="loadFotoBingo(this)">
+      ${imgBingo?`<img src="${imgBingo}" style="width:100%;max-height:150px;object-fit:cover;border-radius:8px;border:2px solid #ff0;margin:6px 0;">`:''}
+    </div>
+    <div class="card card-y">
+      <h3>🏢 DADOS DA EMPRESA (QR)</h3>
+      <input type="text" id="bp-ne"   value="${bf.empNome||prAtual.ne||''}" placeholder="Nome da empresa">
+      <input type="text" id="bp-end"  value="${bf.empEnd||prAtual.rua||''}"  placeholder="Morada">
+      <input type="tel"  id="bp-tel"  value="${bf.empTel||prAtual.tel||''}"  placeholder="Telefone">
+      <input type="text" id="bp-resp" value="${bf.empResp||prAtual.resp||''}" placeholder="Responsável">
+    </div>
+    <div class="card card-y">
+      <h3>⏱️ TEMPO DE ATIVAÇÃO</h3>
+      <div class="slider-wrap">
+        <div class="slider-val" id="bp-sv">${durBingo}h</div>
+        <input type="range" id="bp-sl" min="0.5" max="24" step="0.5" value="${durBingo}"
+          oninput="durBingo=parseFloat(this.value);G('bp-sv').innerText=this.value<1?Math.round(this.value*60)+'min':this.value+'h';G('bp-exp').innerText=fmt(Date.now()+parseFloat(this.value)*3600000);">
+        <div style="display:flex;justify-content:space-between;font-size:.65rem;color:#555;margin-top:3px;"><span>30min</span><span>6h</span><span>12h</span><span>18h</span><span>24h</span></div>
+      </div>
+      <div style="background:#000;border:1px solid #ff0;border-radius:6px;padding:8px;text-align:center;margin-top:6px;">
+        <p style="color:#0aa;font-size:.72rem;">Expira às:</p>
+        <p id="bp-exp" style="color:#ff0;font-weight:bold;font-size:.88rem;">${fmt(Date.now()+durBingo*3600000)}</p>
+      </div>
+    </div>
+    <div id="m-modal" class="msg"></div>
+    <button style="width:100%;padding:12px;margin-top:8px;background:linear-gradient(45deg,#600,#f00,#ff0);color:#fff;border:2px solid #ff0;border-radius:4px;font-weight:bold;cursor:pointer;font-family:'Courier New',monospace;font-size:.95rem;" onclick="confirmarAtivarBingo(${i})">
+      🎰 ATIVAR AGORA
+    </button>
+    ${bf.estado==='ativa'?`<button class="btn vermelho bloco" onclick="desativarBingo(${i});fecharModal();" style="margin-top:5px;">⏹️ DESATIVAR</button>`:''}
+  `);
+}
+
+function loadFotoBingo(input){ const f=input.files[0]; if(!f) return; if(f.size>5*1024*1024){alert('❌ Máx. 5MB');return;} const r=new FileReader(); r.onload=e=>imgBingo=e.target.result; r.readAsDataURL(f); }
+
+function confirmarAtivarBingo(i){
+  const pr=val('bp-pr'),ne=val('bp-ne'),tel=val('bp-tel'),resp=val('bp-resp');
+  if(!pr){msg('m-modal','❌ Define o prémio!','erro');return;}
+  if(!ne){msg('m-modal','❌ Nome da empresa obrigatório!','erro');return;}
+  if(!tel){msg('m-modal','❌ Telefone obrigatório!','erro');return;}
+  const bf=prAtual.bingoFlags[i];
+  const exTs=Date.now()+durBingo*3600000;
+  bf.estado='ativa'; bf.premio=pr; bf.descricao=val('bp-desc'); bf.foto=imgBingo||null;
+  bf.empNome=ne; bf.empEnd=val('bp-end'); bf.empTel=tel; bf.empResp=resp;
+  bf.ativadoEm=Date.now(); bf.duracaoMs=durBingo*3600000; bf.expiracaoAtivacao=exTs;
+  guardarPR(); fecharModal(); atualizarPainelPR();
+  msg('m-lotes',`✅ Bandeira BINGO #${bf.num} ATIVADA! ${durBingo}h`,'ok');
+  if(mapaJ) mostrarEmpresasMapa();
+}
+
+function desativarBingo(i){
+  if(!confirm('Desativar bandeira BINGO?')) return;
+  const bf=prAtual.bingoFlags[i];
+  if(TIMERS[bf.id]){clearInterval(TIMERS[bf.id]);delete TIMERS[bf.id];}
+  bf.estado='inativa'; bf.ativadoEm=null; bf.expiracaoAtivacao=null;
+  guardarPR(); atualizarPainelPR();
+  msg('m-lotes','✅ Bandeira desativada.','ok');
+}
+
+function abrirAlterarTempo(i){
+  const bf=prAtual.bingoFlags[i]; const r=Math.max(0,bf.expiracaoAtivacao-Date.now());
+  abrirModal(`⏱️ Alterar Tempo — BINGO #${bf.num}`,`
+    <div class="timer-bingo" style="margin-bottom:12px;">
+      <span class="timer-ico">⏱️</span>
+      <div class="timer-n" id="tb-mdl-${bf.id}">${fmtTimer(r)}</div>
+      <div style="font-size:.7rem;color:#0aa;">Tempo restante</div>
+    </div>
+    <div class="card card-y">
+      <h3>⚡ ADICIONAR TEMPO</h3>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;">
+        ${['+30min','+1h','+2h','+4h','+6h','+12h','+24h','-1h'].map(t=>`
+          <button class="btn cinza" style="padding:8px;font-size:.75rem;" onclick="addTempoBingo(${i},'${t}')">
+            ${t}
+          </button>`).join('')}
+      </div>
+    </div>
+    <div class="card card-y">
+      <h3>🔄 REINICIAR</h3>
+      <div class="slider-wrap">
+        <div class="slider-val" id="sl2-v">${bf.duracaoMs/3600000}h</div>
+        <input type="range" id="sl2-t" min="0.5" max="24" step="0.5" value="${bf.duracaoMs/3600000}"
+          oninput="G('sl2-v').innerText=this.value<1?Math.round(this.value*60)+'min':this.value+'h';">
+      </div>
+      <button class="btn laranja bloco" onclick="reiniciarTempoBingo(${i})" style="margin-top:6px;">🔄 REINICIAR TIMER</button>
+    </div>
+    <button class="btn vermelho bloco" onclick="desativarBingo(${i});fecharModal();" style="margin-top:6px;">⏹️ DESATIVAR</button>
+    <div id="m-modal" class="msg"></div>
+  `);
+  iniciarTimerBingo(`mdl-${bf.id}`,bf.expiracaoAtivacao);
+}
+
+function addTempoBingo(i,t){
+  let ms=0;
+  if(t==='+30min')ms=1800000;else if(t==='+1h')ms=3600000;else if(t==='+2h')ms=7200000;
+  else if(t==='+4h')ms=14400000;else if(t==='+6h')ms=21600000;else if(t==='+12h')ms=43200000;
+  else if(t==='+24h')ms=86400000;else if(t==='-1h')ms=-3600000;
+  const bf=prAtual.bingoFlags[i];
+  const nEx=Math.max(Date.now()+60000,(bf.expiracaoAtivacao||Date.now())+ms);
+  bf.expiracaoAtivacao=nEx; bf.duracaoMs=Math.max(1800000,bf.duracaoMs+ms);
+  guardarPR();
+  iniciarTimerBingo(`mdl-${bf.id}`,nEx);
+  iniciarTimerBingo(bf.id,nEx);
+  msg('m-modal',`✅ Tempo ${t} · Expira: ${fmt(nEx)}`,'ok');
+}
+
+function reiniciarTempoBingo(i){
+  const v=parseFloat(G('sl2-t')?.value||1);
+  const bf=prAtual.bingoFlags[i];
+  const nEx=Date.now()+v*3600000;
+  bf.expiracaoAtivacao=nEx; bf.duracaoMs=v*3600000;
+  guardarPR();
+  iniciarTimerBingo(`mdl-${bf.id}`,nEx);
+  iniciarTimerBingo(bf.id,nEx);
+  msg('m-modal',`✅ Timer reiniciado: ${v}h`,'ok');
 }
 
 function renderInfoEmpPR(){
   const d=prAtual||{};
   const dn=['Segunda','Terça','Quarta','Quinta','Sexta','Sábado','Domingo'];
-  $id('pr-info-emp').innerHTML=`
+  G('pr-info-emp').innerHTML=`
     <div class="card card-y">
-      <p style="color:#ff0;font-size:.85rem;margin-bottom:6px;">🏢 DADOS DA EMPRESA</p>
-      <div class="row"><div class="rl">Nome</div><div class="rv">${d.ne||'-'}</div></div>
-      <div class="row"><div class="rl">NIF</div><div class="rv">${d.nif||'-'}</div></div>
-      <div class="row"><div class="rl">Atividade</div><div class="rv">${d.ativ||'-'}</div></div>
-      <div class="row"><div class="rl">Morada</div><div class="rv">${d.morada||'-'}</div></div>
-      <div class="row"><div class="rl">Localidade</div><div class="rv">${d.loc||'-'}${d.dist?', '+d.dist:''}</div></div>
-      <div class="row"><div class="rl">Telefone</div><div class="rv">${d.tel||'-'}</div></div>
-      <div class="row"><div class="rl">Email</div><div class="rv">${d.em||'-'}</div></div>
-      <div class="row"><div class="rl">Website</div><div class="rv">${d.web||'-'}</div></div>
-      <div class="row"><div class="rl">Instagram</div><div class="rv">${d.ig||'-'}</div></div>
+      <p style="color:#ff0;font-size:.85rem;margin-bottom:6px;">🏢 EMPRESA</p>
+      <div class="linha"><div class="label">Nome</div><div class="valor">${d.ne||'-'}</div></div>
+      <div class="linha"><div class="label">NIF</div><div class="valor">${d.nif||'-'}</div></div>
+      <div class="linha"><div class="label">Atividade</div><div class="valor">${d.ativ||'-'}</div></div>
+      <div class="linha"><div class="label">Morada</div><div class="valor">${d.rua||'-'}</div></div>
+      <div class="linha"><div class="label">Localidade</div><div class="valor">${d.loc||'-'}${d.dist?', '+d.dist:''}</div></div>
+      <div class="linha"><div class="label">Telefone</div><div class="valor">${d.tel||'-'}</div></div>
+      <div class="linha"><div class="label">Email</div><div class="valor">${d.em||'-'}</div></div>
+      ${d.web?`<div class="linha"><div class="label">Website</div><div class="valor">${d.web}</div></div>`:''}
+      ${d.ig?`<div class="linha"><div class="label">Instagram</div><div class="valor">${d.ig}</div></div>`:''}
     </div>
     <div class="card card-y">
       <p style="color:#ff0;font-size:.85rem;margin-bottom:6px;">👤 RESPONSÁVEL</p>
-      <div class="row"><div class="rl">Nome</div><div class="rv">${d.resp||'-'}</div></div>
-      <div class="row"><div class="rl">Telemóvel</div><div class="rv">${d.respTel||'-'}</div></div>
-      <div class="row"><div class="rl">Email</div><div class="rv">${d.respEm||'-'}</div></div>
+      <div class="linha"><div class="label">Nome</div><div class="valor">${d.resp||'-'}</div></div>
+      <div class="linha"><div class="label">Telemóvel</div><div class="valor">${d.respT||'-'}</div></div>
     </div>
     ${d.hrs?`<div class="card card-y">
       <p style="color:#ff0;font-size:.85rem;margin-bottom:6px;">🕐 HORÁRIOS</p>
-      ${d.hrs.map((h,i)=>`<div class="row"><div class="rl">${dn[i]}</div><div class="rv">${h||'Não definido'}</div></div>`).join('')}
+      ${d.hrs.map((h,i)=>`<div class="linha"><div class="label">${dn[i]}</div><div class="valor">${h||'Não definido'}</div></div>`).join('')}
     </div>`:''}`;
 }
 
-function tPR(i){
-  for(let j=0;j<5;j++) $id(`pr-t${j}`)?.classList.remove('on');
-  document.querySelectorAll('.tab-pr').forEach(t=>t.classList.remove('on'));
-  $id(`pr-t${i}`)?.classList.add('on');
-  document.querySelectorAll('.tab-pr')[i]?.classList.add('on');
+function tabPR(i){
+  for(let j=0;j<5;j++) G(`pr-tab${j}`)?.classList.remove('on');
+  document.querySelectorAll('.aba').forEach(a=>a.classList.remove('on'));
+  G(`pr-tab${i}`)?.classList.add('on');
+  document.querySelectorAll('#p-pr .aba')[i]?.classList.add('on');
 }
 
-// ============================================================
 // COMPRAR PACOTES
-// ============================================================
-let packSelKey=null;
+let packSel=null;
 function abrirCompra(){
-  abrirMdl('🛒 COMPRAR PACOTE DE BANDEIRAS',`
+  abrirModal('🛒 COMPRAR PACOTE DE BANDEIRAS',`
     <p style="color:#0aa;font-size:.78rem;margin-bottom:12px;">O prémio decide-se depois, nos lotes. Não és obrigado a dar prémios.</p>
     ${Object.values(PACOTES).map(pk=>`
-      <div onclick="selPack('${pk.id}')" id="sp-${pk.id}"
-        style="border:2px solid #333;border-radius:10px;padding:12px;cursor:pointer;background:#0a0a0a;margin:6px 0;transition:all .2s;">
+      <div class="pack" id="pk-${pk.id}" onclick="selPack('${pk.id}')">
         <div style="display:flex;justify-content:space-between;align-items:center;">
           <div>
-            <b style="color:#ff0;">${pk.emoji} ${pk.nome}</b>
-            ${pk.tipo==='gratis'?'<span style="background:#0ff;color:#000;padding:1px 6px;border-radius:8px;font-size:.65rem;margin-left:6px;">GRÁTIS</span>':''}
-            ${pk.tipo==='publicidade'?'<span style="background:#f0f;color:#000;padding:1px 6px;border-radius:8px;font-size:.65rem;margin-left:6px;">24H</span>':''}
+            <b style="color:#ff0;">${pk.e} ${pk.n}</b>
+            ${pk.t==='gratis'?'<span style="background:#0ff;color:#000;padding:1px 6px;border-radius:8px;font-size:.65rem;margin-left:6px;">GRÁTIS</span>':''}
+            ${pk.t==='pub'?'<span style="background:#f0f;color:#000;padding:1px 6px;border-radius:8px;font-size:.65rem;margin-left:6px;">24H</span>':''}
             <div style="font-size:.75rem;color:#0aa;margin-top:4px;">
-              🏴 ${fmtN(pk.flags)} flags · 📍 ${pk.raioStr} · ⏱️ ${pk.horas?pk.horas+'h':pk.dias+' dias'}
-              · 🎰 <b style="color:#ff0;">${pk.bingo} BINGO</b>
+              🏴 ${fN(pk.f)} flags · 📍 ${pk.rs} · ⏱️ ${pk.h?pk.h+'h':pk.d+' dias'} · 🎰 <b style="color:#ff0;">${pk.b} BINGO</b>
             </div>
           </div>
-          <div style="font-size:1.2rem;color:#0f0;font-weight:bold;white-space:nowrap;margin-left:10px;">${pk.precoStr}</div>
+          <div style="font-size:1.2rem;color:#0f0;font-weight:bold;white-space:nowrap;margin-left:10px;">${pk.ps}</div>
         </div>
       </div>`).join('')}
-    <div id="m-compra" class="msg"></div>
-    <button class="btn bo bb" id="btn-comprar" onclick="confirmarCompra()" style="display:none;margin-top:8px;">💳 CONFIRMAR COMPRA</button>
+    <div id="m-modal" class="msg"></div>
+    <button class="btn laranja bloco" id="btn-comprar" onclick="confirmarCompra()" style="display:none;margin-top:8px;">💳 CONFIRMAR COMPRA</button>
   `);
 }
 
 function selPack(key){
-  packSelKey=key;
-  document.querySelectorAll('[id^=sp-]').forEach(e=>{if(e.style)e.style.border='2px solid #333';});
-  const el=$id(`sp-${key}`);if(el) el.style.border='2px solid #ff0';
-  $id('btn-comprar').style.display='block';
-  $id('btn-comprar').innerText=`💳 COMPRAR ${PACOTES[key].emoji} ${PACOTES[key].nome} — ${PACOTES[key].precoStr}`;
+  packSel=key;
+  document.querySelectorAll('[id^=pk-]').forEach(e=>{if(e.style)e.style.border='2px solid #333';});
+  const el=G(`pk-${key}`); if(el) el.style.border='2px solid #ff0';
+  const btn=G('btn-comprar'); btn.style.display='block';
+  btn.innerText=`💳 COMPRAR ${PACOTES[key].e} ${PACOTES[key].n} — ${PACOTES[key].ps}`;
 }
 
 function confirmarCompra(){
-  if(!packSelKey||!prAtual){return;}
-  const pk=PACOTES[packSelKey];
-  const fim=pk.horas?Date.now()+pk.horas*3600000:Date.now()+pk.dias*24*60*60*1000;
-  const novoPack={id:pk.id,nome:pk.nome,emoji:pk.emoji,flags:pk.flags,raio:pk.raio,raioStr:pk.raioStr,flagsRestantes:pk.flags,inicio:Date.now(),fim,tipo:pk.tipo};
-  prAtual.packs=prAtual.packs||[];prAtual.packs.push(novoPack);
+  if(!packSel||!prAtual) return;
+  const pk=PACOTES[packSel];
+  const fim=pk.h?Date.now()+pk.h*3600000:Date.now()+pk.d*24*60*60*1000;
+  const novoPack={id:pk.id,nome:pk.n,e:pk.e,f:pk.f,raio:pk.r,rs:pk.rs,flagsRest:pk.f,inicio:Date.now(),fim,t:pk.t};
+  prAtual.packs=prAtual.packs||[]; prAtual.packs.push(novoPack);
   // Criar bandeiras BINGO
-  for(let i=0;i<pk.bingo;i++){
+  for(let i=0;i<pk.b;i++){
     prAtual.bingoFlags=prAtual.bingoFlags||[];
-    prAtual.bingoFlags.push({id:Date.now()+i+Math.random(),num:(prAtual.bingoFlags.length+1),estado:'inativa',premio:'🎁 Prémio Surpresa',descricao:'',foto:null,duracaoMs:3600000,ativadoEm:null,expiracaoAtivacao:null,encontradaEm:null,encontradaPor:null,packFim:fim});
+    prAtual.bingoFlags.push({
+      id:Date.now()+i+Math.random(), num:(prAtual.bingoFlags.length+1),
+      estado:'inativa', premio:'🎁 Prémio Surpresa', descricao:'', foto:null,
+      duracaoMs:3600000, ativadoEm:null, expiracaoAtivacao:null,
+      encontradaEm:null, encontradaPor:null, packFim:fim,
+    });
   }
-  guardarPR();fecharMdl();atualizarPainelPR();
-  msg('m-lotes-pr',`✅ ${pk.nome} ativo! ${pk.bingo>0?pk.bingo+' bandeiras BINGO disponíveis na aba BINGO.':''}`,'s');
-  logAtv(`📦 Pacote comprado: ${pk.nome}`,prAtual.ne);
+  guardarPR(); fecharModal(); atualizarPainelPR();
+  msg('m-lotes',`✅ ${pk.n} ativo! ${pk.b>0?pk.b+' bandeiras BINGO disponíveis na aba 🎰 BINGO.':''}`,'ok');
+  log(`📦 Pacote comprado: ${pk.n}`, prAtual.ne);
+  if(mapaJ){mostrarEmpresasMapa(); spawnFlags();}
 }
 
-// ============================================================
 // LOTES
-// ============================================================
-let loteEst='ativo',loteN=10;
+let loteEst='ativo', loteN=10;
 function abrirCriarLote(){
-  const pk=prAtual?.packs?.find(p=>p.fim>Date.now()&&p.tipo!=='publicidade');
-  if(!pk){msg('m-lotes-pr','❌ Sem pacote ativo para criar lotes!','e');return;}
-  const disp=Math.floor((pk.flagsRestantes||0)/2/20);
-  if(disp<=0){msg('m-lotes-pr','❌ Sem flags disponíveis!','e');return;}
-  loteN=10;loteEst='ativo';
-  abrirMdl('📦 CRIAR LOTE DE QR',`
-    <p style="color:#0aa;font-size:.78rem;margin-bottom:10px;">Cada QR = 20 bandeiras. Prémio é opcional.</p>
+  const packA=prAtual?.packs?.find(p=>p.fim>Date.now()&&p.t!=='pub');
+  if(!packA){msg('m-lotes','❌ Sem pacote ativo para criar lotes!','erro');return;}
+  const disp=Math.floor((packA.flagsRest||0)/2/QR_N);
+  if(disp<=0){msg('m-lotes','❌ Sem flags disponíveis!','erro');return;}
+  loteN=10; loteEst='ativo';
+  abrirModal('📦 CRIAR LOTE DE QR',`
+    <p style="color:#0aa;font-size:.78rem;margin-bottom:10px;">Cada QR = ${QR_N} bandeiras. Prémio é opcional.</p>
     <div style="background:#050505;border:1px solid #333;border-radius:6px;padding:10px;margin-bottom:10px;">
-      <div style="display:flex;justify-content:space-between;font-size:.8rem;"><span style="color:#0aa;">QRs disponíveis</span><span style="color:#0ff;font-weight:bold;">${fmtN(disp)}</span></div>
+      <div style="display:flex;justify-content:space-between;font-size:.8rem;">
+        <span style="color:#0aa;">Pacote ativo</span><span style="color:#ff0;font-weight:bold;">${packA.e} ${packA.nome}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:.8rem;margin-top:3px;">
+        <span style="color:#0aa;">QRs disponíveis</span><span style="color:#0ff;font-weight:bold;">${fN(disp)}</span>
+      </div>
     </div>
-    <label style="font-size:.8rem;color:#0aa;">📦 Quantidade:</label>
+    <label style="font-size:.8rem;color:#0aa;">📦 Quantidade de QRs:</label>
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:8px 0;">
-      ${[10,50,100,200,500].map(n=>`<div onclick="selTamLote(${n},this)" id="lt-${n}" style="background:#111;border:2px solid #333;border-radius:6px;padding:8px;text-align:center;cursor:pointer;"><div style="font-size:1rem;color:#ff0;font-weight:bold;">${fmtN(n)}</div><div style="font-size:.62rem;color:#555;">${fmtN(n*20)} flags</div></div>`).join('')}
-      <div onclick="selTamLote('c',this)" id="lt-c" style="background:#111;border:2px solid #333;border-radius:6px;padding:8px;text-align:center;cursor:pointer;"><div style="font-size:1rem;color:#0ff;font-weight:bold;">✏️</div><div style="font-size:.62rem;color:#555;">Outro</div></div>
+      ${[10,50,100,200,500].map(n=>`
+        <div onclick="selTamLote(${n},this)" id="lt${n}" style="background:#111;border:2px solid #333;border-radius:6px;padding:8px;text-align:center;cursor:pointer;">
+          <div style="font-size:1rem;color:#ff0;font-weight:bold;">${fN(n)}</div>
+          <div style="font-size:.62rem;color:#555;">${fN(n*QR_N)} flags</div>
+        </div>`).join('')}
+      <div onclick="selTamLote('c',this)" id="ltc" style="background:#111;border:2px solid #333;border-radius:6px;padding:8px;text-align:center;cursor:pointer;">
+        <div style="font-size:1rem;color:#0ff;font-weight:bold;">✏️</div>
+        <div style="font-size:.62rem;color:#555;">Outro</div>
+      </div>
     </div>
-    <div id="lt-cw" style="display:none;"><input type="number" id="lt-cn" placeholder="Nº de QRs" min="1" max="${disp}" style="width:150px;"></div>
+    <div id="ltcw" style="display:none;"><input type="number" id="ltcn" placeholder="Nº de QRs" min="1" max="${disp}" style="width:150px;"></div>
     <div style="background:#0a0800;border:1px solid #ff0;border-radius:8px;padding:12px;margin:10px 0;">
       <p style="color:#ff0;font-size:.82rem;font-weight:bold;margin-bottom:8px;">🎁 PRÉMIO (OPCIONAL)</p>
       <label style="display:flex;align-items:center;gap:8px;font-size:.82rem;color:#0aa;cursor:pointer;">
-        <input type="checkbox" id="lt-tp" style="width:auto;" onchange="$id('lt-pw').style.display=this.checked?'block':'none'">
+        <input type="checkbox" id="lt-tp" style="width:auto;" onchange="G('lt-pw').style.display=this.checked?'block':'none'">
         Quero dar um prémio neste lote
       </label>
       <div id="lt-pw" style="display:none;margin-top:8px;">
         <input type="text" id="lt-pt" placeholder="Ex: Café grátis, 10% desconto...">
       </div>
     </div>
+    <label style="font-size:.8rem;color:#0aa;display:block;margin-bottom:6px;">⚡ Quando ativar?</label>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px;">
-      <div id="lo-at" onclick="setEstL('ativo')" style="background:#050f05;border:2px solid #0f0;border-radius:6px;padding:10px;text-align:center;cursor:pointer;"><div style="color:#0f0;font-weight:bold;font-size:.82rem;">⚡ JÁ AGORA</div></div>
-      <div id="lo-in" onclick="setEstL('inativo')" style="background:#080808;border:2px solid #333;border-radius:6px;padding:10px;text-align:center;cursor:pointer;"><div style="color:#555;font-weight:bold;font-size:.82rem;">💾 GUARDAR</div></div>
+      <div id="lo-at" onclick="setEstLote('ativo')" style="background:#050f05;border:2px solid #0f0;border-radius:6px;padding:10px;text-align:center;cursor:pointer;">
+        <div style="color:#0f0;font-weight:bold;font-size:.82rem;">⚡ JÁ AGORA</div>
+      </div>
+      <div id="lo-in" onclick="setEstLote('inativo')" style="background:#080808;border:2px solid #333;border-radius:6px;padding:10px;text-align:center;cursor:pointer;">
+        <div style="color:#555;font-weight:bold;font-size:.82rem;">💾 GUARDAR</div>
+      </div>
     </div>
-    <div id="mdl-m" class="msg"></div>
-    <button class="btn bo bb" onclick="criarLoteConf()">✅ CRIAR LOTE</button>
+    <div id="m-modal" class="msg"></div>
+    <button class="btn laranja bloco" onclick="criarLoteConf()">✅ CRIAR LOTE</button>
   `);
-  selTamLote(10,$id('lt-10'));
+  selTamLote(10, G('lt10'));
 }
 
-function selTamLote(n,el){document.querySelectorAll('[id^=lt-]').forEach(e=>{if(e.style)e.style.borderColor='#333';});if(el)el.style.borderColor='#ff0';$id('lt-cw').style.display=n==='c'?'block':'none';loteN=n==='c'?parseInt($id('lt-cn')?.value||1):n;}
-function setEstL(e){loteEst=e;$id('lo-at').style.borderColor=e==='ativo'?'#0f0':'#333';$id('lo-at').style.background=e==='ativo'?'#050f05':'#080808';$id('lo-at').querySelector('div').style.color=e==='ativo'?'#0f0':'#555';$id('lo-in').style.borderColor=e==='inativo'?'#ff0':'#333';$id('lo-in').style.background=e==='inativo'?'#0a0800':'#080808';$id('lo-in').querySelector('div').style.color=e==='inativo'?'#ff0':'#555';}
+function selTamLote(n,el){
+  document.querySelectorAll('[id^=lt]').forEach(e=>{if(e.style)e.style.borderColor='#333';});
+  if(el) el.style.borderColor='#ff0';
+  G('ltcw').style.display=n==='c'?'block':'none';
+  loteN = n==='c' ? parseInt(G('ltcn')?.value||1) : n;
+}
+
+function setEstLote(est){
+  loteEst=est;
+  G('lo-at').style.borderColor=est==='ativo'?'#0f0':'#333';
+  G('lo-at').style.background=est==='ativo'?'#050f05':'#080808';
+  G('lo-at').querySelector('div').style.color=est==='ativo'?'#0f0':'#555';
+  G('lo-in').style.borderColor=est==='inativo'?'#ff0':'#333';
+  G('lo-in').style.background=est==='inativo'?'#0a0800':'#080808';
+  G('lo-in').querySelector('div').style.color=est==='inativo'?'#ff0':'#555';
+}
 
 function criarLoteConf(){
-  const n=loteN,est=loteEst;const temPr=$id('lt-tp')?.checked;const premio=temPr?val('lt-pt'):'';
-  if(!n||n<1){msg('mdl-m','❌ Define a quantidade!','e');return;}
-  if(temPr&&!premio){msg('mdl-m','❌ Define o prémio ou desmarca!','e');return;}
-  const pk=prAtual.packs?.find(p=>p.fim>Date.now()&&p.tipo!=='publicidade');
-  if(pk) pk.flagsRestantes-=n*20;
+  const n=loteN, est=loteEst;
+  const temPr=G('lt-tp')?.checked;
+  const premio=temPr?val('lt-pt'):'';
+  if(!n||n<1){msg('m-modal','❌ Define a quantidade!','erro');return;}
+  if(temPr&&!premio){msg('m-modal','❌ Define o prémio ou desmarca!','erro');return;}
+  const packA=prAtual.packs?.find(p=>p.fim>Date.now()&&p.t!=='pub');
+  if(packA) packA.flagsRest=Math.max(0,(packA.flagsRest||packA.f)-n*QR_N);
   prAtual.lotes=prAtual.lotes||[];
-  prAtual.lotes.push({id:Date.now(),n,premio,temPremio:temPr,estado:est,ativo:est==='ativo',criadoEm:Date.now(),ativadoEm:est==='ativo'?Date.now():null,expiracao:pk?.fim||Date.now()+30*24*60*60*1000,usados:0});
-  guardarPR();fecharMdl();atualizarPainelPR();
-  msg('m-lotes-pr',est==='ativo'?`✅ Lote de ${fmtN(n)} QRs ATIVO!${premio?' Prémio: '+premio:''}`:`✅ Lote de ${fmtN(n)} QRs guardado!`,'s');
+  prAtual.lotes.push({id:Date.now(),n,premio,temPremio:temPr,estado:est,ativo:est==='ativo',criadoEm:Date.now(),expiracao:packA?.fim||Date.now()+30*24*60*60*1000,usados:0});
+  guardarPR(); fecharModal(); atualizarPainelPR();
+  msg('m-lotes',est==='ativo'?`✅ Lote de ${fN(n)} QRs ATIVO!${premio?' Prémio: '+premio:''}`:`✅ Lote de ${fN(n)} QRs guardado!`,'ok');
+  if(mapaJ){mostrarEmpresasMapa(); spawnFlags();}
 }
 
-function ativarLote(id){const l=prAtual.lotes?.find(l=>l.id===id);if(!l)return;l.estado='ativo';l.ativo=true;l.ativadoEm=Date.now();guardarPR();atualizarPainelPR();}
-function pausarLote(id){const l=prAtual.lotes?.find(l=>l.id===id);if(!l)return;l.estado='inativo';l.ativo=false;guardarPR();atualizarPainelPR();}
-function apagarLote(id){if(!confirm('Apagar?'))return;prAtual.lotes=prAtual.lotes.filter(l=>l.id!==id);guardarPR();atualizarPainelPR();}
+function ativarLote(id){ const l=prAtual.lotes?.find(l=>l.id===id); if(!l)return; l.estado='ativo';l.ativo=true; guardarPR(); atualizarPainelPR(); }
+function pausarLote(id){ const l=prAtual.lotes?.find(l=>l.id===id); if(!l)return; l.estado='inativo';l.ativo=false; guardarPR(); atualizarPainelPR(); }
+function apagarLote(id){ if(!confirm('Apagar lote?'))return; prAtual.lotes=prAtual.lotes.filter(l=>l.id!==id); guardarPR(); atualizarPainelPR(); }
 
-// ============================================================
-// BINGO
-// ============================================================
-let imgB64=null,durH=1,usaGPS=false;
-const TIMERS_BINGO={};
-
-function fmtTimer(ms){const t=Math.max(0,ms);const h=Math.floor(t/3600000),m=Math.floor((t%3600000)/60000),s=Math.floor((t%60000)/1000);return`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;}
-
-function iniciarTimerBingo(id,exTs){
-  if(TIMERS_BINGO[id]) clearInterval(TIMERS_BINGO[id]);
-  TIMERS_BINGO[id]=setInterval(()=>{
-    const el=$id(`t-${id}`);if(!el){clearInterval(TIMERS_BINGO[id]);delete TIMERS_BINGO[id];return;}
-    const r=exTs-Date.now();el.innerText=fmtTimer(r);
-    if(r<=0){clearInterval(TIMERS_BINGO[id]);delete TIMERS_BINGO[id];verificarExpBingo();}
-  },1000);
+function guardarPR(){
+  const emps=BD.emps(); const idx=emps.findIndex(p=>p.em===prAtual.em);
+  if(idx>=0) emps[idx]=prAtual; else emps.push(prAtual);
+  BD.saveE(emps); BD.setSessP(prAtual);
 }
 
-function verificarExpBingo(){
-  const bfs=prAtual?.bingoFlags||[];let alt=false;
-  bfs.forEach(bf=>{if(bf.estado==='ativa'&&bf.expiracaoAtivacao&&bf.expiracaoAtivacao<Date.now()){bf.estado='inativa';bf.ativadoEm=null;bf.expiracaoAtivacao=null;alt=true;}});
-  if(alt){guardarPR();atualizarPainelPR();}
-}
-
-function abrirAtivarBingo(i){
-  const bf=prAtual.bingoFlags[i];
-  imgB64=bf.foto||null;durH=bf.duracaoMs/3600000||1;usaGPS=bf.usarGPS||false;
-  abrirMdl(`🎰 Configurar BINGO #${bf.num}`,`
-    <div class="edit-section">
-      <h3>🎁 PRÉMIO</h3>
-      <input type="text" id="bp-pr" value="${bf.premio||'🎁 Prémio Surpresa'}" placeholder="Nome do prémio">
-      <textarea id="bp-desc" placeholder="Descrição detalhada...">${bf.descricao||''}</textarea>
-      <div class="foto-area" onclick="$id('bp-fi').click()">
-        <div style="font-size:1.5rem;">📸</div><p style="color:#ff0;font-size:.8rem;margin-top:4px;">Foto do prémio (opcional)</p>
-      </div>
-      <input type="file" id="bp-fi" accept="image/*" style="display:none;" onchange="carregarFotoBingo(this)">
-    </div>
-    <div class="edit-section">
-      <h3>🏢 DADOS DA EMPRESA (no QR)</h3>
-      <input type="text" id="bp-ne" value="${bf.empNome||prAtual.ne||''}" placeholder="Nome da empresa">
-      <input type="text" id="bp-morada" value="${bf.empMorada||prAtual.morada||''}" placeholder="Morada ou GPS">
-      <input type="tel"  id="bp-tel"  value="${bf.empTel||prAtual.tel||''}"  placeholder="Telefone">
-      <input type="text" id="bp-resp" value="${bf.empResp||prAtual.resp||''}" placeholder="Responsável">
-    </div>
-    <div class="edit-section">
-      <h3>⏱️ TEMPO DE ATIVAÇÃO</h3>
-      <div class="slider-wrapper">
-        <div class="slider-val" id="bp-sv">${durH}h</div>
-        <input type="range" id="bp-sl" min="0.5" max="24" step="0.5" value="${durH}" oninput="durH=parseFloat(this.value);$id('bp-sv').innerText=this.value<1?Math.round(this.value*60)+'min':this.value+'h';$id('bp-exp').innerText=fmt(Date.now()+parseFloat(this.value)*3600000);">
-        <div class="slider-sub"><span>30min</span><span>6h</span><span>12h</span><span>18h</span><span>24h</span></div>
-      </div>
-      <div style="background:#000;border:1px solid #ff0;border-radius:6px;padding:8px;text-align:center;margin-top:6px;">
-        <p style="color:#0aa;font-size:.72rem;">Expira às:</p>
-        <p id="bp-exp" style="color:#ff0;font-weight:bold;font-size:.88rem;">${fmt(Date.now()+durH*3600000)}</p>
-      </div>
-    </div>
-    <div id="mdl-m" class="msg"></div>
-    <button class="btn" style="width:100%;padding:12px;margin-top:8px;background:linear-gradient(45deg,#600,#f00,#ff0);color:#fff;border:2px solid #ff0;border-radius:4px;font-weight:bold;cursor:pointer;font-family:'Courier New',monospace;" onclick="confirmarAtivarBingo(${i})">
-      🎰 ATIVAR BANDEIRA BINGO AGORA
-    </button>
-    ${bf.estado==='ativa'?`<button class="btn bsair bb" onclick="desativarBingo(${i});fecharMdl();" style="margin-top:4px;">⏹️ DESATIVAR</button>`:''}
-  `);
-}
-
-function carregarFotoBingo(input){const f=input.files[0];if(!f)return;if(f.size>5*1024*1024){alert('❌ Foto máx. 5MB');return;}const r=new FileReader();r.onload=e=>imgB64=e.target.result;r.readAsDataURL(f);}
-
-function confirmarAtivarBingo(i){
-  const pr=val('bp-pr');const ne=val('bp-ne');const tel=val('bp-tel');const resp=val('bp-resp');
-  if(!pr){msg('mdl-m','❌ Define o prémio!','e');return;}
-  if(!ne){msg('mdl-m','❌ Nome da empresa obrigatório!','e');return;}
-  if(!tel){msg('mdl-m','❌ Telefone obrigatório!','e');return;}
-  const bf=prAtual.bingoFlags[i];
-  const exTs=Date.now()+durH*3600000;
-  bf.estado='ativa';bf.premio=pr;bf.descricao=val('bp-desc');bf.foto=imgB64||null;
-  bf.empNome=ne;bf.empMorada=val('bp-morada');bf.empTel=tel;bf.empResp=resp;
-  bf.ativadoEm=Date.now();bf.duracaoMs=durH*3600000;bf.expiracaoAtivacao=exTs;
-  guardarPR();fecharMdl();atualizarPainelPR();
-  msg('m-lotes-pr',`✅ Bandeira BINGO #${bf.num} ATIVADA! Prémio: ${pr} · ${durH}h`,'s');
-}
-
-function desativarBingo(i){if(!confirm('Desativar esta bandeira BINGO?'))return;const bf=prAtual.bingoFlags[i];if(TIMERS_BINGO[bf.id]){clearInterval(TIMERS_BINGO[bf.id]);delete TIMERS_BINGO[bf.id];}bf.estado='inativa';bf.ativadoEm=null;bf.expiracaoAtivacao=null;guardarPR();atualizarPainelPR();}
-
-// ============================================================
 // SCANNER
-// ============================================================
-function scanner(){$id('scan-det').style.display='none';msg('m-scan','📸 A simular...','i');setTimeout(()=>{const l=prAtual?.lotes?.find(l=>l.estado==='ativo'&&l.n>l.usados);if(l&&Math.random()>.3){$id('m-scan').className='msg';$id('scan-det').style.display='block';$id('sc-c').innerText='jogador@exemplo.com';$id('sc-p').innerText=l.premio||'(Sem prémio)';$id('sc-v').innerText=fmt(Date.now()+30*24*60*60*1000);}else msg('m-scan','❌ QR inválido ou já usado!','e');},1500);}
-function validarQR(){const l=prAtual?.lotes?.find(l=>l.estado==='ativo'&&l.n>l.usados);if(l)l.usados=(l.usados||0)+1;prAtual.qrsUsados=(prAtual.qrsUsados||0)+1;guardarPR();$id('scan-det').style.display='none';msg('m-scan','✅ Prémio entregue!','s');atualizarPainelPR();}
-
-function guardarPR(){const prs=DB.prs();const idx=prs.findIndex(p=>p.em===prAtual.em);if(idx>=0)prs[idx]=prAtual;else prs.push(prAtual);DB.saveP(prs);DB.setSessPR(prAtual);}
-
-// ============================================================
-// ADMIN
-// ============================================================
-function loginAdm(){if($id('adm-pw').value!==PASS){msg('m-adm-l','❌ Código incorreto!','e');return;}ir('p-adm');}
-function carregarAdm(){
-  const jogs=DB.jogs(),prs=DB.prs();
-  $id('adm-lista-j').innerHTML=jogs.length===0?'<p style="color:#555;font-size:.8rem;">Sem jogadores.</p>':
-    jogs.map((j,i)=>`<div class="uc uc-j" style="display:flex;justify-content:space-between;align-items:center;margin:3px 0;">
-      <span style="font-size:.8rem;"><b>${j.nm}</b> <span style="color:#0ff;font-size:.7rem;">${j.em}</span></span>
-      <button onclick="admJogarComo(${i})" style="background:#003;color:#0ff;border:1px solid #0ff;padding:3px 8px;cursor:pointer;font-size:.7rem;border-radius:3px;">▶</button>
-    </div>`).join('');
-  $id('adm-lista-pr').innerHTML=prs.length===0?'<p style="color:#555;font-size:.8rem;">Sem empresas.</p>':
-    prs.map((p,i)=>`<div class="uc uc-pr" style="display:flex;justify-content:space-between;align-items:center;margin:3px 0;">
-      <span style="font-size:.8rem;"><b style="color:#ff0;">${p.ne}</b></span>
-      <button onclick="admGerirPR(${i})" style="background:#330;color:#ff0;border:1px solid #ff0;padding:3px 8px;cursor:pointer;font-size:.7rem;border-radius:3px;">▶</button>
-    </div>`).join('');
-}
-function admJogar(){const nm=val('adm-j-nm')||'ADMIN_TEST';const u={nm,em:'adm@zap.pt',fl:0,en:100,qrs:[],isAdm:true,reg:Date.now(),ult:Date.now()};DB.setSessJ(u);logAtv(`⚙️ Admin testou como jogador: ${nm}`);entrarJogo(u);}
-function admJogarComo(i){const j=DB.jogs()[i];if(!confirm(`Testar como ${j.nm}?`))return;DB.setSessJ(j);entrarJogo(j);}
-function admEntrarPR(){const nm=val('adm-pr-nm')||'LOJA_ADMIN';const pr=criarPRTemp('adm@pr.zap');pr.ne=nm;prAtual=pr;DB.setSessPR(pr);logAtv(`⚙️ Admin testou como PR: ${nm}`);abrirPainelPR();}
-function admGerirPR(i){const pr=DB.prs()[i];if(!confirm(`Gerir como ${pr.ne}?`))return;prAtual=pr;DB.setSessPR(pr);abrirPainelPR();}
+function scanner(){ G('scan-det').style.display='none'; msg('m-scan','📸 A simular...','info'); setTimeout(()=>{ const l=prAtual?.lotes?.find(l=>l.estado==='ativo'&&l.n>l.usados); if(l&&Math.random()>.3){ G('m-scan').className='msg'; G('scan-det').style.display='block'; G('sc-c').innerText='jogador@exemplo.com'; G('sc-p').innerText=l.premio||'(Sem prémio)'; G('sc-v').innerText=fmt(Date.now()+30*24*60*60*1000); } else msg('m-scan','❌ QR inválido ou já usado!','erro'); },1500); }
+function validarQR(){ const l=prAtual?.lotes?.find(l=>l.estado==='ativo'&&l.n>l.usados); if(l)l.usados=(l.usados||0)+1; prAtual.qrsUsados=(prAtual.qrsUsados||0)+1; guardarPR(); G('scan-det').style.display='none'; msg('m-scan','✅ Prémio entregue!','ok'); atualizarPainelPR(); }
 
 // ============================================================
 // BACKOFFICE
 // ============================================================
-let boFiltroJ='todos',boFiltroP='todas';
-function loginBO(){if($id('bo-pw').value!==PASS){msg('m-bo-l','❌ Código incorreto!','e');return;}logAtv('🖥️ Acesso Backoffice');ir('p-bo');}
+let boFiltroJ='todos', boFiltroP='todas';
 
-function tBO(i){for(let j=0;j<6;j++) $id(`bo-t${j}`)?.classList.remove('on');document.querySelectorAll('.tab-bo').forEach(t=>t.classList.remove('on'));$id(`bo-t${i}`)?.classList.add('on');document.querySelectorAll('.tab-bo')[i]?.classList.add('on');}
+function loginBO(){
+  if(G('bo-pw').value!==PASSE){ msg('m-bo-l','❌ Código incorreto!','erro'); return; }
+  log('🖥️ Acesso Backoffice');
+  ir('p-bo');
+}
+
+function tabBO(i){
+  for(let j=0;j<6;j++) G(`bo-tab${j}`)?.classList.remove('on');
+  document.querySelectorAll('#p-bo .aba').forEach(a=>a.classList.remove('on'));
+  G(`bo-tab${i}`)?.classList.add('on');
+  document.querySelectorAll('#p-bo .aba')[i]?.classList.add('on');
+}
 
 function carregarBO(){
-  const jogs=DB.jogs(),prs=DB.prs(),bings=DB.bingos(),av=DB.atv();
-  const ag30=Date.now()-30*60*1000,hoje=Date.now()-24*60*60*1000;
+  const jogs=BD.jogs(), emps=BD.emps(), bings=BD.bings(), av=BD.atv();
+  const ag30=Date.now()-30*60*1000, hoje=Date.now()-24*60*60*1000;
   const online=jogs.filter(j=>j.ult>ag30).length;
-  const empAtivas=prs.filter(p=>p.packs?.some(pk=>pk.fim>Date.now())).length;
+  const empAtivas=emps.filter(p=>p.packs?.some(pk=>pk.fim>Date.now())).length;
   const alertas=[];
   if(jogs.length===0) alertas.push('Nenhum jogador registado');
-  if(prs.length===0)  alertas.push('Nenhuma empresa registada');
-  prs.filter(p=>!p.packs?.some(pk=>pk.fim>Date.now())).forEach(p=>alertas.push(`${p.ne}: sem pacote ativo`));
+  if(emps.length===0) alertas.push('Nenhuma empresa registada');
+  emps.filter(p=>!p.packs?.some(pk=>pk.fim>Date.now())).forEach(p=>alertas.push(`${p.ne}: sem pacote ativo`));
 
   // HUD
-  $id('bo-hud-j').innerText=jogs.length;$id('bo-hud-p').innerText=prs.length;
+  G('bo-hud-j').innerText=jogs.length; G('bo-hud-p').innerText=emps.length;
 
   // DASHBOARD
-  $id('dash-j').innerText=jogs.length;$id('dash-p').innerText=prs.length;
-  $id('dash-b').innerText=bings.length;$id('dash-al').innerText=alertas.length;
-  $id('dash-j-on').innerText=online;$id('dash-emp-a').innerText=empAtivas;
-  $id('dash-fl').innerText=fmtN(jogs.reduce((s,j)=>s+(j.fl||0),0));
-  $id('dash-qr').innerText=fmtN(prs.reduce((s,p)=>s+(p.qrsGerados||0),0));
+  G('d-j').innerText=jogs.length; G('d-p').innerText=emps.length;
+  G('d-b').innerText=bings.length; G('d-al').innerText=alertas.length;
+  G('d-on').innerText=online; G('d-ea').innerText=empAtivas;
+  G('d-fl').innerText=fN(jogs.reduce((s,j)=>s+(j.fl||0),0));
+  G('d-qr').innerText=fN(emps.reduce((s,p)=>s+(p.qrsGerados||0),0));
 
   // ALERTAS
-  const alCard=$id('dash-al-card');
-  if(alertas.length>0){alCard.style.display='block';$id('dash-al-lista').innerHTML=alertas.map(a=>`<div style="color:#f88;font-size:.8rem;padding:3px 0;border-bottom:1px solid #300;">⚠️ ${a}</div>`).join('');}
+  const alCard=G('d-al-card');
+  if(alertas.length>0){ alCard.style.display='block'; G('d-al-lista').innerHTML=alertas.map(a=>`<div style="color:#f88;font-size:.8rem;padding:3px 0;border-bottom:1px solid #300;">⚠️ ${a}</div>`).join(''); }
   else alCard.style.display='none';
 
   // ATIVIDADE
-  $id('dash-atv').innerHTML=av.slice(0,10).length===0?'<p style="color:#555;font-size:.8rem;">Sem atividade.</p>':
-    av.slice(0,10).map(a=>`<div style="font-size:.78rem;padding:4px 0;border-bottom:1px solid #111;display:flex;justify-content:space-between;"><span>${a.a}${a.d?` <span style="color:#555;">${a.d}</span>`:''}</span><span style="color:#555;font-size:.68rem;">${fmt(a.ts)}</span></div>`).join('');
+  G('d-atv').innerHTML=av.slice(0,8).length===0?'<p style="color:#555;font-size:.8rem;">Sem atividade.</p>':
+    av.slice(0,8).map(a=>`<div style="font-size:.78rem;padding:4px 0;border-bottom:1px solid #111;display:flex;justify-content:space-between;"><span>${a.a}${a.d?` <span style="color:#555;">${a.d}</span>`:''}</span><span style="color:#555;font-size:.68rem;">${fmt(a.ts)}</span></div>`).join('');
 
-  // STATS tabs
-  $id('j-total').innerText=jogs.length;$id('j-online').innerText=online;$id('j-novos').innerText=jogs.filter(j=>j.reg>hoje).length;
-  $id('p-total').innerText=prs.length;$id('p-ativas').innerText=empAtivas;$id('p-sem').innerText=prs.filter(p=>!p.packs?.some(pk=>pk.fim>Date.now())).length;
+  // STATS
+  G('j-tot').innerText=jogs.length; G('j-on').innerText=online; G('j-hj').innerText=jogs.filter(j=>j.reg>hoje).length;
+  G('p-tot').innerText=emps.length; G('p-at').innerText=empAtivas; G('p-sp').innerText=emps.filter(p=>!p.packs?.some(pk=>pk.fim>Date.now())).length;
 
   // BINGO
   let bgt=0,bga=0,bge=0;
-  prs.forEach(p=>{(p.bingoFlags||[]).forEach(b=>{bgt++;if(b.estado==='ativa')bga++;if(b.estado==='encontrada')bge++;});});
-  $id('bg-t-bo').innerText=bgt;$id('bg-a-bo').innerText=bga;$id('bg-e-bo').innerText=bge;
-  $id('lista-bingos-bo').innerHTML=bings.length===0?'<p style="color:#555;">Nenhum bingo.</p>':
-    bings.slice(0,20).map(b=>`<div class="uc" style="border-color:#ff0;margin:3px 0;">🎉 <b style="color:#0ff;">${b.nm}</b>${b.premio?` 🎁 ${b.premio}`:''}<div style="color:#555;font-size:.65rem;">${fmt(b.data)}</div></div>`).join('');
+  emps.forEach(p=>{ (p.bingoFlags||[]).forEach(b=>{ bgt++; if(b.estado==='ativa')bga++; if(b.estado==='encontrada')bge++; }); });
+  G('bg-tot').innerText=bgt; G('bg-at').innerText=bga; G('bg-en').innerText=bge;
+  G('lista-bingos-bo').innerHTML=bings.length===0?'<p style="color:#555;">Nenhum bingo.</p>':
+    bings.slice(0,20).map(b=>`<div class="uc-j" style="margin:3px 0;">🎉 <b style="color:#0ff;">${b.nm}</b>${b.premio?' 🎁 '+b.premio:''}<div style="color:#555;font-size:.65rem;">${fmt(b.data)} · ${b.ne||''}</div></div>`).join('');
 
-  renderJ(jogs);renderP(prs);renderListasTestar(jogs,prs);
+  renderJogadores(jogs); renderEmpresas(emps); renderListasTestar(jogs,emps);
 }
 
-function renderJ(jogs){
-  const ag30=Date.now()-30*60*1000;let lista=jogs;
+function renderJogadores(jogs){
+  const ag30=Date.now()-30*60*1000;
+  let lista=jogs;
   if(boFiltroJ==='online') lista=jogs.filter(j=>j.ult>ag30);
   else if(boFiltroJ==='top') lista=[...jogs].sort((a,b)=>(b.fl||0)-(a.fl||0)).slice(0,20);
-  const q=val('search-j').toLowerCase();
+  const q=val('pesq-j').toLowerCase();
   if(q) lista=lista.filter(j=>j.nm?.toLowerCase().includes(q)||j.em?.toLowerCase().includes(q));
-  $id('lista-j').innerHTML=lista.length===0?'<p style="color:#555;text-align:center;padding:15px;">Nenhum encontrado.</p>':
-    lista.map((j,i)=>{const online=j.ult>ag30;const idx=DB.jogs().findIndex(j2=>j2.em===j.em);return`<div class="uc uc-j" style="margin:4px 0;">
-      <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
-        <span class="online-dot ${online?'dot-on':'dot-off'}"></span>
-        <b>👤 ${j.nm}</b><span style="color:#0ff;font-size:.7rem;">${j.em}</span>
-      </div>
-      <div style="display:flex;gap:8px;font-size:.73rem;color:#0aa;flex-wrap:wrap;">
-        <span>🏴<b style="color:#0ff;">${fmtN(j.fl||0)}</b></span>
-        <span>⚡<b style="color:#0f0;">${Math.round(j.en||100)}%</b></span>
-        <span>🎫<b style="color:#ff0;">${(j.qrs||[]).length}</b></span>
-        <span style="color:#444;font-size:.68rem;">🔑 ${j.pw}</span>
-      </div>
-      <div style="display:flex;gap:4px;margin-top:5px;">
-        <button onclick="boJogarComo(${idx})" style="background:#003;color:#0ff;border:1px solid #0ff;padding:3px 7px;cursor:pointer;font-size:.7rem;border-radius:3px;">🎮 Testar</button>
-        <button onclick="pedirConf('del-j-${idx}','Apagar jogador \'${j.nm}\'?')" style="background:#200;color:#f00;border:1px solid #f00;padding:3px 7px;cursor:pointer;font-size:.7rem;border-radius:3px;">🗑️</button>
-      </div>
-    </div>`}).join('');
+  G('lista-j').innerHTML=lista.length===0?'<p style="color:#555;text-align:center;padding:15px;">Nenhum encontrado.</p>':
+    lista.map((j,i)=>{
+      const online=j.ult>ag30;
+      const idx=BD.jogs().findIndex(j2=>j2.em===j.em);
+      const tm=j.ult?Date.now()-j.ult:null;
+      const ts=tm===null?'Nunca':tm<60000?'Agora':tm<3600000?`${Math.floor(tm/60000)}min`:tm<86400000?`${Math.floor(tm/3600000)}h`:`${Math.floor(tm/86400000)}d`;
+      return `<div class="uc-j" style="margin:4px 0;">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
+          <span class="ponto-online ${online?'ponto-on':'ponto-off'}"></span>
+          <b>👤 ${j.nm}</b><span style="color:#0ff;font-size:.7rem;">${j.em}</span>
+          <span style="color:#555;font-size:.68rem;">⏱️ ${ts}</span>
+        </div>
+        <div style="display:flex;gap:8px;font-size:.73rem;color:#0aa;flex-wrap:wrap;">
+          <span>🏴<b style="color:#0ff;">${fN(j.fl||0)}</b></span>
+          <span>⚡<b style="color:#0f0;">${Math.round(j.en||100)}%</b></span>
+          <span>🎫<b style="color:#ff0;">${(j.qrs||[]).length}</b></span>
+          <span>👁️<b>${j.visao||5}m</b></span>
+          <span style="color:#444;font-size:.68rem;">🔑 ${j.pw}</span>
+        </div>
+        <div style="display:flex;gap:4px;margin-top:5px;">
+          <button onclick="boJogarComo(${idx})" style="background:#003;color:#0ff;border:1px solid #0ff;padding:3px 7px;cursor:pointer;font-size:.7rem;border-radius:3px;">🎮 Testar</button>
+          <button onclick="boEditarJ(${idx})" style="background:#020;color:#0f0;border:1px solid #0f0;padding:3px 7px;cursor:pointer;font-size:.7rem;border-radius:3px;">✏️ Editar</button>
+          <button onclick="pedirConf('del-j-${idx}','Apagar jogador \'${j.nm}\'?')" style="background:#200;color:#f00;border:1px solid #f00;padding:3px 7px;cursor:pointer;font-size:.7rem;border-radius:3px;">🗑️</button>
+        </div>
+      </div>`;
+    }).join('');
 }
 
-function renderP(prs){
-  const ag=Date.now();let lista=prs;
-  if(boFiltroP==='ativas') lista=prs.filter(p=>p.packs?.some(pk=>pk.fim>ag));
-  else if(boFiltroP==='sempack') lista=prs.filter(p=>!p.packs?.some(pk=>pk.fim>ag));
-  const q=val('search-p').toLowerCase();
+function renderEmpresas(emps){
+  const ag=Date.now();
+  let lista=emps;
+  if(boFiltroP==='ativas') lista=emps.filter(p=>p.packs?.some(pk=>pk.fim>ag));
+  else if(boFiltroP==='sempack') lista=emps.filter(p=>!p.packs?.some(pk=>pk.fim>ag));
+  const q=val('pesq-p').toLowerCase();
   if(q) lista=lista.filter(p=>p.ne?.toLowerCase().includes(q)||p.em?.toLowerCase().includes(q));
-  $id('lista-p').innerHTML=lista.length===0?'<p style="color:#555;text-align:center;padding:15px;">Nenhuma encontrada.</p>':
-    lista.map((p,i)=>{const ativa=p.packs?.some(pk=>pk.fim>ag);const idx=DB.prs().findIndex(p2=>p2.em===p.em);return`<div class="uc uc-pr" style="margin:4px 0;">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px;">
-        <b style="color:#ff0;">🏪 ${p.ne}</b>
-        <span style="font-size:.72rem;color:${ativa?'#0f0':'#f00'};">${ativa?'✅ Ativa':'⚠️ Sem pacote'}</span>
-      </div>
-      <div style="font-size:.73rem;color:#0aa;">📍 ${p.loc||'-'} · 📞 ${p.tel||'-'} · 📧 ${p.em}</div>
-      <div style="font-size:.68rem;color:#555;margin-top:2px;">🔑 ${p.pw} · NIF: ${p.nif||'-'}</div>
-      <div style="display:flex;gap:4px;margin-top:5px;">
-        <button onclick="boGerirPR(${idx})" style="background:#330;color:#ff0;border:1px solid #ff0;padding:3px 7px;cursor:pointer;font-size:.7rem;border-radius:3px;">🏪 Testar</button>
-        <button onclick="pedirConf('del-p-${idx}','Apagar empresa \'${p.ne}\'?')" style="background:#200;color:#f00;border:1px solid #f00;padding:3px 7px;cursor:pointer;font-size:.7rem;border-radius:3px;">🗑️</button>
-      </div>
-    </div>`}).join('');
+  G('lista-p').innerHTML=lista.length===0?'<p style="color:#555;text-align:center;padding:15px;">Nenhuma encontrada.</p>':
+    lista.map((p,i)=>{
+      const ativa=p.packs?.some(pk=>pk.fim>ag);
+      const idx=BD.emps().findIndex(p2=>p2.em===p.em);
+      return `<div class="uc-pr" style="margin:4px 0;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px;">
+          <b style="color:#ff0;">🏪 ${p.ne}</b>
+          <span style="font-size:.72rem;color:${ativa?'#0f0':'#f00'};">${ativa?'✅ Ativa':'⚠️ Sem pacote'}</span>
+        </div>
+        <div style="font-size:.73rem;color:#0aa;">📍 ${p.loc||'-'} · 📞 ${p.tel||'-'} · 📧 ${p.em}</div>
+        <div style="font-size:.68rem;color:#555;margin-top:2px;">🔑 ${p.pw} · NIF: ${p.nif||'-'} · Resp: ${p.resp||'-'}</div>
+        <div style="display:flex;gap:4px;margin-top:5px;">
+          <button onclick="boGerirPR(${idx})" style="background:#330;color:#ff0;border:1px solid #ff0;padding:3px 7px;cursor:pointer;font-size:.7rem;border-radius:3px;">🏪 Testar</button>
+          <button onclick="pedirConf('del-p-${idx}','Apagar empresa \'${p.ne}\'?')" style="background:#200;color:#f00;border:1px solid #f00;padding:3px 7px;cursor:pointer;font-size:.7rem;border-radius:3px;">🗑️</button>
+        </div>
+      </div>`;
+    }).join('');
 }
 
-function renderListasTestar(jogs,prs){
-  $id('bo-lista-j').innerHTML=jogs.map((j,i)=>`<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid #111;font-size:.8rem;">
-    <span><b>${j.nm}</b> <span style="color:#0ff;font-size:.7rem;">${j.em}</span></span>
-    <button onclick="boJogarComo(${i})" style="background:#003;color:#0ff;border:1px solid #0ff;padding:2px 7px;cursor:pointer;font-size:.7rem;border-radius:3px;">▶</button>
-  </div>`).join('');
-  $id('bo-lista-pr').innerHTML=prs.map((p,i)=>`<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid #111;font-size:.8rem;">
-    <span><b style="color:#ff0;">${p.ne}</b></span>
-    <button onclick="boGerirPR(${i})" style="background:#330;color:#ff0;border:1px solid #ff0;padding:2px 7px;cursor:pointer;font-size:.7rem;border-radius:3px;">▶</button>
-  </div>`).join('');
+function renderListasTestar(jogs,emps){
+  G('bo-lista-j').innerHTML=jogs.slice(0,10).map((j,i)=>`
+    <div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid #111;font-size:.8rem;">
+      <span><b>${j.nm}</b> <span style="color:#0ff;font-size:.7rem;">${j.em}</span></span>
+      <button onclick="boJogarComo(${i})" style="background:#003;color:#0ff;border:1px solid #0ff;padding:2px 7px;cursor:pointer;font-size:.7rem;border-radius:3px;">▶</button>
+    </div>`).join('');
+  G('bo-lista-pr').innerHTML=emps.slice(0,10).map((p,i)=>`
+    <div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid #111;font-size:.8rem;">
+      <span><b style="color:#ff0;">${p.ne}</b></span>
+      <button onclick="boGerirPR(${i})" style="background:#330;color:#ff0;border:1px solid #ff0;padding:2px 7px;cursor:pointer;font-size:.7rem;border-radius:3px;">▶</button>
+    </div>`).join('');
 }
 
-function filtrarJ(f){boFiltroJ=f;renderJ(DB.jogs());}
-function filtrarP(f){boFiltroP=f;renderP(DB.prs());}
-function pesqJ(){renderJ(DB.jogs());}
-function pesqP(){renderP(DB.prs());}
+function filtrarJ(f){ boFiltroJ=f; renderJogadores(BD.jogs()); }
+function filtrarP(f){ boFiltroP=f; renderEmpresas(BD.emps()); }
+function pesquisarJ(){ renderJogadores(BD.jogs()); }
+function pesquisarP(){ renderEmpresas(BD.emps()); }
 
-function boJogar(){const nm=val('bo-j-nm')||'BO_TESTE';const u={nm,em:'bo@zap.pt',fl:0,en:100,qrs:[],isBO:true,reg:Date.now(),ult:Date.now()};DB.setSessJ(u);logAtv(`🖥️ BO testou como jogador: ${nm}`);entrarJogo(u);}
-function boJogarComo(i){const j=DB.jogs()[i];if(!confirm(`Testar como ${j.nm}?`))return;DB.setSessJ(j);logAtv(`🖥️ BO testou jogador: ${j.nm}`);entrarJogo(j);}
-function boPR(){const nm=val('bo-pr-nm')||'BO_LOJA';const pr=criarPRTemp('bo@pr.zap');pr.ne=nm;prAtual=pr;DB.setSessPR(pr);logAtv(`🖥️ BO testou como PR: ${nm}`);abrirPainelPR();}
-function boGerirPR(i){const pr=DB.prs()[i];if(!confirm(`Gerir como ${pr.ne}?`))return;prAtual=pr;DB.setSessPR(pr);logAtv(`🖥️ BO geriu: ${pr.ne}`);abrirPainelPR();}
+function boJogar(){
+  const nm=val('bo-j-nm')||'BO_TESTE';
+  const u={nm,em:'bo@zap.pt',fl:0,en:100,qrs:[],prog:0,skill:1,visao:5,skillPts:0,isBO:true,reg:Date.now(),ult:Date.now()};
+  BD.setSessJ(u); log(`🖥️ BO testou como jogador: ${nm}`); entrarJogo(u);
+}
+function boJogarComo(i){ const j=BD.jogs()[i]; if(!confirm(`Testar como ${j.nm}?`))return; BD.setSessJ(j); log(`🖥️ BO testou jogador: ${j.nm}`); entrarJogo(j); }
+function boPR(){
+  const nm=val('bo-pr-nm')||'BO_LOJA';
+  const pr=criarPRTemp('bo@pr.zap'); pr.ne=nm;
+  prAtual=pr; BD.setSessP(pr); log(`🖥️ BO testou como PR: ${nm}`); abrirPainelPR();
+}
+function boGerirPR(i){ const pr=BD.emps()[i]; if(!confirm(`Gerir como ${pr.ne}?`))return; prAtual=pr; BD.setSessP(pr); log(`🖥️ BO geriu: ${pr.ne}`); abrirPainelPR(); }
+function boEditarJ(i){ const jogs=BD.jogs(); const j=jogs[i]; const nn=prompt('Nome:',j.nm); if(!nn)return; const np=prompt('Senha:',j.pw); if(!np)return; jogs[i].nm=nn; jogs[i].pw=np; BD.saveJ(jogs); carregarBO(); }
 
-function exportarDados(){const d={jogadores:DB.jogs(),empresas:DB.prs(),bingos:DB.bingos(),atividade:DB.atv(),data:new Date().toISOString()};const b=new Blob([JSON.stringify(d,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='zap_dados.json';a.click();logAtv('📥 Dados exportados');}
-function criarJTeste(){const jogs=DB.jogs();const n=jogs.length+1;const j={nm:`Jogador ${n}`,em:`j${n}@teste.com`,tl:'912345678',pw:'1234',fl:Math.floor(Math.random()*200),en:Math.floor(50+Math.random()*50),qrs:[],reg:Date.now()-Math.random()*30*24*60*60*1000,ult:Date.now()-Math.random()*3600000};jogs.push(j);DB.saveJ(jogs);logAtv(`➕ Jogador teste: ${j.nm}`);carregarBO();msg('msg-sistema',`✅ Jogador ${n} criado! Senha: 1234`,'s');}
-function criarPRTeste(){const prs=DB.prs();const n=prs.length+1;const p={ne:`Loja ${n}`,nif:`12345678${n}`,ativ:'Café / Pastelaria',morada:'Rua Teste 1',cp:'1000-001',loc:'Lisboa',dist:'Lisboa',tel:'210000000',em:`l${n}@teste.com`,resp:'Responsável',pw:'1234',packs:[],lotes:[],bingoFlags:[],qrsGerados:0,qrsUsados:0,reg:Date.now()};prs.push(p);DB.saveP(prs);logAtv(`➕ Empresa teste: ${p.ne}`);carregarBO();msg('msg-sistema',`✅ Loja ${n} criada! Email: l${n}@teste.com | Senha: 1234`,'s');}
+function exportar(){ const d={jogadores:BD.jogs(),empresas:BD.emps(),bingos:BD.bings(),atividade:BD.atv(),data:new Date().toISOString()}; const b=new Blob([JSON.stringify(d,null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download='zap_dados.json'; a.click(); log('📥 Dados exportados'); }
+function criarJTeste(){ const jogs=BD.jogs(); const n=jogs.length+1; const j={nm:`Jogador ${n}`,em:`j${n}@teste.com`,tl:'912345678',pw:'1234',fl:Math.floor(Math.random()*200),en:Math.floor(50+Math.random()*50),qrs:[],prog:0,skill:1,visao:5,skillPts:0,reg:Date.now()-Math.random()*30*24*60*60*1000,ult:Date.now()-Math.random()*3600000}; jogs.push(j); BD.saveJ(jogs); log(`➕ Jogador teste: ${j.nm}`); carregarBO(); msg('m-sistema',`✅ Jogador ${n} criado! Senha: 1234`,'ok'); }
+function criarPRTeste(){ const emps=BD.emps(); const n=emps.length+1; const p={ne:`Loja Teste ${n}`,nif:`12345678${n}`,ativ:'Café / Pastelaria',rua:'Rua Teste 1',cp:'1000-001',loc:'Lisboa',dist:'Lisboa',tel:'210000000',em:`l${n}@teste.com`,resp:'Responsável',respT:'912345678',pw:'1234',packs:[],lotes:[],bingoFlags:[],qrsGerados:0,qrsUsados:0,reg:Date.now()}; emps.push(p); BD.saveE(emps); log(`➕ Empresa teste: ${p.ne}`); carregarBO(); msg('m-sistema',`✅ Loja ${n} criada! Email: l${n}@teste.com | Senha: 1234`,'ok'); }
 
 // ============================================================
-// AUTO-LOGIN + INIT
+// AUTO-LOGIN (memorização de sessão)
 // ============================================================
-(function init(){
-  const sj=DB.sessJ();const sp=DB.sessPR();
-  atualizarHomepage();
-  if(sj&&!sj.isAdm&&!sj.isBO) {/* não auto-entrar, mostrar na homepage */}
-  if(sp&&!sp.isAdm&&!sp.isBO) {/* não auto-entrar, mostrar na homepage */}
-  setInterval(()=>{if($id('p-bo')?.classList.contains('ativa')) carregarBO();},60000);
+(function inicio(){
+  // Verificar se há sessão guardada
+  const sj = BD.getSessJ();
+  const sp = BD.getSessP();
+
+  // Actualizar homepage com sessões ativas
+  atualizarHome();
+
+  // Auto-login: se havia sessão activa, vai directo para o ecrã certo
+  // MAS mostra primeiro a homepage para o utilizador escolher
+  // (não força entrada automática — melhor UX)
+
+  // Verificar expiração de bingos periodicamente
+  setInterval(()=>{
+    if(prAtual) verificarExpBingo();
+    if(document.getElementById('p-bo')?.classList.contains('ativa')) carregarBO();
+  }, 30000);
 })();
 </script>
 </body>
