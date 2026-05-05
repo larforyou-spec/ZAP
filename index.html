@@ -3,731 +3,1167 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>ZAP FLAGS - Avatar</title>
+<title>ZAP FLAGS</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
-body{background:#111;overflow:hidden;width:100vw;height:100vh;font-family:'Courier New',monospace;}
+body{font-family:'Courier New',monospace;background:#000;color:#0f0;min-height:100vh;overflow-x:hidden;}
+.page{display:none;min-height:100vh;}
+.page.ativa{display:block;}
 
-/* MAPA ocupa tudo */
-#mapa{position:fixed;top:0;left:0;width:100%;height:100%;z-index:1;
-  /* desactivar eventos de toque no mapa — só via joystick */
-}
+/* ===== INPUTS / BOTÕES ===== */
+input,select,textarea{width:100%;background:#0a0a0a;color:#0f0;border:1px solid #0f0;
+  padding:10px;margin:4px 0;font-size:.9rem;font-family:'Courier New',monospace;border-radius:4px;}
+input:focus,select:focus,textarea:focus{outline:none;border-color:#0ff;box-shadow:0 0 5px #0ff;}
+select option{background:#0a0a0a;}
+textarea{resize:vertical;min-height:60px;}
 
-/* OVERLAY ESCURO (fog of war) */
-#fog{position:fixed;top:0;left:0;width:100%;height:100%;z-index:2;pointer-events:none;}
+.btn{display:inline-block;padding:11px 16px;margin:3px 2px;font-size:.88rem;font-weight:bold;
+  cursor:pointer;font-family:'Courier New',monospace;border:none;border-radius:4px;transition:all .2s;}
+.bb{display:block;width:100%;margin:5px 0;padding:12px;text-align:center;}
+.bv{background:#0f0;color:#000;}.bv:hover{background:#0ff;}
+.bc{background:#111;color:#0f0;border:1px solid #0f0;}.bc:hover{background:#1a1a1a;}
+.bo{background:linear-gradient(45deg,#f80,#ff0);color:#000;}.bo:hover{background:#ff0;}
+.br{background:#1a0000;color:#f00;border:1px solid #f00;}.br:hover{background:#300;}
+.bvol{background:#000;color:#0aa;border:1px solid #0aa;}.bvol:hover{background:#0aa;color:#000;}
+.bsair{background:#1a0000;color:#f00;border:1px solid #f00;}.bsair:hover{background:#300;}
+.bbo{background:linear-gradient(135deg,#003,#006,#009);color:#0ff;border:2px solid #0ff;}
+.bbo:hover{background:#006;}
 
-/* AVATAR — move-se pelo ecrã */
-#avatar-wrap{
-  position:fixed;z-index:10;
-  pointer-events:none;
-  transition:left .08s linear, top .08s linear;
-}
+/* ===== MENSAGENS ===== */
+.msg{padding:10px;margin:6px 0;border-radius:4px;display:none;font-size:.84rem;}
+.msg.e{background:#200;border:1px solid #f00;color:#f00;display:block;}
+.msg.s{background:#020;border:1px solid #0f0;color:#0f0;display:block;}
+.msg.i{background:#002;border:1px solid #0ff;color:#0ff;display:block;}
+.msg.a{background:#220;border:1px solid #ff0;color:#ff0;display:block;}
 
-/* CÍRCULO DE VISÃO à volta do avatar */
-#circulo{
-  position:absolute;
-  border-radius:50%;
-  border:2px solid rgba(0,255,0,.6);
-  transform:translate(-50%,-50%);
-  top:50%;left:50%;
-  pointer-events:none;
-  transition:width .6s ease,height .6s ease;
-  box-shadow:0 0 0 4000px rgba(0,0,0,.72),
-             0 0 20px rgba(0,255,0,.3);
-}
+/* ===== CAIXA ===== */
+.caixa{max-width:480px;margin:0 auto;padding:20px;}
 
-/* SVG AVATAR */
-#avt{
-  position:absolute;
-  top:50%;left:50%;
-  transform:translate(-50%,-50%);
-  width:52px;height:64px;
-  z-index:11;
-  filter:drop-shadow(0 0 8px #0f0);
-}
+/* ===== ÁREAS COLORIDAS ===== */
+.area-jog{background:#000a00;border:2px solid #0f0;border-radius:10px;padding:16px;margin:8px 0;}
+.area-jog h3{color:#0f0;}
+.area-pr{background:#0a0800;border:2px solid #ff0;border-radius:10px;padding:16px;margin:8px 0;}
+.area-pr h3{color:#ff0;}
+.area-bo{background:linear-gradient(135deg,#000510,#001020);border:2px solid #0ff;
+  border-radius:10px;padding:16px;margin:8px 0;position:relative;overflow:hidden;}
+.area-bo::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent,#0ff,transparent);
+  animation:varre 3s linear infinite;}
+@keyframes varre{from{transform:translateX(-100%)}to{transform:translateX(100%)}}
+.area-bo h3{color:#0ff;}
+.badge-bo{background:#0ff;color:#000;padding:2px 8px;border-radius:10px;font-size:.65rem;font-weight:bold;margin-left:6px;}
 
-/* ===== JOYSTICK / CAIXA DE CONTROLO ===== */
-#caixa-controlo{
-  position:fixed;z-index:100;
-  background:rgba(0,0,0,.82);
-  border:2px solid #0f0;
-  border-radius:12px;
-  padding:10px;
-  cursor:move;
-  user-select:none;
-  box-shadow:0 0 15px rgba(0,255,0,.3);
-  /* posição inicial */
-  bottom:20px;right:20px;
-  width:auto;
-}
-#caixa-titulo{
-  font-size:.7rem;color:#0aa;text-align:center;margin-bottom:8px;
-  display:flex;justify-content:space-between;align-items:center;gap:8px;
-}
-#btns-dir{
-  display:grid;
-  grid-template-columns:repeat(3,1fr);
-  gap:4px;
-}
-.btn-dir{
-  background:#0a1a0a;border:1px solid #0f0;color:#0f0;
-  border-radius:6px;font-size:1.1rem;font-weight:bold;
-  cursor:pointer;user-select:none;
+/* ===== SESSÃO ATIVA NA HOME ===== */
+.barra-sessao{border-radius:10px;padding:12px 14px;margin:8px 0;
+  display:flex;justify-content:space-between;align-items:center;}
+.barra-j {background:#001a00;border:2px solid #0f0;}
+.barra-pr{background:#1a0e00;border:2px solid #ff0;}
+
+/* ===== CARDS ===== */
+.card{background:#080808;border:1px solid #222;border-radius:8px;padding:12px;margin:8px 0;}
+.card-y{border-color:#ff0;background:#0a0800;}
+.card-v{border-color:#0f0;background:#050f05;}
+.card-b{border-color:#0ff;background:#00080a;}
+.row{padding:5px 0;border-bottom:1px solid #111;font-size:.82rem;
+  display:flex;justify-content:space-between;align-items:flex-start;gap:8px;}
+.row:last-child{border-bottom:none;}
+.rl{color:#0aa;font-size:.7rem;white-space:nowrap;padding-top:2px;flex-shrink:0;}
+.rv{text-align:right;font-size:.82rem;word-break:break-word;}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0;}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin:8px 0;}
+.stat{background:#080808;border:1px solid #0f0;border-radius:8px;padding:10px;text-align:center;}
+.stat-n{font-size:1.4rem;color:#0ff;font-weight:bold;}
+.stat-t{font-size:.68rem;color:#0aa;margin-top:3px;}
+.sep{border:none;border-top:1px solid #222;margin:10px 0;}
+.lnk{color:#0ff;cursor:pointer;text-decoration:underline;font-size:.85rem;}
+.pb{width:100%;height:10px;background:#222;border-radius:5px;margin:5px 0;overflow:hidden;}
+.pf{height:100%;border-radius:5px;transition:width .5s;}
+.scroll{max-height:55vh;overflow-y:auto;padding-right:3px;}
+.scroll::-webkit-scrollbar{width:3px;}
+.scroll::-webkit-scrollbar-thumb{background:#ff0;}
+
+/* ===== HUD TOPO (jogo) ===== */
+.hud{position:fixed;top:0;left:0;right:0;z-index:3000;padding:6px 10px;
+  display:flex;justify-content:space-between;align-items:center;}
+.hud-j  {background:rgba(0,15,0,.97);border-bottom:2px solid #0f0;}
+.hud-pr {background:rgba(15,10,0,.97);border-bottom:2px solid #ff0;}
+.hud-bo {background:rgba(0,5,20,.97);border-bottom:2px solid #0ff;}
+.hud-stat{font-size:.7rem;color:#0aa;text-align:center;}
+.hud-val{font-size:.85rem;color:#0ff;font-weight:bold;display:block;}
+
+/* ===== PÁGINA DE JOGO (MAPA) ===== */
+#p-jogo{padding:0;overflow:hidden;height:100vh;}
+#mapa-jogo{position:fixed;top:0;left:0;width:100%;height:100%;z-index:1;}
+#fog-canvas{position:fixed;top:0;left:0;width:100%;height:100%;z-index:2;pointer-events:none;}
+#rodape-jogo{position:fixed;bottom:0;left:0;right:0;z-index:3000;
+  background:rgba(0,0,0,.97);border-top:2px solid #ff0;height:40px;
+  overflow:hidden;display:flex;align-items:center;}
+#ticker{display:inline-flex;gap:80px;white-space:nowrap;
+  animation:rolar 30s linear infinite;padding-left:100vw;}
+@keyframes rolar{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+.tick{color:#ff0;font-size:.78rem;font-weight:bold;}
+.tick b{color:#0ff;}
+#gps-label{position:fixed;bottom:45px;right:8px;z-index:3000;font-size:.65rem;
+  color:#555;background:rgba(0,0,0,.7);border-radius:12px;padding:2px 8px;}
+
+/* ===== AVATAR ===== */
+#avatar-wrap{position:fixed;z-index:10;pointer-events:none;}
+#circ-visao{position:absolute;border-radius:50%;border:2px solid rgba(0,255,0,.6);
+  transform:translate(-50%,-50%);top:50%;left:50%;pointer-events:none;
+  transition:width .6s,height .6s;
+  box-shadow:0 0 0 4000px rgba(0,0,0,.72),0 0 20px rgba(0,255,0,.3);}
+#avt-svg{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  width:52px;height:64px;z-index:11;filter:drop-shadow(0 0 8px #0f0);}
+
+/* ===== CAIXA DE CONTROLO ===== */
+#caixa-ctrl{position:fixed;z-index:3500;background:rgba(0,0,0,.88);
+  border:2px solid #0f0;border-radius:12px;padding:10px;cursor:move;
+  user-select:none;box-shadow:0 0 15px rgba(0,255,0,.3);bottom:48px;right:10px;}
+#ctrl-titulo{font-size:.68rem;color:#0aa;text-align:center;margin-bottom:6px;
+  display:flex;justify-content:space-between;align-items:center;}
+#btns-ctrl{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;}
+.bc2{background:#0a1a0a;border:1px solid #0f0;color:#0f0;border-radius:6px;
+  font-size:1.1rem;font-weight:bold;cursor:pointer;
   display:flex;align-items:center;justify-content:center;
-  transition:all .1s;
-  /* tamanho dinâmico */
-  width:var(--tam-btn,44px);height:var(--tam-btn,44px);
-}
-.btn-dir:active,.btn-dir.ativo{background:#0f3a0f;border-color:#0ff;color:#0ff;
-  box-shadow:0 0 8px #0ff;}
-#btn-tamanho-mais,.btn-tam{
-  background:#001a1a;border:1px solid #0aa;color:#0aa;
-  border-radius:6px;font-size:.8rem;font-weight:bold;
-  cursor:pointer;padding:3px 8px;
-}
-.btn-tam:hover{background:#003a3a;border-color:#0ff;color:#0ff;}
+  width:44px;height:44px;user-select:none;transition:all .1s;}
+.bc2:active,.bc2.on{background:#0f3a0f;border-color:#0ff;color:#0ff;box-shadow:0 0 8px #0ff;}
+#linha-tam{display:flex;gap:4px;margin-top:5px;justify-content:center;align-items:center;}
+.bt{background:#001a1a;border:1px solid #0aa;color:#0aa;border-radius:4px;
+  font-size:.78rem;font-weight:bold;cursor:pointer;padding:3px 8px;}
+.bt:hover{background:#003a3a;border-color:#0ff;color:#0ff;}
 
-/* LINHA DE TAMANHO A+/A- */
-#linha-tam{display:flex;gap:4px;margin-top:6px;justify-content:center;align-items:center;}
+/* ===== PAINEL SKILL (lateral esquerdo) ===== */
+#painel-sk{position:fixed;left:8px;top:55px;z-index:3000;
+  background:rgba(0,0,0,.88);border:1px solid #0f0;border-radius:8px;
+  padding:10px;font-size:.72rem;min-width:115px;max-width:130px;}
+.psk{display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid #0a1a0a;}
+.psk:last-child{border-bottom:none;}
+.psk-l{color:#0aa;}.psk-v{color:#0ff;font-weight:bold;}
+#bsk{height:7px;background:#111;border-radius:4px;border:1px solid #0f0;overflow:hidden;margin-top:5px;}
+#bsk-f{height:100%;background:linear-gradient(90deg,#0f0,#0ff);border-radius:4px;transition:width .4s;}
+#bsk-txt{font-size:.6rem;color:#555;margin-top:2px;text-align:center;}
 
-/* HUD TOPO */
-#hud{
-  position:fixed;top:0;left:0;right:0;z-index:50;
-  background:rgba(0,0,0,.88);border-bottom:2px solid #0f0;
-  padding:6px 12px;display:flex;justify-content:space-between;align-items:center;
-}
-.hud-stat{font-size:.72rem;color:#0aa;text-align:center;}
-.hud-val{font-size:.9rem;color:#0ff;font-weight:bold;display:block;}
+/* ===== NOTIFICAÇÃO ===== */
+#notif{position:fixed;top:65px;left:50%;transform:translateX(-50%);z-index:5000;
+  background:#000;border:2px solid #0ff;border-radius:10px;
+  padding:10px 20px;text-align:center;display:none;pointer-events:none;min-width:220px;}
 
-/* PAINEL SKILL (lateral) */
-#painel-skill{
-  position:fixed;left:10px;top:50%;transform:translateY(-50%);
-  z-index:50;background:rgba(0,0,0,.88);border:1px solid #0f0;
-  border-radius:8px;padding:10px;font-size:.72rem;min-width:120px;
-}
-.ps-linha{display:flex;justify-content:space-between;
-  padding:3px 0;border-bottom:1px solid #0a1a0a;}
-.ps-linha:last-child{border-bottom:none;}
-.ps-l{color:#0aa;}.ps-v{color:#0ff;font-weight:bold;}
+/* ===== MODAL / CONFIRMAÇÃO ===== */
+#movl{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.9);z-index:9000;display:none;}
+#modal{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#000;
+  border:3px solid #ff0;border-radius:12px;padding:20px;z-index:9001;
+  width:95%;max-width:500px;max-height:90vh;overflow-y:auto;display:none;}
+#conf-ovl{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.88);z-index:9500;display:none;}
+#conf-box{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+  background:#000;border:3px solid #f00;border-radius:12px;padding:22px;
+  z-index:9501;width:90%;max-width:360px;text-align:center;display:none;}
 
-/* BARRA PROGRESSO SKILL */
-#barra-sk{height:8px;background:#111;border-radius:4px;border:1px solid #0f0;
-  overflow:hidden;margin-top:6px;}
-#barra-sk-fill{height:100%;background:linear-gradient(90deg,#0f0,#0ff);
-  border-radius:4px;transition:width .4s;}
-#barra-sk-label{font-size:.62rem;color:#555;margin-top:3px;text-align:center;}
+/* ===== BACKOFFICE ===== */
+.tabs-bo{display:flex;gap:2px;overflow-x:auto;border-bottom:2px solid #0ff;}
+.tab-bo{padding:7px 12px;background:#111;border:1px solid #333;color:#055;cursor:pointer;
+  font-family:'Courier New',monospace;font-size:.72rem;border-radius:4px 4px 0 0;white-space:nowrap;}
+.tab-bo.on{background:#001a2a;border-color:#0ff;color:#0ff;font-weight:bold;}
+.sec-bo{display:none;padding:12px;}
+.sec-bo.on{display:block;}
+.uc-j{background:#000a00;border:1px solid #0f0;border-radius:6px;padding:9px;margin:4px 0;font-size:.8rem;}
+.uc-pr{background:#0a0800;border:1px solid #ff0;border-radius:6px;padding:9px;margin:4px 0;font-size:.8rem;}
 
-/* NOTIFICAÇÃO */
-#notif{
-  position:fixed;top:70px;left:50%;transform:translateX(-50%);
-  z-index:200;background:#000;border:2px solid #0ff;border-radius:10px;
-  padding:10px 20px;text-align:center;display:none;pointer-events:none;
-}
+/* TABS PR */
+.tabs-pr{display:flex;gap:2px;overflow-x:auto;border-bottom:2px solid #ff0;}
+.tab-pr{padding:7px 12px;background:#111;border:1px solid #333;color:#880;cursor:pointer;
+  font-family:'Courier New',monospace;font-size:.72rem;border-radius:4px 4px 0 0;white-space:nowrap;}
+.tab-pr.on{background:#1a1000;border-color:#ff0;color:#ff0;font-weight:bold;}
+.sec-pr{display:none;padding:12px;}
+.sec-pr.on{display:block;}
 
-/* GPS */
-#gps-info{
-  position:fixed;bottom:5px;left:50%;transform:translateX(-50%);
-  z-index:50;font-size:.65rem;color:#555;
-  background:rgba(0,0,0,.7);border-radius:12px;padding:2px 8px;
-}
-
-/* SKILL LEVEL TAG */
-#skill-tag{
-  position:fixed;bottom:5px;left:10px;z-index:50;
-  background:rgba(0,0,0,.8);border:1px solid #0f0;border-radius:8px;
-  padding:4px 10px;font-size:.72rem;color:#0f0;
-}
-
-/* MAPA não deve capturar eventos de teclado */
-.leaflet-container{outline:none;}
+/* LOTE */
+.lote{background:#0a0a0a;border:2px solid #333;border-radius:8px;padding:12px;margin:5px 0;position:relative;}
+.lote.ativo{border-color:#0f0;background:#050f05;}
 </style>
 </head>
 <body>
 
-<!-- MAPA -->
-<div id="mapa"></div>
-
-<!-- FOG OF WAR -->
-<canvas id="fog"></canvas>
-
-<!-- AVATAR (move-se no ecrã) -->
-<div id="avatar-wrap">
-  <!-- CÍRCULO DE VISÃO -->
-  <div id="circulo"></div>
-
-  <!-- AVATAR SVG -->
-  <svg id="avt" viewBox="0 0 52 64" xmlns="http://www.w3.org/2000/svg">
-    <!-- SOMBRA -->
-    <ellipse cx="26" cy="61" rx="11" ry="3" fill="rgba(0,0,0,.5)"/>
-
-    <!-- CORPO GRUPO -->
-    <g id="g-corpo">
-      <!-- PERNAS -->
-      <g id="g-perna-e" style="transform-origin:23px 42px">
-        <rect x="19" y="40" width="7" height="16" rx="3.5" fill="#0a4a0a"/>
-        <ellipse cx="22" cy="55" rx="6" ry="3" fill="#083a08"/>
-      </g>
-      <g id="g-perna-d" style="transform-origin:29px 42px">
-        <rect x="26" y="40" width="7" height="16" rx="3.5" fill="#0a4a0a"/>
-        <ellipse cx="30" cy="55" rx="6" ry="3" fill="#083a08"/>
-      </g>
-      <!-- TORSO -->
-      <rect x="17" y="26" width="18" height="16" rx="5" fill="#0d6a0d"/>
-      <rect x="21" y="29" width="10" height="2" rx="1" fill="#0ff" opacity=".5"/>
-      <rect x="21" y="33" width="10" height="1.5" rx=".75" fill="#0ff" opacity=".3"/>
-      <!-- BRAÇOS -->
-      <g id="g-braco-e" style="transform-origin:17px 28px">
-        <rect x="9" y="26" width="8" height="12" rx="4" fill="#0b5a0b"/>
-        <circle cx="13" cy="39" r="3.5" fill="#094a09"/>
-      </g>
-      <g id="g-braco-d" style="transform-origin:35px 28px">
-        <rect x="35" y="26" width="8" height="12" rx="4" fill="#0b5a0b"/>
-        <circle cx="39" cy="39" r="3.5" fill="#094a09"/>
-      </g>
-      <!-- PESCOÇO -->
-      <rect x="23" y="22" width="6" height="6" rx="3" fill="#0b5a0b"/>
-      <!-- CABEÇA -->
-      <g id="g-cabeca" style="transform-origin:26px 15px">
-        <!-- Base -->
-        <circle cx="26" cy="15" r="11" fill="#0d6a0d"/>
-        <!-- Capacete -->
-        <ellipse cx="26" cy="5.5" rx="10" ry="4.5" fill="#050"/>
-        <rect x="16" y="5" width="20" height="5" rx="2" fill="#050"/>
-        <!-- Viseira -->
-        <rect x="18" y="10" width="16" height="3.5" rx="1.75" fill="#0ff" opacity=".55"/>
-        <!-- Olhos -->
-        <circle cx="21" cy="16" r="3" fill="#000"/>
-        <circle cx="31" cy="16" r="3" fill="#000"/>
-        <circle cx="21" cy="16" r="1.8" fill="#0ff" id="olho-e"/>
-        <circle cx="31" cy="16" r="1.8" fill="#0ff" id="olho-d"/>
-        <circle cx="21.8" cy="15.2" r=".7" fill="#fff"/>
-        <circle cx="31.8" cy="15.2" r=".7" fill="#fff"/>
-        <!-- Boca -->
-        <path d="M 22 20 Q 26 22.5 30 20" stroke="#0ff" stroke-width="1.2" fill="none" stroke-linecap="round" opacity=".6"/>
-        <!-- Antena -->
-        <line x1="26" y1="4" x2="26" y2="0" stroke="#0f0" stroke-width="1.5"/>
-        <circle cx="26" cy="0" r="2.5" fill="#0ff">
-          <animate attributeName="opacity" values="1;.2;1" dur="1.4s" repeatCount="indefinite"/>
-          <animate attributeName="r" values="2.5;3.5;2.5" dur="1.4s" repeatCount="indefinite"/>
-        </circle>
-      </g>
-    </g>
-  </svg>
-</div>
-
-<!-- HUD -->
-<div id="hud">
-  <div class="hud-stat">👤 <span class="hud-val" id="hud-nome">Jogador</span></div>
-  <div class="hud-stat">🏴 <span class="hud-val" id="hud-flags">0</span></div>
-  <div class="hud-stat">⚡ <span class="hud-val" id="hud-en">100%</span></div>
-  <div class="hud-stat">🎯 Skill <span class="hud-val" id="hud-skill">0</span></div>
-  <div class="hud-stat">👁️ <span class="hud-val" id="hud-visao">5m</span></div>
-</div>
-
-<!-- PAINEL SKILL -->
-<div id="painel-skill">
-  <div style="color:#0f0;font-weight:bold;text-align:center;margin-bottom:6px;font-size:.78rem;">📊 PROGRESSO</div>
-  <div class="ps-linha"><span class="ps-l">Nível</span><span class="ps-v" id="ps-nivel">1</span></div>
-  <div class="ps-linha"><span class="ps-l">Skill</span><span class="ps-v" id="ps-skill">0</span></div>
-  <div class="ps-linha"><span class="ps-l">Visão</span><span class="ps-v" id="ps-visao">5m</span></div>
-  <div class="ps-linha"><span class="ps-l">Flags</span><span class="ps-v" id="ps-flags">0</span></div>
-  <div class="ps-linha"><span class="ps-l">Prox. Skill</span><span class="ps-v" id="ps-prox">500</span></div>
-  <div id="barra-sk"><div id="barra-sk-fill" style="width:0%"></div></div>
-  <div id="barra-sk-label">0 / 500 flags</div>
-</div>
-
-<!-- CAIXA DE CONTROLO (arrastável) -->
-<div id="caixa-controlo">
-  <div id="caixa-titulo">
-    <span>🕹️ MOVIMENTO</span>
-    <span style="cursor:move;color:#555;" title="Arrasta para mover">⠿</span>
+<!-- ============================================================ -->
+<!-- PÁGINA INÍCIO                                               -->
+<!-- ============================================================ -->
+<div id="p-inicio" class="page ativa">
+<div class="caixa" style="padding-top:25px;text-align:center;">
+  <h1 style="font-size:2.2rem;text-shadow:0 0 20px #0f0;">🏴 ZAP FLAGS</h1>
+  <p style="color:#0aa;font-size:.85rem;margin-bottom:5px;">Caça ao Tesouro Digital</p>
+  <div style="text-align:right;margin-bottom:15px;">
+    <button class="bsair btn" style="padding:6px 12px;font-size:.78rem;" onclick="fecharApp()">✖ FECHAR</button>
   </div>
-  <div id="btns-dir">
-    <div></div>
-    <div class="btn-dir" id="btn-cima"    data-dir="cima"    onpointerdown="pressDir('cima')"    onpointerup="soltarDir('cima')"   ontouchstart="pressDir('cima')" ontouchend="soltarDir('cima')">▲</div>
-    <div></div>
-    <div class="btn-dir" id="btn-esq"     data-dir="esq"     onpointerdown="pressDir('esq')"     onpointerup="soltarDir('esq')"    ontouchstart="pressDir('esq')"  ontouchend="soltarDir('esq')">◄</div>
-    <div class="btn-dir" id="btn-centro"  style="font-size:.65rem;color:#555;">STOP</div>
-    <div class="btn-dir" id="btn-dir"     data-dir="dir"     onpointerdown="pressDir('dir')"     onpointerup="soltarDir('dir')"    ontouchstart="pressDir('dir')"  ontouchend="soltarDir('dir')">►</div>
-    <div></div>
-    <div class="btn-dir" id="btn-baixo"   data-dir="baixo"   onpointerdown="pressDir('baixo')"   onpointerup="soltarDir('baixo')"  ontouchstart="pressDir('baixo')" ontouchend="soltarDir('baixo')">▼</div>
-    <div></div>
+
+  <!-- SESSÕES ATIVAS -->
+  <div id="home-j" style="display:none;">
+    <div class="barra-sessao barra-j">
+      <div style="text-align:left;">
+        <div style="font-weight:bold;font-size:.9rem;color:#0f0;" id="home-j-nome">👤 ---</div>
+        <div style="font-size:.72rem;color:#0aa;" id="home-j-info">---</div>
+      </div>
+      <div style="display:flex;gap:6px;">
+        <button class="btn bv" style="padding:7px 12px;font-size:.8rem;" onclick="reentrarJogo()">🎮 Jogar</button>
+        <button class="bsair btn" style="padding:7px 12px;font-size:.8rem;" onclick="confSair('j')">🚪</button>
+      </div>
+    </div>
   </div>
-  <div id="linha-tam">
-    <button class="btn-tam" onclick="mudarTamBtn(-1)" title="Diminuir botões">A−</button>
-    <span style="font-size:.65rem;color:#555;" id="tam-label">44px</span>
-    <button class="btn-tam" onclick="mudarTamBtn(+1)" title="Aumentar botões">A+</button>
+  <div id="home-pr" style="display:none;">
+    <div class="barra-sessao barra-pr">
+      <div style="text-align:left;">
+        <div style="font-weight:bold;font-size:.9rem;color:#ff0;" id="home-pr-nome">🏪 ---</div>
+        <div style="font-size:.72rem;color:#0aa;" id="home-pr-info">---</div>
+      </div>
+      <div style="display:flex;gap:6px;">
+        <button class="btn bo" style="padding:7px 12px;font-size:.8rem;" onclick="reentrarPR()">🏪 Painel</button>
+        <button class="bsair btn" style="padding:7px 12px;font-size:.8rem;" onclick="confSair('pr')">🚪</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="area-jog">
+    <h3>🎮 ÁREA DO JOGADOR</h3>
+    <button class="btn bv bb" onclick="ir('p-login')">▶ ENTRAR NO JOGO</button>
+    <button class="btn bc bb" onclick="ir('p-reg')">📝 CRIAR CONTA DE JOGADOR</button>
+  </div>
+  <div class="area-pr">
+    <h3>🏪 ÁREA DO LOJISTA</h3>
+    <button class="btn bv bb" onclick="ir('p-pr-login')">▶ ENTRAR NA MINHA CONTA</button>
+    <button class="btn bo bb" onclick="ir('p-pr-reg')">📝 REGISTAR EMPRESA</button>
+  </div>
+  <div class="area-bo">
+    <h3>🖥️ BACKOFFICE <span class="badge-bo">SISTEMA</span></h3>
+    <p style="color:#0aa;font-size:.78rem;margin-bottom:12px;line-height:1.6;">
+      Gestão completa do sistema ZAP FLAGS.
+    </p>
+    <button class="btn bbo bb" onclick="ir('p-bo-login')" style="font-size:.95rem;padding:14px;">
+      🖥️ ACEDER AO BACKOFFICE
+    </button>
+  </div>
+  <p style="color:#111;font-size:.65rem;margin-top:12px;">v9.0 © 2025 ZAP FLAGS</p>
+</div>
+</div>
+
+<!-- ============================================================ -->
+<!-- LOGIN JOGADOR                                               -->
+<!-- ============================================================ -->
+<div id="p-login" class="page">
+<div class="caixa">
+  <button class="btn bvol bb" onclick="ir('p-inicio')">← VOLTAR</button>
+  <div class="area-jog">
+    <h3>🎮 ENTRAR NO JOGO</h3>
+    <div id="m-login" class="msg"></div>
+    <label style="font-size:.8rem;color:#0aa;">📧 Email</label>
+    <input type="email" id="l-em" placeholder="email@exemplo.com" autocomplete="email">
+    <label style="font-size:.8rem;color:#0aa;">🔑 Senha</label>
+    <input type="password" id="l-pw" placeholder="A tua senha" autocomplete="current-password">
+    <button class="btn bv bb" onclick="fazerLogin()">▶ ENTRAR</button>
+  </div>
+  <div style="text-align:center;margin-top:10px;">
+    <span class="lnk" onclick="ir('p-reg')">Não tens conta? Regista-te</span>
   </div>
 </div>
-
-<!-- NOTIFICAÇÃO -->
-<div id="notif">
-  <div style="font-size:1.1rem;" id="notif-ico">🎯</div>
-  <div style="color:#0ff;font-weight:bold;" id="notif-txt">---</div>
-  <div style="color:#0aa;font-size:.75rem;" id="notif-sub">---</div>
 </div>
 
-<!-- GPS -->
-<div id="gps-info">📡 GPS: a iniciar...</div>
-<div id="skill-tag">👁️ 5m visão · Skill 0</div>
+<!-- ============================================================ -->
+<!-- REGISTO JOGADOR                                             -->
+<!-- ============================================================ -->
+<div id="p-reg" class="page">
+<div class="caixa">
+  <button class="btn bvol bb" onclick="ir('p-inicio')">← VOLTAR</button>
+  <div class="area-jog">
+    <h3>📝 CRIAR CONTA DE JOGADOR</h3>
+    <div class="card card-b" style="text-align:center;margin-bottom:10px;">
+      <p style="color:#0ff;font-weight:bold;">🎁 OFERTA DE BOAS-VINDAS</p>
+      <p style="color:#0aa;font-size:.78rem;margin-top:4px;">1.000 bandeiras GRÁTIS ao criar conta!</p>
+    </div>
+    <div id="m-reg" class="msg"></div>
+    <label style="font-size:.8rem;color:#0aa;">👤 Nome</label>
+    <input type="text" id="r-nm" placeholder="O teu nome" autocomplete="name">
+    <label style="font-size:.8rem;color:#0aa;">📧 Email</label>
+    <input type="email" id="r-em" placeholder="email@exemplo.com" autocomplete="email">
+    <label style="font-size:.8rem;color:#0aa;">📱 Telemóvel</label>
+    <input type="tel" id="r-tl" placeholder="912345678" autocomplete="tel">
+    <label style="font-size:.8rem;color:#0aa;">🔑 Senha (mín. 4 car.)</label>
+    <input type="password" id="r-pw" placeholder="Cria uma senha" autocomplete="new-password">
+    <label style="font-size:.8rem;color:#0aa;">🔑 Confirmar Senha</label>
+    <input type="password" id="r-pw2" placeholder="Repete a senha" autocomplete="new-password">
+    <button class="btn bv bb" onclick="fazerRegisto()">✅ CRIAR CONTA GRÁTIS</button>
+  </div>
+  <div style="text-align:center;margin-top:10px;">
+    <span class="lnk" onclick="ir('p-login')">Já tens conta? Entra aqui</span>
+  </div>
+</div>
+</div>
+
+<!-- ============================================================ -->
+<!-- JOGO (MAPA + AVATAR)                                        -->
+<!-- ============================================================ -->
+<div id="p-jogo" class="page" style="padding:0;overflow:hidden;height:100vh;">
+
+  <!-- HUD TOPO -->
+  <div class="hud hud-j" style="z-index:3000;">
+    <div class="hud-stat">👤 <span class="hud-val" id="j-nome">---</span></div>
+    <div class="hud-stat">🏴 <span class="hud-val" id="j-flags">0</span></div>
+    <div class="hud-stat">⚡ <span class="hud-val" id="j-en">100%</span></div>
+    <div class="hud-stat">🎯 <span class="hud-val" id="j-skill">0</span></div>
+    <div class="hud-stat">👁️ <span class="hud-val" id="j-visao">5m</span></div>
+    <div style="display:flex;gap:4px;">
+      <button class="btn bc" style="width:auto;padding:5px 8px;font-size:.7rem;" onclick="ir('p-inicio')">← Início</button>
+      <button class="bsair btn" style="width:auto;padding:5px 8px;font-size:.7rem;" onclick="confSair('j')">Sair</button>
+    </div>
+  </div>
+
+  <!-- MAPA -->
+  <div id="mapa-jogo"></div>
+
+  <!-- FOG OF WAR -->
+  <canvas id="fog-canvas"></canvas>
+
+  <!-- AVATAR (move-se no ecrã) -->
+  <div id="avatar-wrap">
+    <div id="circ-visao"></div>
+    <svg id="avt-svg" viewBox="0 0 52 64" xmlns="http://www.w3.org/2000/svg">
+      <ellipse cx="26" cy="61" rx="11" ry="3" fill="rgba(0,0,0,.5)"/>
+      <g id="g-corpo">
+        <g id="g-pe" style="transform-origin:23px 42px">
+          <rect x="19" y="40" width="7" height="16" rx="3.5" fill="#0a4a0a"/>
+          <ellipse cx="22" cy="55" rx="6" ry="3" fill="#083a08"/>
+        </g>
+        <g id="g-pd" style="transform-origin:29px 42px">
+          <rect x="26" y="40" width="7" height="16" rx="3.5" fill="#0a4a0a"/>
+          <ellipse cx="30" cy="55" rx="6" ry="3" fill="#083a08"/>
+        </g>
+        <rect x="17" y="26" width="18" height="16" rx="5" fill="#0d6a0d"/>
+        <rect x="21" y="29" width="10" height="2" rx="1" fill="#0ff" opacity=".5"/>
+        <rect x="21" y="33" width="10" height="1.5" rx=".75" fill="#0ff" opacity=".3"/>
+        <g id="g-be" style="transform-origin:17px 28px">
+          <rect x="9" y="26" width="8" height="12" rx="4" fill="#0b5a0b"/>
+          <circle cx="13" cy="39" r="3.5" fill="#094a09"/>
+        </g>
+        <g id="g-bd" style="transform-origin:35px 28px">
+          <rect x="35" y="26" width="8" height="12" rx="4" fill="#0b5a0b"/>
+          <circle cx="39" cy="39" r="3.5" fill="#094a09"/>
+        </g>
+        <rect x="23" y="22" width="6" height="6" rx="3" fill="#0b5a0b"/>
+        <g id="g-cab" style="transform-origin:26px 15px">
+          <circle cx="26" cy="15" r="11" fill="#0d6a0d"/>
+          <ellipse cx="26" cy="5.5" rx="10" ry="4.5" fill="#050"/>
+          <rect x="16" y="5" width="20" height="5" rx="2" fill="#050"/>
+          <rect x="18" y="10" width="16" height="3.5" rx="1.75" fill="#0ff" opacity=".55"/>
+          <circle cx="21" cy="16" r="3" fill="#000"/>
+          <circle cx="31" cy="16" r="3" fill="#000"/>
+          <circle cx="21" cy="16" r="1.8" fill="#0ff"/>
+          <circle cx="31" cy="16" r="1.8" fill="#0ff"/>
+          <circle cx="21.8" cy="15.2" r=".7" fill="#fff"/>
+          <circle cx="31.8" cy="15.2" r=".7" fill="#fff"/>
+          <path d="M 22 20 Q 26 22.5 30 20" stroke="#0ff" stroke-width="1.2" fill="none" stroke-linecap="round" opacity=".6"/>
+          <line x1="26" y1="4" x2="26" y2="0" stroke="#0f0" stroke-width="1.5"/>
+          <circle cx="26" cy="0" r="2.5" fill="#0ff">
+            <animate attributeName="opacity" values="1;.2;1" dur="1.4s" repeatCount="indefinite"/>
+            <animate attributeName="r" values="2.5;3.5;2.5" dur="1.4s" repeatCount="indefinite"/>
+          </circle>
+        </g>
+      </g>
+    </svg>
+  </div>
+
+  <!-- PAINEL SKILL -->
+  <div id="painel-sk">
+    <div style="color:#0f0;font-weight:bold;text-align:center;margin-bottom:5px;font-size:.75rem;">📊 PROGRESSO</div>
+    <div class="psk"><span class="psk-l">Nível</span><span class="psk-v" id="sk-niv">1</span></div>
+    <div class="psk"><span class="psk-l">Skill</span><span class="psk-v" id="sk-sk">0</span></div>
+    <div class="psk"><span class="psk-l">Visão</span><span class="psk-v" id="sk-vis">5m</span></div>
+    <div class="psk"><span class="psk-l">Flags</span><span class="psk-v" id="sk-fl">0</span></div>
+    <div class="psk"><span class="psk-l">Prox.</span><span class="psk-v" id="sk-prox">500</span></div>
+    <div id="bsk"><div id="bsk-f" style="width:0%"></div></div>
+    <div id="bsk-txt">0 / 500</div>
+  </div>
+
+  <!-- CAIXA DE CONTROLO (arrastável) -->
+  <div id="caixa-ctrl">
+    <div id="ctrl-titulo">
+      <span>🕹️ MOVER</span>
+      <span style="color:#555;font-size:.7rem;">⠿ arrasta</span>
+    </div>
+    <div id="btns-ctrl">
+      <div></div>
+      <div class="bc2" id="bc-cima"  onpointerdown="pd('c')" onpointerup="pu('c')" ontouchstart="pd('c')" ontouchend="pu('c')">▲</div>
+      <div></div>
+      <div class="bc2" id="bc-esq"   onpointerdown="pd('e')" onpointerup="pu('e')" ontouchstart="pd('e')" ontouchend="pu('e')">◄</div>
+      <div class="bc2" style="font-size:.6rem;color:#333;">●</div>
+      <div class="bc2" id="bc-dir"   onpointerdown="pd('d')" onpointerup="pu('d')" ontouchstart="pd('d')" ontouchend="pu('d')">►</div>
+      <div></div>
+      <div class="bc2" id="bc-baixo" onpointerdown="pd('b')" onpointerup="pu('b')" ontouchstart="pd('b')" ontouchend="pu('b')">▼</div>
+      <div></div>
+    </div>
+    <div id="linha-tam">
+      <button class="bt" onclick="mudarTam(-1)">A−</button>
+      <span id="tam-lbl" style="font-size:.65rem;color:#555;">44px</span>
+      <button class="bt" onclick="mudarTam(+1)">A+</button>
+    </div>
+  </div>
+
+  <!-- NOTIFICAÇÃO -->
+  <div id="notif">
+    <div id="notif-ico" style="font-size:1.2rem;margin-bottom:4px;">🎯</div>
+    <div id="notif-txt" style="color:#0ff;font-weight:bold;font-size:.88rem;"></div>
+    <div id="notif-sub" style="color:#0aa;font-size:.75rem;margin-top:2px;"></div>
+  </div>
+
+  <!-- TICKER -->
+  <div id="rodape-jogo"><div id="ticker"></div></div>
+  <div id="gps-label">📡 GPS: a iniciar...</div>
+</div>
+
+<!-- ============================================================ -->
+<!-- PR LOGIN                                                    -->
+<!-- ============================================================ -->
+<div id="p-pr-login" class="page">
+<div class="caixa">
+  <button class="btn bvol bb" onclick="ir('p-inicio')">← VOLTAR</button>
+  <div class="area-pr">
+    <h3>🏪 ENTRAR COMO LOJISTA</h3>
+    <div id="m-pr-l" class="msg"></div>
+    <input type="email" id="pl-em" placeholder="📧 Email da empresa" autocomplete="email">
+    <input type="password" id="pl-pw" placeholder="🔑 Senha" autocomplete="current-password">
+    <button class="btn bo bb" onclick="loginPR()">▶ ENTRAR</button>
+  </div>
+  <div style="text-align:center;margin-top:10px;">
+    <span class="lnk" onclick="ir('p-pr-reg')">Registar empresa nova</span>
+  </div>
+</div>
+</div>
+
+<!-- ============================================================ -->
+<!-- PR REGISTO                                                  -->
+<!-- ============================================================ -->
+<div id="p-pr-reg" class="page">
+<div class="caixa">
+  <button class="btn bvol bb" onclick="ir('p-inicio')">← VOLTAR</button>
+  <div class="area-pr"><h3>📝 REGISTAR EMPRESA</h3></div>
+  <div id="m-pr-reg" class="msg"></div>
+  <div class="scroll">
+    <div class="card card-y">
+      <h3 style="color:#ff0;margin-bottom:6px;">📍 MORADA</h3>
+      <input type="text" id="pr-rua" placeholder="* Rua e Número">
+      <div class="g2">
+        <input type="text" id="pr-cp" placeholder="* Código Postal">
+        <input type="text" id="pr-loc" placeholder="* Localidade">
+      </div>
+      <select id="pr-dist">
+        <option value="">* Distrito</option>
+        <option>Aveiro</option><option>Beja</option><option>Braga</option><option>Bragança</option>
+        <option>Castelo Branco</option><option>Coimbra</option><option>Évora</option><option>Faro</option>
+        <option>Guarda</option><option>Leiria</option><option>Lisboa</option><option>Portalegre</option>
+        <option>Porto</option><option>Santarém</option><option>Setúbal</option>
+        <option>Viana do Castelo</option><option>Vila Real</option><option>Viseu</option>
+        <option>Ilha da Madeira</option><option>Ilha dos Açores</option>
+      </select>
+    </div>
+    <div class="card card-y">
+      <h3 style="color:#ff0;margin-bottom:6px;">🏢 EMPRESA</h3>
+      <input type="text" id="pr-ne" placeholder="* Nome da Empresa">
+      <input type="text" id="pr-nif" placeholder="* NIF (9 dígitos)" maxlength="9">
+      <select id="pr-ativ">
+        <option value="">* Setor de Atividade</option>
+        <optgroup label="🍽️ Restauração"><option>Restaurante</option><option>Café / Pastelaria</option><option>Bar / Pub</option><option>Hotel</option><option>Take-Away</option></optgroup>
+        <optgroup label="🛍️ Comércio"><option>Supermercado</option><option>Roupa / Moda</option><option>Eletrónica</option><option>Farmácia</option><option>Desporto</option><option>Outro Comércio</option></optgroup>
+        <optgroup label="💆 Serviços"><option>Cabeleireiro</option><option>Ginásio</option><option>Clínica</option><option>Estética</option><option>Outro Serviço</option></optgroup>
+        <optgroup label="🎭 Lazer"><option>Cinema</option><option>Escola</option><option>Outro</option></optgroup>
+      </select>
+    </div>
+    <div class="card card-y">
+      <h3 style="color:#ff0;margin-bottom:6px;">📞 CONTACTOS</h3>
+      <input type="tel" id="pr-tel" placeholder="* Telefone">
+      <input type="email" id="pr-email" placeholder="* Email da Empresa">
+      <input type="url" id="pr-web" placeholder="Website (opcional)">
+    </div>
+    <div class="card card-y">
+      <h3 style="color:#ff0;margin-bottom:6px;">👤 RESPONSÁVEL</h3>
+      <input type="text" id="pr-resp" placeholder="* Nome do Responsável">
+      <input type="tel" id="pr-resp-t" placeholder="* Telemóvel">
+      <input type="password" id="pr-pw" placeholder="* Senha (mín. 4 car.)" autocomplete="new-password">
+      <input type="password" id="pr-pw2" placeholder="* Confirmar Senha" autocomplete="new-password">
+    </div>
+    <div style="padding:8px;">
+      <label style="display:flex;align-items:flex-start;gap:8px;font-size:.82rem;color:#0aa;cursor:pointer;">
+        <input type="checkbox" id="pr-trm" style="width:auto;margin-top:3px;flex-shrink:0;">
+        Li e aceito os <span style="color:#0ff;">&nbsp;Termos e Condições&nbsp;</span> do ZAP FLAGS.
+      </label>
+    </div>
+    <button class="btn bo bb" onclick="registarPR()">✅ REGISTAR EMPRESA</button>
+    <button class="btn bvol bb" onclick="ir('p-inicio')">← VOLTAR</button>
+  </div>
+</div>
+</div>
+
+<!-- ============================================================ -->
+<!-- PR PAINEL                                                   -->
+<!-- ============================================================ -->
+<div id="p-pr" class="page" style="padding:0;">
+  <div class="hud hud-pr" style="padding:8px 12px;">
+    <div>
+      <div style="font-weight:bold;font-size:.8rem;color:#ff0;" id="pr-hud-n">🏪 ---</div>
+      <div style="font-size:.65rem;color:#0aa;" id="pr-hud-loc">---</div>
+    </div>
+    <div style="display:flex;gap:4px;">
+      <button class="btn bvol" style="width:auto;padding:5px 8px;font-size:.72rem;" onclick="ir('p-inicio')">← Início</button>
+      <button class="bsair btn" style="width:auto;padding:5px 8px;font-size:.72rem;" onclick="confSair('pr')">Sair</button>
+    </div>
+  </div>
+  <div class="tabs-pr" style="margin-top:52px;">
+    <div class="tab-pr on" onclick="tabPR(0)">📦 Pacotes</div>
+    <div class="tab-pr"    onclick="tabPR(1)">🎰 BINGO</div>
+    <div class="tab-pr"    onclick="tabPR(2)">📸 Scanner</div>
+    <div class="tab-pr"    onclick="tabPR(3)">🏢 Empresa</div>
+  </div>
+  <div id="pr-s0" class="sec-pr on">
+    <div id="pr-sem" style="text-align:center;background:#0a0800;border:2px solid #ff0;border-radius:10px;padding:25px;margin:10px 0;">
+      <div style="font-size:2rem;margin-bottom:8px;">📦</div>
+      <p style="color:#ff0;font-weight:bold;margin-bottom:8px;">Sem pacote ativo</p>
+      <button class="btn bo" onclick="abrirCompra()">🛒 COMPRAR PACOTE</button>
+    </div>
+    <div id="pr-com" style="display:none;">
+      <div id="pr-pack-info" class="card card-y"></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin:8px 0 4px;">
+        <h3 style="color:#0ff;margin:0;font-size:.88rem;">📦 LOTES DE QR</h3>
+        <button class="btn bv" style="padding:5px 12px;font-size:.78rem;" onclick="abrirCriarLote()">+ CRIAR LOTE</button>
+      </div>
+      <div id="m-lotes" class="msg"></div>
+      <div id="lista-lotes" class="scroll" style="max-height:35vh;"></div>
+    </div>
+  </div>
+  <div id="pr-s1" class="sec-pr">
+    <div style="text-align:center;padding:20px;color:#555;">🎰 BINGO em desenvolvimento</div>
+  </div>
+  <div id="pr-s2" class="sec-pr" style="text-align:center;padding-top:20px;">
+    <button class="btn bv bb" onclick="scanner()">📸 ESCANEAR QR</button>
+    <div id="m-scan" class="msg" style="margin-top:8px;"></div>
+  </div>
+  <div id="pr-s3" class="sec-pr">
+    <div id="pr-info-emp"></div>
+    <div class="sep"></div>
+    <button class="bsair btn bb" onclick="confSair('pr')" style="margin-top:10px;">🚪 SAIR DA CONTA</button>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- BACKOFFICE LOGIN                                            -->
+<!-- ============================================================ -->
+<div id="p-bo-login" class="page">
+<div class="caixa">
+  <button class="btn bvol bb" onclick="ir('p-inicio')">← VOLTAR</button>
+  <div class="area-bo">
+    <h3>🖥️ BACKOFFICE <span class="badge-bo">SISTEMA</span></h3>
+    <p style="color:#0aa;font-size:.78rem;margin-bottom:15px;">Painel de gestão completo.</p>
+    <div id="m-bo-l" class="msg"></div>
+    <input type="password" id="bo-pw" placeholder="Código de acesso" style="text-align:center;letter-spacing:6px;border-color:#0ff;color:#0ff;font-size:1.1rem;">
+    <button class="btn bbo bb" onclick="loginBO()" style="margin-top:8px;">🖥️ ENTRAR</button>
+  </div>
+</div>
+</div>
+
+<!-- ============================================================ -->
+<!-- BACKOFFICE PAINEL                                           -->
+<!-- ============================================================ -->
+<div id="p-bo" class="page" style="padding:0;">
+  <div class="hud hud-bo" style="padding:8px 12px;">
+    <div><div style="font-weight:bold;font-size:.82rem;color:#0ff;">🖥️ BACKOFFICE</div></div>
+    <div style="display:flex;gap:10px;font-size:.75rem;text-align:center;">
+      <div><div style="color:#0f0;font-weight:bold;" id="bo-hud-j">0</div><div style="color:#555;font-size:.6rem;">Jogadores</div></div>
+      <div><div style="color:#ff0;font-weight:bold;" id="bo-hud-p">0</div><div style="color:#555;font-size:.6rem;">Empresas</div></div>
+    </div>
+    <div style="display:flex;gap:4px;">
+      <button class="btn bvol" style="width:auto;padding:5px 8px;font-size:.72rem;" onclick="ir('p-inicio')">← Início</button>
+      <button class="bsair btn" style="width:auto;padding:5px 8px;font-size:.72rem;" onclick="ir('p-inicio')">Sair</button>
+    </div>
+  </div>
+  <div class="tabs-bo" style="margin-top:52px;">
+    <div class="tab-bo on" onclick="tabBO(0)">📊 Dashboard</div>
+    <div class="tab-bo"    onclick="tabBO(1)">👥 Jogadores</div>
+    <div class="tab-bo"    onclick="tabBO(2)">🏪 Empresas</div>
+    <div class="tab-bo"    onclick="tabBO(3)">⚙️ Sistema</div>
+    <div class="tab-bo"    onclick="tabBO(4)">🔬 Testar</div>
+  </div>
+  <div id="bo-s0" class="sec-bo on">
+    <div class="card card-b">
+      <p style="color:#0ff;font-size:.85rem;font-weight:bold;margin-bottom:10px;">📊 VISÃO GERAL</p>
+      <div class="g2">
+        <div class="stat" style="border-color:#0ff;background:#000a14;"><div class="stat-n" id="d-j">0</div><div class="stat-t">👥 Jogadores</div></div>
+        <div class="stat" style="border-color:#0ff;background:#000a14;"><div class="stat-n" id="d-p">0</div><div class="stat-t">🏪 Empresas</div></div>
+        <div class="stat" style="border-color:#0ff;background:#000a14;"><div class="stat-n" id="d-fl">0</div><div class="stat-t">🏴 Flags Total</div></div>
+        <div class="stat" style="border-color:#0ff;background:#000a14;"><div class="stat-n" id="d-on" style="color:#0f0;">0</div><div class="stat-t">🟢 Online</div></div>
+      </div>
+    </div>
+    <div class="card card-b">
+      <p style="color:#0ff;font-size:.82rem;font-weight:bold;margin-bottom:6px;">🕐 ATIVIDADE RECENTE</p>
+      <div id="d-atv"></div>
+    </div>
+    <button class="btn bc bb" style="font-size:.78rem;" onclick="carregarBO()">🔄 ATUALIZAR</button>
+  </div>
+  <div id="bo-s1" class="sec-bo">
+    <input type="text" id="pesq-j" placeholder="🔍 Pesquisar jogador..." oninput="pesqJ()" style="margin-bottom:8px;">
+    <div id="lista-j" class="scroll" style="max-height:60vh;"></div>
+  </div>
+  <div id="bo-s2" class="sec-bo">
+    <input type="text" id="pesq-p" placeholder="🔍 Pesquisar empresa..." oninput="pesqP()" style="margin-bottom:8px;">
+    <div id="lista-p" class="scroll" style="max-height:60vh;"></div>
+  </div>
+  <div id="bo-s3" class="sec-bo">
+    <div class="card card-b">
+      <p style="color:#0ff;font-size:.82rem;font-weight:bold;margin-bottom:8px;">⚙️ CONFIGURAÇÕES</p>
+      <div class="row"><div class="rl">Versão</div><div class="rv" style="color:#0ff;">v9.0</div></div>
+      <div class="row"><div class="rl">QR Code</div><div class="rv">20 bandeiras = 1 QR</div></div>
+      <div class="row"><div class="rl">Raio BINGO</div><div class="rv">250m</div></div>
+      <div class="row"><div class="rl">Skill</div><div class="rv">10 skill = 1m visão</div></div>
+    </div>
+    <div class="card" style="border-color:#f00;background:#0f0000;">
+      <p style="color:#f00;font-size:.82rem;font-weight:bold;margin-bottom:8px;">⚠️ FERRAMENTAS</p>
+      <button class="btn bc bb" onclick="exportar()" style="margin:3px 0;">📥 Exportar JSON</button>
+      <button class="btn bc bb" onclick="criarJTeste()" style="margin:3px 0;">➕ Criar jogador teste</button>
+      <button class="btn bc bb" onclick="criarPRTeste()" style="margin:3px 0;">➕ Criar empresa teste</button>
+      <div class="sep"></div>
+      <button class="btn br bb" onclick="pedirConf('del-j','Apagar TODOS os jogadores?')" style="margin:3px 0;">🗑️ Apagar todos os jogadores</button>
+      <button class="btn br bb" onclick="pedirConf('del-p','Apagar TODAS as empresas?')"  style="margin:3px 0;">🗑️ Apagar todas as empresas</button>
+    </div>
+    <div id="m-sis" class="msg"></div>
+  </div>
+  <div id="bo-s4" class="sec-bo">
+    <div class="area-jog" style="margin-bottom:8px;">
+      <h3>🎮 TESTAR COMO JOGADOR</h3>
+      <input type="text" id="bo-j-nm" value="BO_TESTE">
+      <button class="btn bv bb" onclick="boJogar()">🎮 ENTRAR NO JOGO</button>
+      <div id="bo-lista-j" class="scroll" style="max-height:20vh;margin-top:6px;"></div>
+    </div>
+    <div class="area-pr">
+      <h3>🏪 TESTAR COMO LOJISTA</h3>
+      <input type="text" id="bo-pr-nm" value="BO_LOJA_TESTE">
+      <button class="btn bo bb" onclick="boPR()">🏪 ENTRAR COMO LOJISTA</button>
+      <div id="bo-lista-pr" class="scroll" style="max-height:15vh;margin-top:6px;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div id="movl" onclick="fecharModal()"></div>
+<div id="modal">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+    <h2 id="modal-tit" style="color:#ff0;border:none;margin:0;font-size:1rem;">---</h2>
+    <button class="btn bc" style="width:auto;padding:4px 10px;font-size:.78rem;" onclick="fecharModal()">✖</button>
+  </div>
+  <div id="modal-corpo"></div>
+  <div id="m-modal" class="msg"></div>
+  <button class="btn bvol bb" onclick="fecharModal()" style="margin-top:8px;">← FECHAR</button>
+</div>
+
+<!-- CONFIRMAÇÃO -->
+<div id="conf-ovl"></div>
+<div id="conf-box">
+  <div id="conf-ico" style="font-size:2.5rem;margin-bottom:8px;">❓</div>
+  <h2 id="conf-tit" style="color:#f00;border-color:#f00;margin-bottom:10px;font-size:1rem;"></h2>
+  <p id="conf-txt" style="color:#888;font-size:.82rem;margin-bottom:18px;line-height:1.5;"></p>
+  <div style="display:flex;gap:8px;">
+    <button class="btn bvol" style="flex:1;padding:12px;" onclick="fecharConf()">❌ CANCELAR</button>
+    <button class="btn br"   style="flex:1;padding:12px;" id="conf-ok" onclick="execConf()">✅ CONFIRMAR</button>
+  </div>
+</div>
 
 <script>
 'use strict';
 
 // ============================================================
+// BASE DE DADOS
+// ============================================================
+const BD={
+  jogs:   ()=>{try{return JSON.parse(localStorage.getItem('zap_jogs')||'[]')}catch{return[]}},
+  emps:   ()=>{try{return JSON.parse(localStorage.getItem('zap_emps')||'[]')}catch{return[]}},
+  bings:  ()=>{try{return JSON.parse(localStorage.getItem('zap_bngs')||'[]')}catch{return[]}},
+  atv:    ()=>{try{return JSON.parse(localStorage.getItem('zap_atv') ||'[]')}catch{return[]}},
+  saveJ:  l=>localStorage.setItem('zap_jogs',JSON.stringify(l)),
+  saveE:  l=>localStorage.setItem('zap_emps',JSON.stringify(l)),
+  saveB:  l=>localStorage.setItem('zap_bngs',JSON.stringify(l)),
+  saveA:  l=>localStorage.setItem('zap_atv', JSON.stringify(l)),
+  sessJ:  ()=>{try{return JSON.parse(localStorage.getItem('zap_sj')||'null')}catch{return null}},
+  sessPR: ()=>{try{return JSON.parse(localStorage.getItem('zap_sp')||'null')}catch{return null}},
+  setSJ:  u=>localStorage.setItem('zap_sj',JSON.stringify(u)),
+  setSP:  p=>localStorage.setItem('zap_sp',JSON.stringify(p)),
+  delSJ:  ()=>localStorage.removeItem('zap_sj'),
+  delSP:  ()=>localStorage.removeItem('zap_sp'),
+};
+
+const G   = id=>document.getElementById(id);
+const val = id=>G(id)?.value?.trim()||'';
+const vE  = e=>/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(e).toLowerCase());
+const vT  = t=>/^[0-9]{9,15}$/.test(String(t).replace(/[\s\-\+]/g,''));
+const vN  = n=>/^[0-9]{9}$/.test(String(n).replace(/\s/g,''));
+const fN  = n=>(n||0).toLocaleString('pt-PT');
+const fmt = ts=>ts?new Date(ts).toLocaleString('pt-PT',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'}):'---';
+const PASSE='321321';
+
+function log(a,d=''){const av=BD.atv();av.unshift({a,d,ts:Date.now()});if(av.length>100)av.pop();BD.saveA(av);}
+function msg(id,t,tp){const e=G(id);if(!e)return;e.className='msg '+tp;e.innerText=t;setTimeout(()=>{if(e){e.className='msg';e.innerText='';}},5000);}
+function fecharModal(){G('movl').style.display='none';G('modal').style.display='none';}
+function abrirModal(tit,corpo){G('modal-tit').innerText=tit;G('modal-corpo').innerHTML=corpo;G('movl').style.display='block';G('modal').style.display='block';}
+
+// ============================================================
+// NAVEGAÇÃO
+// ============================================================
+function ir(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('ativa'));
+  G(id)?.classList.add('ativa');
+  document.querySelectorAll('.msg').forEach(m=>{m.className='msg';m.innerText='';});
+  window.scrollTo(0,0);
+  if(id==='p-inicio') atualizarHome();
+  if(id==='p-bo')     carregarBO();
+  if(id==='p-pr')     atualizarPainelPR();
+  if(id==='p-jogo'){
+    // Iniciar mapa e avatar quando entra no jogo
+    setTimeout(iniciarJogo,200);
+  }
+}
+
+function fecharApp(){
+  mostrConf('✖','FECHAR?','Tens a certeza que queres fechar a aplicação?','fechar');
+}
+
+// ============================================================
+// HOME — SESSÕES
+// ============================================================
+function atualizarHome(){
+  const sj=BD.sessJ(), sp=BD.sessPR();
+  const dj=G('home-j'), dp=G('home-pr');
+  if(sj&&!sj.isBO){
+    G('home-j-nome').innerText='👤 '+sj.nm;
+    G('home-j-info').innerText=`📧 ${sj.em} · 🏴 ${sj.fl||0} flags · 👁️ ${sj.visao||5}m`;
+    dj.style.display='block';
+  } else dj.style.display='none';
+  if(sp&&!sp.isBO){
+    G('home-pr-nome').innerText='🏪 '+sp.ne;
+    G('home-pr-info').innerText=`📍 ${sp.loc||'-'} · 📧 ${sp.em}`;
+    dp.style.display='block';
+  } else dp.style.display='none';
+}
+
+function reentrarJogo(){const sj=BD.sessJ();if(!sj){ir('p-login');return;}jogAtual=sj;ir('p-jogo');}
+function reentrarPR(){const sp=BD.sessPR();if(!sp){ir('p-pr-login');return;}prAtual=sp;ir('p-pr');}
+
+// CONFIRMAÇÕES SAIR
+let confAcao=null;
+function confSair(q){mostrConf('🚪','SAIR?',q==='j'?'Sair da conta de jogador?\n\nProgresso guardado.':'Sair da conta da empresa?\n\nDados guardados.',`sair-${q}`);}
+function pedirConf(a,txt){mostrConf('⚠️','CONFIRMAR',txt,a);}
+function mostrConf(ico,tit,txt,acao){
+  confAcao=acao;G('conf-ico').innerText=ico;G('conf-tit').innerText=tit;G('conf-txt').innerText=txt;
+  G('conf-ovl').style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.88);z-index:9500;display:block;';
+  G('conf-box').style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#000;border:3px solid #f00;border-radius:12px;padding:22px;z-index:9501;width:90%;max-width:360px;text-align:center;display:block;';
+}
+function fecharConf(){confAcao=null;G('conf-ovl').style.display='none';G('conf-box').style.display='none';}
+function execConf(){
+  const a=confAcao;fecharConf();
+  if(a==='sair-j'){BD.delSJ();jogAtual=null;atualizarHome();}
+  else if(a==='sair-pr'){BD.delSP();prAtual=null;atualizarHome();}
+  else if(a==='fechar'){window.close();ir('p-inicio');}
+  else if(a==='del-j'){BD.saveJ([]);carregarBO();msg('m-sis','✅ Jogadores apagados.','s');}
+  else if(a==='del-p'){BD.saveE([]);carregarBO();msg('m-sis','✅ Empresas apagadas.','s');}
+  else if(a?.startsWith('del-j-')){const i=parseInt(a.slice(6));const j=BD.jogs();j.splice(i,1);BD.saveJ(j);carregarBO();}
+  else if(a?.startsWith('del-p-')){const i=parseInt(a.slice(6));const p=BD.emps();p.splice(i,1);BD.saveE(p);carregarBO();}
+}
+
+// ============================================================
+// JOGADOR — REGISTO / LOGIN
+// ============================================================
+function fazerRegisto(){
+  const nm=val('r-nm'),em=val('r-em').toLowerCase(),tl=val('r-tl'),pw=G('r-pw').value,p2=G('r-pw2').value;
+  if(!nm)             {msg('m-reg','❌ Insere o nome!','e');return;}
+  if(!em||!vE(em))    {msg('m-reg','❌ Email inválido!','e');return;}
+  if(!pw||pw.length<4){msg('m-reg','❌ Senha mínimo 4 car.!','e');return;}
+  if(pw!==p2)         {msg('m-reg','❌ Senhas não coincidem!','e');return;}
+  const jogs=BD.jogs();
+  if(jogs.find(j=>j.em===em)){msg('m-reg','❌ Email já registado!','e');return;}
+  if(BD.emps().find(p=>p.em===em)){msg('m-reg','❌ Email já existe como empresa!','e');return;}
+  const u={nm,em,tl,pw,fl:0,en:100,qrs:[],prog:0,skill:0,skillTotal:0,
+    flagsEnerg:0,flagsLimite:500,nivel:1,visao:5,reg:Date.now(),ult:Date.now()};
+  jogs.push(u);BD.saveJ(jogs);BD.setSJ(u);log(`👤 Novo jogador: ${nm}`);
+  jogAtual=u;ir('p-jogo');
+}
+
+function fazerLogin(){
+  const em=val('l-em').toLowerCase(),pw=G('l-pw').value;
+  if(!em){msg('m-login','❌ Insere o email!','e');return;}
+  if(!pw){msg('m-login','❌ Insere a senha!','e');return;}
+  if(pw===PASSE){msg('m-login','❌ Código BO. Usa 🖥️ BACKOFFICE.','a');return;}
+  const jogs=BD.jogs();
+  const u=jogs.find(j=>j.em===em&&j.pw===pw);
+  if(!u){const ex=jogs.find(j=>j.em===em);msg('m-login',ex?'❌ Senha incorreta!':'❌ Email não encontrado!','e');return;}
+  u.ult=Date.now();const idx=jogs.findIndex(j2=>j2.em===em);jogs[idx]=u;BD.saveJ(jogs);BD.setSJ(u);
+  log(`👤 Login: ${u.nm}`);jogAtual=u;ir('p-jogo');
+}
+
+// ============================================================
 // SISTEMA DE SKILL / VISÃO
 // ============================================================
 /*
-  REGRAS DO SKILL:
-  - Cada nível de skill requer o dobro de bandeiras com energia do anterior
-  - Nível 1:  500 bandeiras → +1 skill
-  - Nível 2: 1000 bandeiras → +1 skill
-  - Nível 3: 2000 bandeiras → +1 skill
-  - Nível 4: 4000 bandeiras → +1 skill
-  - ...sempre a dobrar
+  Níveis de Skill (flags com energia necessárias — sempre a dobrar):
+  Nível 1:      500 flags → skill 1
+  Nível 2:    1.000 flags → skill 2
+  Nível 3:    2.000 flags → skill 3
+  Nível 4:    4.000 flags → skill 4
+  ...dobra sempre
 
   VISÃO:
-  - 10 skill = 1 metro de visão
-  - Começa em 5 metros (0 skill)
-  - Máximo 100 metros (950 skill)
+  10 skill = 1 metro extra de visão
+  Começa em 5m, máximo 100m
 */
-
 const VISAO_MIN = 5;
 const VISAO_MAX = 100;
-const SKILL_POR_METRO = 10; // 10 skill = 1 metro
+const SKILL_P_METRO = 10;
 
-// Limites de flags por nível de skill (500, 1000, 2000, 4000...)
-function flagsParaProxSkill(skillAtual){
-  // Primeiro nível = 500, depois dobra sempre
-  return 500 * Math.pow(2, skillAtual);
+function calcFlagsLimite(skillAtual){ return 500 * Math.pow(2, skillAtual); }
+function calcVisao(skill){ return Math.min(VISAO_MAX, VISAO_MIN + Math.floor(skill/SKILL_P_METRO)); }
+
+function verificarSkillJog(){
+  if(!jogAtual) return;
+  const lim=jogAtual.flagsLimite||500;
+  if((jogAtual.flagsEnerg||0)>=lim){
+    jogAtual.flagsEnerg-=lim;
+    jogAtual.skill=(jogAtual.skill||0)+1;
+    jogAtual.skillTotal=(jogAtual.skillTotal||0)+1;
+    jogAtual.flagsLimite=calcFlagsLimite(jogAtual.skill);
+    const novaV=calcVisao(jogAtual.skill);
+    const antV=jogAtual.visao||VISAO_MIN;
+    jogAtual.visao=novaV;
+    jogAtual.nivel=Math.floor(jogAtual.skill/10)+1;
+    let txt=`🎯 Skill ${jogAtual.skill} alcançado!`;
+    let sub=`Próximo: ${fN(jogAtual.flagsLimite)} bandeiras`;
+    if(novaV>antV){txt=`👁️ Visão: ${novaV}m!`;sub=`Skill ${jogAtual.skill} · +${novaV-antV}m`;}
+    mostrarNotif('🎯',txt,sub);
+    actualizarCirculoVisao();
+  }
+  actualizarPainelSkill();
+  gravarJog();
 }
 
-function calcularVisao(skill){
-  const metros = VISAO_MIN + Math.floor(skill / SKILL_POR_METRO);
-  return Math.min(VISAO_MAX, metros);
-}
-
-// ============================================================
-// ESTADO
-// ============================================================
-const G = id => document.getElementById(id);
-
-let av = {
-  // Posição no ECRÃ (px)
-  x: window.innerWidth  / 2,
-  y: window.innerHeight / 2,
-  // Posição no MUNDO (lat/lng)
-  lat: 39.5,
-  lng: -8.0,
-  // Stats
-  nome:       'Jogador',
-  flags:      0,          // total de flags apanhadas
-  flagsEnerg: 0,          // flags com energia (para skill)
-  skill:      0,
-  energia:    100,
-  visao:      VISAO_MIN,
-  nivel:      1,
-  // Movimento
-  vx: 0, vy: 0,
-  velocidade: 2,          // px por frame
-  andando: false,
-  dir: 1,                 // 1=dir, -1=esq
-};
-
-// Threshold de flags para o próximo skill
-let flagsLimiteSkill = flagsParaProxSkill(0); // 500
-
-// ============================================================
-// MAPA LEAFLET
-// ============================================================
-let mapaL    = null;
-let watchGPS = null;
-let gpsFunciona = false;
-
-function iniciarMapa(){
-  mapaL = L.map('mapa',{
-    center:[av.lat, av.lng],
-    zoom:18,
-    zoomControl:true,
-    attributionControl:false,
-    // IMPORTANTE: desactivar interacções de toque/rato no mapa
-    // O avatar move-se → o mapa segue o avatar
-    dragging:false,
-    touchZoom:true,
-    scrollWheelZoom:true,
-    doubleClickZoom:false,
-    keyboard:false,
-  });
-
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
-    attribution:'© OpenStreetMap', maxZoom:20
-  }).addTo(mapaL);
-
-  // Colocar algumas bandeiras no mapa para apanhar
-  colocarBandeirasDemo();
-
-  // GPS
-  iniciarGPS();
+function actualizarPainelSkill(){
+  if(!jogAtual) return;
+  G('sk-niv').innerText=jogAtual.nivel||1;
+  G('sk-sk').innerText=jogAtual.skill||0;
+  G('sk-vis').innerText=(jogAtual.visao||5)+'m';
+  G('sk-fl').innerText=fN(jogAtual.fl||0);
+  G('sk-prox').innerText=fN(jogAtual.flagsLimite||500);
+  const lim=jogAtual.flagsLimite||500;
+  const pct=Math.min(100,((jogAtual.flagsEnerg||0)/lim)*100);
+  G('bsk-f').style.width=pct+'%';
+  G('bsk-txt').innerText=fN(jogAtual.flagsEnerg||0)+' / '+fN(lim);
+  // HUD
+  G('j-nome').innerText=jogAtual.nm||'---';
+  G('j-flags').innerText=fN(jogAtual.fl||0);
+  G('j-en').innerText=Math.round(jogAtual.en||100)+'%';
+  G('j-skill').innerText=jogAtual.skill||0;
+  G('j-visao').innerText=(jogAtual.visao||5)+'m';
 }
 
 // ============================================================
-// GPS (posição inicial)
+// JOGO — MAPA + AVATAR
 // ============================================================
-function iniciarGPS(){
-  if(!navigator.geolocation){
-    G('gps-info').innerText='❌ GPS não suportado — demo';
+let mapaL=null, fogCtx=null, watchGPS=null;
+let jogAtual=null;
+let jogoIniciado=false;
+let animT=0, ultimoFrame=0;
+let av={x:0,y:0,lat:39.5,lng:-8.0,dir:1,andando:false};
+const dirsAtivas={c:false,b:false,e:false,d:false};
+let tamBtn=44;
+const bandeirasJogo=[];
+let spawnTimer=null;
+
+function iniciarJogo(){
+  if(!jogAtual){ir('p-inicio');return;}
+  if(jogoIniciado){
+    // Já iniciado — só actualizar
+    actualizarPainelSkill();
+    actualizarCirculoVisao();
+    iniciarTicker();
     return;
   }
-  navigator.geolocation.getCurrentPosition(
-    pos=>{
-      gpsFunciona=true;
-      av.lat=pos.coords.latitude;
-      av.lng=pos.coords.longitude;
-      mapaL.setView([av.lat,av.lng],18);
-      G('gps-info').innerText=`✅ GPS: ${av.lat.toFixed(5)}, ${av.lng.toFixed(5)}`;
-      // Recolocar bandeiras na posição real
-      mapaL.eachLayer(l=>{if(l._icone_bandeira) mapaL.removeLayer(l);});
-      colocarBandeirasDemo();
-    },
-    ()=>{ G('gps-info').innerText='⚠️ GPS indisponível — modo demo'; },
-    {enableHighAccuracy:true,timeout:8000}
-  );
+  jogoIniciado=true;
+  av.x=window.innerWidth/2; av.y=window.innerHeight/2;
+  G('avatar-wrap').style.left=av.x+'px'; G('avatar-wrap').style.top=av.y+'px';
+
+  // MAPA
+  mapaL=L.map('mapa-jogo',{center:[av.lat,av.lng],zoom:18,zoomControl:true,
+    attributionControl:false,dragging:false,keyboard:false,
+    doubleClickZoom:false,scrollWheelZoom:true});
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:20}).addTo(mapaL);
+
+  // FOG
+  const fc=G('fog-canvas');fogCtx=fc.getContext('2d');
+  fc.width=window.innerWidth;fc.height=window.innerHeight;
+  window.addEventListener('resize',()=>{fc.width=window.innerWidth;fc.height=window.innerHeight;});
+
+  // GPS
+  iniciarGPS_jogo();
+
+  // Bandeiras
+  setTimeout(spawnarBandeiras,500);
+  spawnTimer=setInterval(spawnarBandeiras,30000);
+
+  // Actualizar
+  actualizarPainelSkill();
+  actualizarCirculoVisao();
+  iniciarTicker();
+  arrastarCaixa();
+
+  // Loop
+  requestAnimationFrame(loopJogo);
 }
 
-// ============================================================
-// BANDEIRAS DEMO NO MAPA
-// ============================================================
-const bandeirasNoMapa = [];
+function iniciarGPS_jogo(){
+  if(!navigator.geolocation){G('gps-label').innerText='❌ GPS não suportado';return;}
+  navigator.geolocation.getCurrentPosition(pos=>{
+    av.lat=pos.coords.latitude;av.lng=pos.coords.longitude;
+    mapaL.setView([av.lat,av.lng],18);
+    G('gps-label').innerText=`✅ GPS: ${av.lat.toFixed(5)}, ${av.lng.toFixed(5)}`;
+    bandeirasJogo.forEach(b=>mapaL.removeLayer(b.m));
+    bandeirasJogo.length=0;
+    spawnarBandeiras();
+  },()=>G('gps-label').innerText='⚠️ GPS indisponível — demo',{enableHighAccuracy:true,timeout:8000});
+}
 
-function colocarBandeirasDemo(){
-  // Colocar 20 bandeiras em volta do ponto inicial
-  for(let i=0;i<20;i++){
-    const ang  = Math.random()*2*Math.PI;
-    const dist = 30+Math.random()*120; // metros
-    const dLat = (dist/111000)*Math.cos(ang);
-    const dLng = (dist/(111000*Math.cos(av.lat*Math.PI/180)))*Math.sin(ang);
-    const lat2 = av.lat+dLat;
-    const lng2 = av.lng+dLng;
-    const temEnergia = Math.random()>0.4;
-
-    criarBandeira(lat2,lng2,temEnergia);
+// BANDEIRAS NO MAPA
+function spawnarBandeiras(){
+  if(!mapaL) return;
+  const nAlvo=25;
+  const activas=bandeirasJogo.filter(b=>!b.apanhada).length;
+  const aCriar=nAlvo-activas;
+  for(let i=0;i<aCriar;i++){
+    const ang=Math.random()*2*Math.PI;
+    const dist=20+Math.random()*150;
+    const dLa=(dist/111000)*Math.cos(ang);
+    const dLo=(dist/(111000*Math.cos(av.lat*Math.PI/180)))*Math.sin(ang);
+    const la=av.lat+dLa,lo=av.lng+dLo;
+    const energ=Math.random()>.45;
+    criarBandeira(la,lo,energ);
   }
 }
 
-function criarBandeira(lat,lng,temEnergia){
-  const cor  = temEnergia?'#0ff':'#f00';
-  const emj  = temEnergia?'⚡':'🏴';
-  const ic   = L.divIcon({className:'',
-    html:`<div style="background:${cor};color:#000;width:22px;height:22px;border-radius:50%;
-      display:flex;align-items:center;justify-content:center;font-size:.8rem;
-      border:2px solid #fff;box-shadow:0 0 8px ${cor};cursor:pointer;">${emj}</div>`,
-    iconSize:[22,22],iconAnchor:[11,11]
-  });
-  const m = L.marker([lat,lng],{icon:ic}).addTo(mapaL);
-  m._icone_bandeira = true;
-  m._temEnergia = temEnergia;
-  bandeirasNoMapa.push({marker:m,lat,lng,energia:temEnergia,apanhada:false});
-}
-
-// VERIFICAR SE O AVATAR APANHOU ALGUMA BANDEIRA
-function verificarApanharBandeiras(){
-  const raioApanhar = 15; // metros — avatar apanha bandeiras neste raio
-  bandeirasNoMapa.forEach(b=>{
-    if(b.apanhada) return;
-    const dx = (av.lng-b.lng)*111000*Math.cos(av.lat*Math.PI/180);
-    const dy = (av.lat-b.lat)*111000;
-    const dist = Math.sqrt(dx*dx+dy*dy);
-    if(dist<raioApanhar){
-      b.apanhada=true;
-      mapaL.removeLayer(b.marker);
-      av.flags++;
-      if(b.energia){
-        av.flagsEnerg++;
-        av.energia=Math.min(100,av.energia+5);
-        verificarSkill();
-      }
-      actualizarHUD();
-      // Repor nova bandeira após 5s
-      setTimeout(()=>{
-        const ang=Math.random()*2*Math.PI;
-        const d=40+Math.random()*100;
-        const la=av.lat+(d/111000)*Math.cos(ang);
-        const lo=av.lng+(d/(111000*Math.cos(av.lat*Math.PI/180)))*Math.sin(ang);
-        b.lat=la; b.lng=lo; b.apanhada=false; b.energia=Math.random()>0.4;
-        criarBandeiraNova(b);
-      },5000);
-    }
-  });
-}
-
-function criarBandeiraNova(b){
-  const cor=b.energia?'#0ff':'#f00';
-  const emj=b.energia?'⚡':'🏴';
+function criarBandeira(la,lo,energ){
+  const cor=energ?'#0ff':'#f00';const emj=energ?'⚡':'🏴';
   const ic=L.divIcon({className:'',
-    html:`<div style="background:${cor};color:#000;width:22px;height:22px;border-radius:50%;
-      display:flex;align-items:center;justify-content:center;font-size:.8rem;
-      border:2px solid #fff;box-shadow:0 0 8px ${cor};">${emj}</div>`,
-    iconSize:[22,22],iconAnchor:[11,11]
-  });
-  b.marker=L.marker([b.lat,b.lng],{icon:ic}).addTo(mapaL);
-  b.marker._icone_bandeira=true;
-  b.marker._temEnergia=b.energia;
+    html:`<div style="background:${cor};color:#000;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.8rem;border:2px solid #fff;box-shadow:0 0 8px ${cor};">${emj}</div>`,
+    iconSize:[22,22],iconAnchor:[11,11]});
+  const m=L.marker([la,lo],{icon:ic}).addTo(mapaL);
+  const b={m,la,lo,energ,apanhada:false};
+  bandeirasJogo.push(b);
+  // Quando clicado, apanhar
+  m.on('click',()=>apanharBandeira(b));
 }
 
-// ============================================================
-// SISTEMA DE SKILL (verificar progresso)
-// ============================================================
-function verificarSkill(){
-  if(av.flagsEnerg >= flagsLimiteSkill){
-    // Ganhar 1 ponto de skill
-    av.flagsEnerg -= flagsLimiteSkill;
-    av.skill++;
-    flagsLimiteSkill = flagsParaProxSkill(av.skill);
-    const novaVisao = calcularVisao(av.skill);
-    const visaoAnt  = av.visao;
-    av.visao = novaVisao;
-    av.nivel = Math.floor(av.skill/10)+1;
-
-    // Notificação
-    let txt = `🎯 Skill ${av.skill} alcançado!`;
-    let sub = `Próximo: ${flagsLimiteSkill.toLocaleString('pt-PT')} bandeiras`;
-    if(novaVisao > visaoAnt){
-      txt = `👁️ Visão aumentou para ${novaVisao}m!`;
-      sub = `Skill ${av.skill} · Próxima visão com mais ${SKILL_POR_METRO} skill`;
-    }
-    mostrarNotif('🎯',txt,sub);
-    actualizarCirculo();
-    actualizarFog();
-    G('skill-tag').innerText=`👁️ ${novaVisao}m visão · Skill ${av.skill}`;
+function apanharBandeira(b){
+  if(b.apanhada) return;
+  b.apanhada=true;
+  mapaL.removeLayer(b.m);
+  jogAtual.fl=(jogAtual.fl||0)+1;
+  if(b.energ){
+    jogAtual.en=Math.min(100,(jogAtual.en||100)+5);
+    jogAtual.flagsEnerg=(jogAtual.flagsEnerg||0)+1;
+    verificarSkillJog();
   }
-  actualizarPainel();
+  actualizarPainelSkill();
+  gravarJog();
+  // Repor após delay
+  setTimeout(()=>{
+    const ang=Math.random()*2*Math.PI,d=30+Math.random()*120;
+    const la=av.lat+(d/111000)*Math.cos(ang);
+    const lo=av.lng+(d/(111000*Math.cos(av.lat*Math.PI/180)))*Math.sin(ang);
+    b.la=la;b.lo=lo;b.apanhada=false;b.energ=Math.random()>.45;
+    b.m=L.marker([la,lo],{icon:L.divIcon({className:'',
+      html:`<div style="background:${b.energ?'#0ff':'#f00'};color:#000;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.8rem;border:2px solid #fff;box-shadow:0 0 8px ${b.energ?'#0ff':'#f00'};">${b.energ?'⚡':'🏴'}</div>`,
+      iconSize:[22,22],iconAnchor:[11,11]})}).addTo(mapaL);
+    b.m.on('click',()=>apanharBandeira(b));
+  },6000);
+}
+
+function verificarApanharBandeiras(){
+  const raio=12; // metros
+  bandeirasJogo.forEach(b=>{
+    if(b.apanhada) return;
+    const dx=(av.lng-b.lo)*111000*Math.cos(av.lat*Math.PI/180);
+    const dy=(av.lat-b.la)*111000;
+    if(Math.sqrt(dx*dx+dy*dy)<raio) apanharBandeira(b);
+  });
+}
+
+function gravarJog(){
+  if(!jogAtual) return;
+  jogAtual.ult=Date.now();
+  const jogs=BD.jogs();const idx=jogs.findIndex(j=>j.em===jogAtual.em);
+  if(idx>=0) jogs[idx]=jogAtual;else jogs.push(jogAtual);
+  BD.saveJ(jogs);BD.setSJ(jogAtual);
 }
 
 // ============================================================
-// MOVIMENTO DO AVATAR
+// LOOP DO JOGO
 // ============================================================
-const teclasPremidas = new Set();
-const dirAtiva = {cima:false,baixo:false,esq:false,dir:false};
-
-// Teclado
-document.addEventListener('keydown', e=>{
-  const m = {ArrowUp:'cima',ArrowDown:'baixo',ArrowLeft:'esq',ArrowRight:'dir',
-              'w':'cima','s':'baixo','a':'esq','d':'dir'};
-  if(m[e.key]){ dirAtiva[m[e.key]]=true; e.preventDefault(); }
-});
-document.addEventListener('keyup', e=>{
-  const m = {ArrowUp:'cima',ArrowDown:'baixo',ArrowLeft:'esq',ArrowRight:'dir',
-              'w':'cima','s':'baixo','a':'esq','d':'dir'};
-  if(m[e.key]){ dirAtiva[m[e.key]]=false; }
-});
-
-// Botões tácteis / rato
-function pressDir(d){ dirAtiva[d]=true;  G('btn-'+d)?.classList.add('ativo'); }
-function soltarDir(d){ dirAtiva[d]=false; G('btn-'+d)?.classList.remove('ativo'); }
-
-// Tamanho dos botões
-let tamBtn = 44;
-function mudarTamBtn(delta){
-  tamBtn = Math.max(32, Math.min(80, tamBtn+delta*6));
-  document.documentElement.style.setProperty('--tam-btn', tamBtn+'px');
-  G('tam-label').innerText = tamBtn+'px';
-  document.querySelectorAll('.btn-dir').forEach(b=>{ b.style.width=tamBtn+'px'; b.style.height=tamBtn+'px'; });
-}
-
-// ============================================================
-// LOOP PRINCIPAL
-// ============================================================
-let animT = 0;
-let ultimoFrame = 0;
-
-function loop(ts){
-  requestAnimationFrame(loop);
-  const dt = Math.min(ts-ultimoFrame, 50);
-  ultimoFrame = ts;
-  animT += dt * 0.001;
-
-  // Calcular velocidade
-  const vel = av.velocidade * (dt/16);
-  let mx=0, my=0;
-
-  if(dirAtiva.cima)  my -= vel;
-  if(dirAtiva.baixo) my += vel;
-  if(dirAtiva.esq)   mx -= vel;
-  if(dirAtiva.dir)   mx += vel;
-
-  // Diagonal normalizada
-  if(mx!==0 && my!==0){ mx*=0.707; my*=0.707; }
-
-  const andando = mx!==0||my!==0;
-  av.andando=andando;
-  if(mx>0) av.dir=1;
-  else if(mx<0) av.dir=-1;
-
-  if(andando){
-    // Mover avatar no ECRÃ
-    av.x = Math.max(30, Math.min(window.innerWidth-30,  av.x+mx));
-    av.y = Math.max(60, Math.min(window.innerHeight-30, av.y+my));
-
-    // Converter movimento px → lat/lng e mover o mapa
-    const zoom   = mapaL.getZoom();
-    const lat    = av.lat;
-    const escala = 156543.03392*Math.cos(lat*Math.PI/180)/Math.pow(2,zoom);
-    // mx px → metros → graus
-    const dLng = (mx * escala) / 111319.9;
-    const dLat = (-my * escala) / 111319.9;
-    av.lat += dLat;
-    av.lng += dLng;
-
-    // MAPA segue o avatar
-    mapaL.panBy([-mx,-my],{animate:false});
-
+function loopJogo(ts){
+  requestAnimationFrame(loopJogo);
+  const dt=Math.min(ts-ultimoFrame,50);ultimoFrame=ts;animT+=dt*.001;
+  const vel=2.5*(dt/16);
+  let mx=0,my=0;
+  if(dirsAtivas.c) my-=vel;
+  if(dirsAtivas.b) my+=vel;
+  if(dirsAtivas.e) mx-=vel;
+  if(dirsAtivas.d) mx+=vel;
+  if(mx&&my){mx*=.707;my*=.707;}
+  const and=mx||my;av.andando=!!and;
+  if(mx>0)av.dir=1;else if(mx<0)av.dir=-1;
+  if(and){
+    // Mover avatar no ecrã
+    av.x=Math.max(30,Math.min(window.innerWidth-30,av.x+mx));
+    av.y=Math.max(55,Math.min(window.innerHeight-44,av.y+my));
+    // Mover mundo (lat/lng)
+    if(mapaL){
+      const z=mapaL.getZoom();
+      const esc=156543.03392*Math.cos(av.lat*Math.PI/180)/Math.pow(2,z);
+      av.lat+=(-my*esc)/111319.9;
+      av.lng+=(mx*esc)/111319.9;
+      mapaL.panBy([-mx,-my],{animate:false});
+    }
     verificarApanharBandeiras();
   }
-
-  // Posicionar avatar-wrap no ecrã
-  const wrap = G('avatar-wrap');
-  wrap.style.left = av.x+'px';
-  wrap.style.top  = av.y+'px';
-
-  // Animação do avatar
-  animarAvatar(animT, andando);
-
-  // Fog of war
-  actualizarFogFrame();
+  // Posicionar avatar
+  const w=G('avatar-wrap');
+  w.style.left=av.x+'px';w.style.top=av.y+'px';
+  // Animar avatar
+  animarAvatarJogo(animT,!!and);
+  // Fog
+  desenharFog();
 }
 
-// ============================================================
-// ANIMAÇÃO DO AVATAR
-// ============================================================
-function animarAvatar(t, andando){
-  const svg = G('avt');
-
-  if(andando){
-    // Andar: braços e pernas alternam
-    const ang = Math.sin(t*8)*22;
-    G('g-braco-e').style.transform = `rotate(${ang}deg)`;
-    G('g-braco-d').style.transform = `rotate(${-ang}deg)`;
-    G('g-perna-e').style.transform = `rotate(${-ang}deg)`;
-    G('g-perna-d').style.transform = `rotate(${ang}deg)`;
-    G('g-cabeca').style.transform  = `translateY(${Math.abs(Math.sin(t*8))*-1.5}px)`;
-    G('g-corpo').style.transform   = `rotate(${Math.sin(t*8)*1.5}deg)`;
-    // Espelhar se for para a esquerda
-    svg.style.transform = `translate(-50%,-50%) scaleX(${av.dir})`;
-    svg.style.filter    = 'drop-shadow(0 0 10px #0f0)';
+function animarAvatarJogo(t,and){
+  const svg=G('avt-svg');if(!svg) return;
+  if(and){
+    const a=Math.sin(t*8)*22;
+    const ge=G('g-be'),gd=G('g-bd'),pe=G('g-pe'),pd=G('g-pd'),cab=G('g-cab'),corp=G('g-corpo');
+    if(ge) ge.style.transform=`rotate(${a}deg)`;
+    if(gd) gd.style.transform=`rotate(${-a}deg)`;
+    if(pe) pe.style.transform=`rotate(${-a}deg)`;
+    if(pd) pd.style.transform=`rotate(${a}deg)`;
+    if(cab) cab.style.transform=`translateY(${Math.abs(Math.sin(t*8))*-1.5}px)`;
+    if(corp) corp.style.transform=`rotate(${Math.sin(t*8)*1.5}deg)`;
+    svg.style.transform=`translate(-50%,-50%) scaleX(${av.dir})`;
+    svg.style.filter='drop-shadow(0 0 10px #0f0)';
   } else {
-    // Respiração suave
-    const resp = Math.sin(t*1.5)*1.5;
-    G('g-braco-e').style.transform = `rotate(${resp}deg)`;
-    G('g-braco-d').style.transform = `rotate(${-resp}deg)`;
-    G('g-perna-e').style.transform = 'rotate(0deg)';
-    G('g-perna-d').style.transform = 'rotate(0deg)';
-    G('g-cabeca').style.transform  = `translateY(${resp*.4}px)`;
-    G('g-corpo').style.transform   = 'rotate(0deg)';
-    // Pulsar
-    const s = 1+Math.sin(t*1.2)*.025;
-    svg.style.transform = `translate(-50%,-50%) scale(${s})`;
-    svg.style.filter    = `drop-shadow(0 0 ${8+Math.sin(t*1.2)*4}px #0f0)`;
+    const r=Math.sin(t*1.5)*1.5;
+    const ge=G('g-be'),gd=G('g-bd'),pe=G('g-pe'),pd=G('g-pd'),cab=G('g-cab'),corp=G('g-corpo');
+    if(ge) ge.style.transform=`rotate(${r}deg)`;
+    if(gd) gd.style.transform=`rotate(${-r}deg)`;
+    if(pe) pe.style.transform='rotate(0deg)';
+    if(pd) pd.style.transform='rotate(0deg)';
+    if(cab) cab.style.transform=`translateY(${r*.4}px)`;
+    if(corp) corp.style.transform='rotate(0deg)';
+    const s=1+Math.sin(t*1.2)*.025;
+    svg.style.transform=`translate(-50%,-50%) scale(${s})`;
+    svg.style.filter=`drop-shadow(0 0 ${8+Math.sin(t*1.2)*4}px #0f0)`;
   }
 }
 
 // ============================================================
 // CÍRCULO DE VISÃO
 // ============================================================
-function actualizarCirculo(){
-  const visaoM = av.visao;
-  const ppm    = calcPPM();
-  const raio   = Math.max(50, visaoM*ppm);
-  const diam   = raio*2;
-  const c = G('circulo');
-  c.style.width  = diam+'px';
-  c.style.height = diam+'px';
-  // Cor varia
-  const p = (visaoM-VISAO_MIN)/(VISAO_MAX-VISAO_MIN);
-  const g2 = 255;
-  const b2 = Math.round(p*255);
-  const cor = `rgb(0,${g2},${b2})`;
-  c.style.borderColor = cor;
-  c.style.boxShadow   = `0 0 0 4000px rgba(0,0,0,.72),0 0 ${20+p*30}px ${cor}`;
-}
-
-function calcPPM(){
-  if(!mapaL) return 5;
-  const z   = mapaL.getZoom();
-  const lat = av.lat;
-  const esc = 156543.03392*Math.cos(lat*Math.PI/180)/Math.pow(2,z);
-  return 1/esc;
+function actualizarCirculoVisao(){
+  if(!mapaL||!jogAtual) return;
+  const vis=jogAtual.visao||5;
+  const z=mapaL.getZoom();
+  const la=av.lat;
+  const esc=156543.03392*Math.cos(la*Math.PI/180)/Math.pow(2,z);
+  const raio=Math.max(50,vis/esc);
+  const diam=raio*2;
+  const c=G('circ-visao');
+  c.style.width=diam+'px';c.style.height=diam+'px';
+  const p=(vis-5)/95;
+  const cor=`rgb(0,255,${Math.round(p*255)})`;
+  c.style.borderColor=cor;
+  c.style.boxShadow=`0 0 0 4000px rgba(0,0,0,.72),0 0 ${20+p*30}px ${cor}`;
 }
 
 // ============================================================
-// FOG OF WAR (Canvas)
+// FOG OF WAR
 // ============================================================
-let fogCtx=null;
-function iniciarFog(){
-  const c=G('fog');
-  fogCtx=c.getContext('2d');
-  redimensionarFog();
-  window.addEventListener('resize',redimensionarFog);
+function calcRaioFog(){
+  if(!mapaL||!jogAtual) return 60;
+  const vis=jogAtual.visao||5;
+  const z=mapaL.getZoom();
+  const la=av.lat;
+  const esc=156543.03392*Math.cos(la*Math.PI/180)/Math.pow(2,z);
+  return Math.max(50,vis/esc);
 }
-function redimensionarFog(){
-  G('fog').width=window.innerWidth;
-  G('fog').height=window.innerHeight;
-}
-function actualizarFog(){actualizarFogFrame();}
-function actualizarFogFrame(){
+function desenharFog(){
   if(!fogCtx) return;
   const W=window.innerWidth,H=window.innerHeight;
   const cx=av.x,cy=av.y;
-  const raio=Math.max(50,av.visao*calcPPM());
+  const raio=calcRaioFog();
   fogCtx.clearRect(0,0,W,H);
-  // Escurecer tudo
   fogCtx.fillStyle='rgba(0,0,0,.72)';
   fogCtx.fillRect(0,0,W,H);
-  // Recortar círculo
   fogCtx.save();
   fogCtx.globalCompositeOperation='destination-out';
-  fogCtx.beginPath();
-  fogCtx.arc(cx,cy,raio,0,Math.PI*2);
-  fogCtx.fillStyle='rgba(0,0,0,1)';
-  fogCtx.fill();
+  fogCtx.beginPath();fogCtx.arc(cx,cy,raio,0,Math.PI*2);
+  fogCtx.fillStyle='rgba(0,0,0,1)';fogCtx.fill();
   fogCtx.restore();
-  // Borda suave
   fogCtx.save();
   fogCtx.globalCompositeOperation='source-over';
   const gr=fogCtx.createRadialGradient(cx,cy,raio*.7,cx,cy,raio*1.15);
-  gr.addColorStop(0,'rgba(0,0,0,0)');
-  gr.addColorStop(1,'rgba(0,0,0,.72)');
-  fogCtx.beginPath();
-  fogCtx.arc(cx,cy,raio*1.15,0,Math.PI*2);
-  fogCtx.fillStyle=gr;
-  fogCtx.fill();
+  gr.addColorStop(0,'rgba(0,0,0,0)');gr.addColorStop(1,'rgba(0,0,0,.72)');
+  fogCtx.beginPath();fogCtx.arc(cx,cy,raio*1.15,0,Math.PI*2);
+  fogCtx.fillStyle=gr;fogCtx.fill();
   fogCtx.restore();
 }
 
 // ============================================================
-// HUD / PAINEL
+// CONTROLOS
 // ============================================================
-function actualizarHUD(){
-  G('hud-nome').innerText  = av.nome;
-  G('hud-flags').innerText = av.flags.toLocaleString('pt-PT');
-  G('hud-en').innerText    = Math.round(av.energia)+'%';
-  G('hud-skill').innerText = av.skill;
-  G('hud-visao').innerText = av.visao+'m';
+document.addEventListener('keydown',e=>{
+  const m={ArrowUp:'c',ArrowDown:'b',ArrowLeft:'e',ArrowRight:'d',w:'c',s:'b',a:'e',d:'d'};
+  if(m[e.key]){dirsAtivas[m[e.key]]=true;e.preventDefault();}
+});
+document.addEventListener('keyup',e=>{
+  const m={ArrowUp:'c',ArrowDown:'b',ArrowLeft:'e',ArrowRight:'d',w:'c',s:'b',a:'e',d:'d'};
+  if(m[e.key]){dirsAtivas[m[e.key]]=false;}
+});
+function pd(d){dirsAtivas[d]=true; G('bc-'+{c:'cima',b:'baixo',e:'esq',d:'dir'}[d])?.classList.add('on');}
+function pu(d){dirsAtivas[d]=false;G('bc-'+{c:'cima',b:'baixo',e:'esq',d:'dir'}[d])?.classList.remove('on');}
+function mudarTam(delta){
+  tamBtn=Math.max(32,Math.min(80,tamBtn+delta*6));
+  G('tam-lbl').innerText=tamBtn+'px';
+  document.querySelectorAll('.bc2').forEach(b=>{b.style.width=tamBtn+'px';b.style.height=tamBtn+'px';});
 }
 
-function actualizarPainel(){
-  G('ps-nivel').innerText = av.nivel;
-  G('ps-skill').innerText = av.skill;
-  G('ps-visao').innerText = av.visao+'m';
-  G('ps-flags').innerText = av.flags.toLocaleString('pt-PT');
-  G('ps-prox').innerText  = flagsLimiteSkill.toLocaleString('pt-PT');
-  // Barra
-  const pct = Math.min(100,(av.flagsEnerg/flagsLimiteSkill)*100);
-  G('barra-sk-fill').style.width = pct+'%';
-  G('barra-sk-label').innerText  = av.flagsEnerg.toLocaleString('pt-PT')+' / '+flagsLimiteSkill.toLocaleString('pt-PT')+' flags';
-  actualizarHUD();
-  G('skill-tag').innerText=`👁️ ${av.visao}m visão · Skill ${av.skill}`;
+// ARRASTAR CAIXA
+function arrastarCaixa(){
+  const c=G('caixa-ctrl');let ar=false,ox=0,oy=0;
+  c.addEventListener('pointerdown',e=>{
+    if(e.target.classList.contains('bc2')||e.target.classList.contains('bt')) return;
+    ar=true;ox=e.clientX-c.getBoundingClientRect().left;oy=e.clientY-c.getBoundingClientRect().top;
+    c.setPointerCapture(e.pointerId);e.preventDefault();
+  });
+  c.addEventListener('pointermove',e=>{if(!ar)return;c.style.left=(e.clientX-ox)+'px';c.style.top=(e.clientY-oy)+'px';c.style.right='auto';c.style.bottom='auto';});
+  c.addEventListener('pointerup',()=>ar=false);
+}
+
+// ============================================================
+// TICKER
+// ============================================================
+function adicionarTick(html){
+  const t=G('ticker');
+  [1,2].forEach(()=>{const s=document.createElement('span');s.className='tick';s.innerHTML=html+'&nbsp;&nbsp;&nbsp;';t.appendChild(s);});
+}
+function iniciarTicker(){
+  G('ticker').innerHTML='';
+  adicionarTick('🏴 ZAP FLAGS — Caça ao Tesouro!');
+  adicionarTick('👁️ Apanha bandeiras ⚡ para ganhar Skill e aumentar a visão!');
+  adicionarTick(`🎯 500 bandeiras → Skill 1 → +0.1m visão (10 skill = 1m)`);
+  adicionarTick('🕹️ Usa as setas/WASD ou a caixa de controlo para andar!');
+  BD.bings().slice(0,2).forEach(b=>adicionarTick(`🎉 BINGO! <b>${b.nm}</b>! 🏆`));
 }
 
 // ============================================================
@@ -735,106 +1171,295 @@ function actualizarPainel(){
 // ============================================================
 let notifTmr=null;
 function mostrarNotif(ico,txt,sub){
-  G('notif-ico').innerText=ico;
-  G('notif-txt').innerText=txt;
-  G('notif-sub').innerText=sub||'';
-  G('notif').style.display='flex';
-  G('notif').style.flexDirection='column';
-  G('notif').style.gap='4px';
+  G('notif-ico').innerText=ico;G('notif-txt').innerText=txt;G('notif-sub').innerText=sub||'';
+  G('notif').style.display='flex';G('notif').style.flexDirection='column';G('notif').style.gap='4px';
   if(notifTmr) clearTimeout(notifTmr);
   notifTmr=setTimeout(()=>G('notif').style.display='none',3500);
 }
 
 // ============================================================
-// ARRASTAR A CAIXA DE CONTROLO
+// PR — REGISTO / LOGIN / PAINEL
 // ============================================================
-(function arrastarCaixa(){
-  const caixa=G('caixa-controlo');
-  let arrastando=false,ox=0,oy=0;
+let prAtual=null;
 
-  caixa.addEventListener('pointerdown',e=>{
-    // Só arrastar se clicar no titulo/borda, não nos botões
-    if(e.target.classList.contains('btn-dir')||e.target.classList.contains('btn-tam')) return;
-    arrastando=true;
-    ox=e.clientX-caixa.getBoundingClientRect().left;
-    oy=e.clientY-caixa.getBoundingClientRect().top;
-    caixa.setPointerCapture(e.pointerId);
-    e.preventDefault();
-  });
-  caixa.addEventListener('pointermove',e=>{
-    if(!arrastando) return;
-    caixa.style.left  =(e.clientX-ox)+'px';
-    caixa.style.top   =(e.clientY-oy)+'px';
-    caixa.style.right ='auto';
-    caixa.style.bottom='auto';
-  });
-  caixa.addEventListener('pointerup',()=>arrastando=false);
+function registarPR(){
+  const ne=val('pr-ne'),nif=val('pr-nif'),rua=val('pr-rua'),cp=val('pr-cp'),loc=val('pr-loc'),dist=val('pr-dist'),ativ=val('pr-ativ'),tel=val('pr-tel'),em=val('pr-email').toLowerCase(),resp=val('pr-resp'),respT=val('pr-resp-t'),pw=G('pr-pw').value,p2=G('pr-pw2').value;
+  if(!rua)           {msg('m-pr-reg','❌ Morada obrigatória!','e');return;}
+  if(!cp)            {msg('m-pr-reg','❌ Código postal obrigatório!','e');return;}
+  if(!loc)           {msg('m-pr-reg','❌ Localidade obrigatória!','e');return;}
+  if(!dist)          {msg('m-pr-reg','❌ Seleciona o distrito!','e');return;}
+  if(!ne)            {msg('m-pr-reg','❌ Nome da empresa obrigatório!','e');return;}
+  if(!nif||!vN(nif)) {msg('m-pr-reg','❌ NIF inválido!','e');return;}
+  if(!ativ)          {msg('m-pr-reg','❌ Seleciona o setor de atividade!','e');return;}
+  if(!tel||!vT(tel)) {msg('m-pr-reg','❌ Telefone inválido!','e');return;}
+  if(!em||!vE(em))   {msg('m-pr-reg','❌ Email inválido!','e');return;}
+  if(!resp)          {msg('m-pr-reg','❌ Nome do responsável obrigatório!','e');return;}
+  if(!pw||pw.length<4){msg('m-pr-reg','❌ Senha mínimo 4 car.!','e');return;}
+  if(pw!==p2)        {msg('m-pr-reg','❌ Senhas não coincidem!','e');return;}
+  if(!G('pr-trm').checked){msg('m-pr-reg','❌ Aceita os Termos e Condições!','e');return;}
+  const emps=BD.emps();
+  if(emps.find(p=>p.nif===nif)){msg('m-pr-reg','❌ NIF já registado!','e');return;}
+  if(emps.find(p=>p.em===em))  {msg('m-pr-reg','❌ Email já registado!','e');return;}
+  if(BD.jogs().find(j=>j.em===em)){msg('m-pr-reg','❌ Email já existe como jogador!','e');return;}
+  const pr={ne,nif,ativ,rua,cp,loc,dist,tel,em,web:val('pr-web'),resp,respT,pw,
+    packs:[],lotes:[],bingoFlags:[],qrsGerados:0,qrsUsados:0,reg:Date.now()};
+  emps.push(pr);BD.saveE(emps);prAtual=pr;BD.setSP(pr);log(`🏪 Nova empresa: ${ne}`);
+  ir('p-pr');
+}
+
+function loginPR(){
+  const em=val('pl-em').toLowerCase(),pw=G('pl-pw').value;
+  if(!em){msg('m-pr-l','❌ Insere o email!','e');return;}
+  if(!pw){msg('m-pr-l','❌ Insere a senha!','e');return;}
+  if(pw===PASSE){const pr=BD.emps().find(p=>p.em===em)||{ne:'Admin PR',em,pw:PASSE,packs:[],lotes:[],bingoFlags:[],loc:'Lisboa',qrsGerados:0,qrsUsados:0};prAtual=pr;BD.setSP(pr);ir('p-pr');return;}
+  const pr=BD.emps().find(p=>p.em===em&&p.pw===pw);
+  if(!pr){const ex=BD.emps().find(p=>p.em===em);msg('m-pr-l',ex?'❌ Senha incorreta!':'❌ Email não encontrado!','e');return;}
+  prAtual=pr;BD.setSP(pr);log(`🏪 Login PR: ${pr.ne}`);ir('p-pr');
+}
+
+function atualizarPainelPR(){
+  if(!prAtual) return;
+  G('pr-hud-n').innerText='🏪 '+(prAtual.ne||'---');
+  G('pr-hud-loc').innerText=(prAtual.loc||'')+(prAtual.dist?', '+prAtual.dist:'');
+  const packs=prAtual.packs||[];
+  const packA=packs.find(pk=>pk.fim>Date.now());
+  G('pr-sem').style.display=packA?'none':'block';
+  G('pr-com').style.display=packA?'block':'none';
+  if(packA){renderPackInfo(packA);renderLotes();}
+  renderInfoEmpPR();
+}
+
+function renderPackInfo(pk){
+  G('pr-pack-info').innerHTML=`
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+      <div>${pk.e||'📦'} <b style="color:#ff0;font-size:.95rem;">${pk.nome||pk.n||'-'}</b></div>
+      <span style="background:#0a2200;color:#0f0;border:1px solid #0f0;padding:3px 10px;border-radius:10px;font-size:.72rem;">🟢 ATIVO</span>
+    </div>
+    <div class="g3">
+      <div class="stat" style="border-color:#ff0;background:#0a0800;"><div class="stat-n" style="color:#ff0;font-size:1rem;">${fN(pk.flagsRest||0)}</div><div class="stat-t">🏴 Flags</div></div>
+      <div class="stat" style="border-color:#0ff;background:#0a0800;"><div class="stat-n" style="color:#0ff;font-size:1rem;">${fN(Math.floor((pk.flagsRest||0)/2/20))}</div><div class="stat-t">🎫 QRs</div></div>
+      <div class="stat" style="border-color:#ff0;background:#0a0800;"><div class="stat-n" style="color:#ff0;font-size:1rem;">${Math.max(0,Math.ceil((pk.fim-Date.now())/86400000))}</div><div class="stat-t">⏱️ Dias</div></div>
+    </div>
+    <div class="row"><div class="rl">Raio</div><div class="rv">${pk.rs||'-'}</div></div>
+    <div class="row"><div class="rl">Expira</div><div class="rv" style="color:#ff0;font-size:.8rem;">${fmt(pk.fim)}</div></div>`;
+}
+
+function renderLotes(){
+  const lotes=prAtual.lotes||[];const div=G('lista-lotes');
+  if(lotes.length===0){div.innerHTML='<div style="text-align:center;color:#555;padding:12px;">Sem lotes. Clica em "+ CRIAR LOTE".</div>';return;}
+  div.innerHTML=lotes.slice().reverse().map(l=>{
+    const rest=l.n-(l.usados||0);const pct=Math.round(((l.usados||0)/l.n)*100);
+    const cor=l.estado==='ativo'?'#0f0':'#555';
+    return `<div class="lote ${l.estado}">
+      <div style="color:${cor};font-weight:bold;font-size:.88rem;margin-bottom:4px;">${l.temPremio&&l.premio?`🎁 ${l.premio}`:'📦 Sem prémio'}</div>
+      <div style="display:flex;gap:10px;font-size:.75rem;color:#0aa;margin-bottom:4px;">
+        <span>📦<b style="color:#0ff;">${fN(l.n)}</b></span><span>✔️<b style="color:#ff0;">${fN(l.usados||0)}</b></span><span>📬<b style="color:#0f0;">${fN(rest)}</b></span>
+      </div>
+      <div class="pb"><div class="pf" style="width:${pct}%;background:linear-gradient(90deg,${cor},${cor}88);"></div></div>
+      <div style="display:flex;gap:4px;margin-top:6px;flex-wrap:wrap;">
+        ${l.estado==='inativo'?`<button class="btn bv" style="padding:4px 9px;font-size:.72rem;" onclick="ativarL(${l.id})">⚡</button>`:''}
+        ${l.estado==='ativo'?`<button class="btn bc" style="padding:4px 9px;font-size:.72rem;" onclick="pausarL(${l.id})">⏸️</button>`:''}
+        <button class="btn br" style="padding:4px 9px;font-size:.72rem;" onclick="apagarL(${l.id})">🗑️</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderInfoEmpPR(){
+  if(!prAtual) return;const d=prAtual;
+  const dn=['Segunda','Terça','Quarta','Quinta','Sexta','Sábado','Domingo'];
+  G('pr-info-emp').innerHTML=`
+    <div class="card card-y"><p style="color:#ff0;font-size:.85rem;margin-bottom:6px;">🏢 EMPRESA</p>
+      <div class="row"><div class="rl">Nome</div><div class="rv">${d.ne||'-'}</div></div>
+      <div class="row"><div class="rl">NIF</div><div class="rv">${d.nif||'-'}</div></div>
+      <div class="row"><div class="rl">Atividade</div><div class="rv">${d.ativ||'-'}</div></div>
+      <div class="row"><div class="rl">Morada</div><div class="rv">${d.rua||'-'}</div></div>
+      <div class="row"><div class="rl">Localidade</div><div class="rv">${d.loc||'-'}${d.dist?', '+d.dist:''}</div></div>
+      <div class="row"><div class="rl">Telefone</div><div class="rv">${d.tel||'-'}</div></div>
+      <div class="row"><div class="rl">Email</div><div class="rv">${d.em||'-'}</div></div>
+    </div>`;
+}
+
+function tabPR(i){for(let j=0;j<4;j++) G(`pr-s${j}`)?.classList.remove('on');document.querySelectorAll('.tab-pr').forEach(t=>t.classList.remove('on'));G(`pr-s${i}`)?.classList.add('on');document.querySelectorAll('.tab-pr')[i]?.classList.add('on');}
+
+// COMPRAR PACOTES
+const PACOTES={MICRO:{id:'MICRO',e:'🥉',n:'MICRO',f:2000,p:5,ps:'5€',r:1000,rs:'1km',d:30,b:1},BASICO:{id:'BASICO',e:'🥈',n:'BÁSICO',f:4000,p:10,ps:'10€',r:5000,rs:'5km',d:60,b:4},STANDARD:{id:'STANDARD',e:'🥇',n:'STANDARD',f:10000,p:15,ps:'15€',r:10000,rs:'10km',d:90,b:10},PRO:{id:'PRO',e:'💎',n:'PRO',f:25000,p:20,ps:'20€',r:25000,rs:'25km',d:90,b:25},PREMIUM:{id:'PREMIUM',e:'👑',n:'PREMIUM',f:75000,p:50,ps:'50€',r:50000,rs:'50km',d:180,b:50}};
+let packSel=null;
+function abrirCompra(){
+  packSel=null;
+  abrirModal('🛒 COMPRAR PACOTE',`
+    <p style="color:#0aa;font-size:.78rem;margin-bottom:12px;">O prémio decide-se depois nos lotes.</p>
+    ${Object.values(PACOTES).map(pk=>`
+      <div onclick="selPack('${pk.id}')" id="pk-${pk.id}" style="border:2px solid #333;border-radius:10px;padding:12px;cursor:pointer;background:#0a0a0a;margin:6px 0;transition:all .2s;">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div><b style="color:#ff0;">${pk.e} ${pk.n}</b>
+            <div style="font-size:.75rem;color:#0aa;margin-top:4px;">🏴 ${fN(pk.f)} flags · 📍 ${pk.rs} · ⏱️ ${pk.d} dias · 🎰 ${pk.b} BINGO</div>
+          </div>
+          <div style="font-size:1.2rem;color:#0f0;font-weight:bold;white-space:nowrap;margin-left:10px;">${pk.ps}</div>
+        </div>
+      </div>`).join('')}
+    <div id="m-modal" class="msg"></div>
+    <button class="btn bo bb" id="btn-cp" onclick="confirmarCompra()" style="display:none;margin-top:8px;">💳 CONFIRMAR</button>
+  `);
+}
+function selPack(k){packSel=k;document.querySelectorAll('[id^=pk-]').forEach(e=>{if(e.style)e.style.border='2px solid #333';});G(`pk-${k}`).style.border='2px solid #ff0';G('btn-cp').style.display='block';G('btn-cp').innerText=`💳 COMPRAR ${PACOTES[k].e} ${PACOTES[k].n} — ${PACOTES[k].ps}`;}
+function confirmarCompra(){
+  if(!packSel||!prAtual) return;const pk=PACOTES[packSel];
+  const fim=Date.now()+pk.d*24*60*60*1000;
+  const novoPack={id:pk.id,nome:pk.n,e:pk.e,f:pk.f,flagsRest:pk.f,raio:pk.r,rs:pk.rs,inicio:Date.now(),compradoEm:Date.now(),fim};
+  prAtual.packs=prAtual.packs||[];prAtual.packs.push(novoPack);
+  // Criar bandeiras BINGO
+  prAtual.bingoFlags=prAtual.bingoFlags||[];
+  for(let i=0;i<pk.b;i++) prAtual.bingoFlags.push({id:Date.now()+i+Math.random(),num:prAtual.bingoFlags.length+1,estado:'inativa',premio:'🎁 Prémio Surpresa',packFim:fim});
+  guardarPR();fecharModal();atualizarPainelPR();
+  msg('m-lotes',`✅ ${pk.n} ativo!`,'s');
+}
+
+// LOTES
+let loteEst='ativo',loteN=10;
+function abrirCriarLote(){
+  const packA=prAtual?.packs?.find(p=>p.fim>Date.now());
+  if(!packA){msg('m-lotes','❌ Sem pacote!','e');return;}
+  const disp=Math.floor((packA.flagsRest||0)/2/20);
+  if(disp<=0){msg('m-lotes','❌ Sem flags!','e');return;}
+  loteN=10;loteEst='ativo';
+  abrirModal('📦 CRIAR LOTE',`
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:8px 0;">
+      ${[10,50,100,200,500].map(n=>`<div onclick="selTL(${n},this)" id="lt${n}" style="background:#111;border:2px solid #333;border-radius:6px;padding:8px;text-align:center;cursor:pointer;"><div style="font-size:1rem;color:#ff0;font-weight:bold;">${fN(n)}</div><div style="font-size:.62rem;color:#555;">${fN(n*20)} flags</div></div>`).join('')}
+      <div onclick="selTL('c',this)" id="ltc" style="background:#111;border:2px solid #333;border-radius:6px;padding:8px;text-align:center;cursor:pointer;"><div style="font-size:1rem;color:#0ff;font-weight:bold;">✏️</div></div>
+    </div>
+    <div id="ltcw" style="display:none;"><input type="number" id="ltcn" placeholder="Nº de QRs" min="1" max="${disp}" style="width:150px;"></div>
+    <div style="background:#0a0800;border:1px solid #ff0;border-radius:8px;padding:12px;margin:10px 0;">
+      <p style="color:#ff0;font-size:.82rem;font-weight:bold;margin-bottom:8px;">🎁 PRÉMIO (OPCIONAL)</p>
+      <label style="display:flex;align-items:center;gap:8px;font-size:.82rem;color:#0aa;cursor:pointer;">
+        <input type="checkbox" id="lt-tp" style="width:auto;" onchange="G('lt-pw').style.display=this.checked?'block':'none'">
+        Quero dar um prémio
+      </label>
+      <div id="lt-pw" style="display:none;margin-top:8px;"><input type="text" id="lt-pt" placeholder="Ex: Café grátis..."></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px;">
+      <div id="lo-at" onclick="setEL('ativo')" style="background:#050f05;border:2px solid #0f0;border-radius:6px;padding:10px;text-align:center;cursor:pointer;"><div style="color:#0f0;font-weight:bold;font-size:.82rem;">⚡ JÁ AGORA</div></div>
+      <div id="lo-in" onclick="setEL('inativo')" style="background:#080808;border:2px solid #333;border-radius:6px;padding:10px;text-align:center;cursor:pointer;"><div style="color:#555;font-weight:bold;font-size:.82rem;">💾 GUARDAR</div></div>
+    </div>
+    <div id="m-modal" class="msg"></div>
+    <button class="btn bo bb" onclick="criarLoteConf()">✅ CRIAR LOTE</button>
+  `);
+  selTL(10,G('lt10'));
+}
+function selTL(n,el){document.querySelectorAll('[id^=lt]').forEach(e=>{if(e.style)e.style.borderColor='#333';});if(el)el.style.borderColor='#ff0';G('ltcw').style.display=n==='c'?'block':'none';loteN=n==='c'?parseInt(G('ltcn')?.value||1):n;}
+function setEL(e){loteEst=e;G('lo-at').style.borderColor=e==='ativo'?'#0f0':'#333';G('lo-at').style.background=e==='ativo'?'#050f05':'#080808';G('lo-at').querySelector('div').style.color=e==='ativo'?'#0f0':'#555';G('lo-in').style.borderColor=e==='inativo'?'#ff0':'#333';G('lo-in').style.background=e==='inativo'?'#0a0800':'#080808';G('lo-in').querySelector('div').style.color=e==='inativo'?'#ff0':'#555';}
+function criarLoteConf(){
+  const n=loteN,est=loteEst;const temPr=G('lt-tp')?.checked;const premio=temPr?val('lt-pt'):'';
+  if(!n||n<1){msg('m-modal','❌ Define a quantidade!','e');return;}
+  if(temPr&&!premio){msg('m-modal','❌ Define o prémio!','e');return;}
+  const packA=prAtual?.packs?.find(p=>p.fim>Date.now());if(packA) packA.flagsRest=Math.max(0,(packA.flagsRest||0)-n*20);
+  prAtual.lotes=prAtual.lotes||[];
+  prAtual.lotes.push({id:Date.now(),n,premio,temPremio:temPr,estado:est,ativo:est==='ativo',criadoEm:Date.now(),expiracao:packA?.fim||Date.now()+30*24*60*60*1000,usados:0});
+  guardarPR();fecharModal();atualizarPainelPR();msg('m-lotes',est==='ativo'?`✅ Lote ativo!${premio?' Prémio: '+premio:''}`:'✅ Guardado!','s');
+}
+function ativarL(id){const l=prAtual?.lotes?.find(l=>l.id===id);if(!l)return;l.estado='ativo';l.ativo=true;guardarPR();atualizarPainelPR();}
+function pausarL(id){const l=prAtual?.lotes?.find(l=>l.id===id);if(!l)return;l.estado='inativo';l.ativo=false;guardarPR();atualizarPainelPR();}
+function apagarL(id){if(!confirm('Apagar?'))return;prAtual.lotes=prAtual.lotes.filter(l=>l.id!==id);guardarPR();atualizarPainelPR();}
+function guardarPR(){const emps=BD.emps();const idx=emps.findIndex(p=>p.em===prAtual.em);if(idx>=0)emps[idx]=prAtual;else emps.push(prAtual);BD.saveE(emps);BD.setSP(prAtual);}
+function scanner(){msg('m-scan','📸 Em desenvolvimento','i');}
+
+// ============================================================
+// BACKOFFICE
+// ============================================================
+function loginBO(){if(G('bo-pw').value!==PASSE){msg('m-bo-l','❌ Código incorreto!','e');return;}log('🖥️ BO');ir('p-bo');}
+function tabBO(i){for(let j=0;j<5;j++) G(`bo-s${j}`)?.classList.remove('on');document.querySelectorAll('.tab-bo').forEach(t=>t.classList.remove('on'));G(`bo-s${i}`)?.classList.add('on');document.querySelectorAll('.tab-bo')[i]?.classList.add('on');}
+
+function carregarBO(){
+  const jogs=BD.jogs(),emps=BD.emps(),av2=BD.atv();
+  const ag30=Date.now()-30*60*1000;
+  G('bo-hud-j').innerText=jogs.length;G('bo-hud-p').innerText=emps.length;
+  G('d-j').innerText=jogs.length;G('d-p').innerText=emps.length;
+  G('d-fl').innerText=fN(jogs.reduce((s,j)=>s+(j.fl||0),0));
+  G('d-on').innerText=jogs.filter(j=>j.ult>ag30).length;
+  G('d-atv').innerHTML=av2.slice(0,6).length===0?'<p style="color:#555;font-size:.8rem;">Sem atividade.</p>':
+    av2.slice(0,6).map(a=>`<div style="font-size:.78rem;padding:3px 0;border-bottom:1px solid #111;display:flex;justify-content:space-between;"><span>${a.a}${a.d?` <span style="color:#555;">${a.d}</span>`:''}</span><span style="color:#555;font-size:.68rem;">${fmt(a.ts)}</span></div>`).join('');
+  renderBoJogs(jogs);renderBoEmps(emps);renderBoListas(jogs,emps);
+}
+
+function renderBoJogs(jogs){
+  const q=val('pesq-j').toLowerCase();
+  let l=jogs;if(q) l=jogs.filter(j=>j.nm?.toLowerCase().includes(q)||j.em?.toLowerCase().includes(q));
+  const ag30=Date.now()-30*60*1000;
+  G('lista-j').innerHTML=l.length===0?'<p style="color:#555;text-align:center;padding:15px;">Nenhum.</p>':
+    l.map((j,i)=>`<div class="uc-j" style="margin:4px 0;">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
+        <div style="width:8px;height:8px;border-radius:50%;background:${j.ult>ag30?'#0f0':'#333'};flex-shrink:0;"></div>
+        <b>👤 ${j.nm}</b><span style="color:#0ff;font-size:.7rem;">${j.em}</span>
+      </div>
+      <div style="font-size:.73rem;color:#0aa;flex-wrap:wrap;display:flex;gap:8px;">
+        <span>🏴<b style="color:#0ff;">${fN(j.fl||0)}</b></span>
+        <span>⚡<b style="color:#0f0;">${Math.round(j.en||100)}%</b></span>
+        <span>🎯<b style="color:#ff0;">${j.skill||0}</b></span>
+        <span>👁️<b>${j.visao||5}m</b></span>
+        <span style="color:#444;font-size:.68rem;">🔑 ${j.pw}</span>
+      </div>
+      <div style="display:flex;gap:4px;margin-top:5px;">
+        <button onclick="boJogarComo(${i})" style="background:#003;color:#0ff;border:1px solid #0ff;padding:3px 7px;cursor:pointer;font-size:.7rem;border-radius:3px;">🎮</button>
+        <button onclick="pedirConf('del-j-${i}','Apagar jogador?')" style="background:#200;color:#f00;border:1px solid #f00;padding:3px 7px;cursor:pointer;font-size:.7rem;border-radius:3px;">🗑️</button>
+      </div>
+    </div>`).join('');
+}
+
+function renderBoEmps(emps){
+  const q=val('pesq-p').toLowerCase();
+  let l=emps;if(q) l=emps.filter(p=>p.ne?.toLowerCase().includes(q)||p.em?.toLowerCase().includes(q));
+  G('lista-p').innerHTML=l.length===0?'<p style="color:#555;text-align:center;padding:15px;">Nenhuma.</p>':
+    l.map((p,i)=>`<div class="uc-pr" style="margin:4px 0;">
+      <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+        <b style="color:#ff0;">🏪 ${p.ne}</b>
+        <span style="font-size:.72rem;color:${p.packs?.some(pk=>pk.fim>Date.now())?'#0f0':'#f00'};">${p.packs?.some(pk=>pk.fim>Date.now())?'✅':'⚠️'}</span>
+      </div>
+      <div style="font-size:.73rem;color:#0aa;">📍 ${p.loc||'-'} · 📞 ${p.tel||'-'} · 📧 ${p.em}</div>
+      <div style="font-size:.68rem;color:#555;margin-top:2px;">🔑 ${p.pw}</div>
+      <div style="display:flex;gap:4px;margin-top:5px;">
+        <button onclick="boGerirPR(${i})" style="background:#330;color:#ff0;border:1px solid #ff0;padding:3px 7px;cursor:pointer;font-size:.7rem;border-radius:3px;">🏪</button>
+        <button onclick="pedirConf('del-p-${i}','Apagar empresa?')" style="background:#200;color:#f00;border:1px solid #f00;padding:3px 7px;cursor:pointer;font-size:.7rem;border-radius:3px;">🗑️</button>
+      </div>
+    </div>`).join('');
+}
+
+function renderBoListas(jogs,emps){
+  G('bo-lista-j').innerHTML=jogs.slice(0,8).map((j,i)=>`
+    <div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid #111;font-size:.8rem;">
+      <span><b>${j.nm}</b> <span style="color:#0ff;font-size:.7rem;">${j.em}</span></span>
+      <button onclick="boJogarComo(${i})" style="background:#003;color:#0ff;border:1px solid #0ff;padding:2px 7px;cursor:pointer;font-size:.7rem;border-radius:3px;">▶</button>
+    </div>`).join('');
+  G('bo-lista-pr').innerHTML=emps.slice(0,8).map((p,i)=>`
+    <div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid #111;font-size:.8rem;">
+      <span><b style="color:#ff0;">${p.ne}</b></span>
+      <button onclick="boGerirPR(${i})" style="background:#330;color:#ff0;border:1px solid #ff0;padding:2px 7px;cursor:pointer;font-size:.7rem;border-radius:3px;">▶</button>
+    </div>`).join('');
+}
+
+function pesqJ(){renderBoJogs(BD.jogs());}
+function pesqP(){renderBoEmps(BD.emps());}
+function boJogar(){const nm=val('bo-j-nm')||'BO_TESTE';const u={nm,em:'bo@zap.pt',fl:0,en:100,qrs:[],prog:0,skill:0,flagsEnerg:0,flagsLimite:500,nivel:1,visao:5,isBO:true,reg:Date.now(),ult:Date.now()};BD.setSJ(u);jogAtual=u;ir('p-jogo');}
+function boJogarComo(i){const j=BD.jogs()[i];if(!confirm(`Testar como ${j.nm}?`))return;BD.setSJ(j);jogAtual=j;ir('p-jogo');}
+function boPR(){const nm=val('bo-pr-nm')||'BO_LOJA';const pr={ne:nm,em:'bo@pr.zap',loc:'Lisboa',tel:'000',resp:'Admin',pw:PASSE,packs:[],lotes:[],bingoFlags:[],qrsGerados:0,qrsUsados:0,isBO:true};prAtual=pr;BD.setSP(pr);ir('p-pr');}
+function boGerirPR(i){const pr=BD.emps()[i];if(!confirm(`Gerir como ${pr.ne}?`))return;prAtual=pr;BD.setSP(pr);ir('p-pr');}
+function exportar(){const d={jogadores:BD.jogs(),empresas:BD.emps(),bingos:BD.bings(),atividade:BD.atv(),data:new Date().toISOString()};const b=new Blob([JSON.stringify(d,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='zap_dados.json';a.click();log('📥 Exportado');}
+function criarJTeste(){const jogs=BD.jogs();const n=jogs.length+1;const j={nm:`Jogador ${n}`,em:`j${n}@t.com`,tl:'912345678',pw:'1234',fl:Math.floor(Math.random()*200),en:100,qrs:[],prog:0,skill:0,flagsEnerg:0,flagsLimite:500,nivel:1,visao:5,reg:Date.now()-Math.random()*86400000*30,ult:Date.now()-Math.random()*3600000};jogs.push(j);BD.saveJ(jogs);log(`➕ Jogador teste: ${j.nm}`);carregarBO();msg('m-sis',`✅ Jogador ${n} criado! Senha: 1234`,'s');}
+function criarPRTeste(){const emps=BD.emps();const n=emps.length+1;const p={ne:`Loja ${n}`,nif:`12345678${n}`,ativ:'Café / Pastelaria',rua:'Rua Teste',cp:'1000-001',loc:'Lisboa',dist:'Lisboa',tel:'210000000',em:`l${n}@t.com`,resp:'Responsável',respT:'912345678',pw:'1234',packs:[],lotes:[],bingoFlags:[],qrsGerados:0,qrsUsados:0,reg:Date.now()};emps.push(p);BD.saveE(emps);log(`➕ Empresa teste: ${p.ne}`);carregarBO();msg('m-sis',`✅ Loja ${n}! Email: l${n}@t.com | Senha: 1234`,'s');}
+
+// ============================================================
+// AUTO-LOGIN (MEMORIZAÇÃO DE SESSÃO)
+// ============================================================
+(function init(){
+  const sj=BD.sessJ(), sp=BD.sessPR();
+  // SEMPRE mostrar a página de início — nunca entrar direto no jogo
+  // O utilizador decide quando entrar
+  atualizarHome();
+  // Se havia sessão de jogo, mostrar na home para continuar
+  if(sj&&!sj.isBO){ jogAtual=sj; }
+  if(sp&&!sp.isBO){ prAtual=sp; }
+  // NÃO ir automaticamente para o jogo — mostrar a home
+  ir('p-inicio');
 })();
-
-// ============================================================
-// TESTE RÁPIDO (botão para ganhar skill)
-// ============================================================
-window.simularFlags=function(n){
-  av.flagsEnerg+=(n||500);
-  av.flags+=(n||500);
-  verificarSkill();
-  actualizarPainel();
-};
-
-// Atalho de teclado para teste: S+K = +500 flags com energia
-let keyBuf='';
-document.addEventListener('keypress',e=>{
-  keyBuf+=e.key;
-  if(keyBuf.endsWith('sk')){simularFlags(500);keyBuf='';}
-  if(keyBuf.length>10) keyBuf=keyBuf.slice(-10);
-});
-
-// ============================================================
-// INICIALIZAR
-// ============================================================
-window.addEventListener('load',()=>{
-  // Posição inicial do avatar: centro do ecrã
-  av.x=window.innerWidth/2;
-  av.y=window.innerHeight/2;
-
-  // Carregar dados do jogador
-  try{
-    const sj=JSON.parse(localStorage.getItem('zap_sj')||'null');
-    if(sj){
-      av.nome  =sj.nm||'Jogador';
-      av.flags =sj.fl||0;
-      av.energia=sj.en||100;
-      av.skill  =sj.skillPts||0;
-      flagsLimiteSkill=flagsParaProxSkill(av.skill);
-      av.visao =calcularVisao(av.skill);
-      av.nivel =Math.floor(av.skill/10)+1;
-    }
-  }catch(e){}
-
-  iniciarMapa();
-  iniciarFog();
-
-  // Posicionar avatar no centro
-  const w=G('avatar-wrap');
-  w.style.left=av.x+'px';
-  w.style.top =av.y+'px';
-
-  actualizarCirculo();
-  actualizarPainel();
-
-  // Iniciar loop
-  requestAnimationFrame(loop);
-
-  // Actualizar círculo e fog regularmente
-  setInterval(()=>{
-    actualizarCirculo();
-  },500);
-
-  // Info para o utilizador
-  setTimeout(()=>{
-    mostrarNotif('🕹️','Usa as setas/WASD para andar!','Apanha bandeiras ⚡ para ganhar Skill');
-  },1000);
-});
 </script>
 </body>
 </html>
