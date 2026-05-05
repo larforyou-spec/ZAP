@@ -3,31 +3,17 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ZAP FLAGS - Bandeiras BINGO</title>
+<title>ZAP FLAGS</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:'Courier New',monospace;background:#000;color:#0f0;min-height:100vh;}
-
-/* HUD FIXO NO TOPO */
-.hud-bingo{
-  position:sticky;top:0;left:0;right:0;z-index:3000;
-  background:rgba(10,8,0,.98);
-  border-bottom:3px solid #ff0;
-  padding:10px 15px;
-  display:flex;justify-content:space-between;align-items:center;
-  box-shadow:0 2px 15px rgba(255,200,0,.3);
-}
-.hud-titulo{
-  display:flex;align-items:center;gap:8px;
-}
-.hud-titulo h1{font-size:1.3rem;color:#ff0;text-shadow:0 0 10px #ff0;}
-.hud-btns{display:flex;gap:6px;}
-
-/* CONTEÚDO */
+.page{display:none;min-height:100vh;}
+.page.ativa{display:block;}
 .box{max-width:580px;margin:0 auto;padding:15px;}
 
-h2{font-size:1.1rem;margin-bottom:10px;border-bottom:1px solid #ff0;padding-bottom:6px;color:#ff0;}
+h1{font-size:2rem;text-shadow:0 0 15px #0f0;margin-bottom:5px;}
+h2{font-size:1.1rem;margin-bottom:10px;border-bottom:1px solid #0f0;padding-bottom:6px;}
 h3{font-size:.88rem;color:#0ff;margin:10px 0 6px;}
 
 input,select,textarea{width:100%;background:#0a0a0a;color:#0f0;border:1px solid #0f0;
@@ -44,8 +30,9 @@ input[type=range]{border:none;background:transparent;padding:6px 0;cursor:pointe
 .bc{background:#111;color:#0f0;border:1px solid #0f0;}.bc:hover{background:#1a1a1a;}
 .bo{background:linear-gradient(45deg,#f80,#ff0);color:#000;}.bo:hover{background:#ff0;}
 .br{background:#1a0000;color:#f00;border:1px solid #f00;}.br:hover{background:#300;}
-.bvol{background:#000;color:#0aa;border:1px solid #0aa;font-size:.82rem;padding:7px 12px;}.bvol:hover{background:#0aa;color:#000;}
-.bsair{background:#1a0000;color:#f00;border:1px solid #f00;font-size:.82rem;padding:7px 12px;}.bsair:hover{background:#300;}
+.bvol{background:#000;color:#0aa;border:1px solid #0aa;}.bvol:hover{background:#0aa;color:#000;}
+.bsair{background:#1a0000;color:#f00;border:1px solid #f00;}.bsair:hover{background:#300;}
+.badm{background:linear-gradient(45deg,#600,#f00);color:#fff;border:2px solid #f88;}
 .bbingo{background:linear-gradient(45deg,#600,#f00,#ff0);color:#fff;border:2px solid #ff0;
   animation:bingoPulse 2s ease-in-out infinite;}
 @keyframes bingoPulse{0%,100%{box-shadow:0 0 5px #ff0}50%{box-shadow:0 0 20px #ff0,0 0 40px #f00}}
@@ -74,17 +61,29 @@ input[type=range]{border:none;background:transparent;padding:6px 0;cursor:pointe
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0;}
 .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin:8px 0;}
 .stat{background:#080808;border:1px solid #ff0;border-radius:8px;padding:10px;text-align:center;}
-.stat-n{font-size:1.5rem;color:#ff0;font-weight:bold;}
+.stat-n{font-size:1.4rem;color:#ff0;font-weight:bold;}
 .stat-t{font-size:.7rem;color:#0aa;margin-top:3px;}
 
-/* BINGO FLAG CARD */
+/* HUD BINGO */
+.hud-bingo{position:sticky;top:0;left:0;right:0;z-index:3000;
+  background:rgba(10,8,0,.98);border-bottom:3px solid #ff0;
+  padding:8px 12px;display:flex;justify-content:space-between;align-items:center;
+  box-shadow:0 2px 15px rgba(255,200,0,.3);}
+.hud-btns{display:flex;gap:5px;}
+
+/* HUD PR */
+.hud-pr{position:fixed;top:0;left:0;right:0;z-index:3000;
+  background:rgba(15,10,0,.97);border-bottom:2px solid #ff0;
+  padding:8px 12px;display:flex;justify-content:space-between;align-items:center;}
+
+/* BINGO CARD */
 .bfc{border-radius:10px;padding:14px;margin:12px 0;position:relative;}
 .bfc.inativa{background:#0a0500;border:2px solid #333;}
 .bfc.ativa{background:#1a0800;border:2px solid #ff0;box-shadow:0 0 12px rgba(255,200,0,.3);}
 .bfc.encontrada{background:#001a00;border:2px solid #0f0;}
 .bfc.expirada{background:#0a0000;border:2px solid #333;opacity:.6;}
 
-/* TIMER GRANDE */
+/* TIMER */
 .timer-grande{display:flex;flex-direction:column;align-items:center;
   background:#000;border:3px solid #ff0;border-radius:12px;
   padding:14px;margin:10px 0;text-align:center;}
@@ -127,11 +126,27 @@ input[type=range]{border:none;background:transparent;padding:6px 0;cursor:pointe
   border:3px solid #ff0;border-radius:12px;padding:20px;z-index:9001;
   width:95%;max-width:520px;max-height:92vh;overflow-y:auto;display:none;}
 
-/* CONFIRM SAIR */
-#confirm-sair{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+/* CONFIRM */
+#conf-ovl{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.85);z-index:9500;display:none;}
+#conf-box{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
   background:#000;border:3px solid #f00;border-radius:12px;padding:24px;
-  z-index:9500;width:90%;max-width:380px;text-align:center;display:none;}
-#confirm-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.85);z-index:9499;display:none;}
+  z-index:9501;width:90%;max-width:360px;text-align:center;display:none;}
+
+/* ÁREAS */
+.jog-sec{background:#000a00;border:2px solid #0f0;border-radius:10px;padding:16px;margin:8px 0;}
+.jog-sec h3{color:#0f0;font-size:.9rem;margin-bottom:10px;}
+.emp-sec{background:#0a0800;border:2px solid #ff0;border-radius:10px;padding:16px;margin:8px 0;}
+.emp-sec h3{color:#ff0;font-size:.9rem;margin-bottom:10px;}
+.adm-sec{background:#0a0000;border:2px solid #f00;border-radius:10px;padding:16px;margin:8px 0;}
+.adm-sec h3{color:#f00;font-size:.9rem;margin-bottom:10px;}
+
+/* TABS PR */
+.tabs-pr{display:flex;gap:2px;overflow-x:auto;border-bottom:2px solid #ff0;margin-top:52px;}
+.tab-pr{padding:7px 12px;background:#111;border:1px solid #333;color:#880;cursor:pointer;
+  font-family:'Courier New',monospace;font-size:.72rem;border-radius:4px 4px 0 0;white-space:nowrap;}
+.tab-pr.on{background:#1a1000;border-color:#ff0;color:#ff0;font-weight:bold;}
+.tpr{display:none;padding:12px;}
+.tpr.on{display:block;}
 
 .sep{border:none;border-top:1px solid #222;margin:12px 0;}
 .pb{width:100%;height:10px;background:#222;border-radius:5px;margin:6px 0;overflow:hidden;}
@@ -139,109 +154,293 @@ input[type=range]{border:none;background:transparent;padding:6px 0;cursor:pointe
 .scroll{max-height:60vh;overflow-y:auto;padding-right:3px;}
 .scroll::-webkit-scrollbar{width:3px;}
 .scroll::-webkit-scrollbar-thumb{background:#ff0;}
-
-/* BANNER VOLTA */
-.banner-volta{background:#001a00;border:1px solid #0f0;border-radius:6px;
-  padding:8px 12px;margin-bottom:10px;font-size:.78rem;color:#0aa;text-align:center;}
+.lnk{color:#0ff;cursor:pointer;text-decoration:underline;font-size:.85rem;}
 </style>
 </head>
 <body>
 
-<!-- ===== HUD FIXO COM BOTÕES VOLTAR / SAIR ===== -->
-<div class="hud-bingo">
-  <div class="hud-titulo">
-    <span style="font-size:1.6rem;">🎰</span>
+<!-- ===== PÁGINA INÍCIO ===== -->
+<div id="p0" class="page ativa">
+<div class="box" style="padding-top:40px;text-align:center;">
+  <h1>🏴 ZAP FLAGS</h1>
+  <p style="color:#0aa;margin-bottom:30px;">Caça ao Tesouro Digital</p>
+  <div class="jog-sec">
+    <h3>🎮 ÁREA DO JOGADOR</h3>
+    <button class="btn bv bb" onclick="ir('p-login')">▶ ENTRAR</button>
+    <button class="btn bc bb" onclick="ir('p-reg')">📝 CRIAR CONTA</button>
+  </div>
+  <div class="emp-sec">
+    <h3>🏪 ÁREA DO LOJISTA</h3>
+    <button class="btn bv bb" onclick="ir('p-pr-login')">▶ ENTRAR</button>
+    <button class="btn bo bb" onclick="ir('p-pr-reg')">📝 REGISTAR EMPRESA</button>
+  </div>
+  <div class="adm-sec">
+    <h3>⚙️ ADMINISTRADOR</h3>
+    <button class="btn badm bb" onclick="ir('p-adm-login')">🔐 ACESSO ADMIN</button>
+  </div>
+</div>
+</div>
+
+<!-- ===== LOGIN JOGADOR ===== -->
+<div id="p-login" class="page">
+<div class="box">
+  <button class="btn bvol bb" onclick="ir('p0')">← VOLTAR</button>
+  <div class="jog-sec">
+    <h3>🎮 ENTRAR NO JOGO</h3>
+    <div id="m-login" class="msg"></div>
+    <input type="email" id="l-em" placeholder="📧 Email">
+    <input type="password" id="l-pw" placeholder="🔑 Senha">
+    <button class="btn bv bb" onclick="loginJog()">▶ ENTRAR</button>
+  </div>
+  <div style="text-align:center;margin-top:10px;">
+    <span class="lnk" onclick="ir('p-reg')">Não tens conta? Regista-te</span>
+  </div>
+</div>
+</div>
+
+<!-- ===== REGISTO JOGADOR ===== -->
+<div id="p-reg" class="page">
+<div class="box">
+  <button class="btn bvol bb" onclick="ir('p0')">← VOLTAR</button>
+  <div class="jog-sec">
+    <h3>📝 CRIAR CONTA</h3>
+    <div id="m-reg" class="msg"></div>
+    <input type="text" id="r-nm" placeholder="👤 Nome">
+    <input type="email" id="r-em" placeholder="📧 Email">
+    <input type="tel" id="r-tl" placeholder="📱 Telemóvel">
+    <input type="password" id="r-pw" placeholder="🔑 Senha (mín. 4 car.)">
+    <input type="password" id="r-pw2" placeholder="🔑 Confirmar Senha">
+    <button class="btn bv bb" onclick="regJog()">✅ CRIAR CONTA</button>
+  </div>
+  <div style="text-align:center;margin-top:10px;">
+    <span class="lnk" onclick="ir('p-login')">Já tens conta?</span>
+  </div>
+</div>
+</div>
+
+<!-- ===== JOGO (simplificado) ===== -->
+<div id="p-jogo" class="page">
+<div class="box">
+  <div style="display:flex;justify-content:space-between;align-items:center;
+    background:rgba(0,15,0,.97);border-bottom:2px solid #0f0;
+    padding:8px 12px;position:sticky;top:0;z-index:1000;margin:-15px -15px 15px;">
     <div>
-      <h1>BINGO FLAGS</h1>
-      <div style="font-size:.65rem;color:#0aa;">Painel do Lojista</div>
+      <div style="font-weight:bold;font-size:.85rem;" id="j-nm">👤 ---</div>
+      <div style="font-size:.65rem;color:#0aa;" id="j-em">📧 ---</div>
+    </div>
+    <div style="display:flex;gap:5px;">
+      <button class="btn bvol" style="width:auto;padding:5px 10px;font-size:.75rem;" onclick="ir('p0')">← Início</button>
+      <button class="btn bsair" style="width:auto;padding:5px 10px;font-size:.75rem;" onclick="sairJog()">Sair</button>
+    </div>
+  </div>
+  <div style="text-align:center;padding:40px 20px;">
+    <div style="font-size:4rem;margin-bottom:15px;">🗺️</div>
+    <p style="color:#0f0;font-size:1.1rem;font-weight:bold;" id="j-bem">Bem-vindo!</p>
+    <p style="color:#0aa;font-size:.85rem;margin-top:8px;">Mapa do jogo aqui</p>
+    <div style="margin-top:20px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+      <div class="stat" style="min-width:80px;"><div class="stat-n" id="j-fl">0</div><div class="stat-t">🏴 Flags</div></div>
+      <div class="stat" style="min-width:80px;"><div class="stat-n" id="j-en" style="color:#0f0;">100</div><div class="stat-t">⚡ Energia</div></div>
+      <div class="stat" style="min-width:80px;"><div class="stat-n" id="j-qr" style="color:#0ff;">0</div><div class="stat-t">🎫 QRs</div></div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ===== PR LOGIN ===== -->
+<div id="p-pr-login" class="page">
+<div class="box">
+  <button class="btn bvol bb" onclick="ir('p0')">← VOLTAR</button>
+  <div class="emp-sec">
+    <h3>🏪 ENTRAR COMO LOJISTA</h3>
+    <div id="m-pr-l" class="msg"></div>
+    <input type="email" id="pl-em" placeholder="📧 Email da empresa">
+    <input type="password" id="pl-pw" placeholder="🔑 Senha">
+    <button class="btn bo bb" onclick="loginPR()">▶ ENTRAR</button>
+  </div>
+  <div style="text-align:center;margin-top:10px;">
+    <span class="lnk" onclick="ir('p-pr-reg')">Registar empresa nova</span>
+  </div>
+</div>
+</div>
+
+<!-- ===== PR REGISTO (simplificado) ===== -->
+<div id="p-pr-reg" class="page">
+<div class="box">
+  <button class="btn bvol bb" onclick="ir('p0')">← VOLTAR</button>
+  <div class="emp-sec"><h3>📝 REGISTAR EMPRESA</h3></div>
+  <div id="m-pr-reg" class="msg"></div>
+  <input type="text" id="pr-ne" placeholder="* Nome da Empresa">
+  <input type="text" id="pr-nif" placeholder="* NIF (9 dígitos)" maxlength="9">
+  <input type="text" id="pr-morada" placeholder="* Morada">
+  <input type="text" id="pr-loc" placeholder="* Localidade">
+  <input type="tel" id="pr-tel" placeholder="* Telefone">
+  <input type="email" id="pr-email" placeholder="* Email da Empresa">
+  <input type="text" id="pr-resp" placeholder="* Nome do Responsável">
+  <input type="password" id="pr-pw" placeholder="* Senha (mín. 4 car.)">
+  <input type="password" id="pr-pw2" placeholder="* Confirmar Senha">
+  <button class="btn bo bb" onclick="regPR()">✅ REGISTAR</button>
+  <button class="btn bvol bb" onclick="ir('p0')">← VOLTAR</button>
+</div>
+</div>
+
+<!-- ===== PR PAINEL ===== -->
+<div id="p-pr" class="page" style="padding:0;">
+  <!-- HUD -->
+  <div class="hud-pr">
+    <div>
+      <div style="font-weight:bold;font-size:.8rem;color:#ff0;" id="ph-n">🏪 ---</div>
+      <div style="font-size:.65rem;color:#0aa;" id="ph-a">---</div>
+    </div>
+    <div class="hud-btns">
+      <button class="btn bvol" style="width:auto;padding:5px 8px;font-size:.72rem;" onclick="ir('p0')">← Início</button>
+      <button class="btn bsair" style="width:auto;padding:5px 8px;font-size:.72rem;" onclick="sairPR()">Sair</button>
     </div>
   </div>
 
-  <!-- STATS NO HUD -->
-  <div style="display:flex;gap:12px;font-size:.78rem;text-align:center;">
-    <div>
-      <div style="color:#ff0;font-weight:bold;font-size:1.1rem;" id="hud-total">0</div>
-      <div style="color:#555;font-size:.62rem;">Total</div>
+  <!-- TABS -->
+  <div class="tabs-pr">
+    <div class="tab-pr on" onclick="tPR(0)">📦 Pacotes</div>
+    <div class="tab-pr"    onclick="tPR(1)">🎰 BINGO</div>
+    <div class="tab-pr"    onclick="tPR(2)">📸 Scanner</div>
+    <div class="tab-pr"    onclick="tPR(3)">🏢 Empresa</div>
+  </div>
+
+  <!-- TAB 0: PACOTES -->
+  <div id="pr-t0" class="tpr on">
+    <div class="card card-y" style="text-align:center;padding:20px;">
+      <p style="font-size:1.2rem;margin-bottom:8px;">📦</p>
+      <p style="color:#ff0;font-weight:bold;margin-bottom:8px;">Pacotes de Bandeiras</p>
+      <p style="color:#0aa;font-size:.82rem;margin-bottom:12px;">Compra pacotes para as tuas campanhas e bandeiras BINGO.</p>
+      <button class="btn bo" onclick="irBingo()">🎰 VER BANDEIRAS BINGO</button>
     </div>
-    <div>
-      <div style="color:#0f0;font-weight:bold;font-size:1.1rem;" id="hud-ativas">0</div>
-      <div style="color:#555;font-size:.62rem;">Ativas</div>
-    </div>
-    <div>
-      <div style="color:#0ff;font-weight:bold;font-size:1.1rem;" id="hud-enc">0</div>
-      <div style="color:#555;font-size:.62rem;">Encontradas</div>
+    <div class="card card-b" style="margin-top:12px;">
+      <p style="color:#0ff;font-weight:bold;margin-bottom:8px;">🎰 BINGO — RESUMO RÁPIDO</p>
+      <div class="grid3">
+        <div class="stat"><div class="stat-n" id="pr-bg-t">0</div><div class="stat-t">🎰 Total</div></div>
+        <div class="stat"><div class="stat-n" id="pr-bg-a" style="color:#0f0;">0</div><div class="stat-t">⚡ Ativas</div></div>
+        <div class="stat"><div class="stat-n" id="pr-bg-e" style="color:#0ff;">0</div><div class="stat-t">✅ Encontradas</div></div>
+      </div>
+      <button class="btn bbingo bb" style="margin-top:8px;" onclick="irBingo()">
+        🎰 GERIR BANDEIRAS BINGO
+      </button>
     </div>
   </div>
 
-  <!-- BOTÕES VOLTAR / SAIR -->
-  <div class="hud-btns">
-    <button class="btn bvol" onclick="voltarPainel()" title="Voltar ao painel do lojista">
-      ← Voltar
-    </button>
-    <button class="btn bsair" onclick="mostrarConfirmSair()" title="Sair da conta">
-      Sair
-    </button>
+  <!-- TAB 1: BINGO (botão para ir ao painel BINGO) -->
+  <div id="pr-t1" class="tpr">
+    <div class="card card-bingo" style="text-align:center;padding:20px;">
+      <div style="font-size:3rem;margin-bottom:10px;">🎰</div>
+      <p style="color:#ff0;font-size:1.1rem;font-weight:bold;margin-bottom:8px;">BANDEIRAS BINGO</p>
+      <p style="color:#0aa;font-size:.82rem;margin-bottom:15px;">
+        Gere as tuas bandeiras especiais BINGO.<br>
+        Ativa-as, define prémios e vê quem as encontrou.
+      </p>
+      <div class="grid3" style="margin-bottom:15px;">
+        <div class="stat"><div class="stat-n" id="pr-bg-t2">0</div><div class="stat-t">🎰 Total</div></div>
+        <div class="stat"><div class="stat-n" id="pr-bg-a2" style="color:#0f0;">0</div><div class="stat-t">⚡ Ativas</div></div>
+        <div class="stat"><div class="stat-n" id="pr-bg-e2" style="color:#0ff;">0</div><div class="stat-t">✅ Encontradas</div></div>
+      </div>
+      <button class="btn bbingo" style="width:100%;padding:15px;font-size:1rem;" onclick="irBingo()">
+        🎰 ABRIR PAINEL BINGO
+      </button>
+    </div>
+  </div>
+
+  <!-- TAB 2: SCANNER -->
+  <div id="pr-t2" class="tpr" style="text-align:center;">
+    <p style="color:#0aa;font-size:.85rem;margin-bottom:15px;">Valida QR Codes dos clientes:</p>
+    <button class="btn bv bb">📸 ESCANEAR QR</button>
+  </div>
+
+  <!-- TAB 3: EMPRESA -->
+  <div id="pr-t3" class="tpr">
+    <div id="info-emp-pr"></div>
+    <button class="btn bsair bb" onclick="sairPR()" style="margin-top:10px;">🚪 SAIR DA CONTA</button>
   </div>
 </div>
 
-<!-- CONTEÚDO PRINCIPAL -->
+<!-- ===== PAINEL BINGO (página própria) ===== -->
+<div id="p-bingo" class="page" style="padding:0;">
+
+  <!-- HUD FIXO BINGO -->
+  <div class="hud-bingo">
+    <div style="display:flex;align-items:center;gap:8px;">
+      <span style="font-size:1.5rem;">🎰</span>
+      <div>
+        <div style="font-weight:bold;font-size:.9rem;color:#ff0;">BINGO FLAGS</div>
+        <div style="font-size:.62rem;color:#0aa;" id="bg-empresa-nome">---</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;font-size:.75rem;text-align:center;">
+      <div><div style="color:#ff0;font-weight:bold;font-size:1rem;" id="hud-bg-t">0</div><div style="color:#555;font-size:.6rem;">Total</div></div>
+      <div><div style="color:#0f0;font-weight:bold;font-size:1rem;" id="hud-bg-a">0</div><div style="color:#555;font-size:.6rem;">Ativas</div></div>
+      <div><div style="color:#0ff;font-weight:bold;font-size:1rem;" id="hud-bg-e">0</div><div style="color:#555;font-size:.6rem;">Encontradas</div></div>
+    </div>
+    <div class="hud-btns">
+      <!-- ← VOLTAR: volta ao painel PR -->
+      <button class="btn bvol" style="width:auto;padding:6px 12px;font-size:.78rem;"
+        onclick="voltarDoBingo()">
+        ← Voltar
+      </button>
+      <!-- SAIR: termina sessão e vai ao início -->
+      <button class="btn bsair" style="width:auto;padding:6px 12px;font-size:.78rem;"
+        onclick="pedirConfSair()">
+        Sair
+      </button>
+    </div>
+  </div>
+
+  <!-- CONTEÚDO BINGO -->
+  <div class="box" style="margin-top:10px;">
+    <div id="msg-bingo" class="msg"></div>
+    <div id="lista-bingo" class="scroll"></div>
+
+    <!-- BOTÕES EM BAIXO (quando lista é longa) -->
+    <div style="display:flex;gap:8px;margin-top:20px;padding-top:15px;border-top:1px solid #222;">
+      <button class="btn bvol" style="flex:1;padding:12px;font-size:.9rem;" onclick="voltarDoBingo()">
+        ← VOLTAR AO PAINEL
+      </button>
+      <button class="btn bsair" style="flex:1;padding:12px;font-size:.9rem;" onclick="pedirConfSair()">
+        🚪 SAIR DA CONTA
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== ADMIN LOGIN ===== -->
+<div id="p-adm-login" class="page">
 <div class="box">
-
-  <!-- BANNER INFO -->
-  <div class="banner-volta">
-    💡 Para voltar ao painel principal do lojista, clica em <b style="color:#0ff;">← Voltar</b> no topo.
+  <button class="btn bvol bb" onclick="ir('p0')">← VOLTAR</button>
+  <div class="adm-sec">
+    <h3>⚙️ ADMINISTRADOR</h3>
+    <div id="m-adm" class="msg"></div>
+    <input type="password" id="adm-pw" placeholder="🔑 Código" style="text-align:center;letter-spacing:5px;">
+    <button class="btn badm bb" onclick="loginAdm()">⚙️ ENTRAR</button>
   </div>
-
-  <!-- STATS CARDS -->
-  <div class="grid3" style="margin-bottom:12px;">
-    <div class="stat"><div class="stat-n" id="st-total">0</div><div class="stat-t">🎰 Total</div></div>
-    <div class="stat"><div class="stat-n" id="st-ativas" style="color:#0f0;">0</div><div class="stat-t">⚡ Ativas</div></div>
-    <div class="stat"><div class="stat-n" id="st-enc" style="color:#0ff;">0</div><div class="stat-t">✅ Encontradas</div></div>
-  </div>
-
-  <!-- MSG GLOBAL -->
-  <div id="msg-global" class="msg"></div>
-
-  <!-- LISTA DE BANDEIRAS BINGO -->
-  <div id="lista-bingo" class="scroll"></div>
-
-  <!-- BOTÃO VOLTAR EM BAIXO (para quando a lista é longa) -->
-  <div style="display:flex;gap:8px;margin-top:20px;padding-top:15px;border-top:1px solid #222;">
-    <button class="btn bvol" style="flex:1;padding:12px;" onclick="voltarPainel()">
-      ← VOLTAR AO PAINEL
-    </button>
-    <button class="btn bsair" style="flex:1;padding:12px;" onclick="mostrarConfirmSair()">
-      🚪 SAIR DA CONTA
-    </button>
-  </div>
-
-</div><!-- fim .box -->
+</div>
+</div>
 
 <!-- ===== CONFIRMAÇÃO SAIR ===== -->
-<div id="confirm-overlay" onclick="fecharConfirmSair()"></div>
-<div id="confirm-sair">
-  <div style="font-size:2.5rem;margin-bottom:10px;">🚪</div>
+<div id="conf-ovl"></div>
+<div id="conf-box">
+  <div style="font-size:2.5rem;margin-bottom:8px;">🚪</div>
   <h2 style="color:#f00;border-color:#f00;margin-bottom:12px;">SAIR DA CONTA</h2>
-  <p style="color:#0aa;font-size:.85rem;margin-bottom:20px;">
-    Tens a certeza que queres sair da conta da empresa?<br>
-    <span style="color:#555;font-size:.78rem;">Os dados ficam guardados.</span>
+  <p style="color:#0aa;font-size:.85rem;margin-bottom:8px;">
+    Tens a certeza que queres sair da conta da empresa?
   </p>
+  <p style="color:#555;font-size:.75rem;margin-bottom:20px;">Os dados ficam guardados.</p>
   <div style="display:flex;gap:8px;">
-    <button class="btn bvol" style="flex:1;padding:12px;" onclick="fecharConfirmSair()">
-      ❌ CANCELAR
-    </button>
-    <button class="btn bsair" style="flex:1;padding:12px;" onclick="confirmarSair()">
-      ✅ SIM, SAIR
-    </button>
+    <button class="btn bvol" style="flex:1;padding:12px;" onclick="fecharConf()">❌ CANCELAR</button>
+    <button class="btn bsair" style="flex:1;padding:12px;" onclick="confirmarSair()">✅ SIM, SAIR</button>
   </div>
 </div>
 
-<!-- MODAL PRINCIPAL -->
+<!-- MODAL -->
 <div id="movl" onclick="fecharMdl()"></div>
 <div id="mdl">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-    <h2 id="mdl-tit" style="color:#ff0;border:none;margin:0;">---</h2>
-    <button class="btn bc" style="width:auto;padding:5px 10px;font-size:.8rem;" onclick="fecharMdl()">✖ FECHAR</button>
+    <h2 id="mdl-tit" style="color:#ff0;border:none;margin:0;font-size:1rem;">---</h2>
+    <button class="btn bc" style="width:auto;padding:4px 10px;font-size:.78rem;" onclick="fecharMdl()">✖</button>
   </div>
   <div id="mdl-corpo"></div>
   <div id="mdl-m" class="msg"></div>
@@ -253,109 +452,273 @@ input[type=range]{border:none;background:transparent;padding:6px 0;cursor:pointe
 // ============================================================
 // CONFIG
 // ============================================================
+const PASS='321321';
 const BINGO_RAIO=250;
 
 // ============================================================
 // DB
 // ============================================================
-function getFlags(){try{return JSON.parse(localStorage.getItem('zap_bingo')||'[]')}catch{return[]}}
-function saveFlags(l){localStorage.setItem('zap_bingo',JSON.stringify(l));}
-
-// Empresa padrão (vem normalmente da sessão PR)
-const empresaBase={
-  ne:'Café Central',morada:'Rua das Flores 10, 4000-100 Porto',
-  lat:'41.1496',lng:'-8.6109',tel:'220 000 000',
-  email:'cafe@email.pt',website:'https://cafecentral.pt',
-  resp:'João Silva',respTel:'912 000 000',
+const DB={
+  jogs: ()=>{try{return JSON.parse(localStorage.getItem('zap_j')||'[]')}catch{return[]}},
+  prs:  ()=>{try{return JSON.parse(localStorage.getItem('zap_p')||'[]')}catch{return[]}},
+  saveJ:l=>localStorage.setItem('zap_j',JSON.stringify(l)),
+  saveP:l=>localStorage.setItem('zap_p',JSON.stringify(l)),
+  sessJ:  ()=>{try{return JSON.parse(localStorage.getItem('zap_sj')||'null')}catch{return null}},
+  sessPR: ()=>{try{return JSON.parse(localStorage.getItem('zap_sp')||'null')}catch{return null}},
+  setSessJ: u=>localStorage.setItem('zap_sj',JSON.stringify(u)),
+  setSessPR:p=>localStorage.setItem('zap_sp',JSON.stringify(p)),
+  delSessJ: ()=>localStorage.removeItem('zap_sj'),
+  delSessPR:()=>localStorage.removeItem('zap_sp'),
 };
-
-// ============================================================
-// INICIALIZAR BANDEIRAS (demo com 10)
-// ============================================================
-function iniciar(){
-  if(getFlags().length>0) return;
-  const f=[];
-  for(let i=0;i<10;i++){
-    f.push({
-      id:Date.now()+i,num:i+1,estado:'inativa',
-      premio:'🎁 Prémio Surpresa',descricao:'',foto:null,
-      empNome:empresaBase.ne,empMorada:empresaBase.morada,
-      empLat:empresaBase.lat,empLng:empresaBase.lng,usarGPS:false,
-      empTel:empresaBase.tel,empEmail:empresaBase.email,
-      empWeb:empresaBase.website,empResp:empresaBase.resp,empRespTel:empresaBase.respTel,
-      ativadoEm:null,duracaoMs:3600000,expiracaoAtivacao:null,
-      encontradaEm:null,encontradaPor:null,qrData:null,
-      packFim:Date.now()+90*24*60*60*1000,
-    });
-  }
-  saveFlags(f);
-}
-
-// ============================================================
-// NAVEGAÇÃO — VOLTAR / SAIR
-// ============================================================
-function voltarPainel(){
-  // Em app completa: ir('p-pr') ou ir('p-pr-painel')
-  // Aqui simulamos:
-  if(confirm('Voltar ao painel do lojista?\n\n(Os dados das bandeiras BINGO ficam guardados.)')){
-    alert('✅ Em app completa: voltaria ao painel do lojista.\n\nFuncionalidade integrada no sistema ZAP FLAGS.');
-    // ir('p-pr');  ← usar esta linha no sistema completo
-  }
-}
-
-function mostrarConfirmSair(){
-  document.getElementById('confirm-overlay').style.display='block';
-  document.getElementById('confirm-sair').style.display='block';
-}
-function fecharConfirmSair(){
-  document.getElementById('confirm-overlay').style.display='none';
-  document.getElementById('confirm-sair').style.display='none';
-}
-function confirmarSair(){
-  fecharConfirmSair();
-  // Em app completa:
-  // DB.delSessPR(); prAtual=null; ir('p0');
-  alert('✅ Em app completa: termina a sessão e volta ao início.\n\nFuncionalidade integrada no sistema ZAP FLAGS.');
-}
 
 // ============================================================
 // UTILS
 // ============================================================
 const $=id=>document.getElementById(id);
 const val=id=>$(id)?.value?.trim()||'';
+const vE=e=>/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(e).toLowerCase());
+const vT=t=>/^[0-9]{9,15}$/.test(String(t).replace(/[\s\-\+]/g,''));
 function pad(n){return String(Math.floor(n)).padStart(2,'0');}
 function fmt(ts){return ts?new Date(ts).toLocaleString('pt-PT',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'}):'---';}
-function msParaHMS(ms){const t=Math.max(0,ms);return{h:Math.floor(t/3600000),m:Math.floor((t%3600000)/60000),s:Math.floor((t%60000)/1000)};}
-function fmtTimer(ms){const{h,m,s}=msParaHMS(ms);return`${pad(h)}:${pad(m)}:${pad(s)}`;}
-function msgMdl(t,tp){const e=$('mdl-m');if(!e)return;e.className='msg '+tp;e.innerText=t;setTimeout(()=>{if(e){e.className='msg';e.innerText='';}},4000);}
-function msgGlobal(t,tp){const e=$('msg-global');if(!e)return;e.className='msg '+tp;e.innerText=t;setTimeout(()=>{if(e){e.className='msg';e.innerText='';}},5000);}
-function fecharMdl(){$('movl').style.display='none';$('mdl').style.display='none';}
-function abrirMdl(tit,corpo){
-  $('mdl-tit').innerText=tit;
-  $('mdl-corpo').innerHTML=corpo;
-  $('movl').style.display='block';
-  $('mdl').style.display='block';
-}
+function msHMS(ms){const t=Math.max(0,ms);return{h:Math.floor(t/3600000),m:Math.floor((t%3600000)/60000),s:Math.floor((t%60000)/1000)};}
+function fmtT(ms){const{h,m,s}=msHMS(ms);return`${pad(h)}:${pad(m)}:${pad(s)}`;}
+
+function msg(id,t,tp){const e=$(id);if(!e)return;e.className='msg '+tp;e.innerText=t;setTimeout(()=>{if(e){e.className='msg';e.innerText='';}},5000);}
+function msgMdl(t,tp){msg('mdl-m',t,tp);}
+function msgBingo(t,tp){msg('msg-bingo',t,tp);}
 
 // TIMERS
 const TIMERS={};
-function pararTimer(id){if(TIMERS[id]){clearInterval(TIMERS[id]);delete TIMERS[id];}}
-function iniciarTimerEl(elId,expiracaoTs,onExpire){
-  pararTimer(elId);
+function pararT(id){if(TIMERS[id]){clearInterval(TIMERS[id]);delete TIMERS[id];}}
+function iniciarT(elId,exTs,cb){
+  pararT(elId);
   TIMERS[elId]=setInterval(()=>{
-    const el=$(elId);if(!el){pararTimer(elId);return;}
-    const r=expiracaoTs-Date.now();
-    el.innerText=fmtTimer(r);
-    if(r<=0){pararTimer(elId);if(onExpire)onExpire();}
+    const el=$(elId);if(!el){pararT(elId);return;}
+    const r=exTs-Date.now();el.innerText=fmtT(r);
+    if(r<=0){pararT(elId);if(cb)cb();}
   },1000);
 }
 
+// MODAL
+function fecharMdl(){$('movl').style.display='none';$('mdl').style.display='none';}
+function abrirMdl(tit,corpo){
+  $('mdl-tit').innerText=tit;$('mdl-corpo').innerHTML=corpo;
+  $('movl').style.display='block';$('mdl').style.display='block';
+}
+
+// CONFIRMAÇÃO SAIR
+function fecharConf(){
+  $('conf-ovl').style.cssText='display:none';
+  $('conf-box').style.cssText='display:none';
+}
+function mostrarConf(){
+  $('conf-ovl').style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.85);z-index:9500;display:block;';
+  $('conf-box').style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#000;border:3px solid #f00;border-radius:12px;padding:24px;z-index:9501;width:90%;max-width:360px;text-align:center;display:block;';
+}
+
 // ============================================================
-// VERIFICAR EXPIRAÇÕES
+// NAVEGAÇÃO
 // ============================================================
-function verificarExp(){
-  const flags=getFlags();let alt=false;
-  flags.forEach(bf=>{
+let paginaAnterior='p0'; // guarda de onde viemos
+
+function ir(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('ativa'));
+  $(id)?.classList.add('ativa');
+  document.querySelectorAll('.msg').forEach(m=>{m.className='msg';m.innerText='';});
+  window.scrollTo(0,0);
+}
+
+// IR PARA BINGO (a partir do painel PR)
+function irBingo(){
+  if(!prAtual){msgBingo('❌ Não estás logado como lojista.','e');return;}
+  // Guardar que viemos do painel PR
+  paginaAnterior='p-pr';
+  // Actualizar nome da empresa no HUD do bingo
+  $('bg-empresa-nome').innerText=prAtual.ne||'---';
+  atualizarStatsBingo();
+  renderLista();
+  ir('p-bingo');
+}
+
+// ← VOLTAR DO BINGO → vai para o painel PR
+function voltarDoBingo(){
+  // Parar todos os timers do bingo
+  Object.keys(TIMERS).forEach(k=>pararT(k));
+  // Actualizar stats no painel PR
+  atualizarStatsPR();
+  // Navegar de volta ao painel PR
+  ir('p-pr');
+}
+
+// SAIR PEDIR CONFIRMAÇÃO
+function pedirConfSair(){mostrarConf();}
+
+// CONFIRMAR SAIR — termina sessão e volta ao INÍCIO
+function confirmarSair(){
+  fecharConf();
+  // Parar timers
+  Object.keys(TIMERS).forEach(k=>pararT(k));
+  // Apagar sessão
+  DB.delSessPR();
+  prAtual=null;
+  // Ir para o INÍCIO
+  ir('p0');
+}
+
+// ============================================================
+// REGISTO JOGADOR
+// ============================================================
+function regJog(){
+  const nm=val('r-nm'),em=val('r-em').toLowerCase(),tl=val('r-tl'),pw=$('r-pw').value,p2=$('r-pw2').value;
+  if(!nm)             {msg('m-reg','❌ Insere o nome!','e');return;}
+  if(!em||!vE(em))    {msg('m-reg','❌ Email inválido!','e');return;}
+  if(!pw||pw.length<4){msg('m-reg','❌ Senha mínimo 4 car.!','e');return;}
+  if(pw!==p2)         {msg('m-reg','❌ Senhas não coincidem!','e');return;}
+  const jogs=DB.jogs();
+  if(jogs.find(j=>j.em===em)){msg('m-reg','❌ Email já registado!','e');return;}
+  const u={nm,em,tl,pw,fl:0,en:100,qrs:[],reg:Date.now()};
+  jogs.push(u);DB.saveJ(jogs);DB.setSessJ(u);entrarJogo(u);
+}
+
+function loginJog(){
+  const em=val('l-em').toLowerCase(),pw=$('l-pw').value;
+  if(!em){msg('m-login','❌ Insere o email!','e');return;}
+  if(!pw){msg('m-login','❌ Insere a senha!','e');return;}
+  if(pw===PASS){msg('m-login','❌ Código de Admin. Usa ⚙️ ADMINISTRADOR.','a');return;}
+  const jogs=DB.jogs();
+  const u=jogs.find(j=>j.em===em&&j.pw===pw);
+  if(!u){const ex=jogs.find(j=>j.em===em);msg('m-login',ex?'❌ Senha incorreta!':'❌ Email não encontrado!','e');return;}
+  DB.setSessJ(u);entrarJogo(u);
+}
+
+function entrarJogo(u){
+  $('j-nm').innerText='👤 '+u.nm;
+  $('j-em').innerText='📧 '+u.em;
+  $('j-fl').innerText=u.fl||0;
+  $('j-en').innerText=u.en||100;
+  $('j-qr').innerText=(u.qrs||[]).length;
+  $('j-bem').innerText='Bem-vindo, '+u.nm+'!';
+  ir('p-jogo');
+}
+function sairJog(){if(confirm('Sair do jogo?')){DB.delSessJ();ir('p0');}}
+
+// ============================================================
+// REGISTO PR
+// ============================================================
+function regPR(){
+  const ne=val('pr-ne'),nif=val('pr-nif'),morada=val('pr-morada'),loc=val('pr-loc');
+  const tel=val('pr-tel'),em=val('pr-email').toLowerCase();
+  const resp=val('pr-resp'),pw=$('pr-pw').value,p2=$('pr-pw2').value;
+  if(!ne)    {msg('m-pr-reg','❌ Nome da empresa obrigatório!','e');return;}
+  if(!nif||!/^[0-9]{9}$/.test(nif)){msg('m-pr-reg','❌ NIF inválido!','e');return;}
+  if(!morada){msg('m-pr-reg','❌ Morada obrigatória!','e');return;}
+  if(!loc)   {msg('m-pr-reg','❌ Localidade obrigatória!','e');return;}
+  if(!tel)   {msg('m-pr-reg','❌ Telefone obrigatório!','e');return;}
+  if(!em||!vE(em)){msg('m-pr-reg','❌ Email inválido!','e');return;}
+  if(!resp)  {msg('m-pr-reg','❌ Nome do responsável obrigatório!','e');return;}
+  if(!pw||pw.length<4){msg('m-pr-reg','❌ Senha mínimo 4 car.!','e');return;}
+  if(pw!==p2){msg('m-pr-reg','❌ Senhas não coincidem!','e');return;}
+  const prs=DB.prs();
+  if(prs.find(p=>p.nif===nif)){msg('m-pr-reg','❌ NIF já registado!','e');return;}
+  if(prs.find(p=>p.em===em))  {msg('m-pr-reg','❌ Email já registado!','e');return;}
+  const pr={ne,nif,morada,loc,tel,em,resp,pw,bingoFlags:criarBingos('STANDARD',Date.now()+90*24*60*60*1000,10),reg:Date.now()};
+  prs.push(pr);DB.saveP(prs);prAtual=pr;DB.setSessPR(pr);abrirPainelPR();
+}
+
+function loginPR(){
+  const em=val('pl-em').toLowerCase(),pw=$('pl-pw').value;
+  if(!em){msg('m-pr-l','❌ Insere o email!','e');return;}
+  if(!pw){msg('m-pr-l','❌ Insere a senha!','e');return;}
+  if(pw===PASS){
+    const pr=DB.prs().find(p=>p.em===em)||{ne:'ADMIN PR',em,pw:PASS,bingoFlags:criarBingos('STANDARD',Date.now()+90*24*60*60*1000,10),morada:'Rua Teste 1',loc:'Lisboa',tel:'210000000',resp:'Admin'};
+    prAtual=pr;DB.setSessPR(pr);abrirPainelPR();return;
+  }
+  const pr=DB.prs().find(p=>p.em===em&&p.pw===pw);
+  if(!pr){const ex=DB.prs().find(p=>p.em===em);msg('m-pr-l',ex?'❌ Senha incorreta!':'❌ Email não encontrado!','e');return;}
+  prAtual=pr;DB.setSessPR(pr);abrirPainelPR();
+}
+
+let prAtual=null;
+
+function abrirPainelPR(){
+  $('ph-n').innerText='🏪 '+(prAtual.ne||'---');
+  $('ph-a').innerText=prAtual.loc||'';
+  renderInfoEmpPR();
+  atualizarStatsPR();
+  ir('p-pr');
+}
+
+function atualizarStatsPR(){
+  const bfs=prAtual?.bingoFlags||[];
+  const t=bfs.length,a=bfs.filter(b=>b.estado==='ativa').length,e=bfs.filter(b=>b.estado==='encontrada').length;
+  ['pr-bg-t','pr-bg-t2'].forEach(id=>{if($(id))$(id).innerText=t;});
+  ['pr-bg-a','pr-bg-a2'].forEach(id=>{if($(id))$(id).innerText=a;});
+  ['pr-bg-e','pr-bg-e2'].forEach(id=>{if($(id))$(id).innerText=e;});
+}
+
+function tPR(i){
+  for(let j=0;j<4;j++) $(`pr-t${j}`)?.classList.remove('on');
+  document.querySelectorAll('.tab-pr').forEach(t=>t.classList.remove('on'));
+  $(`pr-t${i}`)?.classList.add('on');
+  document.querySelectorAll('.tab-pr')[i]?.classList.add('on');
+  if(i===1) atualizarStatsPR();
+}
+
+function sairPR(){pedirConfSair();}
+
+function renderInfoEmpPR(){
+  const d=prAtual||{};
+  $('info-emp-pr').innerHTML=`
+    <div class="card card-y">
+      <p style="color:#ff0;font-size:.85rem;margin-bottom:6px;">🏢 EMPRESA</p>
+      <div class="row"><div class="rl">Nome</div><div class="rv">${d.ne||'-'}</div></div>
+      <div class="row"><div class="rl">NIF</div><div class="rv">${d.nif||'-'}</div></div>
+      <div class="row"><div class="rl">Morada</div><div class="rv">${d.morada||'-'}</div></div>
+      <div class="row"><div class="rl">Localidade</div><div class="rv">${d.loc||'-'}</div></div>
+      <div class="row"><div class="rl">Telefone</div><div class="rv">${d.tel||'-'}</div></div>
+      <div class="row"><div class="rl">Email</div><div class="rv">${d.em||'-'}</div></div>
+      <div class="row"><div class="rl">Responsável</div><div class="rv">${d.resp||'-'}</div></div>
+    </div>`;
+}
+
+// ============================================================
+// ADMIN
+// ============================================================
+function loginAdm(){
+  if($('adm-pw').value!==PASS){msg('m-adm','❌ Código incorreto!','e');return;}
+  alert('✅ Admin: funcionalidade completa disponível no sistema completo ZAP FLAGS.');
+}
+
+// ============================================================
+// BANDEIRAS BINGO
+// ============================================================
+function criarBingos(packId,packFim,n){
+  const flags=[];
+  for(let i=0;i<n;i++){
+    flags.push({
+      id:Date.now()+i+Math.random(),num:i+1,estado:'inativa',
+      premio:'🎁 Prémio Surpresa',descricao:'',foto:null,
+      empNome:'',empMorada:'',empLat:'',empLng:'',usarGPS:false,
+      empTel:'',empEmail:'',empWeb:'',empResp:'',empRespTel:'',
+      ativadoEm:null,duracaoMs:3600000,expiracaoAtivacao:null,
+      encontradaEm:null,encontradaPor:null,qrData:null,packFim,
+    });
+  }
+  return flags;
+}
+
+function getBFs(){return prAtual?.bingoFlags||[];}
+function saveBFs(l){if(prAtual){prAtual.bingoFlags=l;guardarPR();}}
+
+function guardarPR(){
+  const prs=DB.prs();const idx=prs.findIndex(p=>p.em===prAtual.em);
+  if(idx>=0) prs[idx]=prAtual;else prs.push(prAtual);
+  DB.saveP(prs);DB.setSessPR(prAtual);
+}
+
+function verificarExpBingo(){
+  const bfs=getBFs();let alt=false;
+  bfs.forEach(bf=>{
     if(bf.estado==='ativa'&&bf.expiracaoAtivacao&&bf.expiracaoAtivacao<Date.now()){
       bf.estado='inativa';bf.ativadoEm=null;bf.expiracaoAtivacao=null;alt=true;
     }
@@ -363,28 +726,29 @@ function verificarExp(){
       bf.estado='expirada';alt=true;
     }
   });
-  if(alt){saveFlags(flags);renderLista();}
-  atualizarStats();
+  if(alt){saveBFs(bfs);renderLista();}
+  atualizarStatsBingo();
 }
 
-function atualizarStats(){
-  const f=getFlags();
-  const t=f.length;const a=f.filter(b=>b.estado==='ativa').length;const e=f.filter(b=>b.estado==='encontrada').length;
-  ['st-total','hud-total'].forEach(id=>{if($(id))$(id).innerText=t;});
-  ['st-ativas','hud-ativas'].forEach(id=>{if($(id))$(id).innerText=a;});
-  ['st-enc','hud-enc'].forEach(id=>{if($(id))$(id).innerText=e;});
+function atualizarStatsBingo(){
+  const bfs=getBFs();
+  const t=bfs.length,a=bfs.filter(b=>b.estado==='ativa').length,e=bfs.filter(b=>b.estado==='encontrada').length;
+  ['hud-bg-t'].forEach(id=>{if($(id))$(id).innerText=t;});
+  ['hud-bg-a'].forEach(id=>{if($(id))$(id).innerText=a;});
+  ['hud-bg-e'].forEach(id=>{if($(id))$(id).innerText=e;});
+  atualizarStatsPR();
 }
 
 // ============================================================
-// RENDER LISTA
+// RENDER LISTA BINGO
 // ============================================================
 function renderLista(){
-  verificarExp();
-  const flags=getFlags();
-  $('lista-bingo').innerHTML=flags.map((bf,i)=>renderCard(bf,i)).join('');
-  flags.forEach(bf=>{
+  verificarExpBingo();
+  const bfs=getBFs();
+  $('lista-bingo').innerHTML=bfs.map((bf,i)=>renderCard(bf,i)).join('');
+  bfs.forEach(bf=>{
     if(bf.estado==='ativa'&&bf.expiracaoAtivacao){
-      iniciarTimerEl(`t-${bf.id}`,bf.expiracaoAtivacao,()=>{verificarExp();renderLista();});
+      iniciarT(`t-${bf.id}`,bf.expiracaoAtivacao,()=>{verificarExpBingo();renderLista();});
     }
   });
 }
@@ -403,165 +767,161 @@ function renderCard(bf,i){
     const r=Math.max(0,bf.expiracaoAtivacao-Date.now());
     timerHtml=`<div class="timer-grande">
       <span class="timer-ico-anim">⏱️</span>
-      <div class="timer-display" id="t-${bf.id}">${fmtTimer(r)}</div>
+      <div class="timer-display" id="t-${bf.id}">${fmtT(r)}</div>
       <div class="timer-label">Tempo restante ativo</div>
       <div style="font-size:.7rem;color:#555;margin-top:3px;">
-        Ativado: ${fmt(bf.ativadoEm)} &nbsp;·&nbsp; Expira: ${fmt(bf.expiracaoAtivacao)}
+        Ativado: ${fmt(bf.ativadoEm)} · Expira: ${fmt(bf.expiracaoAtivacao)}
       </div>
     </div>`;
   }
 
-  const fotoHtml=bf.foto
-    ?`<img src="${bf.foto}" style="width:100%;max-height:180px;object-fit:cover;border-radius:8px;border:2px solid #ff0;margin:8px 0;">`:'';
+  const fotoHtml=bf.foto?`<img src="${bf.foto}" style="width:100%;max-height:180px;object-fit:cover;border-radius:8px;border:2px solid #ff0;margin:8px 0;">`:'';
 
   let encHtml='';
   if(est==='encontrada'){
     encHtml=`<div class="card card-v" style="margin-top:8px;padding:10px;">
       <div class="row"><div class="rl">Encontrada por</div><div class="rv" style="color:#0f0;font-weight:bold;">${bf.encontradaPor||'---'}</div></div>
       <div class="row"><div class="rl">Data/Hora</div><div class="rv" style="color:#0aa;">${fmt(bf.encontradaEm)}</div></div>
-      <button class="btn bv" style="width:100%;margin-top:8px;padding:8px;" onclick="verQR(${i})">🎫 VER QR CODE GERADO</button>
+      <button class="btn bv" style="width:100%;margin-top:8px;padding:8px;" onclick="verQR(${i})">🎫 VER QR CODE</button>
     </div>`;
   }
 
   let btns='';
   if(est==='inativa'){
-    btns=`<div style="margin-top:10px;">
-      <button class="btn bbingo bb" onclick="abrirPainelAtivar(${i})">🎰 CONFIGURAR E ATIVAR</button>
-    </div>`;
+    btns=`<button class="btn bbingo bb" onclick="abrirAtivar(${i})" style="margin-top:10px;">🎰 CONFIGURAR E ATIVAR</button>`;
   }
   if(est==='ativa'){
     btns=`<div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap;">
       <button class="btn bdesativ" style="flex:1;padding:9px;font-size:.82rem;" onclick="desativar(${i})">⏹️ DESATIVAR</button>
-      <button class="btn bo"      style="flex:1;padding:9px;font-size:.82rem;" onclick="abrirEditarAtiva(${i})">✏️ EDITAR</button>
-      <button class="btn bpurple" style="flex:1;padding:9px;font-size:.82rem;" onclick="abrirAlterarTempo(${i})">⏱️ TEMPO</button>
+      <button class="btn bo"       style="flex:1;padding:9px;font-size:.82rem;" onclick="abrirEditar(${i})">✏️ EDITAR</button>
+      <button class="btn bpurple"  style="flex:1;padding:9px;font-size:.82rem;" onclick="abrirTempo(${i})">⏱️ TEMPO</button>
     </div>
     <button class="btn bc bb" style="margin-top:5px;padding:7px;" onclick="simularEncontrar(${i})">🧪 Simular encontrar</button>`;
   }
   if(est==='encontrada'){
-    btns=`<button class="btn bv bb" style="margin-top:10px;" onclick="verQR(${i})">🎫 VER / IMPRIMIR QR CODE</button>`;
+    btns=`<button class="btn bv bb" style="margin-top:10px;" onclick="verQR(${i})">🎫 VER / IMPRIMIR QR</button>`;
   }
 
   return `<div class="bfc ${est}">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-      <div><span style="font-size:1.4rem;">🎰</span> <b style="font-size:.95rem;">Bandeira BINGO #${bf.num}</b></div>
+      <div><span style="font-size:1.3rem;">🎰</span> <b style="font-size:.92rem;">Bandeira BINGO #${bf.num}</b></div>
       ${badges[est]||''}
     </div>
-    <div class="row"><div class="rl">🎁 Prémio</div><div class="rv" style="color:#ff0;font-weight:bold;">${bf.premio}</div></div>
+    <div class="row"><div class="rl">🎁 Prémio</div><div class="rv" style="color:#ff0;font-weight:bold;">${bf.premio||'---'}</div></div>
     ${bf.descricao?`<div class="row"><div class="rl">📝 Descrição</div><div class="rv" style="color:#0aa;font-size:.78rem;">${bf.descricao}</div></div>`:''}
-    <div class="row"><div class="rl">🏢 Empresa</div><div class="rv" style="color:#ff0;">${bf.empNome}</div></div>
-    <div class="row"><div class="rl">📍 ${bf.usarGPS?'GPS':'Morada'}</div><div class="rv" style="color:#0aa;font-size:.78rem;">${bf.usarGPS?`${bf.empLat}, ${bf.empLng}`:bf.empMorada}</div></div>
-    <div class="row"><div class="rl">📞 Contacto</div><div class="rv">${bf.empTel}</div></div>
-    <div class="row"><div class="rl">👤 Responsável</div><div class="rv" style="color:#0f0;">${bf.empResp}</div></div>
-    <div class="row"><div class="rl">📍 Raio BINGO</div><div class="rv">${BINGO_RAIO}m</div></div>
-    <div class="row"><div class="rl">⏱️ Duração configurada</div><div class="rv" style="color:#0ff;">${(bf.duracaoMs/3600000).toFixed(1)}h</div></div>
+    ${bf.empNome?`<div class="row"><div class="rl">🏢 Empresa</div><div class="rv" style="color:#ff0;">${bf.empNome}</div></div>`:''}
+    ${(bf.empMorada||bf.empLat)?`<div class="row"><div class="rl">📍 ${bf.usarGPS?'GPS':'Morada'}</div><div class="rv" style="color:#0aa;font-size:.78rem;">${bf.usarGPS?`${bf.empLat}, ${bf.empLng}`:bf.empMorada}</div></div>`:''}
+    ${bf.empTel?`<div class="row"><div class="rl">📞 Contacto</div><div class="rv">${bf.empTel}</div></div>`:''}
+    ${bf.empResp?`<div class="row"><div class="rl">👤 Responsável</div><div class="rv" style="color:#0f0;">${bf.empResp}</div></div>`:''}
+    <div class="row"><div class="rl">📍 Raio</div><div class="rv">${BINGO_RAIO}m</div></div>
+    <div class="row"><div class="rl">⏱️ Duração config.</div><div class="rv" style="color:#0ff;">${(bf.duracaoMs/3600000).toFixed(1)}h</div></div>
     ${fotoHtml}${timerHtml}${encHtml}${btns}
   </div>`;
 }
 
 // ============================================================
-// PAINEL: CONFIGURAR E ATIVAR
+// ABRE MODAL: CONFIGURAR E ATIVAR
 // ============================================================
-let imgB64=null,duracaoSlider=1,usarGPSLocal=false;
+let imgB64=null,durH=1,usaGPS=false;
 
-function abrirPainelAtivar(i){
-  const bf=getFlags()[i];
-  imgB64=bf.foto||null;duracaoSlider=bf.duracaoMs/3600000||1;usarGPSLocal=bf.usarGPS||false;
+function abrirAtivar(i){
+  const bf=getBFs()[i];
+  imgB64=bf.foto||null;durH=bf.duracaoMs/3600000||1;usaGPS=bf.usarGPS||false;
 
-  abrirMdl(`🎰 Configurar Bandeira BINGO #${bf.num}`,`
-    <p style="color:#0aa;font-size:.78rem;margin-bottom:12px;">Configura todos os dados antes de ativar.</p>
+  // Pré-preencher com dados da empresa se ainda não definidos
+  const ne=bf.empNome||prAtual.ne||'';
+  const morada=bf.empMorada||prAtual.morada||'';
+  const tel=bf.empTel||prAtual.tel||'';
+  const email=bf.empEmail||prAtual.email||'';
+  const resp=bf.empResp||prAtual.resp||'';
+
+  abrirMdl(`🎰 Configurar BINGO #${bf.num}`,`
+    <p style="color:#0aa;font-size:.78rem;margin-bottom:12px;">Configura antes de ativar. Podes alterar depois.</p>
 
     <div class="edit-section">
       <h3>🎁 PRÉMIO</h3>
       <label style="font-size:.8rem;color:#0aa;">Nome do prémio: <span style="color:#f00;">*</span></label>
-      <input type="text" id="ap-premio" value="${bf.premio}" placeholder="Ex: Café Grátis, Jantar para 2...">
-      <label style="font-size:.8rem;color:#0aa;display:block;margin-top:8px;">Descrição:</label>
+      <input type="text" id="ap-pr" value="${bf.premio||'🎁 Prémio Surpresa'}" placeholder="Ex: Café Grátis...">
+      <label style="font-size:.8rem;color:#0aa;display:block;margin-top:6px;">Descrição:</label>
       <textarea id="ap-desc" placeholder="Detalhes do prémio...">${bf.descricao||''}</textarea>
-      <label style="font-size:.8rem;color:#0aa;display:block;margin-top:8px;">📸 Foto do prémio:</label>
+      <label style="font-size:.8rem;color:#0aa;display:block;margin-top:6px;">📸 Foto do prémio:</label>
       <div id="ap-fp" class="foto-area" onclick="$('ap-fi').click()" ${imgB64?'style="display:none;"':''}>
         <div style="font-size:2rem;">📸</div>
         <p style="color:#ff0;font-size:.82rem;margin-top:5px;">Clica para adicionar foto</p>
-        <p style="color:#555;font-size:.7rem;">JPG, PNG — máx. 5MB</p>
+        <p style="color:#555;font-size:.7rem;">JPG/PNG — máx. 5MB</p>
       </div>
       <img id="ap-fp-img" src="${imgB64||''}" style="width:100%;max-height:200px;object-fit:cover;border-radius:8px;border:2px solid #ff0;margin:6px 0;display:${imgB64?'block':'none'};">
       <input type="file" id="ap-fi" accept="image/*" style="display:none;" onchange="carregarFoto(this,'ap')">
-      <span id="ap-rem">${imgB64?`<button class="btn br" style="width:auto;padding:4px 12px;font-size:.75rem;" onclick="removerFoto('ap')">🗑️ Remover foto</button>`:''}</span>
+      <span id="ap-rem">${imgB64?`<button class="btn br" style="width:auto;padding:4px 12px;font-size:.75rem;" onclick="removerFoto('ap')">🗑️ Remover</button>`:''}</span>
     </div>
     <hr class="sep">
 
     <div class="edit-section">
       <h3>🏢 DADOS DA EMPRESA</h3>
-      <label style="font-size:.8rem;color:#0aa;">Nome da empresa: <span style="color:#f00;">*</span></label>
-      <input type="text" id="ap-ne" value="${bf.empNome}">
-      <div style="display:flex;gap:6px;margin:8px 0 4px;">
-        <button id="ap-btn-m" class="btn ${!bf.usarGPS?'bv':'bc'}" style="flex:1;padding:7px;font-size:.78rem;" onclick="swLoc('ap','morada')">📍 Morada</button>
-        <button id="ap-btn-g" class="btn ${bf.usarGPS?'bv':'bc'}"  style="flex:1;padding:7px;font-size:.78rem;" onclick="swLoc('ap','gps')">🛰️ GPS</button>
+      <input type="text" id="ap-ne" value="${ne}" placeholder="* Nome da empresa">
+      <div style="display:flex;gap:6px;margin:6px 0;">
+        <button id="ap-bm" class="btn ${!usaGPS?'bv':'bc'}" style="flex:1;padding:7px;font-size:.78rem;" onclick="swGPS('ap','morada')">📍 Morada</button>
+        <button id="ap-bg" class="btn ${usaGPS?'bv':'bc'}"  style="flex:1;padding:7px;font-size:.78rem;" onclick="swGPS('ap','gps')">🛰️ GPS</button>
       </div>
-      <div id="ap-m-wrap" style="display:${!bf.usarGPS?'block':'none'};">
-        <input type="text" id="ap-morada" value="${bf.empMorada}" placeholder="Rua, nº, CP, cidade">
+      <div id="ap-mw" style="display:${!usaGPS?'block':'none'};">
+        <input type="text" id="ap-morada" value="${morada}" placeholder="Rua, nº, CP, cidade">
       </div>
-      <div id="ap-g-wrap" style="display:${bf.usarGPS?'block':'none'};">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-          <input type="text" id="ap-lat" value="${bf.empLat}" placeholder="Latitude">
-          <input type="text" id="ap-lng" value="${bf.empLng}" placeholder="Longitude">
+      <div id="ap-gw" style="display:${usaGPS?'block':'none'};">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+          <input type="text" id="ap-lat" value="${bf.empLat||''}" placeholder="Latitude">
+          <input type="text" id="ap-lng" value="${bf.empLng||''}" placeholder="Longitude">
         </div>
-        <button class="btn bc" style="width:auto;padding:5px 12px;font-size:.75rem;margin-top:4px;" onclick="obterGPS('ap')">📡 GPS atual</button>
-        <p id="ap-gps-st" style="font-size:.72rem;color:#555;margin-top:3px;"></p>
+        <button class="btn bc" style="width:auto;padding:4px 12px;font-size:.75rem;margin-top:4px;" onclick="getGPS('ap')">📡 GPS atual</button>
+        <p id="ap-gs" style="font-size:.72rem;color:#555;margin-top:2px;"></p>
       </div>
-      <label style="font-size:.8rem;color:#0aa;display:block;margin-top:8px;">📞 Telefone: <span style="color:#f00;">*</span></label>
-      <input type="tel" id="ap-tel" value="${bf.empTel}">
-      <label style="font-size:.8rem;color:#0aa;display:block;margin-top:8px;">📧 Email:</label>
-      <input type="email" id="ap-email" value="${bf.empEmail||''}">
-      <label style="font-size:.8rem;color:#0aa;display:block;margin-top:8px;">🌐 Website:</label>
-      <input type="url" id="ap-web" value="${bf.empWeb||''}">
-      <label style="font-size:.8rem;color:#0aa;display:block;margin-top:8px;">👤 Responsável: <span style="color:#f00;">*</span></label>
-      <input type="text" id="ap-resp" value="${bf.empResp}">
-      <label style="font-size:.8rem;color:#0aa;display:block;margin-top:8px;">📱 Tel. Responsável:</label>
-      <input type="tel" id="ap-resp-tel" value="${bf.empRespTel||''}">
+      <input type="tel"   id="ap-tel"  value="${tel}"   placeholder="* Telefone" style="margin-top:6px;">
+      <input type="email" id="ap-em"   value="${email}" placeholder="Email">
+      <input type="url"   id="ap-web"  value="${bf.empWeb||''}" placeholder="Website">
+      <input type="text"  id="ap-resp" value="${resp}"  placeholder="* Nome do responsável">
+      <input type="tel"   id="ap-rt"   value="${bf.empRespTel||''}" placeholder="Tel. responsável">
     </div>
     <hr class="sep">
 
     <div class="edit-section">
       <h3>⏱️ TEMPO DE ATIVAÇÃO</h3>
-      <p style="color:#0aa;font-size:.75rem;margin-bottom:8px;">Se ninguém a encontrar, desaparece automaticamente e fica "inativa".</p>
+      <p style="color:#0aa;font-size:.75rem;margin-bottom:8px;">Se ninguém encontrar, desaparece automaticamente e fica inativa.</p>
       <div class="slider-wrapper">
-        <div class="slider-val" id="sl-val">${duracaoSlider}h</div>
-        <input type="range" id="sl-tempo" min="0.5" max="24" step="0.5" value="${duracaoSlider}" oninput="atualizarSlider(this.value,'sl-val','ap-expira')">
+        <div class="slider-val" id="sl-v">${durH<1?Math.round(durH*60)+'min':durH+'h'}</div>
+        <input type="range" id="sl-t" min="0.5" max="24" step="0.5" value="${durH}" oninput="updSl(this.value,'sl-v','ap-exp')">
         <div class="slider-sub"><span>30min</span><span>6h</span><span>12h</span><span>18h</span><span>24h</span></div>
       </div>
-      <div style="background:#000;border:1px solid #ff0;border-radius:6px;padding:10px;text-align:center;margin-top:8px;">
-        <p style="color:#0aa;font-size:.73rem;margin-bottom:3px;">Expira às:</p>
-        <p id="ap-expira" style="color:#ff0;font-weight:bold;font-size:.9rem;">${fmt(Date.now()+duracaoSlider*3600000)}</p>
+      <div style="background:#000;border:1px solid #ff0;border-radius:6px;padding:8px;text-align:center;margin-top:6px;">
+        <p style="color:#0aa;font-size:.72rem;">Expira às:</p>
+        <p id="ap-exp" style="color:#ff0;font-weight:bold;font-size:.88rem;">${fmt(Date.now()+durH*3600000)}</p>
       </div>
     </div>
 
     <div id="mdl-m" class="msg"></div>
-    <button class="btn bbingo bb" onclick="confirmarAtivar(${i})" style="margin-top:10px;">
-      🎰 ATIVAR BANDEIRA BINGO AGORA
-    </button>
+    <button class="btn bbingo bb" onclick="confirmarAtivar(${i})" style="margin-top:10px;">🎰 ATIVAR AGORA</button>
   `);
 }
 
-function atualizarSlider(v,valId,expiId){
-  duracaoSlider=parseFloat(v);
+function updSl(v,valId,expId){
+  durH=parseFloat(v);
   const el=$(valId);if(el) el.innerText=v<1?Math.round(v*60)+'min':v+'h';
-  const ep=$(expiId);if(ep) ep.innerText=fmt(Date.now()+duracaoSlider*3600000);
+  const ep=$(expId);if(ep) ep.innerText=fmt(Date.now()+durH*3600000);
 }
 
-function swLoc(pfx,tipo){
-  usarGPSLocal=tipo==='gps';
-  $(`${pfx}-m-wrap`).style.display=tipo==='morada'?'block':'none';
-  $(`${pfx}-g-wrap`).style.display=tipo==='gps'?'block':'none';
-  $(`${pfx}-btn-m`).className=`btn ${tipo==='morada'?'bv':'bc'}`;
-  $(`${pfx}-btn-g`).className=`btn ${tipo==='gps'?'bv':'bc'}`;
+function swGPS(pfx,tipo){
+  usaGPS=tipo==='gps';
+  $(`${pfx}-mw`).style.display=tipo==='morada'?'block':'none';
+  $(`${pfx}-gw`).style.display=tipo==='gps'?'block':'none';
+  $(`${pfx}-bm`).className=`btn ${tipo==='morada'?'bv':'bc'}`;
+  $(`${pfx}-bg`).className=`btn ${tipo==='gps'?'bv':'bc'}`;
 }
 
-function obterGPS(pfx){
-  const st=$(`${pfx}-gps-st`);if(st) st.innerText='📡 A localizar...';
+function getGPS(pfx){
+  const st=$(`${pfx}-gs`);if(st) st.innerText='📡 A localizar...';
   if(!navigator.geolocation){if(st) st.innerText='❌ GPS não suportado';return;}
-  navigator.geolocation.getCurrentPosition(pos=>{
-    const la=pos.coords.latitude.toFixed(6),ln=pos.coords.longitude.toFixed(6);
-    const elLa=$(`${pfx}-lat`),elLn=$(`${pfx}-lng`);
-    if(elLa) elLa.value=la;if(elLn) elLn.value=ln;
+  navigator.geolocation.getCurrentPosition(p=>{
+    const la=p.coords.latitude.toFixed(6),ln=p.coords.longitude.toFixed(6);
+    const la_el=$(`${pfx}-lat`),ln_el=$(`${pfx}-lng`);
+    if(la_el) la_el.value=la;if(ln_el) ln_el.value=ln;
     if(st) st.innerText=`✅ ${la}, ${ln}`;
   },()=>{if(st) st.innerText='❌ Erro GPS';});
 }
@@ -574,7 +934,7 @@ function carregarFoto(input,pfx){
     const ph=$(`${pfx}-fp`),pv=$(`${pfx}-fp-img`);
     if(ph) ph.style.display='none';if(pv){pv.src=imgB64;pv.style.display='block';}
     const rem=$(`${pfx}-rem`);
-    if(rem) rem.innerHTML=`<button class="btn br" style="width:auto;padding:4px 12px;font-size:.75rem;" onclick="removerFoto('${pfx}')">🗑️ Remover foto</button>`;
+    if(rem) rem.innerHTML=`<button class="btn br" style="width:auto;padding:4px 12px;font-size:.75rem;" onclick="removerFoto('${pfx}')">🗑️ Remover</button>`;
   };r.readAsDataURL(f);
 }
 
@@ -586,141 +946,132 @@ function removerFoto(pfx){
 }
 
 function confirmarAtivar(i){
-  const premio=val('ap-premio');const ne=val('ap-ne');const tel=val('ap-tel');const resp=val('ap-resp');
+  const pr=val('ap-pr');const ne=val('ap-ne');const tel=val('ap-tel');const resp=val('ap-resp');
   const morada=val('ap-morada');const lat=val('ap-lat');const lng=val('ap-lng');
-  if(!premio)                  {msgMdl('❌ Define o prémio!','e');return;}
-  if(!ne)                      {msgMdl('❌ Nome da empresa obrigatório!','e');return;}
-  if(!tel)                     {msgMdl('❌ Telefone obrigatório!','e');return;}
-  if(!resp)                    {msgMdl('❌ Nome do responsável obrigatório!','e');return;}
-  if(!usarGPSLocal&&!morada)   {msgMdl('❌ Insere a morada!','e');return;}
-  if(usarGPSLocal&&(!lat||!lng)){msgMdl('❌ Insere as coordenadas GPS!','e');return;}
+  if(!pr)                   {msgMdl('❌ Define o prémio!','e');return;}
+  if(!ne)                   {msgMdl('❌ Nome da empresa obrigatório!','e');return;}
+  if(!tel)                  {msgMdl('❌ Telefone obrigatório!','e');return;}
+  if(!resp)                 {msgMdl('❌ Nome do responsável obrigatório!','e');return;}
+  if(!usaGPS&&!morada)      {msgMdl('❌ Insere a morada!','e');return;}
+  if(usaGPS&&(!lat||!lng))  {msgMdl('❌ Insere as coordenadas GPS!','e');return;}
 
-  const flags=getFlags();const bf=flags[i];
-  const exTs=Date.now()+duracaoSlider*3600000;
-  bf.estado='ativa';bf.premio=premio;bf.descricao=val('ap-desc');bf.foto=imgB64||null;
-  bf.empNome=ne;bf.empMorada=morada||bf.empMorada;bf.empLat=lat||bf.empLat;bf.empLng=lng||bf.empLng;
-  bf.usarGPS=usarGPSLocal;bf.empTel=tel;bf.empEmail=val('ap-email')||bf.empEmail;
-  bf.empWeb=val('ap-web')||bf.empWeb;bf.empResp=resp;bf.empRespTel=val('ap-resp-tel')||bf.empRespTel;
-  bf.ativadoEm=Date.now();bf.duracaoMs=duracaoSlider*3600000;bf.expiracaoAtivacao=exTs;
+  const bfs=getBFs();const bf=bfs[i];
+  const exTs=Date.now()+durH*3600000;
+  bf.estado='ativa';bf.premio=pr;bf.descricao=val('ap-desc');bf.foto=imgB64||null;
+  bf.empNome=ne;bf.empMorada=morada||bf.empMorada;
+  bf.empLat=lat||bf.empLat;bf.empLng=lng||bf.empLng;bf.usarGPS=usaGPS;
+  bf.empTel=tel;bf.empEmail=val('ap-em')||bf.empEmail;
+  bf.empWeb=val('ap-web')||bf.empWeb;
+  bf.empResp=resp;bf.empRespTel=val('ap-rt')||bf.empRespTel;
+  bf.ativadoEm=Date.now();bf.duracaoMs=durH*3600000;bf.expiracaoAtivacao=exTs;
   bf.encontradaEm=null;bf.encontradaPor=null;bf.qrData=null;
-  saveFlags(flags);fecharMdl();renderLista();
-  msgGlobal(`✅ Bandeira BINGO #${bf.num} ATIVADA! Prémio: ${premio} · Duração: ${duracaoSlider}h`,'s');
+  saveBFs(bfs);fecharMdl();renderLista();
+  msgBingo(`✅ Bandeira BINGO #${bf.num} ATIVADA! Prémio: ${pr} · ${durH}h`,'s');
 }
 
 // ============================================================
 // EDITAR ATIVA
 // ============================================================
-function abrirEditarAtiva(i){
-  const bf=getFlags()[i];imgB64=bf.foto||null;usarGPSLocal=bf.usarGPS||false;
+function abrirEditar(i){
+  const bf=getBFs()[i];imgB64=bf.foto||null;usaGPS=bf.usarGPS||false;
   const r=Math.max(0,bf.expiracaoAtivacao-Date.now());
-
-  abrirMdl(`✏️ Editar Bandeira BINGO #${bf.num} — ATIVA`,`
+  abrirMdl(`✏️ Editar BINGO #${bf.num}`,`
     <div class="timer-grande" style="margin-bottom:12px;">
       <span class="timer-ico-anim">⏱️</span>
-      <div class="timer-display" id="t-mdl-${bf.id}">${fmtTimer(r)}</div>
+      <div class="timer-display" id="t-mdl-${bf.id}">${fmtT(r)}</div>
       <div class="timer-label">Tempo restante</div>
     </div>
-
     <div class="edit-section">
       <h3>🎁 PRÉMIO</h3>
-      <input type="text" id="ed-premio" value="${bf.premio}" placeholder="Nome do prémio">
-      <textarea id="ed-desc" placeholder="Descrição...">${bf.descricao||''}</textarea>
-      <label style="font-size:.8rem;color:#0aa;display:block;margin-top:6px;">📸 Foto:</label>
+      <input type="text" id="ed-pr" value="${bf.premio}">
+      <textarea id="ed-desc">${bf.descricao||''}</textarea>
       <div id="ed-fp" class="foto-area" onclick="$('ed-fi').click()" ${imgB64?'style="display:none;"':''}>
-        <div style="font-size:1.5rem;">📸</div><p style="color:#ff0;font-size:.8rem;margin-top:4px;">Adicionar foto</p>
+        <div style="font-size:1.5rem;">📸</div><p style="color:#ff0;font-size:.8rem;margin-top:4px;">Foto</p>
       </div>
       <img id="ed-fp-img" src="${imgB64||''}" style="width:100%;max-height:180px;object-fit:cover;border-radius:8px;border:2px solid #ff0;margin:6px 0;display:${imgB64?'block':'none'};">
       <input type="file" id="ed-fi" accept="image/*" style="display:none;" onchange="carregarFoto(this,'ed')">
-      <span id="ed-rem">${imgB64?`<button class="btn br" style="width:auto;padding:4px 12px;font-size:.75rem;" onclick="removerFoto('ed')">🗑️ Remover foto</button>`:''}</span>
+      <span id="ed-rem">${imgB64?`<button class="btn br" style="width:auto;padding:4px 12px;font-size:.75rem;" onclick="removerFoto('ed')">🗑️ Remover</button>`:''}</span>
     </div>
     <hr class="sep">
-
     <div class="edit-section">
-      <h3>🏢 DADOS DA EMPRESA</h3>
+      <h3>🏢 EMPRESA</h3>
       <input type="text" id="ed-ne" value="${bf.empNome}" placeholder="Nome da empresa">
       <div style="display:flex;gap:6px;margin:6px 0;">
-        <button id="ed-btn-m" class="btn ${!bf.usarGPS?'bv':'bc'}" style="flex:1;padding:6px;font-size:.78rem;" onclick="swLoc('ed','morada')">📍 Morada</button>
-        <button id="ed-btn-g" class="btn ${bf.usarGPS?'bv':'bc'}"  style="flex:1;padding:6px;font-size:.78rem;" onclick="swLoc('ed','gps')">🛰️ GPS</button>
+        <button id="ed-bm" class="btn ${!bf.usarGPS?'bv':'bc'}" style="flex:1;padding:6px;font-size:.78rem;" onclick="swGPS('ed','morada')">📍 Morada</button>
+        <button id="ed-bg" class="btn ${bf.usarGPS?'bv':'bc'}"  style="flex:1;padding:6px;font-size:.78rem;" onclick="swGPS('ed','gps')">🛰️ GPS</button>
       </div>
-      <div id="ed-m-wrap" style="display:${!bf.usarGPS?'block':'none'};">
-        <input type="text" id="ed-morada" value="${bf.empMorada}" placeholder="Rua, nº, CP, cidade">
+      <div id="ed-mw" style="display:${!bf.usarGPS?'block':'none'};">
+        <input type="text" id="ed-morada" value="${bf.empMorada}" placeholder="Morada">
       </div>
-      <div id="ed-g-wrap" style="display:${bf.usarGPS?'block':'none'};">
+      <div id="ed-gw" style="display:${bf.usarGPS?'block':'none'};">
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
           <input type="text" id="ed-lat" value="${bf.empLat}">
           <input type="text" id="ed-lng" value="${bf.empLng}">
         </div>
-        <button class="btn bc" style="width:auto;padding:4px 10px;font-size:.75rem;margin-top:4px;" onclick="obterGPS('ed')">📡 GPS atual</button>
-        <p id="ed-gps-st" style="font-size:.7rem;color:#555;"></p>
+        <button class="btn bc" style="width:auto;padding:4px 10px;font-size:.75rem;margin-top:4px;" onclick="getGPS('ed')">📡 GPS</button>
+        <p id="ed-gs" style="font-size:.7rem;color:#555;"></p>
       </div>
-      <input type="tel" id="ed-tel" value="${bf.empTel}" placeholder="Telefone" style="margin-top:6px;">
-      <input type="email" id="ed-email" value="${bf.empEmail||''}" placeholder="Email">
-      <input type="url" id="ed-web" value="${bf.empWeb||''}" placeholder="Website">
-      <input type="text" id="ed-resp" value="${bf.empResp}" placeholder="Nome do responsável">
-      <input type="tel" id="ed-resp-tel" value="${bf.empRespTel||''}" placeholder="Tel. Responsável">
+      <input type="tel"   id="ed-tel"  value="${bf.empTel}"     placeholder="Telefone" style="margin-top:6px;">
+      <input type="email" id="ed-em"   value="${bf.empEmail||''}" placeholder="Email">
+      <input type="url"   id="ed-web"  value="${bf.empWeb||''}"  placeholder="Website">
+      <input type="text"  id="ed-resp" value="${bf.empResp}"     placeholder="Responsável">
+      <input type="tel"   id="ed-rt"   value="${bf.empRespTel||''}" placeholder="Tel. responsável">
     </div>
-
     <div id="mdl-m" class="msg"></div>
     <button class="btn bv bb" onclick="guardarEdicao(${i})" style="margin-top:8px;">💾 GUARDAR</button>
     <button class="btn bdesativ bb" onclick="desativar(${i});fecharMdl();" style="margin-top:4px;">⏹️ DESATIVAR</button>
   `);
-  iniciarTimerEl(`t-mdl-${bf.id}`,bf.expiracaoAtivacao,()=>{});
+  iniciarT(`t-mdl-${bf.id}`,bf.expiracaoAtivacao,()=>{});
 }
 
 function guardarEdicao(i){
-  const premio=val('ed-premio');const ne=val('ed-ne');const tel=val('ed-tel');const resp=val('ed-resp');
-  if(!premio){msgMdl('❌ Define o prémio!','e');return;}
-  if(!ne)    {msgMdl('❌ Nome da empresa obrigatório!','e');return;}
-  if(!tel)   {msgMdl('❌ Telefone obrigatório!','e');return;}
-  if(!resp)  {msgMdl('❌ Responsável obrigatório!','e');return;}
-  const flags=getFlags();const bf=flags[i];
-  bf.premio=premio;bf.descricao=val('ed-desc');bf.foto=imgB64||null;
+  const pr=val('ed-pr');const ne=val('ed-ne');const tel=val('ed-tel');const resp=val('ed-resp');
+  if(!pr)  {msgMdl('❌ Define o prémio!','e');return;}
+  if(!ne)  {msgMdl('❌ Nome da empresa obrigatório!','e');return;}
+  if(!tel) {msgMdl('❌ Telefone obrigatório!','e');return;}
+  if(!resp){msgMdl('❌ Responsável obrigatório!','e');return;}
+  const bfs=getBFs();const bf=bfs[i];
+  bf.premio=pr;bf.descricao=val('ed-desc');bf.foto=imgB64||null;
   bf.empNome=ne;bf.empMorada=val('ed-morada')||bf.empMorada;
-  bf.empLat=val('ed-lat')||bf.empLat;bf.empLng=val('ed-lng')||bf.empLng;
-  bf.usarGPS=usarGPSLocal;bf.empTel=tel;bf.empEmail=val('ed-email')||bf.empEmail;
-  bf.empWeb=val('ed-web')||bf.empWeb;bf.empResp=resp;bf.empRespTel=val('ed-resp-tel')||bf.empRespTel;
-  saveFlags(flags);fecharMdl();renderLista();
-  msgGlobal('✅ Dados da bandeira BINGO atualizados!','s');
+  bf.empLat=val('ed-lat')||bf.empLat;bf.empLng=val('ed-lng')||bf.empLng;bf.usarGPS=usaGPS;
+  bf.empTel=tel;bf.empEmail=val('ed-em')||bf.empEmail;bf.empWeb=val('ed-web')||bf.empWeb;
+  bf.empResp=resp;bf.empRespTel=val('ed-rt')||bf.empRespTel;
+  saveBFs(bfs);fecharMdl();renderLista();
+  msgBingo('✅ Bandeira BINGO atualizada!','s');
 }
 
 // ============================================================
 // ALTERAR TEMPO
 // ============================================================
-function abrirAlterarTempo(i){
-  const bf=getFlags()[i];
-  const r=Math.max(0,bf.expiracaoAtivacao-Date.now());
-  const duratualH=bf.duracaoMs/3600000;
-
-  abrirMdl(`⏱️ Alterar Tempo — Bandeira BINGO #${bf.num}`,`
+function abrirTempo(i){
+  const bf=getBFs()[i];const r=Math.max(0,bf.expiracaoAtivacao-Date.now());
+  const dH=bf.duracaoMs/3600000;
+  abrirMdl(`⏱️ Alterar Tempo — BINGO #${bf.num}`,`
     <div class="timer-grande" style="margin-bottom:12px;">
       <span class="timer-ico-anim">⏱️</span>
-      <div class="timer-display" id="t-mdl-${bf.id}">${fmtTimer(r)}</div>
-      <div class="timer-label">Tempo restante atual</div>
-      <div style="font-size:.7rem;color:#555;margin-top:3px;">Expira: ${fmt(bf.expiracaoAtivacao)}</div>
+      <div class="timer-display" id="t-mdl-${bf.id}">${fmtT(r)}</div>
+      <div class="timer-label">Tempo restante · Expira: ${fmt(bf.expiracaoAtivacao)}</div>
     </div>
-
     <div class="edit-section">
       <h3>⚡ ADICIONAR / REMOVER TEMPO</h3>
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;">
         ${['+30min','+1h','+2h','+4h','+6h','+12h','+24h','-1h'].map(t=>`
-          <button class="btn bc" style="padding:8px;font-size:.78rem;" onclick="adicionarTempo(${i},'${t}')">
+          <button class="btn bc" style="padding:8px;font-size:.78rem;" onclick="addTempo(${i},'${t}')">
             ${t}
           </button>`).join('')}
       </div>
     </div>
     <hr class="sep">
-
     <div class="edit-section">
       <h3>🔄 REINICIAR COM NOVA DURAÇÃO</h3>
       <div class="slider-wrapper">
-        <div class="slider-val" id="sl2-val">${duratualH}h</div>
-        <input type="range" id="sl2-tempo" min="0.5" max="24" step="0.5" value="${duratualH}"
-          oninput="atualizarSlider(this.value,'sl2-val','sl2-expira')">
+        <div class="slider-val" id="sl2-v">${dH}h</div>
+        <input type="range" id="sl2-t" min="0.5" max="24" step="0.5" value="${dH}" oninput="updSl(this.value,'sl2-v','sl2-exp')">
         <div class="slider-sub"><span>30min</span><span>6h</span><span>12h</span><span>18h</span><span>24h</span></div>
       </div>
       <div style="background:#000;border:1px solid #ff0;border-radius:6px;padding:8px;text-align:center;margin-top:6px;">
-        <p style="color:#0aa;font-size:.72rem;">Nova expiração seria:</p>
-        <p id="sl2-expira" style="color:#ff0;font-weight:bold;font-size:.88rem;">${fmt(Date.now()+duratualH*3600000)}</p>
+        <p style="color:#0aa;font-size:.72rem;">Nova expiração:</p>
+        <p id="sl2-exp" style="color:#ff0;font-weight:bold;">${fmt(Date.now()+dH*3600000)}</p>
       </div>
       <button class="btn bo bb" onclick="reiniciarTempo(${i})" style="margin-top:8px;">🔄 REINICIAR TIMER</button>
     </div>
@@ -728,54 +1079,47 @@ function abrirAlterarTempo(i){
     <button class="btn bdesativ bb" onclick="desativar(${i});fecharMdl();">⏹️ DESATIVAR AGORA</button>
     <div id="mdl-m" class="msg"></div>
   `);
-  iniciarTimerEl(`t-mdl-${bf.id}`,bf.expiracaoAtivacao,()=>{});
+  iniciarT(`t-mdl-${bf.id}`,bf.expiracaoAtivacao,()=>{});
 }
 
-function adicionarTempo(i,t){
-  const ms={'+':{'+30min':30*60000,'+1h':3600000,'+2h':7200000,'+4h':14400000,'+6h':21600000,'+12h':43200000,'+24h':86400000}[t]||0,'-':{'-1h':-3600000}[t]||0}[t[0]];
-  let addMs=0;
-  if(t==='+30min') addMs=30*60000;
-  else if(t==='+1h')  addMs=3600000;
-  else if(t==='+2h')  addMs=7200000;
-  else if(t==='+4h')  addMs=14400000;
-  else if(t==='+6h')  addMs=21600000;
-  else if(t==='+12h') addMs=43200000;
-  else if(t==='+24h') addMs=86400000;
-  else if(t==='-1h')  addMs=-3600000;
-
-  const flags=getFlags();const bf=flags[i];
-  const novaExp=Math.max(Date.now()+60000,(bf.expiracaoAtivacao||Date.now())+addMs);
-  bf.expiracaoAtivacao=novaExp;bf.duracaoMs=Math.max(1800000,bf.duracaoMs+addMs);
-  saveFlags(flags);
-  iniciarTimerEl(`t-mdl-${bf.id}`,novaExp,()=>{});
-  iniciarTimerEl(`t-${bf.id}`,novaExp,()=>{verificarExp();renderLista();});
-  const ep=$('sl2-expira');if(ep) ep.innerText=fmt(novaExp);
-  msgMdl(`✅ Tempo ${t} — Expira: ${fmt(novaExp)}`,'s');
-  msgGlobal(`⏱️ Bandeira BINGO #${bf.num}: tempo ${t}`,'i');
+function addTempo(i,t){
+  let ms=0;
+  if(t==='+30min')ms=1800000;else if(t==='+1h')ms=3600000;else if(t==='+2h')ms=7200000;
+  else if(t==='+4h')ms=14400000;else if(t==='+6h')ms=21600000;else if(t==='+12h')ms=43200000;
+  else if(t==='+24h')ms=86400000;else if(t==='-1h')ms=-3600000;
+  const bfs=getBFs();const bf=bfs[i];
+  const nExp=Math.max(Date.now()+60000,(bf.expiracaoAtivacao||Date.now())+ms);
+  bf.expiracaoAtivacao=nExp;bf.duracaoMs=Math.max(1800000,bf.duracaoMs+ms);
+  saveBFs(bfs);
+  iniciarT(`t-mdl-${bf.id}`,nExp,()=>{});
+  iniciarT(`t-${bf.id}`,nExp,()=>{verificarExpBingo();renderLista();});
+  const ep=$('sl2-exp');if(ep) ep.innerText=fmt(nExp);
+  msgMdl(`✅ Tempo ${t} — Expira: ${fmt(nExp)}`,'s');
+  msgBingo(`⏱️ Bandeira #${bf.num}: tempo ${t}`,'i');
 }
 
 function reiniciarTempo(i){
-  const v=parseFloat($('sl2-tempo')?.value||1);
-  const flags=getFlags();const bf=flags[i];
-  const novaExp=Date.now()+v*3600000;
-  bf.expiracaoAtivacao=novaExp;bf.duracaoMs=v*3600000;
-  saveFlags(flags);
-  iniciarTimerEl(`t-mdl-${bf.id}`,novaExp,()=>{});
-  iniciarTimerEl(`t-${bf.id}`,novaExp,()=>{verificarExp();renderLista();});
+  const v=parseFloat($('sl2-t')?.value||1);
+  const bfs=getBFs();const bf=bfs[i];
+  const nExp=Date.now()+v*3600000;
+  bf.expiracaoAtivacao=nExp;bf.duracaoMs=v*3600000;
+  saveBFs(bfs);
+  iniciarT(`t-mdl-${bf.id}`,nExp,()=>{});
+  iniciarT(`t-${bf.id}`,nExp,()=>{verificarExpBingo();renderLista();});
   msgMdl(`✅ Timer reiniciado: ${v}h`,'s');
-  msgGlobal(`🔄 Bandeira BINGO #${bf.num}: timer reiniciado (${v}h)`,'s');
+  msgBingo(`🔄 Bandeira #${bf.num}: timer reiniciado (${v}h)`,'s');
 }
 
 // ============================================================
 // DESATIVAR
 // ============================================================
 function desativar(i){
-  if(!confirm(`⏹️ Desativar Bandeira BINGO #${getFlags()[i]?.num}?\n\nFica inativa — podes reativar depois.`))return;
-  const flags=getFlags();const bf=flags[i];
-  pararTimer(`t-${bf.id}`);
-  bf.estado='inativa';bf.ativadoEm=null;bf.expiracaoAtivacao=null;
-  saveFlags(flags);renderLista();
-  msgGlobal(`✅ Bandeira BINGO #${bf.num} desativada.`,'a');
+  const bf=getBFs()[i];
+  if(!confirm(`⏹️ Desativar Bandeira BINGO #${bf.num}?\nFica inativa — podes reativar depois.`))return;
+  pararT(`t-${bf.id}`);
+  const bfs=getBFs();bfs[i].estado='inativa';bfs[i].ativadoEm=null;bfs[i].expiracaoAtivacao=null;
+  saveBFs(bfs);renderLista();
+  msgBingo(`✅ Bandeira BINGO #${bf.num} desativada.`,'a');
 }
 
 // ============================================================
@@ -784,28 +1128,24 @@ function desativar(i){
 function simularEncontrar(i){
   const nomes=['Maria Silva','João Santos','Ana Costa','Pedro Lima','Carla Pereira'];
   const jogador=nomes[Math.floor(Math.random()*nomes.length)];
-  const flags=getFlags();const bf=flags[i];
+  const bfs=getBFs();const bf=bfs[i];
   if(bf.estado!=='ativa'){alert('Esta bandeira não está ativa!');return;}
   bf.estado='encontrada';bf.encontradaEm=Date.now();bf.encontradaPor=jogador;
-  bf.qrData=gerarQRData(bf,jogador);
-  pararTimer(`t-${bf.id}`);
-  saveFlags(flags);renderLista();atualizarStats();
-  msgGlobal(`🎰 BINGO! ${jogador} encontrou a Bandeira #${bf.num}!`,'s');
+  bf.qrData=gerarQR(bf,jogador);pararT(`t-${bf.id}`);
+  saveBFs(bfs);renderLista();atualizarStatsBingo();
+  msgBingo(`🎰 BINGO! ${jogador} encontrou a Bandeira #${bf.num}!`,'s');
   setTimeout(()=>verQR(i),400);
 }
 
-// ============================================================
-// GERAR QR DATA
-// ============================================================
-function gerarQRData(bf,jogador){
+function gerarQR(bf,jogador){
   return {
-    id:`BINGO-${bf.id}-${Date.now()}`,tipo:'BINGO ESPECIAL ZAP FLAGS',
+    id:`BINGO-${bf.num}-${Date.now()}`,tipo:'BINGO ESPECIAL ZAP FLAGS',
     jogador,premio:bf.premio,descricao:bf.descricao||'',temFoto:!!bf.foto,
-    empresa:bf.empNome,
-    morada:bf.usarGPS?`GPS: ${bf.empLat}, ${bf.empLng}`:bf.empMorada,
+    empresa:bf.empNome||prAtual.ne,
+    morada:bf.usarGPS?`GPS: ${bf.empLat}, ${bf.empLng}`:bf.empMorada||prAtual.morada,
     lat:bf.usarGPS?bf.empLat:null,lng:bf.usarGPS?bf.empLng:null,
-    tel:bf.empTel,email:bf.empEmail||'',web:bf.empWeb||'',
-    resp:bf.empResp,respTel:bf.empRespTel||'',
+    tel:bf.empTel||prAtual.tel,email:bf.empEmail||'',web:bf.empWeb||'',
+    resp:bf.empResp||prAtual.resp,respTel:bf.empRespTel||'',
     encontradoEm:fmt(bf.encontradaEm),
     validade:fmt(bf.encontradaEm+30*24*60*60*1000),
     bandeira:`#${bf.num}`,raio:`${BINGO_RAIO}m`,
@@ -816,39 +1156,35 @@ function gerarQRData(bf,jogador){
 // VER QR
 // ============================================================
 function verQR(i){
-  const bf=getFlags()[i];if(!bf.qrData){alert('QR ainda não gerado.');return;}
+  const bf=getBFs()[i];if(!bf.qrData){alert('QR ainda não gerado.');return;}
   const q=bf.qrData;
-
   abrirMdl(`🎫 QR CODE — ${q.premio}`,`
     ${bf.foto?`<img src="${bf.foto}" style="width:100%;max-height:200px;object-fit:cover;border-radius:8px;border:2px solid #ff0;margin-bottom:12px;">`:''}
     <div style="text-align:center;margin-bottom:12px;">
       <div style="font-size:2rem;margin-bottom:5px;">🎰</div>
       <h3 style="color:#ff0;font-size:1rem;">BINGO ESPECIAL!</h3>
       <p style="color:#0ff;font-weight:bold;font-size:.95rem;">${q.jogador}</p>
-      <p style="color:#0aa;font-size:.78rem;">encontrou a bandeira!</p>
     </div>
-    <div style="text-align:center;margin:12px 0;">
-      <p style="color:#0aa;font-size:.75rem;margin-bottom:8px;">Apresenta este QR na loja:</p>
-      <div class="qr-wrap" id="qr-div"></div>
+    <div style="text-align:center;margin:10px 0;">
+      <div class="qr-wrap" id="qr-div" style="background:#fff;padding:16px;border-radius:8px;display:inline-block;"></div>
     </div>
-    <div class="qr-premio-box">
+    <div style="background:#1a0800;border:3px solid #ff0;border-radius:10px;padding:16px;text-align:center;margin:10px 0;">
       <p style="color:#0aa;font-size:.75rem;margin-bottom:5px;">🎁 PRÉMIO:</p>
-      <p style="color:#ff0;font-size:1.3rem;font-weight:bold;text-shadow:0 0 8px #ff0;">${q.premio}</p>
-      ${q.descricao?`<p style="color:#0aa;font-size:.8rem;margin-top:8px;line-height:1.6;">${q.descricao}</p>`:''}
+      <p style="color:#ff0;font-size:1.2rem;font-weight:bold;">${q.premio}</p>
+      ${q.descricao?`<p style="color:#0aa;font-size:.8rem;margin-top:6px;">${q.descricao}</p>`:''}
     </div>
-    <div class="qr-info" style="border-color:#ff0;margin-top:10px;">
-      <p style="color:#ff0;font-size:.85rem;font-weight:bold;margin-bottom:8px;">🏢 DADOS DA EMPRESA</p>
+    <div style="background:#0a0a0a;border:1px solid #ff0;border-radius:8px;padding:12px;margin:10px 0;">
+      <p style="color:#ff0;font-size:.82rem;font-weight:bold;margin-bottom:6px;">🏢 DADOS DA EMPRESA</p>
       <div class="row"><div class="rl">Empresa</div><div class="rv" style="color:#ff0;font-weight:bold;">${q.empresa}</div></div>
       <div class="row"><div class="rl">📍 ${q.lat?'GPS':'Morada'}</div><div class="rv" style="color:#0aa;font-size:.78rem;">${q.morada}</div></div>
-      ${q.lat?`<div class="row"><div class="rl">🗺️ Coords</div><div class="rv" style="color:#0ff;font-size:.75rem;">${q.lat}, ${q.lng}</div></div>`:''}
-      <div class="row"><div class="rl">📞 Telefone</div><div class="rv" style="color:#0ff;font-weight:bold;">${q.tel}</div></div>
+      ${q.lat?`<div class="row"><div class="rl">Coords</div><div class="rv" style="color:#0ff;font-size:.75rem;">${q.lat}, ${q.lng}</div></div>`:''}
+      <div class="row"><div class="rl">📞 Tel</div><div class="rv" style="color:#0ff;font-weight:bold;">${q.tel}</div></div>
       ${q.email?`<div class="row"><div class="rl">📧 Email</div><div class="rv" style="color:#0ff;font-size:.78rem;">${q.email}</div></div>`:''}
-      ${q.web?`<div class="row"><div class="rl">🌐 Website</div><div class="rv" style="color:#0ff;font-size:.78rem;">${q.web}</div></div>`:''}
+      ${q.web?`<div class="row"><div class="rl">🌐 Web</div><div class="rv" style="color:#0ff;font-size:.78rem;">${q.web}</div></div>`:''}
       <div class="row"><div class="rl">👤 Responsável</div><div class="rv" style="color:#0f0;font-weight:bold;">${q.resp}</div></div>
-      ${q.respTel?`<div class="row"><div class="rl">📱 Tel. Resp.</div><div class="rv">${q.respTel}</div></div>`:''}
+      ${q.respTel?`<div class="row"><div class="rl">📱 Tel Resp.</div><div class="rv">${q.respTel}</div></div>`:''}
     </div>
-    <div class="qr-info" style="border-color:#333;margin-top:8px;">
-      <p style="color:#555;font-size:.75rem;font-weight:bold;margin-bottom:6px;">ℹ️ DETALHES</p>
+    <div style="background:#0a0a0a;border:1px solid #333;border-radius:8px;padding:10px;margin-top:8px;">
       <div class="row"><div class="rl">ID</div><div class="rv" style="color:#555;font-size:.7rem;">${q.id}</div></div>
       <div class="row"><div class="rl">Bandeira</div><div class="rv">${q.bandeira} · ${q.raio}</div></div>
       <div class="row"><div class="rl">Encontrado em</div><div class="rv" style="font-size:.78rem;">${q.encontradoEm}</div></div>
@@ -856,10 +1192,9 @@ function verQR(i){
     </div>
     <div style="display:flex;gap:6px;margin-top:10px;">
       <button class="btn bv" style="flex:1;padding:10px;" onclick="window.print()">🖨️ IMPRIMIR</button>
-      <button class="btn bc" style="flex:1;padding:10px;" onclick="navigator.clipboard?.writeText('${q.id}').then(()=>alert('✅ ID copiado!'))">📋 COPIAR ID</button>
+      <button class="btn bc" style="flex:1;padding:10px;" onclick="navigator.clipboard?.writeText('${q.id}').then(()=>alert('✅ ID copiado!'))">📋 COPIAR</button>
     </div>
   `);
-
   setTimeout(()=>{
     const div=$('qr-div');
     if(div&&typeof QRCode!=='undefined'){
@@ -873,11 +1208,18 @@ function verQR(i){
 }
 
 // ============================================================
-// INICIALIZAR
+// AUTO-LOGIN
 // ============================================================
-iniciar();
-renderLista();
-setInterval(()=>{verificarExp();atualizarStats();},5000);
+(function init(){
+  const sj=DB.sessJ();const sp=DB.sessPR();
+  if(sj) entrarJogo(sj);
+  else if(sp){prAtual=sp;abrirPainelPR();}
+})();
+
+// Verificar bingos a cada 10 segundos
+setInterval(()=>{
+  if($('p-bingo')?.classList.contains('ativa')){verificarExpBingo();}
+},10000);
 </script>
 </body>
 </html>
