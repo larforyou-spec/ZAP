@@ -1472,53 +1472,18 @@
       return list;
     }
 
-   function weightedPackagePick() {
-  if (!currentPosition) return null;
+    // CORREÇÃO: Função weightedPackagePick completamente reescrita e corrigida
+    function weightedPackagePick() {
+      if (!currentPosition) return null;
 
- 
-   
-      currentPosition.lat,
-      currentPosition.lng,
-      pr.lat,
-      pr.lng
-    ) / 1000;
-
-    let weight = 0;
-
-    if (pkg.radiusKm === Infinity) {
-      weight = 0.4;
-    } else if (distKm <= pkg.radiusKm) {
-      const closeness = 1 - (distKm / pkg.radiusKm);
-
-      let radiusBonus = 1;
-      if (pkg.radiusKm <= 5) radiusBonus = 2.2;
-      else if (pkg.radiusKm <= 15) radiusBonus = 1.8;
-      else if (pkg.radiusKm <= 50) radiusBonus = 1.3;
-      else radiusBonus = 1.0;
-
-      weight = (1 + closeness * 4) * radiusBonus;
-    } else {
-      weight = 0.03;
-    }
-
-    const stockFactor = Math.max(0.3, Math.min(2, pkg.flagsLeft / Math.max(pkg.flagsInitial, 1)));
-    weight = weight * stockFactor;
-
-    return { pr, pkg, weight };
-  }).filter(c => c.weight > 0);
-
-  const total = candidates.reduce((acc, c) => acc + c.weight, 0);
-  if (!total) return null;
-
-  let rnd = Math.random() * total;
-  for (const c of candidates) {
-    rnd -= c.weight;
-    if (rnd <= 0) return c;
-  }
-
- 
       const candidates = getAllActivePackages().map(({ pr, pkg }) => {
-        const distKm = getDistanceMeters(currentPosition.lat, currentPosition.lng, pr.lat, pr.lng) / 1000;
+        const distKm = getDistanceMeters(
+          currentPosition.lat,
+          currentPosition.lng,
+          pr.lat,
+          pr.lng
+        ) / 1000;
+
         let weight = 0;
 
         if (pkg.radiusKm === Infinity) {
@@ -1537,20 +1502,21 @@
         }
 
         const stockFactor = Math.max(0.3, Math.min(2, pkg.flagsLeft / Math.max(pkg.flagsInitial, 1)));
-        weight = weight * stockFactor;
+        weight *= stockFactor;
 
         return { pr, pkg, weight };
       }).filter(c => c.weight > 0);
 
-      const total = candidates.reduce((acc, c) => acc + c.weight, 0);
-      if (!total) return null;
+      const totalWeight = candidates.reduce((acc, c) => acc + c.weight, 0);
+      if (!totalWeight) return null;
 
-      let rnd = Math.random() * total;
+      let rnd = Math.random() * totalWeight;
       for (const c of candidates) {
         rnd -= c.weight;
         if (rnd <= 0) return c;
       }
-      return candidates[0];
+
+      return candidates[candidates.length - 1] || null;
     }
 
     function promoChanceForPackage(pr, pkg) {
@@ -1611,7 +1577,7 @@
 
       clearFlags();
 
-      // redução ~80%: 1 bandeira ZAP + 1 bandeira PR
+      // 1 bandeira ZAP + 1 bandeira PR
       const zapFlag = createFlagCandidate("ZAP");
       if (zapFlag) allFlags.push(zapFlag);
 
@@ -2408,4 +2374,4 @@
     }
   </script>
 </body>
-</html> CORRIGIR TUDO E MANDAR COMPLETO
+</html>
