@@ -1,465 +1,1048 @@
 <!DOCTYPE html>
 <html lang="pt">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>ZAP FLAGS</title>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>ZAP FLAGS | Larforyou&reg;</title>
+
+  <link rel="icon" href="./icon.png" type="image/png" />
+  <link rel="manifest" href="./manifest.json" />
+  <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
+  <meta name="theme-color" content="#000000" />
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
   <style>
-    *{box-sizing:border-box;margin:0;padding:0}
-    html,body{width:100%;height:100%;overflow:hidden;font-family:Arial,sans-serif;background:#000;color:#0f0}
-    .hidden{display:none!important}
-    button{background:#0f0;color:#000;border:none;border-radius:14px;padding:14px 20px;font-size:16px;font-weight:800;cursor:pointer}
-    button:active{transform:scale(.95)}button:disabled{opacity:.4;cursor:not-allowed}
-    .btn-dark{background:#181818;color:#0f0;border:1px solid #0f0}
-    .btn-danger{background:#8b0000;color:#fff;border:1px solid #ff6b6b}
-    .btn-small{padding:6px 10px;font-size:12px}
-    input,select{width:100%;margin-bottom:10px;padding:12px;border-radius:10px;border:1px solid #0f0;background:#101010;color:#0f0;font-size:14px}
-    label{font-size:13px;color:#a7fca7;display:block;margin-bottom:2px}
-    label .req{color:#ff4444;font-weight:bold}
-    .item{border:1px solid #0f0;background:rgba(0,25,0,.16);border-radius:10px;padding:10px;margin-bottom:8px}
-    .tab-bar{display:flex;gap:0;margin-bottom:14px;border-bottom:2px solid #0f0}
-    .tab{flex:1;text-align:center;padding:10px;cursor:pointer;font-weight:700;color:#0a0;border-bottom:3px solid transparent}
-    .tab.active{color:#0f0;border-bottom-color:#0f0}
-    /* LANDING */
-    #landing{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;background:linear-gradient(180deg,#000,#051005);gap:24px;padding:24px}
-    #landing h1{font-size:48px;text-shadow:0 0 30px rgba(0,255,0,.4)}
-    #landing .sub{color:#a7fca7;font-size:16px;margin-bottom:8px;text-align:center;line-height:1.5}
-    #landing .bp{padding:28px 60px;font-size:28px;background:linear-gradient(135deg,#00ff66,#00c853);color:#000;border-radius:20px;box-shadow:0 0 40px rgba(0,255,100,.3);letter-spacing:2px}
-    #landing .be{padding:18px 40px;font-size:18px;background:#202020;color:#0f0;border:2px solid #0f0;border-radius:16px;box-shadow:0 0 15px rgba(0,255,0,.15)}
-    /* AUTH SCREENS */
-    .auth-wrap{height:100vh;overflow-y:auto;padding:20px;background:linear-gradient(180deg,#000,#051005)}
-    .auth-box{max-width:500px;margin:0 auto;border:2px solid #0f0;border-radius:16px;background:rgba(0,20,0,.3);padding:20px;box-shadow:0 0 20px rgba(0,255,0,.1)}
-    .auth-box h2{margin-bottom:12px;text-align:center}
-    /* GAME */
-    #game-screen{position:absolute;inset:0}
-    #map-wrap{position:absolute;inset:0}
-    #map{width:100%;height:100%;z-index:1}
-    #fog-overlay{position:absolute;inset:0;pointer-events:none;z-index:450;--fog-x:50%;--fog-y:50%;--fog-r:90px;background:radial-gradient(circle var(--fog-r) at var(--fog-x) var(--fog-y),rgba(0,0,0,0) 0%,rgba(0,0,0,0) 60%,rgba(0,30,90,.6) 78%,rgba(0,30,90,.86) 100%)}
-    #top-strip{position:absolute;top:8px;left:8px;right:8px;z-index:1000;background:rgba(0,0,0,.85);border:1px solid #0f0;border-radius:12px;padding:8px}
-    .ebar{width:100%;height:8px;background:#222;border-radius:999px;overflow:hidden;border:1px solid rgba(0,255,0,.35)}
-    #efill{height:100%;width:100%;background:linear-gradient(90deg,#008f1f,#00ff66);transition:width .3s}
-    #fbtns{position:absolute;right:10px;bottom:100px;z-index:1100;display:flex;flex-direction:column;gap:8px}
-    .fb{width:46px;height:46px;border-radius:50%;padding:0;display:flex;align-items:center;justify-content:center;font-size:18px}
-    #offctrl{position:absolute;left:10px;bottom:100px;z-index:2600;background:rgba(0,0,0,.88);border:1px solid #0f0;border-radius:12px;padding:8px;width:118px;text-align:center;touch-action:none;user-select:none}
-    .dpad{display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;margin-top:6px}
-    .dpad button{padding:8px;font-size:14px}
-    #sidep{position:absolute;left:8px;right:8px;bottom:8px;z-index:2500;background:rgba(0,0,0,.92);border:2px solid #0f0;border-radius:14px;padding:12px;max-height:36vh;overflow-y:auto}
-    .ph{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;gap:10px}
-    .pm{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#00f0ff,#0066ff);border:3px solid #fff;box-shadow:0 0 10px rgba(0,255,255,.55);display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:900;overflow:hidden}
-    .pm img{width:100%;height:100%;object-fit:cover;border-radius:50%}
-    .fm{width:34px;height:34px;position:relative}
-    .fs{position:absolute;width:2px;height:18px;left:14px;top:12px;border-radius:2px;background:#aaa}
-    .fbn{position:absolute;left:14px;top:4px;width:16px;height:10px;clip-path:polygon(0 0,100% 28%,0 100%);border:1px solid #fff}
-    .fc-z{background:#00ff66!important}.fc-p{background:#ff0000!important}.fc-r{background:#ffaa00!important}
-    .modal{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:3000;width:92%;max-width:480px;background:#000;border:3px solid #0f0;border-radius:14px;padding:16px;box-shadow:0 0 25px rgba(0,255,0,.22)}
-    .qrc{display:inline-block;margin-top:8px;padding:8px;border-radius:10px;border:1px solid #0f0;background:#111;font-family:monospace;word-break:break-all;color:#fff}
-    /* PR SCREEN */
-    #pr-screen{display:flex;flex-direction:column;height:100vh;background:linear-gradient(180deg,#000,#051005)}
-    #pr-hdr{background:rgba(0,255,0,.1);border-bottom:1px solid #0f0;padding:12px 16px;display:flex;justify-content:space-between;align-items:center}
-    #pr-body{flex:1;overflow-y:auto;padding:16px}
-    .branch-card{border:1px solid #0f0;background:rgba(0,25,0,.1);border-radius:10px;padding:12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: Arial, sans-serif;
+      background: #000;
+      color: #0f0;
+    }
+
+    .hidden { display: none !important; }
+
+    button {
+      background: #0f0;
+      color: #000;
+      border: none;
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-size: 14px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .btn-dark {
+      background: #181818;
+      color: #0f0;
+      border: 1px solid #0f0;
+    }
+
+    .btn-danger {
+      background: #8b0000;
+      color: #fff;
+      border: 1px solid #ff6b6b;
+    }
+
+    input, select {
+      width: 100%;
+      margin-bottom: 10px;
+      padding: 12px;
+      border-radius: 10px;
+      border: 1px solid #0f0;
+      background: #101010;
+      color: #0f0;
+      font-size: 14px;
+    }
+
+    /* LOGIN SCREEN */
+    #login-screen {
+      background: linear-gradient(180deg, #000, #051005);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      height: 100vh;
+    }
+
+    .login-box {
+      width: 100%;
+      max-width: 600px;
+      border: 2px solid #0f0;
+      border-radius: 16px;
+      background: rgba(0,20,0,.30);
+      padding: 18px;
+      box-shadow: 0 0 20px rgba(0,255,0,.10);
+      text-align: center;
+    }
+
+    /* GAME SCREEN */
+    #map-wrap {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    #map {
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+    }
+
+    #fog-overlay {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 450;
+      --fog-x: 50%;
+      --fog-y: 50%;
+      --fog-r: 90px;
+      background:
+        radial-gradient(
+          circle var(--fog-r) at var(--fog-x) var(--fog-y),
+          rgba(0,0,0,0) 0%,
+          rgba(0,0,0,0) 60%,
+          rgba(0,30,90,0.60) 78%,
+          rgba(0,30,90,0.86) 100%
+        );
+    }
+
+    #top-strip {
+      position: absolute;
+      top: 8px;
+      left: 8px;
+      right: 8px;
+      z-index: 1000;
+      background: rgba(0,0,0,.82);
+      border: 1px solid #0f0;
+      border-radius: 12px;
+      padding: 8px;
+    }
+
+    .energy-bar {
+      width: 100%;
+      height: 8px;
+      background: #222;
+      border-radius: 999px;
+      overflow: hidden;
+      border: 1px solid rgba(0,255,0,.35);
+    }
+
+    #energy-fill {
+      height: 100%;
+      width: 100%;
+      background: linear-gradient(90deg,#008f1f,#00ff66);
+      transition: width 0.3s;
+    }
+
+    #floating-buttons {
+      position: absolute;
+      right: 10px;
+      bottom: 90px;
+      z-index: 1100;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .float-btn {
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      box-shadow: 0 0 10px rgba(0,255,0,.15);
+    }
+
+    #offline-controls {
+      position: absolute;
+      left: 10px;
+      bottom: 90px;
+      z-index: 2600;
+      background: rgba(0,0,0,.88);
+      border: 1px solid #0f0;
+      border-radius: 12px;
+      padding: 8px;
+      width: 118px;
+      height: 138px;
+      text-align: center;
+      touch-action: none;
+      user-select: none;
+      cursor: move;
+    }
+
+    .dpad {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 4px;
+      margin-top: 6px;
+    }
+
+    .dpad button {
+      padding: 8px;
+      font-size: 14px;
+      min-width: 0;
+    }
+
+    #side-panel {
+      position: absolute;
+      left: 8px;
+      right: 8px;
+      bottom: 30px;
+      z-index: 2500;
+      background: rgba(0,0,0,.92);
+      border: 2px solid #0f0;
+      border-radius: 14px;
+      padding: 12px;
+      max-height: 36vh;
+      overflow-y: auto;
+    }
+
+    .item {
+      border: 1px solid #0f0;
+      background: rgba(0,25,0,.16);
+      border-radius: 10px;
+      padding: 10px;
+      margin-bottom: 8px;
+    }
+
+    .player-marker {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: linear-gradient(135deg,#00f0ff,#0066ff);
+      border: 3px solid #fff;
+      box-shadow: 0 0 10px rgba(0,255,255,.55);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 12px;
+      font-weight: 900;
+      overflow: hidden;
+    }
+
+    .player-marker img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 50%;
+    }
+
+    .flag-marker {
+      width: 34px;
+      height: 34px;
+      position: relative;
+    }
+
+    .flag-stick {
+      position: absolute;
+      width: 2px;
+      height: 18px;
+      left: 14px;
+      top: 12px;
+      border-radius: 2px;
+      background: #aaa;
+    }
+
+    .flag-banner {
+      position: absolute;
+      left: 14px;
+      top: 4px;
+      width: 16px;
+      height: 10px;
+      clip-path: polygon(0 0, 100% 28%, 0 100%);
+      border: 1px solid #fff;
+      background: #FF0000;
+    }
+
+    .modal {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 3000;
+      width: 92%;
+      max-width: 480px;
+      background: #000;
+      border: 3px solid #0f0;
+      border-radius: 14px;
+      padding: 16px;
+      box-shadow: 0 0 25px rgba(0,255,0,.22);
+    }
+
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      gap: 10px;
+    }
+
+    .qr-code {
+      display: inline-block;
+      margin-top: 8px;
+      padding: 8px;
+      border-radius: 10px;
+      border: 1px solid #0f0;
+      background: #111;
+      font-family: monospace;
+      word-break: break-all;
+      color: #fff;
+    }
+    
+    /* MARCAS LARFORYOU */
+    .watermark { position: fixed; bottom: 35px; left: 15px; font-size: 20px; font-weight: bold; color: rgba(0, 255, 0, 0.5); text-shadow: 2px 2px 4px #000; z-index: 9999; pointer-events: none; }
+    .copyright { position: fixed; bottom: 5px; width: 100%; text-align: center; font-size: 11px; color: rgba(0, 255, 0, 0.5); z-index: 9999; pointer-events: none; }
   </style>
 </head>
 <body>
-<!-- ===== LANDING ===== -->
-<div id="landing">
-  <h1>🚩 ZAP FLAGS</h1>
-  <div class="sub">Encontra bandeiras. Ganha prémios.<br>Desafia empresas.</div>
-  <button class="bp" onclick="showAuth('JG')">▶ JOGAR</button>
-  <button class="be" onclick="showAuth('PR')">🏢 EMPRESA</button>
-</div>
-<!-- ===== AUTH ===== -->
-<div id="auth-screen" class="hidden">
-  <div class="auth-wrap">
-    <div class="auth-box">
-      <h2 id="auth-title">🎮 JOGADOR</h2>
-      <div style="text-align:center;margin-bottom:16px"><button class="btn-dark btn-small" onclick="goLanding()">← Voltar</button></div>
-      <div class="tab-bar">
-        <div class="tab active" id="tab-reg" onclick="showTab('reg')">Registar</div>
-        <div class="tab" id="tab-log" onclick="showTab('log')">Entrar</div>
+
+  <div class="watermark">Larforyou&reg;</div>
+  <div class="copyright">&copy; 2024 Larforyou&reg; - Marca Registada. Todos os direitos reservados.</div>
+
+  <!-- LOGIN -->
+  <div id="login-screen">
+    <div class="login-box">
+      <h1>ZAP FLAGS</h1>
+      <div style="color:#a7fca7; font-size:13px; margin-bottom:16px; line-height:1.45;">
+        Escolhe como queres entrar. O jogador é a opção principal.
       </div>
-      <!-- === REGISTO JOGADOR === -->
-      <div id="jg-reg">
-        <label><span class="req">*</span> Nome completo</label>
-        <input id="r-name" placeholder="Obrigatório" required>
-        <label><span class="req">*</span> E-mail</label>
-        <input id="r-email" type="email" placeholder="Obrigatório" required>
-        <label><span class="req">*</span> Senha</label>
-        <input id="r-pass" type="password" placeholder="Obrigatório" required>
-        <label><span class="req">*</span> Confirmar Senha</label>
-        <input id="r-pass2" type="password" placeholder="Obrigatório" required>
-        <label>Contacto</label>
-        <input id="r-contact" placeholder="Telefone (opcional)">
-        <label>Morada</label>
-        <input id="r-addr" placeholder="Rua, nº (opcional)">
-        <label>Localidade</label>
-        <input id="r-city" placeholder="Cidade (opcional)">
-        <label>Distrito</label>
-        <select id="r-district">
-          <option value="">Selecionar distrito (opcional)</option>
-          <option>Aveiro</option><option>Beja</option><option>Braga</option><option>Bragança</option>
-          <option>Castelo Branco</option><option>Coimbra</option><option>Évora</option><option>Faro</option>
-          <option>Guarda</option><option>Leiria</option><option>Lisboa</option><option>Portalegre</option>
-          <option>Porto</option><option>Santarém</option><option>Setúbal</option><option>Viana do Castelo</option>
-          <option>Vila Real</option><option>Viseu</option>
+
+      <div style="display:flex; flex-direction:column; gap:10px; margin:18px 0;">
+        <button style="padding:18px 16px; font-size:20px; background:linear-gradient(135deg,#00ff66,#00c853);" onclick="switchEntryMode('JG')">ENTRAR COMO JOGADOR</button>
+        <button style="padding:12px 14px; font-size:14px; background:#202020; border:1px solid #0f0;" onclick="switchEntryMode('PR')">SOU EMPRESA / PR</button>
+      </div>
+
+      <!-- JG FORM -->
+      <div id="jg-form">
+        <div style="text-align:left; margin:8px 0; font-size:14px; font-weight:700; color:#d1ffd1;">Jogador</div>
+        <input id="player-name" type="text" placeholder="Nome do jogador" />
+        <input id="player-contact" type="text" placeholder="Email ou nº de telefone" />
+        <input id="player-password" type="password" placeholder="Criar senha" />
+        <input id="player-password-confirm" type="password" placeholder="Confirmar senha" />
+
+        <select id="player-avatar-mode">
+          <option value="male">Avatar masculino</option>
+          <option value="female">Avatar feminino</option>
+          <option value="photo">Usar foto por URL</option>
         </select>
-        <div id="jg-reg-msg" style="min-height:18px;font-size:12px;margin:6px 0;color:#a7fca7"></div>
-        <button onclick="regPlayer()" style="width:100%">REGISTAR E ENTRAR</button>
+
+        <input id="player-photo-url" type="text" placeholder="URL da foto (opcional)" />
+
+        <div style="display:flex; gap:8px; justify-content:center; margin-top:10px;">
+          <button onclick="registerAccount('JG')">REGISTAR</button>
+          <button class="btn-dark" onclick="loginAccount('JG')">ENTRAR</button>
+        </div>
+        <div id="jg-auth-msg" style="text-align:left; min-height:20px; margin-top:6px; font-size:12px; color:#a7fca7;"></div>
       </div>
-      <!-- === LOGIN JOGADOR === -->
-      <div id="jg-log" class="hidden">
-        <label><span class="req">*</span> Nome</label>
-        <input id="l-name" placeholder="O teu nome">
-        <label><span class="req">*</span> Senha</label>
-        <input id="l-pass" type="password" placeholder="A tua senha">
-        <div id="jg-log-msg" style="min-height:18px;font-size:12px;margin:6px 0;color:#a7fca7"></div>
-        <button onclick="loginPlayer()" style="width:100%">ENTRAR</button>
-      </div>
-      <!-- === REGISTO EMPRESA === -->
-      <div id="pr-reg" class="hidden">
-        <label><span class="req">*</span> Nome da Empresa</label>
-        <input id="pr-r-name" placeholder="Obrigatório" required>
-        <label><span class="req">*</span> NIF (faturação)</label>
-        <input id="pr-r-nif" placeholder="9 dígitos - Obrigatório" required maxlength="9">
-        <label><span class="req">*</span> E-mail</label>
-        <input id="pr-r-email" type="email" placeholder="Obrigatório" required>
-        <label><span class="req">*</span> Senha</label>
-        <input id="pr-r-pass" type="password" placeholder="Obrigatório" required>
-        <label><span class="req">*</span> Confirmar Senha</label>
-        <input id="pr-r-pass2" type="password" placeholder="Obrigatório" required>
-        <label><span class="req">*</span> Contacto</label>
-        <input id="pr-r-contact" placeholder="Telefone - Obrigatório" required>
-        <label><span class="req">*</span> Morada</label>
-        <input id="pr-r-addr" placeholder="Obrigatório" required>
-        <label><span class="req">*</span> Localidade</label>
-        <input id="pr-r-city" placeholder="Obrigatório" required>
-        <label><span class="req">*</span> Distrito</label>
-        <select id="pr-r-district" required>
-          <option value="">Selecionar distrito</option>
-          <option>Aveiro</option><option>Beja</option><option>Braga</option><option>Bragança</option>
-          <option>Castelo Branco</option><option>Coimbra</option><option>Évora</option><option>Faro</option>
-          <option>Guarda</option><option>Leiria</option><option>Lisboa</option><option>Portalegre</option>
-          <option>Porto</option><option>Santarém</option><option>Setúbal</option><option>Viana do Castelo</option>
-          <option>Vila Real</option><option>Viseu</option>
-        </select>
-        <label><span class="req">*</span> Código Postal</label>
-        <input id="pr-r-postal" placeholder="0000-000" required>
-        <div id="pr-reg-msg" style="min-height:18px;font-size:12px;margin:6px 0;color:#a7fca7"></div>
-        <button onclick="regPR()" style="width:100%">REGISTAR EMPRESA</button>
-      </div>
-      <!-- === LOGIN EMPRESA === -->
-      <div id="pr-log" class="hidden">
-        <label><span class="req">*</span> E-mail ou NIF</label>
-        <input id="pr-l-id" placeholder="E-mail ou NIF da empresa">
-        <label><span class="req">*</span> Senha</label>
-        <input id="pr-l-pass" type="password" placeholder="Senha">
-        <hr style="border-color:#0a0;margin:12px 0">
-        <div style="text-align:center;color:#a7fca7;font-size:13px;margin-bottom:8px">Entrar como Filial?</div>
-        <label>Código da Empresa Mãe</label>
-        <input id="pr-l-code" placeholder="Código enviado pela empresa mãe">
-        <div id="pr-log-msg" style="min-height:18px;font-size:12px;margin:6px 0;color:#a7fca7"></div>
-        <button onclick="loginPR()" style="width:100%">ENTRAR</button>
+
+      <!-- PR FORM -->
+      <div id="pr-form" class="hidden">
+        <div style="text-align:left; margin:8px 0; font-size:14px; font-weight:700; color:#d1ffd1;">Empresa / PR</div>
+        <input id="pr-company-name" type="text" placeholder="Nome da empresa" />
+        <input id="pr-contact" type="text" placeholder="Email ou nº de telefone" />
+        <input id="pr-password" type="password" placeholder="Criar senha" />
+        <input id="pr-password-confirm" type="password" placeholder="Confirmar senha" />
+        <input id="pr-postal-code" type="text" placeholder="Código postal da loja" />
+
+        <div style="display:flex; gap:8px; justify-content:center; margin-top:10px;">
+          <button onclick="registerAccount('PR')">REGISTAR</button>
+          <button class="btn-dark" onclick="loginAccount('PR')">ENTRAR</button>
+        </div>
+        <div id="pr-auth-msg" style="text-align:left; min-height:20px; margin-top:6px; font-size:12px; color:#a7fca7;"></div>
       </div>
     </div>
   </div>
-</div>
-<!-- ===== GAME ===== -->
-<div id="game-screen" class="hidden">
-  <div id="map-wrap"><div id="map"></div><div id="fog-overlay"></div></div>
-  <div id="top-strip">
-    <div class="ebar"><div id="efill"></div></div>
-    <div style="margin-top:6px;font-size:12px;color:#bfffbf;display:flex;justify-content:space-between;flex-wrap:wrap">
-      <span id="etext">Energia: 100%</span><span id="mtext">Modo: -</span>
+
+  <!-- GAME -->
+  <div id="game-screen" class="hidden">
+    <div id="map-wrap">
+      <div id="map"></div>
+      <div id="fog-overlay"></div>
+    </div>
+
+    <div id="top-strip">
+      <div class="energy-bar"><div id="energy-fill"></div></div>
+      <div style="margin-top:6px; font-size:12px; color:#bfffbf; display:flex; justify-content:space-between; flex-wrap:wrap;">
+        <span id="energy-text">Energia: 100%</span>
+        <span id="mode-text">Modo: -</span>
+      </div>
+    </div>
+
+    <div id="floating-buttons">
+      <button class="float-btn btn-dark" onclick="openPanel('progress')">📈</button>
+      <button class="float-btn btn-dark" onclick="openPanel('qrs')">🎫</button>
+      <button class="float-btn btn-dark" onclick="openPanel('account')">👤</button>
+      <button class="float-btn btn-dark" onclick="centerOnPlayer()">📍</button>
+    </div>
+
+    <div id="offline-controls" class="hidden">
+      <div style="font-size:14px; color:#bfffbf; margin-bottom:4px; padding:2px; border-bottom:1px solid rgba(0,255,0,.25);">⋮⋮</div>
+      <div style="display:flex; justify-content:center; gap:4px; margin:4px 0;">
+        <button class="btn-dark btn-small" onclick="resizeOfflineControls(-10)">A-</button>
+        <button class="btn-dark btn-small" onclick="resizeOfflineControls(10)">A+</button>
+      </div>
+      <div class="dpad">
+        <div style="visibility:hidden;">.</div>
+        <button onclick="moveHomePlayer(0, 1)">⬆</button>
+        <div style="visibility:hidden;">.</div>
+        <button onclick="moveHomePlayer(-1, 0)">⬅</button>
+        <button onclick="manualRefreshFlags()">⟳</button>
+        <button onclick="moveHomePlayer(1, 0)">➡</button>
+        <div style="visibility:hidden;">.</div>
+        <button onclick="moveHomePlayer(0, -1)">⬇</button>
+        <div style="visibility:hidden;">.</div>
+      </div>
+    </div>
+
+    <div id="side-panel" class="hidden">
+      <div class="panel-header">
+        <b id="side-panel-title">Painel</b>
+        <button class="btn-dark btn-small" onclick="closePanel()">X</button>
+      </div>
+      <div id="side-panel-content"></div>
     </div>
   </div>
-  <div id="fbtns">
-    <button class="fb btn-dark" onclick="openPanel('progress')">📈</button>
-    <button class="fb btn-dark" onclick="openPanel('qrs')">🎫</button>
-    <button class="fb btn-dark" onclick="openPanel('account')">👤</button>
-    <button class="fb btn-dark" onclick="centerPlayer()">📍</button>
-    <button class="fb btn-danger" onclick="goLanding()">⏎</button>
-  </div>
-  <div id="offctrl" class="hidden">
-    <div style="font-size:12px;color:#bfffbf;margin-bottom:4px;padding:2px;border-bottom:1px solid rgba(0,255,0,.25)">⋮⋮</div>
-    <div style="display:flex;justify-content:center;gap:4px;margin:4px 0">
-      <button class="btn-dark btn-small" onclick="resizeOC(-10)">A-</button>
-      <button class="btn-dark btn-small" onclick="resizeOC(10)">A+</button>
+
+  <!-- MODAL MODO -->
+  <div id="mode-modal" class="modal hidden">
+    <div class="panel-header">
+      <h2 style="margin:0;">Como queres jogar?</h2>
+      <button class="btn-dark btn-small" onclick="closeModeModal()">X</button>
     </div>
-    <div class="dpad">
-      <div style="visibility:hidden">.</div><button onclick="moveHP(0,1)">⬆</button><div style="visibility:hidden">.</div>
-      <button onclick="moveHP(-1,0)">⬅</button><button onclick="manualRef()">⟳</button><button onclick="moveHP(1,0)">➡</button>
-      <div style="visibility:hidden">.</div><button onclick="moveHP(0,-1)">⬇</button><div style="visibility:hidden">.</div>
+    <div class="item">
+      <b>GPS / Rua</b><br>
+      Joga a caminhar na rua com localização real.
     </div>
-  </div>
-  <div id="sidep" class="hidden">
-    <div class="ph"><b id="sptitle">Painel</b><button class="btn-dark btn-small" onclick="closePanel()">✕</button></div>
-    <div id="spcontent"></div>
-  </div>
-</div>
-<div id="mode-modal" class="modal hidden">
-  <div class="ph"><h2 style="margin:0">Como queres jogar?</h2><button class="btn-dark btn-small" onclick="closeMM()">✕</button></div>
-  <div class="item"><b>📡 GPS / Rua</b><br>Localização real.</div>
-  <div class="item"><b>🏠 Offline / Casa</b><br>Movimento manual.</div>
-  <div style="display:flex;gap:8px;margin-top:10px">
-    <button onclick="reqGPS()">📡 GPS</button>
-    <button class="btn-dark" onclick="actHome()">🏠 OFFLINE</button>
-  </div>
-</div>
-<div id="flag-modal" class="modal hidden"><div id="fm-content"></div></div>
-<!-- ===== PR SCREEN ===== -->
-<div id="pr-screen" class="hidden">
-  <div id="pr-hdr">
-    <span id="pr-hdr-title" style="font-size:18px;font-weight:bold">🏢 PAINEL EMPRESA</span>
-    <div style="display:flex;gap:8px">
-      <button class="btn-dark btn-small" onclick="showBranches()">🏢 Filiais</button>
-      <button class="btn-dark btn-small" onclick="goLanding()">⏎ Sair</button>
+    <div class="item">
+      <b>Offline / Casa</b><br>
+      Joga sem GPS real, com movimento manual e sem exploração física real.
+    </div>
+    <div style="display:flex; gap:8px;">
+      <button onclick="requestGPSMode()">ATIVAR GPS</button>
+      <button class="btn-dark" onclick="activateHomeMode()">ENTRAR OFFLINE</button>
     </div>
   </div>
-  <div id="pr-body"></div>
-</div>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script>
-const SK="zap_flags_v5";
-const PACKS={MINIMO:{key:"MINIMO",label:"Mínimo",price:10,flags:1000,radiusKm:5,maxLots:50,bingos:0},MEDIO:{key:"MEDIO",label:"Médio",price:15,flags:2500,radiusKm:15,maxLots:125,bingos:2},GRANDE:{key:"GRANDE",label:"Grande",price:25,flags:10000,radiusKm:50,maxLots:500,bingos:3},ENORME:{key:"ENORME",label:"Enorme",price:50,flags:25000,radiusKm:1/0,maxLots:1250,bingos:5}};
-let map,pMark,vCirc,cPos,wId,allF=[],offMode=false,curPanel=null;
-let lastPE,mBuf=0,lastFC,lastFT=0;
-let state=load(),actType=null;
-function load(){try{const r=localStorage.getItem(SK);if(!r)return def();const p=JSON.parse(r);if(!p.players)p.players=[];if(!p.prs)p.prs=[];if(!p.branches)p.branches=[];if(!p.player)p.player=def().player;return p}catch(e){return def()}}
-function save(){localStorage.setItem(SK,JSON.stringify(state))}
-function def(){return{player:{name:"",email:"",password:"",contact:"",addr:"",city:"",district:"",avatarMode:"male",avatarPhoto:"",energy:100,zapFlags:0,prFlags:0,totalFlags:0,skill:1,vision:5,ppPR:{},tsPR:{},qrs:[]},players:[],prs:[],branches:[],curPR:null}}
-function rid(p){return p+"_"+Math.random().toString(36).slice(2,10).toUpperCase()}
-function genCode(){return Math.random().toString(36).slice(2,8).toUpperCase()}
-/* ===== NAV ===== */
-function showAuth(type){
-  actType=type;
-  document.getElementById('landing').classList.add('hidden');
-  document.getElementById('auth-screen').classList.remove('hidden');
-  document.getElementById('pr-screen').classList.add('hidden');
-  document.getElementById('game-screen').classList.add('hidden');
-  if(type==='JG'){document.getElementById('auth-title').textContent='🎮 JOGADOR';showTab('reg')}
-  else{document.getElementById('auth-title').textContent='🏢 EMPRESA';showTab('reg')}
-}
-function showTab(t){
-  document.getElementById('tab-reg').classList.toggle('active',t==='reg');
-  document.getElementById('tab-log').classList.toggle('active',t==='log');
-  if(actType==='JG'){
-    document.getElementById('jg-reg').classList.toggle('hidden',t!=='reg');
-    document.getElementById('jg-log').classList.toggle('hidden',t!=='log');
-  }else{
-    document.getElementById('pr-reg').classList.toggle('hidden',t!=='reg');
-    document.getElementById('pr-log').classList.toggle('hidden',t!=='log');
-  }
-}
-function goLanding(){
-  if(wId!==null)navigator.geolocation.clearWatch(wId);
-  document.getElementById('landing').classList.remove('hidden');
-  document.getElementById('auth-screen').classList.add('hidden');
-  document.getElementById('game-screen').classList.add('hidden');
-  document.getElementById('pr-screen').classList.add('hidden');
-  document.getElementById('mode-modal').classList.add('hidden');
-  document.getElementById('flag-modal').classList.add('hidden');
-  document.getElementById('sidep').classList.add('hidden');
-  document.getElementById('offctrl').classList.add('hidden');
-}
-/* ===== REGISTO JOGADOR ===== */
-function regPlayer(){
-  const name=document.getElementById('r-name').value.trim();
-  const email=document.getElementById('r-email').value.trim();
-  const pass=document.getElementById('r-pass').value;
-  const pass2=document.getElementById('r-pass2').value;
-  const contact=document.getElementById('r-contact').value.trim();
-  const addr=document.getElementById('r-addr').value.trim();
-  const city=document.getElementById('r-city').value.trim();
-  const district=document.getElementById('r-district').value;
-  if(!name)return m('jg-reg-msg','❌ Nome é obrigatório.');
-  if(!email)return m('jg-reg-msg','❌ E-mail é obrigatório.');
-  if(!pass)return m('jg-reg-msg','❌ Senha é obrigatória.');
-  if(pass!==pass2)return m('jg-reg-msg','❌ Senhas não coincidem.');
-  if(pass.length<4)return m('jg-reg-msg','❌ Senha mínima 4 caracteres.');
-  if(state.players.find(p=>p.email===email))return m('jg-reg-msg','❌ E-mail já registado.');
-  const player={name,email,password:pass,contact,addr,city,district,avatarMode:"male",avatarPhoto:"",energy:100,zapFlags:0,prFlags:0,totalFlags:0,skill:1,vision:5,ppPR:{},tsPR:{},qrs:[]};
-  if(!state.players)state.players=[];
-  state.players.push(player);
-  state.player={...player};
-  save();actType='JG';
-  enterGame();
-}
-function loginPlayer(){
-  const name=document.getElementById('l-name').value.trim();
-  const pass=document.getElementById('l-pass').value;
-  if(!name)return m('jg-log-msg','❌ Nome é obrigatório.');
-  if(!pass)return m('jg-log-msg','❌ Senha é obrigatória.');
-  const pl=(state.players||[]).find(p=>p.name===name&&p.password===pass);
-  if(!pl)return m('jg-log-msg','❌ Nome ou senha incorretos. Regista-te primeiro.');
-  state.player={...pl};
-  save();actType='JG';
-  enterGame();
-}
-/* ===== REGISTO EMPRESA ===== */
-function regPR(){
-  const name=document.getElementById('pr-r-name').value.trim();
-  const nif=document.getElementById('pr-r-nif').value.trim();
-  const email=document.getElementById('pr-r-email').value.trim();
-  const pass=document.getElementById('pr-r-pass').value;
-  const pass2=document.getElementById('pr-r-pass2').value;
-  const contact=document.getElementById('pr-r-contact').value.trim();
-  const addr=document.getElementById('pr-r-addr').value.trim();
-  const city=document.getElementById('pr-r-city').value.trim();
-  const district=document.getElementById('pr-r-district').value;
-  const postal=document.getElementById('pr-r-postal').value.trim();
-  if(!name)return m('pr-reg-msg','❌ Nome é obrigatório.');
-  if(!nif||nif.length!==9||!/^\d+$/.test(nif))return m('pr-reg-msg','❌ NIF obrigatório (9 dígitos).');
-  if(!email)return m('pr-reg-msg','❌ E-mail é obrigatório.');
-  if(!pass)return m('pr-reg-msg','❌ Senha é obrigatória.');
-  if(pass!==pass2)return m('pr-reg-msg','❌ Senhas não coincidem.');
-  if(!contact)return m('pr-reg-msg','❌ Contacto é obrigatório.');
-  if(!addr)return m('pr-reg-msg','❌ Morada é obrigatória.');
-  if(!city)return m('pr-reg-msg','❌ Localidade é obrigatória.');
-  if(!district)return m('pr-reg-msg','❌ Distrito é obrigatório.');
-  if(!postal)return m('pr-reg-msg','❌ Código postal é obrigatório.');
-  if(state.prs.find(p=>p.nif===nif))return m('pr-reg-msg','❌ NIF já registado.');
-  if(state.prs.find(p=>p.email===email))return m('pr-reg-msg','❌ E-mail já registado.');
-  const prId=rid('PR');
-  const code=genCode();
-  const pr={id:prId,code,name,nif,email,password:pass,contact,addr,city,district,postal,color:'#'+Math.floor(Math.random()*16777215).toString(16).padStart(6,'0'),lat:41.1496,lng:-8.6109,packages:[],campaign:{rewardsEnabled:true,rewardText:"Desconto especial",promoBudgetLeft:200,bingoCountActive:1,rewardsGiven:0},billing:"self",isBranch:false,parentPR:null,active:true,createdAt:Date.now()};
-  if(!state.prs)state.prs=[];
-  state.prs.push(pr);
-  if(!state.branches)state.branches=[];
-  state.branches.push({prId,code,created:Date.now(),active:true});
-  state.curPR=prId;
-  save();actType='PR';
-  enterPR(prId);
-}
-function loginPR(){
-  const id=document.getElementById('pr-l-id').value.trim();
-  const pass=document.getElementById('pr-l-pass').value;
-  const bCode=document.getElementById('pr-l-code').value.trim().toUpperCase();
-  if(!id)return m('pr-log-msg','❌ E-mail ou NIF é obrigatório.');
-  if(!pass)return m('pr-log-msg','❌ Senha é obrigatória.');
-  if(bCode){
-    // Login como filial
-    const branch=state.branches.find(b=>b.code===bCode&&b.active);
-    if(!branch)return m('pr-log-msg','❌ Código de filial inválido.');
-    const pr=state.prs.find(p=>p.id===branch.prId);
-    if(!pr)return m('pr-log-msg','❌ Empresa não encontrada.');
-    if(pr.password!==pass)return m('pr-log-msg','❌ Senha incorreta.');
-    if(!isPREactive(pr))return m('pr-log-msg','❌ Empresa sem pacotes ativos.');
-    state.curPR=pr.id;save();actType='PR';enterPR(pr.id);
-    return;
-  }
-  // Login normal
-  const pr=state.prs.find(p=>(p.email===id||p.nif===id)&&p.password===pass);
-  if(!pr)return m('pr-log-msg','❌ Credenciais inválidas.');
-  if(!isPREactive(pr))return m('pr-log-msg','❌ Sem pacotes ativos.');
-  state.curPR=pr.id;save();actType='PR';enterPR(pr.id);
-}
-function isPREactive(pr){
-  return pr.packages.some(p=>p.flagsLeft>0||(Date.now()-p.createdAt<365*24*60*60*1000));
-}
-function m(id,txt){document.getElementById(id).textContent=txt}
-/* ===== ENTER GAME ===== */
-function enterGame(){
-  document.getElementById('auth-screen').classList.add('hidden');
-  document.getElementById('game-screen').classList.remove('hidden');
-  initMap();document.getElementById('mode-modal').classList.remove('hidden');
-}
-/* ===== ENTER PR ===== */
-function enterPR(prId){
-  document.getElementById('auth-screen').classList.add('hidden');
-  document.getElementById('game-screen').classList.add('hidden');
-  document.getElementById('pr-screen').classList.remove('hidden');
-  renderPR(prId);
-}
-/* ===== MAP ===== */
-function initMap(){if(map)return;map=L.map('map',{zoomControl:true,dragging:true,scrollWheelZoom:true,doubleClickZoom:false,touchZoom:true,boxZoom:false,keyboard:false}).setView([41.1496,-8.6109],18);L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OSM'}).addTo(map);map.on('move zoom',updFog)}
-function pIcon(){let i=state.player.avatarMode==='male'?'♂':state.player.avatarMode==='female'?'♀':'JG';if(state.player.avatarMode==='photo'&&state.player.avatarPhoto)i='<img src="'+state.player.avatarPhoto+'"/>';return L.divIcon({className:'',html:'<div class="pm">'+i+'</div>',iconSize:[28,28],iconAnchor:[14,14]})}
-function fIcon(f){let c=f.type==='ZAP'?'fc-z':f.promo?'fc-r':'fc-p';return L.divIcon({className:'',html:'<div class="fm"><div class="fs"></div><div class="fbn '+c+'"></div></div>',iconSize:[34,34],iconAnchor:[17,28]})}
-function updPos(lat,lng,fromMv,ctr){
-  cPos={lat,lng};
-  if(lastPE&&fromMv){const d=distM(lastPE.lat,lastPE.lng,lat,lng);if(d>.5){mBuf+=d;while(mBuf>=20){mBuf-=20;state.player.energy=Math.max(0,state.player.energy-1)}}}
-  lastPE={lat,lng};
-  if(!pMark)pMark=L.marker([lat,lng],{icon:pIcon()}).addTo(map);else pMark.setLatLng([lat,lng]);
-  if(!vCirc)vCirc=L.circle([lat,lng],{radius:state.player.vision,color:'#0f0',fillOpacity:.05,weight:1}).addTo(map);else{vCirc.setLatLng([lat,lng]);vCirc.setRadius(state.player.vision)}
-  if(ctr)map.setView([lat,lng],18);updFog();refF(false);updVF();renTop();renPanelIf();save()}
-function updFog(){if(!map||!cPos)return;const p=map.latLngToContainerPoint([cPos.lat,cPos.lng]);const f=document.getElementById('fog-overlay');f.style.setProperty('--fog-x',p.x+'px');f.style.setProperty('--fog-y',p.y+'px');f.style.setProperty('--fog-r',Math.max(55,state.player.vision*18)+'px')}
-function distM(a1,l1,a2,l2){const R=6371e3,p1=a1*Math.PI/180,p2=a2*Math.PI/180,dP=(a2-a1)*Math.PI/180,dL=(l2-l1)*Math.PI/180;const a=Math.sin(dP/2)**2+Math.cos(p1)*Math.cos(p2)*Math.sin(dL/2)**2;return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a))}
-function cVis(z){if(z<=0)return 5;if(z<=100000)return+(5+45*Math.pow(z/100000,.72)).toFixed(2);const e=Math.min(1,(z-100000)/900000);return+(50+50*Math.pow(e,.82)).toFixed(2)}
-function cSkl(z){if(z<10)return 1;if(z<50)return 2;if(z<100)return 3;if(z<250)return 4;if(z<500)return 5;if(z<1000)return 6;if(z<2500)return 7;if(z<5000)return 8;if(z<10000)return 9;return 10+Math.floor(Math.log10(z))}
-function uSV(){state.player.skill=cSkl(state.player.zapFlags);state.player.vision=cVis(state.player.zapFlags)}
-/* ===== BANDEIRAS ===== */
-function rOff(lat,lng,r){const rad=r/111320,u=Math.random(),v=Math.random(),w=rad*Math.sqrt(u),t=2*Math.PI*v;return{lat:lat+w*Math.sin(t),lng:lng+(w*Math.cos(t))/Math.cos(lat*Math.PI/180)}}
-function refF(force){if(!cPos)return;const n=Date.now();let s=force;if(!lastFC)s=true;if(!s&&n-lastFT>15000)s=true;if(!s&&lastFC&&distM(lastFC.lat,lastFC.lng,cPos.lat,cPos.lng)>10)s=true;if(!s)return;clearF();const p=rOff(cPos.lat,cPos.lng,10);allF.push({id:rid('F'),type:'ZAP',lat:p.lat,lng:p.lng,marker:null});state.prs.forEach(pr=>{pr.packages.forEach(pk=>{if(pk.flagsLeft>0){const d=distM(pr.lat,pr.lng,cPos.lat,cPos.lng);const mr=pk.radiusKm===1/0?999999:pk.radiusKm*1000;if(d<=mr){const p2=rOff(cPos.lat,cPos.lng,15);allF.push({id:rid('F'),type:'PR',prId:pr.id,packageId:pk.id,lat:p2.lat,lng:p2.lng,marker:null,promo:Math.random()<.1})}}})});lastFC={...cPos};lastFT=n}
-function updVF(){if(!cPos||!map)return;let vc=0;allF.forEach(f=>{const d=distM(cPos.lat,cPos.lng,f.lat,f.lng);const vis=d<=state.player.vision&&vc<2;if(vis&&!f.marker){f.marker=L.marker([f.lat,f.lng],{icon:fIcon(f)}).addTo(map);f.marker.on('click',()=>openFM(f.id));vc++}if(!vis&&f.marker){map.removeLayer(f.marker);f.marker=null}})}
-function clearF(){allF.forEach(f=>{if(f.marker)map.removeLayer(f.marker)});allF=[]}
-/* ===== MODOS ===== */
-function reqGPS(){document.getElementById('mode-modal').classList.add('hidden');document.getElementById('offctrl').classList.add('hidden');offMode=false;renTop();if(!navigator.geolocation){alert('Sem GPS.');actHome();return}if(wId!==null)navigator.geolocation.clearWatch(wId);navigator.geolocation.getCurrentPosition(p=>{updPos(p.coords.latitude,p.coords.longitude,true,true);wId=navigator.geolocation.watchPosition(pp=>updPos(pp.coords.latitude,pp.coords.longitude,true,false),()=>actHome(),{enableHighAccuracy:true,maximumAge:5000,timeout:20000})},()=>actHome(),{enableHighAccuracy:true,maximumAge:5000,timeout:20000})}
-function actHome(){document.getElementById('mode-modal').classList.add('hidden');offMode=true;document.getElementById('offctrl').classList.remove('hidden');if(!cPos)cPos={lat:41.1496,lng:-8.6109};updPos(cPos.lat,cPos.lng,false,true);manualRef();renTop()}
-function moveHP(dx,dy){if(!offMode||!cPos)return;const lat=cPos.lat+(dy/111320);const lng=cPos.lng+(dx/(111320*Math.cos(cPos.lat*Math.PI/180)));updPos(lat,lng,true,true);manualRef()}
-function centerPlayer(){if(map&&cPos)map.setView([cPos.lat,cPos.lng],18)}
-function manualRef(){lastFT=0;lastFC=null;refF(true);updVF()}
-function resizeOC(d){const b=document.getElementById('offctrl');const w=parseInt(b.style.width||b.offsetWidth,10);b.style.width=Math.max(95,Math.min(180,w+d))+'px'}
-function closeMM(){document.getElementById('mode-modal').classList.add('hidden')}
-/* ===== UI JOGADOR ===== */
-function renTop(){document.getElementById('efill').style.width=state.player.energy+'%';document.getElementById('etext').textContent='Energia: '+state.player.energy+'%';document.getElementById('mtext').textContent=offMode?'Offline':'GPS'}
-function openPanel(t){curPanel=t;document.getElementById('sidep').classList.remove('hidden');document.getElementById('sptitle').textContent=t==='progress'?'📈 Progresso':t==='qrs'?'🎫 QRs':'👤 Conta';document.getElementById('spcontent').innerHTML=t==='progress'?rProg():t==='qrs'?rQR():rAcc()}
-function closePanel(){curPanel=null;document.getElementById('sidep').classList.add('hidden')}
-function renPanelIf(){if(curPanel)openPanel(curPanel)}
-function rProg(){let h='<div class="item">Total: <b>'+state.player.totalFlags+'</b> | ZAP: <b>'+state.player.zapFlags+'</b> | PR: <b>'+state.player.prFlags+'</b><br>Skill: <b>'+state.player.skill+'</b> | Visão: <b>'+state.player.vision.toFixed(2)+'m</b></div>';state.prs.forEach(pr=>{const t=state.player.tsPR[pr.id]||0;const p=state.player.ppPR[pr.id]||{current:0};h+='<div class="item"><span style="background:'+pr.color+';color:#fff;padding:4px 8px;border-radius:999px">'+pr.short+'</span> <b>'+pr.name+'</b><br>Visto: '+t+' | Promo: '+(p.current||0)+'/20</div>'});return h}
-function rQR(){if(!state.player.qrs.length)return'<div class="item">Nenhum QR ativo.</div>';return state.player.qrs.map(q=>{const dl=Math.ceil((q.expiresAt-Date.now())/864e5);return'<div class="item"><b>'+q.prName+'</b><br>Prémio: '+q.rewardText+'<br>Validade: '+dl+' dias<div class="qrc">'+q.code+'</div><br><img src="https://quickchart.io/qr?text='+encodeURIComponent(q.code)+'&size=140" style="margin-top:8px;background:#fff;padding:8px;border-radius:10px"/></div>'}).join('')}
-function rAcc(){const p=state.player;return'<div class="item"><b>'+p.name+'</b><br>'+p.email+'<br>'+p.contact+'<br>'+p.addr+'<br>'+(p.city?p.city+', ':'')+p.district+'<br>Energia: '+p.energy+'%</div><div class="item"><select id="av-m" onchange="uAv()"><option value="male"'+(p.avatarMode==='male'?' selected':'')+'>♂</option><option value="female"'+(p.avatarMode==='female'?' selected':'')+'>♀</option><option value="photo"'+(p.avatarMode==='photo'?' selected':'')+'>📷 Foto</option></select><input id="av-p" value="'+p.avatarPhoto+'" placeholder="URL foto" style="margin-top:8px"><button style="margin-top:8px" onclick="sAv()">GUARDAR</button></div><div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"><button class="btn-dark" onclick="document.getElementById(\'mode-modal\').classList.remove(\'hidden\')">🔄 MODO</button><button class="btn-dark" onclick="manualRef()">⟳</button><button class="btn-danger" onclick="goLanding()">⏎ SAIR</button></div>'}
-function uAv(){state.player.avatarMode=document.getElementById('av-m').value;state.player.avatarPhoto=document.getElementById('av-p').value.trim();if(pMark)pMark.setIcon(pIcon());save();syncPlayer();renPanelIf()}
-function sAv(){uAv();alert('Guardado.')}
-function syncPlayer(){const i=state.players.findIndex(p=>p.email===state.player.email);if(i>=0)state.players[i]={...state.player}}
-/* ===== BANDEIRAS ===== */
-function openFM(fid){const f=allF.find(x=>x.id===fid);if(!f||!cPos)return;const d=distM(cPos.lat,cPos.lng,f.lat,f.lng);const can=d<=5;
-if(f.type==='ZAP'){document.getElementById('fm-content').innerHTML='<div class="ph"><h2 style="margin:0">🔵 BANDEIRA ZAP</h2><button class="btn-dark btn-small" onclick="closeFM()">✕</button></div><div class="item">+10% energia + skill</div><div class="item">Distância: <b>'+Math.round(d)+'m</b> | Até <b>5m</b></div><button '+(can?'':'disabled')+' onclick="colZ(\''+fid+'\')">'+(can?'✅ RECOLHER':'🔒 APROXIMA-TE')+'</button>'}
-else{const pr=state.prs.find(p=>p.id===f.prId);if(!pr)return;document.getElementById('fm-content').innerHTML='<div class="ph"><h2 style="margin:0">'+(f.promo?'🎁 ':'')+'🚩 '+pr.short+'</h2><button class="btn-dark btn-small" onclick="closeFM()">✕</button></div><div class="item"><b>'+pr.name+'</b></div><div class="item">Distância: <b>'+Math.round(d)+'m</b> | Até <b>5m</b></div><button '+(can?'':'disabled')+' onclick="colP(\''+fid+'\')">'+(can?'✅ RECOLHER':'🔒 APROXIMA-TE')+'</button>'}
-document.getElementById('flag-modal').classList.remove('hidden')}
-function closeFM(){document.getElementById('flag-modal').classList.add('hidden')}
-function colZ(fid){const i=allF.findIndex(f=>f.id===fid);if(i<0)return;const f=allF[i];if(distM(cPos.lat,cPos.lng,f.lat,f.lng)>5)return;state.player.energy=Math.min(100,state.player.energy+10);state.player.zapFlags++;state.player.totalFlags++;uSV();allF.splice(i,1);if(f.marker)map.removeLayer(f.marker);save();closeFM();renTop();renPanelIf();alert('🔵 +1 ZAP! Energia +10%')}
-function colP(fid){const i=allF.findIndex(f=>f.id===fid);if(i<0)return;const f=allF[i];if(distM(cPos.lat,cPos.lng,f.lat,f.lng)>5)return;const pr=state.prs.find(p=>p.id===f.prId);if(!pr)return;state.player.prFlags++;state.player.totalFlags++;if(!state.player.ppPR[pr.id])state.player.ppPR[pr.id]={current:0};state.player.ppPR[pr.id].current=Math.min(20,(state.player.ppPR[pr.id].current||0)+1);state.player.tsPR[pr.id]=(state.player.tsPR[pr.id]||0)+1;const pk=pr.packages.find(p=>p.id===f.packageId);if(pk&&pk.flagsLeft>0)pk.flagsLeft--;if((state.player.ppPR[pr.id].current||0)>=20){state.player.qrs.push({prId:pr.id,prName:pr.name,code:'QR-'+rid('')+'-'+Date.now().toString(36),rewardText:pr.campaign.rewardText,expiresAt:Date.now()+7*864e5});state.player.ppPR[pr.id].current=0}uSV();allF.splice(i,1);if(f.marker)map.removeLayer(f.marker);save();closeFM();renTop();renPanelIf();alert('🚩 +1 '+pr.short+'!')}
-/* ===== PAINEL EMPRESA + FILIAIS ===== */
-function renderPR(prId){
-  const pr=state.prs.find(p=>p.id===prId);if(!pr)return;
-  const branches=state.branches.filter(b=>b.prId===prId);
-  const h='<div class="item"><b style="font-size:20px">🏢 '+pr.name+'</b> ('+pr.short+')<br>NIF: <b>'+pr.nif+'</b><br>'+pr.email+' | '+pr.contact+'<br>'+pr.addr+', '+pr.city+', '+pr.district+' '+pr.postal+'<br><span style="color:#a7fca7">Código mãe: <b style="color:#ff0">'+pr.code+'</b></span><br>Faturação: '+(pr.billing==='self'?'Própria':'Empresa Mãe')+'</div>';
-  let bp='<div class="item"><b>📦 Pacotes</b><br>';
-  if(!pr.packages.length)bp+='<span style="color:#ff6b6b">Nenhum pacote.</span>';
-  else pr.packages.forEach(p=>{bp+='<div style="margin:6px 0;padding:8px;background:rgba(0,255,0,.05);border-radius:8px">'+p.label+': <b>'+p.flagsLeft+'/'+p.flagsInitial+'</b> flags | Raio: '+p.radiusKm+'km | Lotes: '+p.maxLots+'</div>'});
-  bp+='</div>';
-  let bb='<div class="item"><b>🛒 Comprar Pacote</b><br><div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px">';
-  Object.values(PACKS).forEach(p=>{bb+='<button onclick="buyPkg(\''+pr.id+'\',\''+p.key+'\')" style="font-size:12px;padding:10px">'+p.label+'<br>'+p.price+'€ | '+p.flags+' flags</button>'});
-  bb+='</div></div>';
-  let fb='<div class="item"><b>🏢 Filiais ('+branches.length+')</b><br>';
-  branches.forEach(b=>{
-    const bp2=state.prs.find(p=>p.id===b.prId);
-    if(bp2)fb+='<div class="branch-card"><div><b>'+bp2.name+'</b> ('+bp2.short+')<br>Código: <b style="color:#ff0">'+b.code+'</b><br>Ativa: '+(b.active?'✅':'❌')+' | Faturação: '+(bp2.billing==='self'?'Própria':'Mãe')+'</div><div><button class="btn-dark btn-small" onclick="genCode(\''+pr.id+'\')">+ Código</button></div></div>';
-  });
-  fb+='<div style="margin-top:8px"><button onclick="regBranch(\''+pr.id+'\')" style="width:100%">➕ REGISTAR NOVA FILIAL</button></div></div>';
-  let cb='<div class="item"><b>📢 Campanha</b><br>Recompensa: '+pr.campaign.rewardText+'<br>Orçamento: '+pr.campaign.promoBudgetLeft+'€<br>Prémios: '+pr.campaign.rewardsGiven+'</div>';
-  document.getElementById('pr-hdr-title').textContent='🏢 '+(pr.name)+(pr.isBranch?' (FILIAL)':'');
-  document.getElementById('pr-body').innerHTML=h+bp+bb+fb+cb;
-}
-function buyPkg(prId,pk){const pr=state.prs.find(p=>p.id===prId);const pack=PACKS[pk];if(!pr||!pack)return;pr.packages.push({id:rid('PKG'),key:pack.key,label:pack.label,flagsInitial:pack.flags,flagsLeft:pack.flags,radiusKm:pack.radiusKm,maxLots:pack.maxLots,bingos:pack.bingos});save();renderPR(prId);alert('✅ '+pack.label+' ativado!')}
-function genCode(prId){const code=genCode();if(!state.branches)state.branches=[];state.branches.push({prId,code,created:Date.now(),active:true});save();renderPR(prId);alert('📋 Código gerado: '+code+'\nEnvia à nova filial.');}
-function regBranch(prId){
-  const parent=state.prs.find(p=>p.id===prId);if(!parent)return;
-  const code=prompt('Código de acesso à filial (ou deixa gerar):')||genCode();
-  const name=prompt('Nome da Filial:');if(!name)return;
-  const nif=prompt('NIF da Filial:');if(!nif||nif.length!==9)return alert('NIF inválido');
-  if(state.prs.find(p=>p.nif===nif))return alert('NIF já existe');
-  const bId=rid('PR');
-  const bPass=prompt('Senha da Filial:')||'123456';
-  const bContact=prompt('Contacto da Filial:')||parent.contact;
-  const bAddr=prompt('Morada da Filial:')||parent.addr;
-  const bCity=prompt('Localidade da Filial:')||parent.city;
-  const bDistrict=prompt('Distrito da Filial:')||parent.district;
-  const bPostal=prompt('Código Postal:')||parent.postal;
-  const billing=prompt('Faturação?\n1 - Própria filial\n2 - Empresa mãe')==='2'?'parent':'self';
-  const newPR={id:bId,code:genCode(),name,nif,email:parent.email,password:bPass,contact:bContact,addr:bAddr,city:bCity,district:bDistrict,postal:bPostal,color:parent.color,lat:parent.lat,lng:parent.lng,packages:[],campaign:{...parent.campaign},billing,isBranch:true,parentPR:prId,active:true,createdAt:Date.now()};
-  state.prs.push(newPR);
-  state.branches.push({prId:bId,code,created:Date.now(),active:true});
-  save();renderPR(prId);
-  alert('✅ Filial "'+name+'" registada!\nCódigo: '+code+'\nFaturação: '+(billing==='parent'?'Empresa Mãe':'Própria'));
-}
+
+  <!-- MODAL BANDEIRA -->
+  <div id="flag-modal" class="modal hidden">
+    <div id="flag-modal-content"></div>
+  </div>
+
+  <!-- Audio para QR -->
+  <audio id="qr-sound" src="https://assets.mixkit.co/sfx/preview/mixkit-retro-game-emergency-alarm-1005.mp3" preload="auto"></audio>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    const STORAGE_KEY = "zap_flags_v2";
+
+    const PACKS = {
+      MINIMO:  { key:"MINIMO", label:"Mínimo", price:10, flags:1000, radiusKm:5, paid:true, maxLots:50, bingos:0 },
+      MEDIO:   { key:"MEDIO",  label:"Médio",   price:15, flags:2500, radiusKm:15, paid:true, maxLots:125, bingos:2 },
+      GRANDE:  { key:"GRANDE", label:"Grande",  price:25, flags:10000, radiusKm:50, paid:true, maxLots:500, bingos:3 },
+      ENORME:  { key:"ENORME", label:"Enorme", price:50, flags:25000, radiusKm:Infinity, paid:true, maxLots:1250, bingos:5 }
+    };
+
+    let map = null;
+    let playerMarker = null;
+    let visionCircle = null;
+    let currentPosition = null;
+    let watchId = null;
+    let allFlags = [];
+    let offlineMode = false;
+    let currentOpenPanel = null;
+    let lastPosForEnergy = null;
+    let movedMetersBuffer = 0;
+    let lastMovementTime = Date.now();
+    let lastFlagRefreshCenter = null;
+    let lastFlagRefreshTime = 0;
+    let lastOfflineSuggestion = 0;
+    let gpsCenteredOnce = false;
+
+    function defaultState() {
+      return {
+        player: {
+          name:"", contact:"", password:"", avatarMode:"male", avatarPhoto:"",
+          energy:100, zapFlags:0, prFlags:0, totalFlags:0, skill:1, vision:5,
+          promoProgressByPR: {}, totalSeenByPR: {}, qrs:[], usedQrs:[]
+        },
+        prs: [
+          {
+            id:"seed1", ownerContact:"demo@zapflags.pt", ownerPassword:"123456",
+            name:"Café Central", short:"CC", color:"#FF4D4F",
+            website:"https://cafe-central.pt", contact:"913000001",
+            address:"Rua Central, Porto", postalCode:"4000-100",
+            lat:41.1496, lng:-8.6109,
+            packages: [
+              { id:"pkg1", key:"MEDIO", label:"Médio", price:15, flagsInitial:2500, flagsLeft:2500,
+                radiusKm:15, maxLots:125, bingos:2, paid:true, source:"demo", createdAt:Date.now() }
+            ],
+            campaign: { rewardsEnabled:true, rewardType:"discount", rewardText:"5% de desconto",
+              promoLotsActive:10, promoBudgetLeft:200, bingoCountActive:1, bingoText:"Oferta surpresa", rewardsGiven:0 }
+          }
+        ],
+        currentPRId: null
+      };
+    }
+
+    let state = loadState();
+
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return defaultState();
+        const parsed = JSON.parse(raw);
+        if (!parsed.player) parsed.player = defaultState().player;
+        if (!parsed.player.password) parsed.player.password = "";
+        if (!parsed.prs) parsed.prs = defaultState().prs;
+        if (!parsed.currentPRId) parsed.currentPRId = null;
+        return parsed;
+      } catch(e) { return defaultState(); }
+    }
+
+    function saveState() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }
+
+    function randomId(prefix) {
+      return prefix + "_" + Math.random().toString(36).slice(2,10).toUpperCase();
+    }
+
+    function initMap() {
+      if (map) return;
+      map = L.map("map", { zoomControl:true, dragging:true, scrollWheelZoom:false, doubleClickZoom:false, touchZoom:true, boxZoom:false, keyboard:false }).setView([41.1496, -8.6109], 18);
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution:"© OSM" }).addTo(map);
+      map.on("move zoom", updateFogOverlay);
+    }
+
+    function createPlayerIcon() {
+      let inner = "JG";
+      if (state.player.avatarMode === "male") inner = "♂";
+      if (state.player.avatarMode === "female") inner = "♀";
+      if (state.player.avatarMode === "photo" && state.player.avatarPhoto) {
+        inner = `<img src="${state.player.avatarPhoto}" alt="avatar" />`;
+      }
+      return L.divIcon({
+        className:"", html:`<div class="player-marker">${inner}</div>`,
+        iconSize:[28,28], iconAnchor:[14,14]
+      });
+    }
+
+    function createFlagIcon() {
+      return L.divIcon({
+        className:"", html:`<div class="flag-marker"><div class="flag-stick"></div><div class="flag-banner" style="background:#FF0000;"></div></div>`,
+        iconSize:[34,34], iconAnchor:[17,28]
+      });
+    }
+
+    function updatePlayerLocation(lat, lng, fromMovement, centerMap) {
+      currentPosition = { lat, lng };
+
+      if (lastPosForEnergy && fromMovement) {
+        const moved = getDistanceMeters(lastPosForEnergy.lat, lastPosForEnergy.lng, lat, lng);
+        if (moved > 0.5) {
+          movedMetersBuffer += moved;
+          lastMovementTime = Date.now();
+          while (movedMetersBuffer >= 20) { movedMetersBuffer -= 20; state.player.energy = Math.max(0, state.player.energy - 1); }
+        }
+      }
+      lastPosForEnergy = { lat, lng };
+
+      if (!playerMarker) {
+        playerMarker = L.marker([lat, lng], { icon:createPlayerIcon() }).addTo(map);
+      } else {
+        playerMarker.setLatLng([lat, lng]);
+        playerMarker.setIcon(createPlayerIcon());
+      }
+
+      if (!visionCircle) {
+        visionCircle = L.circle([lat, lng], { radius:state.player.vision, color:"#00ff00", fillOpacity:0.05, weight:1 }).addTo(map);
+      } else {
+        visionCircle.setLatLng([lat, lng]);
+        visionCircle.setRadius(state.player.vision);
+      }
+
+      if (centerMap) map.setView([lat, lng], 18);
+
+      updateFogOverlay();
+      refreshFlags(false);
+      updateVisibleFlags();
+      renderTopBar();
+      renderPanelIfOpen();
+      saveState();
+    }
+
+    function updateFogOverlay() {
+      if (!map || !currentPosition) return;
+      const point = map.latLngToContainerPoint([currentPosition.lat, currentPosition.lng]);
+      document.getElementById("fog-overlay").style.setProperty("--fog-x", point.x + "px");
+      document.getElementById("fog-overlay").style.setProperty("--fog-y", point.y + "px");
+      document.getElementById("fog-overlay").style.setProperty("--fog-r", Math.max(55, state.player.vision * 18) + "px");
+    }
+
+    function getDistanceMeters(lat1, lng1, lat2, lng2) {
+      const R = 6371e3;
+      const phi1 = lat1 * Math.PI/180, phi2 = lat2 * Math.PI/180;
+      const dPhi = (lat2-lat1)*Math.PI/180, dLambda = (lng2-lng1)*Math.PI/180;
+      const a = Math.sin(dPhi/2)*Math.sin(dPhi/2) + Math.cos(phi1)*Math.cos(phi2)*Math.sin(dLambda/2)*Math.sin(dLambda/2);
+      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    }
+
+    function calculateVision(zapFlags) {
+      if (zapFlags <= 0) return 5;
+      if (zapFlags <= 100000) return +(5 + 45 * Math.pow(zapFlags/100000, 0.72)).toFixed(2);
+      const extra = Math.min(1, (zapFlags-100000)/900000);
+      return +(50 + 50 * Math.pow(extra, 0.82)).toFixed(2);
+    }
+
+    function calculateSkill(zapFlags) {
+      if (zapFlags < 10) return 1; if (zapFlags < 50) return 2; if (zapFlags < 100) return 3;
+      if (zapFlags < 250) return 4; if (zapFlags < 500) return 5; if (zapFlags < 1000) return 6;
+      if (zapFlags < 2500) return 7; if (zapFlags < 5000) return 8; if (zapFlags < 10000) return 9;
+      return 10 + Math.floor(Math.log10(zapFlags));
+    }
+
+    function updateSkillAndVision() {
+      state.player.skill = calculateSkill(state.player.zapFlags);
+      state.player.vision = calculateVision(state.player.zapFlags);
+    }
+
+    function randomOffset(lat, lng, radiusMeters) {
+      const r = radiusMeters / 111320;
+      const u = Math.random(), v = Math.random();
+      const w = r * Math.sqrt(u), t = 2*Math.PI*v;
+      return { lat: lat + w*Math.sin(t), lng: lng + (w*Math.cos(t))/Math.cos(lat*Math.PI/180) };
+    }
+
+    function refreshFlags(force) {
+      if (!currentPosition) return;
+      const now = Date.now();
+      let should = force;
+      if (!lastFlagRefreshCenter) should = true;
+      if (!should && now - lastFlagRefreshTime > 15000) should = true;
+      if (!should && lastFlagRefreshCenter) {
+        const d = getDistanceMeters(lastFlagRefreshCenter.lat, lastFlagRefreshCenter.lng, currentPosition.lat, currentPosition.lng);
+        if (d > 10) should = true;
+      }
+      if (!should) return;
+
+      clearFlags();
+      const p = randomOffset(currentPosition.lat, currentPosition.lng, 10);
+      allFlags.push({ id:randomId("FLAG"), type:"ZAP", lat:p.lat, lng:p.lng, marker:null });
+      state.prs.forEach(pr => {
+        pr.packages.forEach(pkg => {
+          if (pkg.flagsLeft > 0) {
+            const dist = getDistanceMeters(pr.lat, pr.lng, currentPosition.lat, currentPosition.lng);
+            if (dist <= (pkg.radiusKm === Infinity ? 999999 : pkg.radiusKm*1000)) {
+              const p2 = randomOffset(currentPosition.lat, currentPosition.lng, 15);
+              allFlags.push({ id:randomId("FLAG"), type:"PR", prId:pr.id, packageId:pkg.id, lat:p2.lat, lng:p2.lng, marker:null, promo:Math.random()<0.1 });
+            }
+          }
+        });
+      });
+      lastFlagRefreshCenter = { ...currentPosition };
+      lastFlagRefreshTime = now;
+    }
+
+    function updateVisibleFlags() {
+      if (!currentPosition || !map) return;
+      let visCount = 0;
+      allFlags.forEach(flag => {
+        const dist = getDistanceMeters(currentPosition.lat, currentPosition.lng, flag.lat, flag.lng);
+        const visible = dist <= state.player.vision && visCount < 2;
+        if (visible && !flag.marker) {
+          flag.marker = L.marker([flag.lat, flag.lng], { icon:createFlagIcon() }).addTo(map);
+          flag.marker.on("click", () => openFlagModal(flag.id));
+          visCount++;
+        }
+        if (!visible && flag.marker) { map.removeLayer(flag.marker); flag.marker = null; }
+      });
+    }
+
+    function clearFlags() {
+      allFlags.forEach(f => { if (f.marker) map.removeLayer(f.marker); });
+      allFlags = [];
+    }
+
+    function requestGPSMode() {
+      document.getElementById("mode-modal").classList.add("hidden");
+      document.getElementById("offline-controls").classList.add("hidden");
+      offlineMode = false; gpsCenteredOnce = false; renderTopBar();
+      if (!navigator.geolocation) { alert("Este dispositivo não suporta GPS."); activateHomeMode(); return; }
+      if (watchId !== null) navigator.geolocation.clearWatch(watchId);
+      navigator.geolocation.getCurrentPosition(
+        pos => { updatePlayerLocation(pos.coords.latitude, pos.coords.longitude, true, true); watchId = navigator.geolocation.watchPosition(p => updatePlayerLocation(p.coords.latitude, p.coords.longitude, true, false), err => handleGeoError(), { enableHighAccuracy:true, maximumAge:5000, timeout:20000 }); },
+        err => { alert("Não foi possível ativar GPS."); document.getElementById("mode-modal").classList.remove("hidden"); },
+        { enableHighAccuracy:true, maximumAge:5000, timeout:20000 }
+      );
+    }
+
+    function activateHomeMode() {
+      document.getElementById("mode-modal").classList.add("hidden");
+      offlineMode = true;
+      document.getElementById("offline-controls").classList.remove("hidden");
+      if (!currentPosition) currentPosition = { lat:41.1496, lng:-8.6109 };
+      updatePlayerLocation(currentPosition.lat, currentPosition.lng, false, true);
+      manualRefreshFlags(); renderTopBar();
+    }
+
+    function updatePosition(position, forceCenter) {
+      updatePlayerLocation(position.coords.latitude, position.coords.longitude, true, forceCenter || !gpsCenteredOnce);
+      gpsCenteredOnce = true;
+    }
+
+    function handleGeoError() { activateHomeMode(); }
+
+    function moveHomePlayer(dx, dy) {
+      if (!offlineMode || !currentPosition) return;
+      const lat = currentPosition.lat + (dy / 111320);
+      const lng = currentPosition.lng + (dx / (111320 * Math.cos(currentPosition.lat*Math.PI/180)));
+      updatePlayerLocation(lat, lng, true, true);
+      manualRefreshFlags();
+    }
+
+    function centerOnPlayer() {
+      if (!map || !currentPosition) return;
+      map.setView([currentPosition.lat, currentPosition.lng], 18);
+    }
+
+    function resizeOfflineControls(delta) {
+      const box = document.getElementById("offline-controls");
+      const w = parseInt(box.style.width || box.offsetWidth, 10);
+      const h = parseInt(box.style.height || box.offsetHeight, 10);
+      box.style.width = Math.max(95, Math.min(180, w+delta)) + "px";
+      box.style.height = Math.max(115, Math.min(200, h+delta)) + "px";
+    }
+
+    function renderTopBar() {
+      document.getElementById("energy-fill").style.width = state.player.energy + "%";
+      document.getElementById("energy-text").innerText = "Energia: " + state.player.energy + "%";
+      document.getElementById("mode-text").innerText = offlineMode ? "Modo: Offline" : "Modo: GPS";
+    }
+
+    function openPanel(type) {
+      currentOpenPanel = type;
+      document.getElementById("side-panel").classList.remove("hidden");
+      document.getElementById("side-panel-title").innerText = type === "progress" ? "Progresso" : type === "qrs" ? "QRs" : "Conta";
+      document.getElementById("side-panel-content").innerHTML = type === "progress" ? renderProgress() : type === "qrs" ? renderQRs() : renderAccount();
+    }
+
+    function closePanel() { currentOpenPanel = null; document.getElementById("side-panel").classList.add("hidden"); }
+    function renderPanelIfOpen() { if (currentOpenPanel) openPanel(currentOpenPanel); }
+
+    function renderProgress() {
+      return `<div class="item">Total: ${state.player.totalFlags} | ZAP: ${state.player.zapFlags} | PR: ${state.player.prFlags}<br>Skill: ${state.player.skill} | Visão: ${state.player.vision.toFixed(2)}m</div>` +
+        state.prs.map(pr => {
+          const t = state.player.totalSeenByPR[pr.id] || 0;
+          const p = state.player.promoProgressByPR[pr.id] || { current:0, total:0 };
+          return `<div class="item"><span style="background:${pr.color};color:#fff;padding:4px 8px;border-radius:999px;">${pr.short}</span> <b>${pr.name}</b><br>Visto: ${t} | Promo: ${p.current}/20</div>`;
+        }).join("");
+    }
+
+    function renderQRs() {
+      if (!state.player.qrs.length) return '<div class="item">Nenhum QR ativo.</div>';
+      return state.player.qrs.map(qr => `
+        <div class="item">
+          <b>${qr.prName}</b><br>
+          Prémio: ${qr.rewardText}<br>
+          Validade: ${Math.ceil((qr.expiresAt - Date.now())/(24*60*60*1000))} dia(s)
+          <div class="qr-code">${qr.code}</div><br>
+          <img src="https://quickchart.io/qr?text=${encodeURIComponent(qr.code)}&size=140" style="margin-top:8px;background:#fff;padding:8px;border-radius:10px;" />
+        </div>
+      `).join("");
+    }
+
+    // AQUI ESTÁ A FUNÇÃO RECONSTRUÍDA E CORRIGIDA!
+    function renderAccount() {
+      return `
+        <div class="item">Jogador: ${state.player.name}<br>Contacto: ${state.player.contact}<br>Energia: ${state.player.energy}%</div>
+        <div class="item">
+          <select id="account-avatar-mode" onchange="updateAvatar()">
+            <option value="male" ${state.player.avatarMode==='male'?'selected':''}>Masculino</option>
+            <option value="female" ${state.player.avatarMode==='female'?'selected':''}>Feminino</option>
+            <option value="photo" ${state.player.avatarMode==='photo'?'selected':''}>Foto</option>
+          </select>
+          <input id="account-photo" value="${state.player.avatarPhoto}" placeholder="URL da foto" style="margin-top:8px;" />
+          <button style="margin-top:8px;" onclick="saveAvatar()">GUARDAR</button>
+        </div>
+        <div style="display:flex; gap:8px; margin-top:10px;">
+          <button class="btn-dark" onclick="document.getElementById('mode-modal').classList.remove('hidden')">MODO</button>
+          <button class="btn-dark" onclick="manualRefreshFlags()">REFRESH</button>
+          <button class="btn-danger" onclick="logout()">TERMINAR</button>
+        </div>
+      `;
+    }
+
+    function updateAvatar() {
+      state.player.avatarMode = document.getElementById("account-avatar-mode").value;
+      state.player.avatarPhoto = document.getElementById("account-photo").value.trim();
+      if (playerMarker) playerMarker.setIcon(createPlayerIcon());
+      saveState(); renderPanelIfOpen();
+    }
+
+    function saveAvatar() { updateAvatar(); alert("Avatar atualizado."); }
+
+    function logout() { if (confirm("Terminar sessão?")) location.reload(); }
+
+    function openFlagModal(flagId) {
+      const flag = allFlags.find(f => f.id === flagId);
+      if (!flag || !currentPosition) return;
+      const dist = getDistanceMeters(currentPosition.lat, currentPosition.lng, flag.lat, flag.lng);
+      const can = dist <= 5;
+
+      if (flag.type === "ZAP") {
+        document.getElementById("flag-modal-content").innerHTML = `
+          <div class="panel-header"><h2 style="margin:0;">🔵 BANDEIRA ZAP</h2><button class="btn-dark btn-small" onclick="closeFlagModal()">X</button></div>
+          <div class="item">Dá <b>+10% energia</b> e aumenta o teu <b>skill</b>.</div>
+          <div class="item">Distância: <b>${Math.round(dist)}m</b> | Podes recolher até <b>5m</b>.</div>
+          <button ${can?"":"disabled"} onclick="collectZapFlag('${flag.id}')">${can?"RECOLHER":"APROXIMA-TE"}</button>
+        `;
+      } else {
+        const pr = state.prs.find(p => p.id === flag.prId);
+        if (!pr) return;
+        document.getElementById("flag-modal-content").innerHTML = `
+          <div class="panel-header"><h2 style="margin:0;">🚩 EMPRESA / PR</h2><button class="btn-dark btn-small" onclick="closeFlagModal()">X</button></div>
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+            <div style="width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:13px;color:#fff;background:${pr.color};">${pr.short}</div>
+            <div><b>${pr.name}</b><br><span style="font-size:12px;color:#a7fca7;">Empresa / PR</span></div>
+          </div>
+          <div class="item">Morada: ${pr.address||"Sem morada"}</div>
+          <div class="item">Distância: <b>${Math.round(dist)}m</b> | Recolhe para descobrir se conta para prémio.</div>
+          <button ${can?"":"disabled"} onclick="collectPRFlag('${flag.id}')">${can?"RECOLHER":"APROXIMA-TE"}</button>
+        `;
+      }
+      document.getElementById("flag-modal").classList.remove("hidden");
+    }
+
+    function closeFlagModal() { document.getElementById("flag-modal").classList.add("hidden"); }
+
+    function collectZapFlag(flagId) {
+      const flag = allFlags.find(f => f.id === flagId);
+      if (!flag || !currentPosition) return;
+      if (getDistanceMeters(currentPosition.lat, currentPosition.lng, flag.lat, flag.lng) > 5) { alert("Tens de estar a 5m ou menos."); return; }
+      state.player.energy = Math.min(100, state.player.energy + 10);
+      state.player.zapFlags++; state.player.totalFlags++;
+      updateSkillAndVision();
+      if (visionCircle) visionCircle.setRadius(state.player.vision);
+      removeFlag(flag.id);
+      allFlags.push({ id:randomId("FLAG"), type:"ZAP", lat:randomOffset(currentPosition.lat, currentPosition.lng, 10).lat, lng:randomOffset(currentPosition.lat, currentPosition.lng, 10).lng, marker:null });
+      renderTopBar(); renderPanelIfOpen(); saveState();
+      document.getElementById("flag-modal-content").innerHTML = `
+        <div class="panel-header"><h2 style="margin:0;">🔵 BANDEIRA ZAP RECOLHIDA</h2><button class="btn-dark btn-small" onclick="closeFlagModal()">X</button></div>
+        <div class="item">Ganhaste <b>+10% energia</b> e aumentaste o teu skill.</div>
+        <div class="item">Energia: ${state.player.energy}% | Skill: ${state.player.skill} | Visão: ${state.player.vision.toFixed(2)}m</div>
+      `;
+    }
+
+    function collectPRFlag(flagId) {
+      const flag = allFlags.find(f => f.id === flagId);
+      if (!flag || !currentPosition) return;
+      if (getDistanceMeters(currentPosition.lat, currentPosition.lng, flag.lat, flag.lng) > 5) { alert("Tens de estar a 5m ou menos."); return; }
+      if (state.player.energy <= 0) { alert("Sem energia."); return; }
+
+      const pr = state.prs.find(p => p.id === flag.prId);
+      if (!pr) return;
+      const pkg = pr.packages.find(p => p.id === flag.packageId);
+      if (pkg && pkg.flagsLeft > 0) pkg.flagsLeft--;
+
+      state.player.prFlags++; state.player.totalFlags++;
+      state.player.totalSeenByPR[pr.id] = (state.player.totalSeenByPR[pr.id]||0) + 1;
+
+      let body = `Atingiste <b>20 bandeiras</b> da empresa <b>${pr.name}</b>.`;
+      let rewardBox = "";
+
+      if (flag.promo && pr.campaign.rewardsEnabled && pr.campaign.promoBudgetLeft > 0) {
+        pr.campaign.promoBudgetLeft--;
+        state.player.promoProgressByPR[pr.id] = state.player.promoProgressByPR[pr.id] || { current:0, total:0 };
+        state.player.promoProgressByPR[pr.id].current++;
+        state.player.promoProgressByPR[pr.id].total++;
+      }
+
+      const totalSeen = state.player.totalSeenByPR[pr.id];
+      const promoCurrent = (state.player.promoProgressByPR[pr.id]||{current:0}).current;
+
+      if (promoCurrent >= 20 && pr.campaign.rewardsEnabled && pr.campaign.rewardsGiven < pr.campaign.promoLotsActive) {
+        state.player.promoProgressByPR[pr.id].current -= 20;
+        pr.campaign.rewardsGiven++;
+        document.getElementById("qr-sound").play();
+        const qr = { id:randomId("QR"), code:"ZAP-"+pr.short+"-"+Math.random().toString(36).slice(2,8).toUpperCase(), prId:pr.id, prName:pr.name, rewardText:pr.campaign.rewardText||"Oferta", createdAt:Date.now(), expiresAt:Date.now()+15*24*60*60*1000, status:"active" };
+        state.player.qrs.push(qr);
+        body = `Atingiste <b>20 bandeiras</b> da empresa <b>${pr.name}</b>.`;
+        rewardBox = `<div class="item"><b>Prémio:</b> ${pr.campaign.rewardText}<br><b>QR criado:</b> ${qr.code}<br><div class="qr-code">${qr.code}</div><br><img src="https://quickchart.io/qr?text=${encodeURIComponent(qr.code)}&size=140" style="margin-top:8px;background:#fff;padding:8px;border-radius:10px;" /></div>`;
+      }
+
+      removeFlag(flag.id);
+      const selected = weightedPackagePick();
+      if (selected) {
+        const r = randomOffset(currentPosition.lat, currentPosition.lng, 15);
+        allFlags.push({ id:randomId("FLAG"), type:"PR", prId:selected.pr.id, packageId:selected.pkg.id, lat:r.lat, lng:r.lng, marker:null, promo:Math.random()<0.1 });
+      }
+      renderTopBar(); renderPanelIfOpen(); saveState();
+      document.getElementById("flag-modal-content").innerHTML = `
+        <div class="panel-header"><h2 style="margin:0;">🚩 BANDEIRA RECOLHIDA</h2><button class="btn-dark btn-small" onclick="closeFlagModal()">X</button></div>
+        <div class="brand-head" style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+          <div style="width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:13px;color:#fff;background:${pr.color};">${pr.short}</div>
+          <div><b>${pr.name}</b><br><span style="font-size:12px;color:#a7fca7;">Empresa / PR</span></div>
+        </div>
+        <div class="item">${body}</div>
+        ${rewardBox}
+      `;
+    }
+
+    function weightedPackagePick() {
+      if (!currentPosition) return null;
+      const candidates = [];
+      state.prs.forEach(pr => {
+        pr.packages.forEach(pkg => {
+          if (pkg.flagsLeft <= 0) return;
+          const distKm = getDistanceMeters(pr.lat, pr.lng, currentPosition.lat, currentPosition.lng) / 1000;
+          let weight = 0;
+          if (pkg.radiusKm === Infinity) weight = 0.4;
+          else if (distKm <= pkg.radiusKm) {
+            const closeness = 1 - (distKm/pkg.radiusKm);
+            let bonus = 1;
+            if (pkg.radiusKm <= 5) bonus = 2.2; else if (pkg.radiusKm <= 15) bonus = 1.8; else if (pkg.radiusKm <= 50) bonus = 1.3; else bonus = 1.0;
+            weight = (1 + closeness*4) * bonus;
+          } else weight = 0.03;
+          const stockFactor = Math.max(0.3, Math.min(2, pkg.flagsLeft / Math.max(pkg.flagsInitial,1)));
+          weight *= stockFactor;
+          candidates.push({ pr, pkg, weight });
+        });
+      });
+      const totalWeight = candidates.reduce((a,c)=>a+c.weight,0);
+      if (!totalWeight) return null;
+      let rnd = Math.random()*totalWeight;
+      for (const c of candidates) { rnd -= c.weight; if (rnd <= 0) return c; }
+      return candidates[candidates.length-1];
+    }
+
+    function removeFlag(flagId) {
+      const flag = allFlags.find(f => f.id === flagId);
+      if (flag && flag.marker) map.removeLayer(flag.marker);
+      allFlags = allFlags.filter(f => f.id !== flagId);
+    }
+
+    function manualRefreshFlags() { refreshFlags(true); updateVisibleFlags(); }
+
+    function switchEntryMode(mode) {
+      document.getElementById("jg-form").classList.toggle("hidden", mode !== "JG");
+      document.getElementById("pr-form").classList.toggle("hidden", mode !== "PR");
+    }
+
+    function registerAccount(type) {
+      if (type === "JG") {
+        const name = document.getElementById("player-name").value.trim();
+        const contact = document.getElementById("player-contact").value.trim();
+        const pass = document.getElementById("player-password").value.trim();
+        const conf = document.getElementById("player-password-confirm").value.trim();
+        const msg = document.getElementById("jg-auth-msg");
+        if (!name || !contact || !pass || !conf) { msg.innerText = "Preenche todos os campos."; return; }
+        if (pass !== conf) { msg.innerText = "Senhas não coincidem."; return; }
+        if (state.player.contact && state.player.contact !== contact) { msg.innerText = "Já existe um jogador neste navegador."; return; }
+        state.player.name = name; state.player.contact = contact; state.player.password = pass;
+        state.player.avatarMode = document.getElementById("player-avatar-mode").value;
+        state.player.avatarPhoto = document.getElementById("player-photo-url").value.trim();
+        updateSkillAndVision(); saveState();
+        msg.innerText = "Registo criado!";
+        startGame();
+      } else {
+        const name = document.getElementById("pr-company-name").value.trim();
+        const contact = document.getElementById("pr-contact").value.trim();
+        const pass = document.getElementById("pr-password").value.trim();
+        const conf = document.getElementById("pr-password-confirm").value.trim();
+        const postal = document.getElementById("pr-postal-code").value.trim();
+        const msg = document.getElementById("pr-auth-msg");
+        if (!name || !contact || !pass || !conf) { msg.innerText = "Preenche todos os campos."; return; }
+        if (pass !== conf) { msg.innerText = "Senhas não coincidem."; return; }
+        if (!postal) { msg.innerText = "Indica código postal."; return; }
+        const pr = {
+          id:randomId("PR"), ownerContact:contact, ownerPassword:pass, name,
+          short: name.split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase(),
+          color: ["#FF4D4F","#1677FF","#52C41A","#FADB14","#722ED1","#FA8C16"][Math.floor(Math.random()*6)],
+          website:"", contact, address:"", postalCode:postal, lat:41.1496, lng:-8.6109,
+          packages:[{ id:randomId("PKG"), key:"FREE", label:"Grátis", price:0, flagsInitial:1000, flagsLeft:1000, radiusKm:5, maxLots:50, bingos:0, paid:false, source:"register", createdAt:Date.now() }],
+          campaign:{ rewardsEnabled:false, rewardType:"none", rewardText:"Sem prémio", promoLotsActive:0, promoBudgetLeft:0, bingoCountActive:0, bingoText:"", rewardsGiven:0 }
+        };
+        state.prs.push(pr); saveState();
+        msg.innerText = "Empresa registada!";
+        startPRDashboard(pr.id);
+      }
+    }
+
+    function loginAccount(type) {
+      if (type === "JG") {
+        const contact = document.getElementById("player-contact").value.trim();
+        const pass = document.getElementById("player-password").value.trim();
+        const msg = document.getElementById("jg-auth-msg");
+        if (!contact || !pass) { msg.innerText = "Indica contacto e senha."; return; }
+        if (!state.player.contact || !state.player.password) { msg.innerText = "Nenhum jogador registado."; return; }
+        if (state.player.contact !== contact || state.player.password !== pass) { msg.innerText = "Dados incorretos."; return; }
+        msg.innerText = "Entrada com sucesso!";
+        startGame();
+      } else {
+        const contact = document.getElementById("pr-contact").value.trim();
+        const pass = document.getElementById("pr-password").value.trim();
+        const msg = document.getElementById("pr-auth-msg");
+        const pr = state.prs.find(p => p.ownerContact === contact);
+        if (!pr) { msg.innerText = "Empresa não encontrada."; return; }
+        if (pr.ownerPassword !== pass) { msg.innerText = "Senha incorreta."; return; }
+        msg.innerText = "Entrada com sucesso!";
+        startPRDashboard(pr.id);
+      }
+    }
+
+    function startGame() {
+      document.getElementById("login-screen").classList.add("hidden");
+      document.getElementById("game-screen").classList.remove("hidden");
+      initMap(); renderTopBar();
+      document.getElementById("mode-modal").classList.remove("hidden");
+    }
+
+    function startPRDashboard(prId) {
+      document.getElementById("login-screen").classList.add("hidden");
+      document.getElementById("game-screen").classList.add("hidden");
+      alert("Área da Empresa - Dashboard de faturação em desenvolvimento.");
+    }
+
+    function makeDraggable(el, handleSelector=".drag-handle") {
+      const handle = el.querySelector(handleSelector) || el;
+      let dragging = false, startX=0, startY=0, startLeft=0, startTop=0;
+      handle.addEventListener("pointerdown", e => {
+        dragging = true;
+        const r = el.getBoundingClientRect();
+        el.style.left = r.left+"px"; el.style.top = r.top+"px"; el.style.right="auto"; el.style.bottom="auto";
+        startLeft=r.left; startTop=r.top; startX=e.clientX; startY=e.clientY;
+        handle.setPointerCapture(e.pointerId);
+      });
+      window.addEventListener("pointermove", e => {
+        if (!dragging) return;
+        el.style.left = (startLeft + e.clientX-startX)+"px"; el.style.top = (startTop + e.clientY-startY)+"px";
+      });
+      window.addEventListener("pointerup", () => { dragging=false; });
+    }
+
+    updateSkillAndVision(); renderTopBar(); switchEntryMode("JG");
+    if (state.player.name) {
+      document.getElementById("player-name").value = state.player.name;
+      document.getElementById("player-contact").value = state.player.contact;
+      document.getElementById("player-password").value = state.player.password;
+      document.getElementById("player-avatar-mode").value = state.player.avatarMode;
+      document.getElementById("player-photo-url").value = state.player.avatarPhoto;
+    }
+    makeDraggable(document.getElementById("offline-controls"));
+  </script>
+
+</body>
+</html>
