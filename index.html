@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="pt">
 <head>
@@ -38,13 +37,17 @@
       font-size: 14px;
       font-weight: 800;
       cursor: pointer;
+      transition: background 0.2s;
     }
+
+    button:hover { background: #33ff33; }
 
     .btn-dark {
       background: #181818;
       color: #0f0;
       border: 1px solid #0f0;
     }
+    .btn-dark:hover { background: #222; }
 
     .btn-danger {
       background: #8b0000;
@@ -62,6 +65,9 @@
       color: #0f0;
       font-size: 14px;
     }
+
+    a { color: #a7fca7; text-decoration: none; }
+    a:hover { text-decoration: underline; }
 
     /* TABS DE ACESSO */
     .tab-container {
@@ -159,7 +165,6 @@
 
     .modal { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 3000; width: 92%; max-width: 480px; background: #000; border: 3px solid #0f0; border-radius: 14px; padding: 16px; box-shadow: 0 0 25px rgba(0,255,0,.22); }
     .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; gap: 10px; }
-    .qr-code { display: inline-block; margin-top: 8px; padding: 8px; border-radius: 10px; border: 1px solid #0f0; background: #111; font-family: monospace; word-break: break-all; color: #fff; }
   </style>
 </head>
 <body>
@@ -193,6 +198,11 @@
         <div id="form-jg-login">
           <input id="jg-login-email" type="email" placeholder="O teu E-mail" />
           <input id="jg-login-pass" type="password" placeholder="Senha" />
+          
+          <div style="text-align: right; margin-bottom: 12px;">
+            <a href="#" onclick="forgotPassword('JG'); return false;" style="font-size:12px;">Esqueci a senha?</a>
+          </div>
+
           <button style="width:100%; padding:14px; font-size:16px;" onclick="loginAccount('JG')">ENTRAR NO JOGO</button>
         </div>
 
@@ -200,14 +210,20 @@
         <div id="form-jg-register" class="hidden">
           <input id="jg-reg-name" type="text" placeholder="* Nome do Jogador" />
           <input id="jg-reg-email" type="email" placeholder="* E-mail (Acesso único)" />
+          
           <div class="form-grid">
             <input id="jg-reg-pass" type="password" placeholder="* Criar Senha" />
-            <input id="jg-reg-phone" type="text" placeholder="Telefone (Opcional)" />
+            <input id="jg-reg-pass-conf" type="password" placeholder="* Confirmar Senha" />
           </div>
-          <select id="jg-reg-avatar">
-            <option value="male">Avatar Masculino</option>
-            <option value="female">Avatar Feminino</option>
-          </select>
+
+          <div class="form-grid">
+            <input id="jg-reg-phone" type="text" placeholder="Telefone (Opcional)" />
+            <select id="jg-reg-avatar">
+              <option value="male">Avatar Masculino</option>
+              <option value="female">Avatar Feminino</option>
+            </select>
+          </div>
+          
           <button style="width:100%; padding:14px; font-size:16px;" onclick="registerAccount('JG')">REGISTAR E JOGAR</button>
         </div>
         <div id="jg-msg" style="color:#ff6b6b; font-size:13px; margin-top:10px; min-height:18px;"></div>
@@ -224,6 +240,11 @@
         <div id="form-pr-login">
           <input id="pr-login-email" type="email" placeholder="E-mail da Empresa" />
           <input id="pr-login-pass" type="password" placeholder="Senha" />
+          
+          <div style="text-align: right; margin-bottom: 12px;">
+            <a href="#" onclick="forgotPassword('PR'); return false;" style="font-size:12px;">Esqueci a senha?</a>
+          </div>
+
           <button style="width:100%; padding:14px; font-size:16px;" onclick="loginAccount('PR')">ENTRAR NA ÁREA PR</button>
         </div>
 
@@ -238,7 +259,11 @@
           </div>
 
           <input id="pr-reg-email" type="email" placeholder="* E-mail (Será o seu login)" />
-          <input id="pr-reg-pass" type="password" placeholder="* Criar Senha" />
+          
+          <div class="form-grid">
+            <input id="pr-reg-pass" type="password" placeholder="* Criar Senha" />
+            <input id="pr-reg-pass-conf" type="password" placeholder="* Confirmar Senha" />
+          </div>
 
           <div style="font-size:12px; color:#d1ffd1; margin-top:10px; margin-bottom:5px; text-align:left;">* Morada de Faturação:</div>
           <input id="pr-reg-address" type="text" placeholder="* Rua / Lote / Porta" />
@@ -257,13 +282,12 @@
     </div>
   </div>
 
-  <!-- GAME SCREEN (O resto do jogo mantém-se igual) -->
+  <!-- GAME SCREEN ELEMENTS -->
   <div id="game-screen" class="hidden">
     <div id="map-wrap">
       <div id="map"></div>
       <div id="fog-overlay"></div>
     </div>
-
     <div id="top-strip">
       <div class="energy-bar"><div id="energy-fill"></div></div>
       <div style="margin-top:6px; font-size:12px; color:#bfffbf; display:flex; justify-content:space-between; flex-wrap:wrap;">
@@ -271,20 +295,13 @@
         <span id="mode-text">Modo: -</span>
       </div>
     </div>
-
     <div id="floating-buttons">
       <button class="float-btn btn-dark" onclick="openPanel('progress')">📈</button>
       <button class="float-btn btn-dark" onclick="openPanel('qrs')">🎫</button>
       <button class="float-btn btn-dark" onclick="openPanel('account')">👤</button>
       <button class="float-btn btn-dark" onclick="centerOnPlayer()">📍</button>
     </div>
-
     <div id="offline-controls" class="hidden">
-      <div style="font-size:14px; color:#bfffbf; margin-bottom:4px; padding:2px; border-bottom:1px solid rgba(0,255,0,.25);">⋮⋮</div>
-      <div style="display:flex; justify-content:center; gap:4px; margin:4px 0;">
-        <button class="btn-dark btn-small" onclick="resizeOfflineControls(-10)">A-</button>
-        <button class="btn-dark btn-small" onclick="resizeOfflineControls(10)">A+</button>
-      </div>
       <div class="dpad">
         <div style="visibility:hidden;">.</div>
         <button onclick="moveHomePlayer(0, 1)">⬆</button>
@@ -297,7 +314,6 @@
         <div style="visibility:hidden;">.</div>
       </div>
     </div>
-
     <div id="side-panel" class="hidden">
       <div class="panel-header">
         <b id="side-panel-title">Painel</b>
@@ -318,7 +334,7 @@
     </div>
     <div class="item">
       <b>Offline / Casa</b><br>
-      Joga sem GPS real, com movimento manual e sem exploração física real.
+      Joga sem GPS real.
     </div>
     <div style="display:flex; gap:8px;">
       <button onclick="requestGPSMode()">ATIVAR GPS</button>
@@ -326,44 +342,19 @@
     </div>
   </div>
 
-  <div id="flag-modal" class="modal hidden">
-    <div id="flag-modal-content"></div>
-  </div>
-
-  <audio id="qr-sound" src="https://assets.mixkit.co/sfx/preview/mixkit-retro-game-emergency-alarm-1005.mp3" preload="auto"></audio>
-
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
-    const STORAGE_KEY = "zap_flags_v3";
+    const STORAGE_KEY = "zap_flags_v4";
 
-    let map = null, playerMarker = null, visionCircle = null, currentPosition = null;
-    let watchId = null, allFlags = [], offlineMode = false, currentOpenPanel = null;
-    let lastPosForEnergy = null, movedMetersBuffer = 0, lastFlagRefreshCenter = null;
-    let lastFlagRefreshTime = 0, gpsCenteredOnce = false;
-
-    // ESTADO E DADOS
-    function defaultState() {
-      return {
-        player: {
-          name:"", email:"", phone:"", password:"", avatarMode:"male", avatarPhoto:"",
-          energy:100, zapFlags:0, prFlags:0, totalFlags:0, skill:1, vision:5,
-          promoProgressByPR: {}, totalSeenByPR: {}, qrs:[], usedQrs:[]
-        },
-        prs: []
-      };
-    }
-
+    let map = null, offlineMode = false;
     let state = loadState();
 
     function loadState() {
       try {
         const raw = localStorage.getItem(STORAGE_KEY);
-        if (!raw) return defaultState();
-        const parsed = JSON.parse(raw);
-        if (!parsed.player) parsed.player = defaultState().player;
-        if (!parsed.prs) parsed.prs = [];
-        return parsed;
-      } catch(e) { return defaultState(); }
+        if (!raw) return { player: { email:"" }, prs: [] };
+        return JSON.parse(raw);
+      } catch(e) { return { player: { email:"" }, prs: [] }; }
     }
 
     function saveState() {
@@ -374,16 +365,13 @@
       return prefix + "_" + Math.random().toString(36).slice(2,10).toUpperCase();
     }
 
-    // GESTÃO DOS MENUS DE LOGIN
+    // NAVEGAÇÃO DE MENUS
     function setMainMode(mode) {
       document.getElementById("area-jg").classList.toggle("hidden", mode !== "JG");
       document.getElementById("area-pr").classList.toggle("hidden", mode !== "PR");
-      
       document.getElementById("btn-select-jg").className = mode === "JG" ? "" : "btn-dark";
       document.getElementById("btn-select-pr").className = mode === "PR" ? "" : "btn-dark";
-      
-      document.getElementById("jg-msg").innerText = "";
-      document.getElementById("pr-msg").innerText = "";
+      document.getElementById("jg-msg").innerText = ""; document.getElementById("pr-msg").innerText = "";
     }
 
     function setSubMode(mainMode, subMode) {
@@ -400,28 +388,27 @@
       }
     }
 
+    // ESQUECI A SENHA
+    function forgotPassword(type) {
+      alert("A funcionalidade de recuperação de senha será enviada para o seu e-mail logo que o servidor online e a base de dados estejam ligados em definitivo.");
+    }
+
+    // REGISTAR
     function registerAccount(type) {
       if (type === "JG") {
         const name = document.getElementById("jg-reg-name").value.trim();
         const email = document.getElementById("jg-reg-email").value.trim().toLowerCase();
         const pass = document.getElementById("jg-reg-pass").value.trim();
+        const conf = document.getElementById("jg-reg-pass-conf").value.trim();
         const phone = document.getElementById("jg-reg-phone").value.trim();
         const msg = document.getElementById("jg-msg");
 
-        if (!name || !email || !pass) { msg.innerText = "Preenche Nome, E-mail e Senha."; return; }
-        
-        // Validação se o email já está registado neste dispositivo
-        if (state.player.email && state.player.email === email) { msg.innerText = "Este e-mail já está registado. Vai a ENTRAR."; return; }
-        if (state.player.email && state.player.email !== email) { msg.innerText = "Apenas 1 jogador permitido por dispositivo neste momento."; return; }
+        if (!name || !email || !pass || !conf) { msg.innerText = "Preenche os campos obrigatórios (*)."; return; }
+        if (pass !== conf) { msg.innerText = "As senhas não coincidem!"; return; }
+        if (state.player.email && state.player.email === email) { msg.innerText = "E-mail já registado. Vá a ENTRAR."; return; }
 
-        state.player.name = name;
-        state.player.email = email;
-        state.player.phone = phone;
-        state.player.password = pass;
-        state.player.avatarMode = document.getElementById("jg-reg-avatar").value;
-        
-        saveState();
-        startGame();
+        state.player = { name, email, phone, password: pass, energy: 100, vision: 5 };
+        saveState(); startGame();
 
       } else {
         const name = document.getElementById("pr-reg-name").value.trim();
@@ -429,45 +416,25 @@
         const phone = document.getElementById("pr-reg-phone").value.trim();
         const email = document.getElementById("pr-reg-email").value.trim().toLowerCase();
         const pass = document.getElementById("pr-reg-pass").value.trim();
+        const conf = document.getElementById("pr-reg-pass-conf").value.trim();
         const address = document.getElementById("pr-reg-address").value.trim();
         const postal = document.getElementById("pr-reg-postal").value.trim();
         const city = document.getElementById("pr-reg-city").value.trim();
         const district = document.getElementById("pr-reg-district").value.trim();
         const msg = document.getElementById("pr-msg");
 
-        if (!name || !nif || !phone || !email || !pass || !address || !postal || !city || !district) {
-          msg.innerText = "Todos os campos da empresa são obrigatórios."; return;
+        if (!name || !nif || !phone || !email || !pass || !conf || !address || !postal || !city || !district) {
+          msg.innerText = "Todos os campos (*) são obrigatórios."; return;
         }
+        if (pass !== conf) { msg.innerText = "As senhas não coincidem!"; return; }
+        if (state.prs.find(p => p.email === email)) { msg.innerText = "E-mail já registado. Vá a ENTRAR."; return; }
 
-        // Verifica se a empresa já existe
-        if (state.prs.find(p => p.email === email)) {
-          msg.innerText = "E-mail já registado. Vá ao separador ENTRAR."; return;
-        }
-
-        const pr = {
-          id: randomId("PR"),
-          name: name,
-          short: name.substring(0,2).toUpperCase(),
-          nif: nif,
-          email: email,
-          password: pass,
-          phone: phone,
-          address: address,
-          postalCode: postal,
-          city: city,
-          district: district,
-          color: "#FF4D4F",
-          lat: 41.1496, lng: -8.6109,
-          packages: [],
-          campaign: { rewardsEnabled:false }
-        };
-
-        state.prs.push(pr);
-        saveState();
-        startPRDashboard(pr.name);
+        const pr = { id: randomId("PR"), name, nif, email, password: pass, phone, address, postalCode: postal, city, district };
+        state.prs.push(pr); saveState(); startPRDashboard(pr.name);
       }
     }
 
+    // LOGIN
     function loginAccount(type) {
       if (type === "JG") {
         const email = document.getElementById("jg-login-email").value.trim().toLowerCase();
@@ -475,9 +442,8 @@
         const msg = document.getElementById("jg-msg");
 
         if (!email || !pass) { msg.innerText = "Indica E-mail e Senha."; return; }
-        if (state.player.email !== email) { msg.innerText = "E-mail não encontrado ou incorreto."; return; }
+        if (state.player.email !== email) { msg.innerText = "E-mail não encontrado."; return; }
         if (state.player.password !== pass) { msg.innerText = "Senha incorreta."; return; }
-        
         startGame();
       } else {
         const email = document.getElementById("pr-login-email").value.trim().toLowerCase();
@@ -488,50 +454,42 @@
         const pr = state.prs.find(p => p.email === email);
         if (!pr) { msg.innerText = "E-mail de empresa não encontrado."; return; }
         if (pr.password !== pass) { msg.innerText = "Senha incorreta."; return; }
-
         startPRDashboard(pr.name);
       }
     }
 
+    // INICIAR ECRÃS
     function startGame() {
       document.getElementById("login-screen").classList.add("hidden");
       document.getElementById("game-screen").classList.remove("hidden");
-      initMap(); renderTopBar();
       document.getElementById("mode-modal").classList.remove("hidden");
+      initMap();
     }
 
     function startPRDashboard(prName) {
       document.getElementById("login-screen").classList.add("hidden");
       document.getElementById("game-screen").classList.add("hidden");
-      alert("Bem-vindo(a) à Área da Empresa: " + prName + "\n\n(Nesta área poderá ver faturas, comprar pacotes de bandeiras e definir campanhas. A ser implementado em breve!)");
+      alert("Bem-vindo(a) à Área da Empresa: " + prName + "\n\n(O Dashboard completo será desenvolvido futuramente).");
     }
 
-    // --- RESTANTE CÓDIGO DO MAPA / JOGO (Inalterado, apenas omitido na listagem longa de funções matemáticas para não encher a resposta, mas incluído no código que copiou) ---
-    // (As funções de GPS, Bandeiras, Mapa continuam ativas)
-    
     function initMap() {
       if (map) return;
       map = L.map("map", { zoomControl:true }).setView([41.1496, -8.6109], 18);
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution:"© OSM" }).addTo(map);
     }
-    function renderTopBar() {
-      document.getElementById("energy-fill").style.width = state.player.energy + "%";
-      document.getElementById("energy-text").innerText = "Energia: " + state.player.energy + "%";
-      document.getElementById("mode-text").innerText = offlineMode ? "Modo: Offline" : "Modo: GPS";
-    }
+
     function openPanel(type) { document.getElementById("side-panel").classList.remove("hidden"); }
     function closePanel() { document.getElementById("side-panel").classList.add("hidden"); }
     function closeModeModal() { document.getElementById("mode-modal").classList.add("hidden"); }
-    function activateHomeMode() { closeModeModal(); offlineMode = true; document.getElementById("offline-controls").classList.remove("hidden"); initMap(); }
-    function requestGPSMode() { closeModeModal(); offlineMode = false; initMap(); }
-    
-    // Auto-preencher email se já tiver conta no telemovel
+    function activateHomeMode() { closeModeModal(); document.getElementById("offline-controls").classList.remove("hidden"); }
+    function requestGPSMode() { closeModeModal(); }
+
+    // PREENCHIMENTO AUTOMÁTICO SE JÁ ESTIVER REGISTADO
     window.onload = function() {
-      if (state.player.email) {
+      if (state.player && state.player.email) {
         document.getElementById("jg-login-email").value = state.player.email;
       }
     }
-
   </script>
 
   <!-- DIREITOS DE AUTOR -->
