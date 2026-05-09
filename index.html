@@ -1,136 +1,166 @@
-<!DOCTYPE html>
-<html lang="pt">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Avatar Life - Mundo Aberto</title>
-<script src="https://cdn.tailwindcss.com"></script>
-<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-<style>
-  @keyframes bounce-slow{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
-  @keyframes pulse-glow{0%,100%{opacity:.6}50%{opacity:1}}
-  .bounce-slow{animation:bounce-slow 1.5s ease-in-out infinite}
-  .pulse-glow{animation:pulse-glow 2s ease-in-out infinite}
-  body{overscroll-behavior:none;user-select:none;-webkit-user-select:none}
-  button:active{transform:scale(0.92)}
-</style>
-</head>
-<body class="bg-slate-100">
-<div id="root"></div>
-<script type="text/babel">
-const{useState,useEffect,useCallback,useRef}=React;
-const WS=20,PR=2.5,ED=0.3,VC=8;
-function dist(a,b){return Math.sqrt((a.x-b.x)**2+(a.y-b.y)**2)}
-function genFlags(n,ex){const f=[];let id=0;while(f.length<n){const x=Math.floor(Math.random()*WS)+0.5,y=Math.floor(Math.random()*WS)+0.5;if(!ex.some(e=>dist(e,{x,y})<3)&&!f.some(g=>dist(g,{x,y})<1.5))f.push({id:id++,x,y,collected:false})}return f}
-function SpeechBubble({t}){if(!t)return null;return <div className="absolute -top-16 left-1/2 -translate-x-1/2 z-30 bounce-slow"><div className="bg-white border-2 border-gray-300 rounded-2xl px-3 py-2 shadow-xl relative whitespace-nowrap"><p className="text-xs font-semibold text-gray-700">{t}</p></div></div>}
-function Avatar({state,energy,hunger,happiness,size='md'}){
-  const sz={sm:'w-10 h-10 text-lg',md:'w-16 h-16 text-3xl',lg:'w-24 h-24 text-5xl'};
-  const isTired=energy<=15;
-  const emoji=isTired?'😴':state==='eating'?'🍕':state==='sleeping'?'😴':state==='playing'?'🎮':state==='walking'?'🚶':'😊';
-  let sp=null;
-  if(isTired&&state!=='sleeping')sp='Estou cansado, preciso dormir 15 minutos 💤';
-  else if(hunger<=15&&state!=='eating')sp='Estou com fome, preciso comer! 🍔';
-  else if(happiness<=15&&state!=='playing')sp='Estou triste, preciso brincar! 🎯';
-  return <div className="flex flex-col items-center gap-2 relative">
-    <SpeechBubble t={sp}/>
-    <div className={sz[size]+' rounded-full flex items-center justify-center shadow-xl '+(isTired?'bg-red-100 ring-4 ring-red-300':'bg-gradient-to-br from-blue-100 to-purple-100 ring-4 ring-blue-200')}>
-      <span>{emoji}</span></div>
-    <div className="w-full max-w-[120px]"><div className="flex items-center gap-1"><span className="text-xs">⚡</span>
-      <div className="flex-1 bg-gray-200 rounded-full h-2 overflow-hidden">
-        <div className={'h-full rounded-full transition-all '+(isTired?'bg-red-500':energy<40?'bg-yellow-500':'bg-green-500')} style={{width:energy+'%'}}></div></div>
-      <span className="text-xs font-bold text-gray-600 w-8 text-right">{Math.round(energy)}%</span></div></div></div>
-}
-function HomePage({avatarState,stats,onNavigate,onSleep,onEat,onPlay}){
-  return <div className="flex flex-col h-full bg-gradient-to-b from-sky-100 via-blue-50 to-white">
-    <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-4 py-3 shadow-lg"><h1 className="text-lg font-bold text-center">🏠 Casa do Avatar</h1></div>
-    <div className="flex-1 flex flex-col items-center justify-center gap-4 p-4">
-      <Avatar state={avatarState} energy={stats.energy} hunger={stats.hunger} happiness={stats.happiness} size="lg"/>
-      <div className="w-full max-w-xs bg-white/80 backdrop-blur-sm rounded-2xl p-4 shadow-lg space-y-3">
-        <h2 className="text-sm font-bold text-gray-700 text-center mb-2">Estado do Avatar</h2>
-        {[{icon:'⚡',label:'Energia',val:stats.energy},{icon:'🍔',label:'Fome',val:stats.hunger},{icon:'😄',label:'Felicidade',val:stats.happiness}].map(s=>
-          <div key={s.label}><div className="flex justify-between text-xs mb-1"><span>{s.icon} {s.label}</span><span className="font-bold">{Math.round(s.val)}%</span></div>
-            <div className="bg-gray-200 rounded-full h-3 overflow-hidden"><div className={'h-full rounded-full transition-all '+(s.val<20?'bg-red-500':s.val<50?'bg-yellow-500':'bg-green-500')} style={{width:s.val+'%'}}></div></div></div>
-        )}</div>
-      <div className="flex gap-3">
-        <button onClick={onEat} className="bg-orange-500 text-white rounded-2xl px-5 py-3 shadow-lg active:scale-95 flex flex-col items-center"><span className="text-xl">🍕</span><span className="text-xs font-medium mt-1">Comer</span></button>
-        <button onClick={onSleep} className="bg-indigo-500 text-white rounded-2xl px-5 py-3 shadow-lg active:scale-95 flex flex-col items-center"><span className="text-xl">😴</span><span className="text-xs font-medium mt-1">Dormir</span></button>
-        <button onClick={onPlay} className="bg-pink-500 text-white rounded-2xl px-5 py-3 shadow-lg active:scale-95 flex flex-col items-center"><span className="text-xl">🎮</span><span className="text-xs font-medium mt-1">Brincar</span></button></div>
-      <button onClick={()=>onNavigate('game')} className="bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-2xl px-8 py-3 shadow-lg active:scale-95 font-bold text-base">🎮 Ir Jogar!</button>
-    </div></div>
-}
-function GamePage({position,onMove,energy,onSleep,onEat,onPlay}){
-  const[ap,setAp]=useState([]);const[mh,setMh]=useState(0);
-  const[flags,setFlags]=useState(()=>genFlags(12,[]));const[col,setCol]=useState(0);
-  const[toast,setToast]=useState(null);const[wf,setWf]=useState(0);const tRef=useRef(null);
-  useEffect(()=>{const i=setInterval(()=>setWf(f=>(f+1)%2),300);return()=>clearInterval(i)},[]);
-  const hTS=(e)=>{tRef.current={x:e.touches[0].clientX,y:e.touches[0].clientY}};
-  const hTE=(e)=>{if(!tRef.current)return;const dx=e.changedTouches[0].clientX-tRef.current.x,dy=e.changedTouches[0].clientY-tRef.current.y;if(Math.max(Math.abs(dx),Math.abs(dy))<20)return;Math.abs(dx)>Math.abs(dy)?move(dx>0?'right':'left'):move(dy>0?'down':'up');tRef.current=null};
-  useEffect(()=>{setFlags(prev=>{let ch=false;const up=prev.map(f=>{if(f.collected)return f;if(dist(position,{x:f.x,y:f.y})<=PR){ch=true;setToast('🚩 Bandeira apanhada!');setTimeout(()=>setToast(null),2000);return{...f,collected:true}}return f});if(ch){setCol(c=>c+1);const r=up.filter(f=>!f.collected);if(r.length===0){setToast('🎉 Todas apanhadas!');setTimeout(()=>setToast(null),3000);setTimeout(()=>setFlags(genFlags(12,[])),1500)}}return up})},[position]);
-  const move=useCallback((dir)=>{if(energy<=0)return;const sp=0.8,np={...position};if(dir==='up')np.y=Math.max(0.5,position.y-sp);if(dir==='down')np.y=Math.min(WS-0.5,position.y+sp);if(dir==='left')np.x=Math.max(0.5,position.x-sp);if(dir==='right')np.x=Math.min(WS-0.5,position.x+sp);if(Math.abs(np.x-position.x)>0.01||Math.abs(np.y-position.y)>0.01){onMove(np);setMh(h=>h+1)}},[position,onMove,energy]);
-  useEffect(()=>{const h=(e)=>{if(e.key==='ArrowUp'||e.key==='w'||e.key==='W'){e.preventDefault();move('up')}if(e.key==='ArrowDown'||e.key==='s'||e.key==='S'){e.preventDefault();move('down')}if(e.key==='ArrowLeft'||e.key==='a'||e.key==='A'){e.preventDefault();move('left')}if(e.key==='ArrowRight'||e.key==='d'||e.key==='D'){e.preventDefault();move('right')}};window.addEventListener('keydown',h);return()=>window.removeEventListener('keydown',h)},[move]);
-  const toggle=(p)=>setAp(prev=>{if(prev.includes(p))return prev.filter(x=>x!==p);if(prev.length>=2)return[p];return[...prev,p]});
-  const sc=Math.max(0,Math.floor(position.x-VC/2)),sr=Math.max(0,Math.floor(position.y-VC/2));
-  const vc=Math.min(VC,WS-sc),vr=Math.min(VC,WS-sr);
-  const cir=new Set();for(let y=0;y<WS;y++)for(let x=0;x<WS;x++)if(dist(position,{x:x+0.5,y:y+0.5})<=PR)cir.add(x+','+y);
-  const unc=flags.filter(f=>!f.collected).length;
-  const defs=[{type:'inventory',icon:'🎒',label:'Inventário',color:'bg-amber-500'},{type:'map',icon:'🗺️',label:'Mapa',color:'bg-green-500'},{type:'stats',icon:'📊',label:'Estatísticas',color:'bg-blue-500'},{type:'settings',icon:'⚙️',label:'Definições',color:'bg-gray-500'}];
-  const ico={inventory:'🎒',map:'🗺️',stats:'📊',settings:'⚙️'};
-  const lbl={inventory:'Inventário',map:'Mapa',stats:'Estatísticas',settings:'Definições'};
-  const svgR=(PR/VC)*100;
-  const getDec=(gx,gy)=>{const v=(gx*31+gy*17+gx*gy*7)%23;return v===0?'🌳':v===1?'🏠':v===2?'🌸':v===3?'🪨':v===4?'🌻':v===5?'🍄':v===6?'⛲':v===7?'🌲':null};
-  const pCnt=(p)=>{
-    if(!p)return null;
-    if(p==='inventory')return <div className="p-3"><h3 className="font-bold text-sm mb-2">🎒 Inventário</h3><div className="flex items-center gap-2 mb-2 bg-yellow-50 rounded-lg p-2"><span className="text-lg">🚩</span><span className="text-xs font-bold text-yellow-700">{col} apanhadas</span></div><div className="grid grid-cols-4 gap-1.5">{['🍎','🍞','🧃','💊','🗝️','📦','🎁','🧸'].map((it,i)=><div key={i} className="bg-white/80 rounded-lg p-1.5 text-center text-lg">{it}</div>)}</div></div>;
-    if(p==='map')return <div className="p-3"><h3 className="font-bold text-sm mb-2">🗺️ Mapa</h3><div className="bg-green-50 rounded-xl p-3 text-center"><p className="text-[10px] text-gray-600 mb-1">Pos: ({position.x.toFixed(1)},{position.y.toFixed(1)}) | 🚩 {unc}</p><div className="grid grid-cols-8 gap-[2px] max-w-[180px] mx-auto">{Array.from({length:64}).map((_,i)=>{const gx=i%8,gy=Math.floor(i/8);const isP=Math.floor(position.x)===gx&&Math.floor(position.y)===gy;const fl=flags.find(f=>Math.floor(f.x)===gx&&Math.floor(f.y)===gy&&!f.collected);return<div key={i} className={'aspect-square rounded-[1px] text-[6px] flex items-center justify-center '+(isP?'bg-blue-500 ring-[1px] ring-blue-300':fl?'bg-yellow-100 border border-yellow-300':'bg-green-200')}>{fl&&<span>🚩</span>}</div>})}</div></div></div>;
-    if(p==='stats')return <div className="p-3"><h3 className="font-bold text-sm mb-2">📊 Estatísticas</h3><div className="space-y-2"><div><div className="flex justify-between text-[10px] mb-0.5"><span>⚡ Energia</span><span className="font-bold">{Math.round(energy)}%</span></div><div className="bg-gray-200 rounded-full h-2 overflow-hidden"><div className={'h-full rounded-full '+(energy<20?'bg-red-500':energy<50?'bg-yellow-500':'bg-green-500')} style={{width:energy+'%'}}></div></div></div><div className="text-[10px] text-gray-600 space-y-0.5"><p>🚶 Passos: {mh}</p><p>📍 ({position.x.toFixed(1)}, {position.y.toFixed(1)})</p><p>🚩 Apanhadas: <span className="font-bold text-green-600">{col}</span></p><p>🏳️ Restantes: <span className="font-bold text-yellow-600">{unc}</span></p></div></div></div>;
-    return <div className="p-3"><h3 className="font-bold text-sm mb-2">⚙️ Definições</h3><div className="space-y-1.5"><button onClick={onSleep} className="w-full bg-indigo-500 text-white rounded-lg py-1.5 px-3 text-[11px]">😴 Dormir</button><button onClick={onEat} className="w-full bg-orange-500 text-white rounded-lg py-1.5 px-3 text-[11px]">🍕 Comer</button><button onClick={onPlay} className="w-full bg-pink-500 text-white rounded-lg py-1.5 px-3 text-[11px]">🎮 Brincar</button></div></div>;
-  };
-  const aEmoji=energy<=15?'😴':wf===0?'😊':'🚶';
-  return <div className="flex flex-col h-[100dvh] max-h-[100dvh] overflow-hidden">
-    {toast&&<div className="fixed top-3 left-1/2 -translate-x-1/2 z-[100] bg-green-500 text-white px-4 py-2 rounded-xl shadow-xl text-xs font-bold animate-bounce pointer-events-none whitespace-nowrap">{toast}</div>}
-    {ap.length>0&&<div className="flex-shrink-0 max-h-[45%] overflow-hidden"><div className={'flex gap-2 p-2 transition-all '+(ap.length===1?'':'gap-1')}>{ap.map((p,idx)=>{const sm=ap.length>1&&idx===0;return <div key={p} className={'bg-gradient-to-br from-gray-800/95 to-gray-900/95 rounded-2xl text-white shadow-2xl border border-gray-600/50 overflow-hidden backdrop-blur-sm transition-all relative '+(sm?'w-1/3 min-w-[120px] max-h-[100px]':'flex-1 min-w-0 max-h-[160px]')}><button onClick={()=>toggle(p)} className="absolute top-2 right-2 w-5 h-5 bg-white/20 rounded-full flex items-center justify-center text-xs z-10">✕</button>{sm&&<div className="p-2 text-center border-b border-white/10"><span className="text-lg">{ico[p]}</span><p className="text-[10px] text-gray-300 mt-0.5">{lbl[p]}</p></div>}<div className={'overflow-y-auto '+(sm?'max-h-[70px]':'max-h-[150px]')}>{pCnt(p)}</div></div>})}</div></div>}
-    <div className="flex-1 flex flex-row gap-2 p-2 min-h-0 overflow-hidden">
-      <div className="flex-1 flex items-center justify-center min-h-0 relative" onTouchStart={hTS} onTouchEnd={hTE}>
-        <div className="relative w-full max-w-[340px] aspect-square max-h-full rounded-2xl overflow-hidden shadow-xl border-2 border-gray-400">
-          <div className="grid w-full h-full" style={{gridTemplateColumns:'repeat('+vc+',1fr)',gridTemplateRows:'repeat('+vr+',1fr)'}}>
-            {Array.from({length:vc*vr}).map((_,i)=>{const col=i%vc,row=Math.floor(i/vc);const gx=sc+col,gy=sr+row;const isAv=Math.floor(position.x)===gx&&Math.floor(position.y)===gy;const cfx=position.x-gx,cfy=position.y-gy;const isE=(gx+gy)%2===0;const inR=cir.has(gx+','+gy);const fl=flags.find(f=>!f.collected&&Math.floor(f.x)===gx&&Math.floor(f.y)===gy);const dec=getDec(gx,gy);return <div key={gx+'-'+gy} className={'relative '+(isAv?'bg-blue-200/60':fl?'bg-yellow-100/80':inR?'bg-emerald-100':isE?'bg-emerald-200':'bg-emerald-300')} style={{borderRight:'1px solid rgba(0,0,0,0.06)',borderBottom:'1px solid rgba(0,0,0,0.06)'}}>{inR&&!isAv&&<div className="absolute inset-0 bg-blue-300/15"/>}{gx===0&&<div className="absolute left-0 top-0 bottom-0 w-0.5 bg-red-400/40"/>}{gy===0&&<div className="absolute top-0 left-0 right-0 h-0.5 bg-red-400/40"/>}{gx===WS-1&&<div className="absolute right-0 top-0 bottom-0 w-0.5 bg-red-400/40"/>}{gy===WS-1&&<div className="absolute bottom-0 left-0 right-0 h-0.5 bg-red-400/40"/>}{dec&&!isAv&&!fl&&<span className="absolute inset-0 flex items-center justify-center text-sm opacity-50">{dec}</span>}{fl&&!isAv&&<div className="absolute inset-0 flex items-center justify-center pulse-glow z-10"><span className="text-lg sm:text-xl drop-shadow-md">🚩</span></div>}{isAv&&<div className="absolute z-20 transition-all duration-200 ease-out" style={{left:cfx*100+'%',top:cfy*100+'%',width:100/VC+'%',height:100/VC+'%',display:'flex',alignItems:'center',justifyContent:'center'}}><span className="text-2xl sm:text-3xl drop-shadow-lg">{aEmoji}</span></div>}</div>})}
+import { useState, useEffect, useCallback } from 'react';
+import HomePage from './components/HomePage';
+import GamePage from './components/GamePage';
+import { Page, AvatarState, AvatarStats, Position } from './types';
+
+const ENERGY_DECAY_RATE = 0.3; // energy lost per tick
+const TICK_INTERVAL = 2000; // ms
+
+export default function App() {
+  const [currentPage, setCurrentPage] = useState<Page>('home');
+  const [avatarState, setAvatarState] = useState<AvatarState>('idle');
+  const [position, setPosition] = useState<Position>({ x: 0, y: 0 });
+  const [stats, setStats] = useState<AvatarStats>({
+    energy: 100,
+    hunger: 80,
+    happiness: 70,
+  });
+
+  // Energy decay over time
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setStats((prev) => ({
+        ...prev,
+        energy: Math.max(0, prev.energy - ENERGY_DECAY_RATE),
+        hunger: Math.max(0, prev.hunger - ENERGY_DECAY_RATE * 0.5),
+        happiness: Math.max(0, prev.happiness - ENERGY_DECAY_RATE * 0.3),
+      }));
+    }, TICK_INTERVAL);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Update avatar state based on stats
+  useEffect(() => {
+    if (stats.energy <= 15) {
+      setAvatarState('tired');
+    } else if (avatarState === 'tired') {
+      setAvatarState('idle');
+    }
+  }, [stats.energy, avatarState]);
+
+  const handleSleep = useCallback(() => {
+    setAvatarState('sleeping');
+    setStats((prev) => ({
+      ...prev,
+      energy: Math.min(100, prev.energy + 30),
+      hunger: Math.max(0, prev.hunger - 5),
+    }));
+    setTimeout(() => {
+      setAvatarState('idle');
+    }, 2000);
+  }, []);
+
+  const handleEat = useCallback(() => {
+    setAvatarState('eating');
+    setStats((prev) => ({
+      ...prev,
+      energy: Math.min(100, prev.energy + 15),
+      hunger: Math.min(100, prev.hunger + 25),
+    }));
+    setTimeout(() => {
+      setAvatarState('idle');
+    }, 1500);
+  }, []);
+
+  const handlePlay = useCallback(() => {
+    if (stats.energy <= 0) return;
+    setAvatarState('playing');
+    setStats((prev) => ({
+      ...prev,
+      energy: Math.max(0, prev.energy - 10),
+      happiness: Math.min(100, prev.happiness + 20),
+      hunger: Math.max(0, prev.hunger - 5),
+    }));
+    setTimeout(() => {
+      setAvatarState('idle');
+    }, 1500);
+  }, [stats.energy]);
+
+  const handleMove = useCallback((newPos: Position) => {
+    setPosition(newPos);
+    setAvatarState('walking');
+    setStats((prev) => ({
+      ...prev,
+      energy: Math.max(0, prev.energy - 2),
+    }));
+    setTimeout(() => {
+      setAvatarState((current) => (current === 'walking' ? 'idle' : current));
+    }, 500);
+  }, []);
+
+  return (
+      <div className="h-[100dvh] w-screen overflow-hidden bg-gradient-to-br from-slate-50 via-white to-zinc-100 flex flex-col">
+      {/* Bottom Navigation */}
+      <div className="order-last bg-white border-t border-gray-200 shadow-lg flex-shrink-0">
+        <div className="flex items-center justify-around py-2 max-w-md mx-auto">
+          <button
+            onClick={() => setCurrentPage('home')}
+            className={`flex flex-col items-center gap-0.5 px-4 py-1 rounded-xl transition-all ${
+              currentPage === 'home'
+                ? 'text-blue-600 bg-blue-50'
+                : 'text-gray-400 hover:text-gray-600'
+            }`}
+          >
+            <span className="text-xl">🏠</span>
+            <span className="text-[10px] font-bold">Casa</span>
+          </button>
+
+          {/* Status indicator */}
+          <div className="flex flex-col items-center gap-0.5 px-3">
+            <div className="flex items-center gap-1">
+              <span className="text-sm">⚡</span>
+              <div className="w-16 bg-gray-200 rounded-full h-2 overflow-hidden">
+                <div
+                  className={`h-full rounded-full transition-all duration-500 ${
+                    stats.energy < 20
+                      ? 'bg-red-500'
+                      : stats.energy < 50
+                        ? 'bg-yellow-500'
+                        : 'bg-green-500'
+                  }`}
+                  style={{ width: `${stats.energy}%` }}
+                />
+              </div>
+            </div>
+            <span className="text-[10px] text-gray-400 font-medium">{Math.round(stats.energy)}%</span>
           </div>
-          <svg className="absolute inset-0 w-full h-full pointer-events-none z-10" viewBox="0 0 100 100" preserveAspectRatio="none"><circle cx="50" cy="50" r={svgR} fill="none" stroke="rgba(59,130,246,0.7)" strokeWidth="0.8" strokeDasharray="3 2" strokeLinecap="round"/><circle cx="50" cy="50" r={svgR} fill="rgba(59,130,246,0.06)"/><rect x="45" y={50-svgR-3.5} width="10" height="2.8" rx="1" fill="rgba(59,130,246,0.85)"/><text x="50" y={50-svgR-1.7} textAnchor="middle" dominantBaseline="middle" fill="white" fontSize="1.8" fontWeight="bold">2.5m</text></svg>
-          <div className="absolute top-1 left-1 bg-black/40 backdrop-blur-sm rounded-lg px-1.5 py-0.5 z-20"><span className="text-[9px] text-white font-mono">📍 ({position.x.toFixed(1)}, {position.y.toFixed(1)})</span></div>
-          <div className="absolute bottom-1 left-1/2 -translate-x-1/2 text-[9px] text-white/60 font-mono whitespace-nowrap z-20 bg-black/30 rounded px-2 py-0.5">Mundo {WS}x{WS}m | 🚩 {col}/{flags.length}</div>
+
+          <button
+            onClick={() => setCurrentPage('game')}
+            className={`flex flex-col items-center gap-0.5 px-4 py-1 rounded-xl transition-all ${
+              currentPage === 'game'
+                ? 'text-blue-600 bg-blue-50'
+                : 'text-gray-400 hover:text-gray-600'
+            }`}
+          >
+            <span className="text-xl">🎮</span>
+            <span className="text-[10px] font-bold">Jogo</span>
+          </button>
         </div>
       </div>
-      <div className="flex flex-col gap-2 w-[100px] flex-shrink-0 overflow-y-auto pb-1" style={{maxHeight:'100%'}}>
-        <div className="bg-gradient-to-br from-yellow-400 to-orange-400 rounded-xl p-1.5 shadow-lg text-center flex-shrink-0"><p className="text-[9px] font-bold text-white/90 uppercase tracking-wider">🚩 Band.</p><p className="text-xl font-black text-white leading-tight">{col}</p><p className="text-[8px] text-white/80">{unc} rest.</p></div>
-        <div className="bg-white/90 backdrop-blur-sm rounded-xl p-1.5 shadow-lg border border-gray-200 flex-shrink-0"><p className="text-[9px] font-bold text-gray-500 text-center mb-0.5 uppercase tracking-wider">Mover</p><div className="grid grid-cols-3 gap-0.5 w-full"><div></div><button onClick={()=>move('up')} disabled={energy<=0} className="aspect-square bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 text-white rounded-lg flex items-center justify-center text-sm shadow-sm">▲</button><div></div><button onClick={()=>move('left')} disabled={energy<=0} className="aspect-square bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 text-white rounded-lg flex items-center justify-center text-sm shadow-sm">◄</button><button onClick={()=>move('down')} disabled={energy<=0} className="aspect-square bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 text-white rounded-lg flex items-center justify-center text-sm shadow-sm">▼</button><button onClick={()=>move('right')} disabled={energy<=0} className="aspect-square bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 text-white rounded-lg flex items-center justify-center text-sm shadow-sm">►</button></div></div>
-        <div className="bg-white/90 backdrop-blur-sm rounded-xl p-1.5 shadow-lg border border-gray-200 flex-shrink-0"><p className="text-[9px] font-bold text-gray-500 text-center mb-0.5 uppercase tracking-wider">Ações</p><div className="grid grid-cols-2 gap-0.5"><button onClick={onEat} className="aspect-square bg-orange-100 hover:bg-orange-200 rounded-lg flex flex-col items-center justify-center"><span className="text-base">🍕</span><span className="text-[7px] text-gray-500">Comer</span></button><button onClick={onSleep} className="aspect-square bg-indigo-100 hover:bg-indigo-200 rounded-lg flex flex-col items-center justify-center"><span className="text-base">😴</span><span className="text-[7px] text-gray-500">Dormir</span></button><button onClick={onPlay} className="aspect-square bg-pink-100 hover:bg-pink-200 rounded-lg flex flex-col items-center justify-center"><span className="text-base">🎮</span><span className="text-[7px] text-gray-500">Brincar</span></button><div className="aspect-square bg-gray-50 rounded-lg flex flex-col items-center justify-center"><span className="text-base">🔋</span><span className="text-[7px] text-gray-500">{Math.round(energy)}%</span></div></div></div>
-        <div className="bg-white/90 backdrop-blur-sm rounded-xl p-1.5 shadow-lg border border-gray-200 flex-1 min-h-0"><p className="text-[9px] font-bold text-gray-500 text-center mb-1 uppercase tracking-wider">Painéis</p><div className="space-y-0.5">{defs.map(({type:t,icon:ic,label:l,color:c})=><button key={t} onClick={()=>toggle(t)} className={'w-full flex items-center gap-1.5 px-1.5 py-1 rounded-lg text-xs transition-all '+(ap.includes(t)?c+' text-white shadow-md':'bg-gray-50 hover:bg-gray-100 text-gray-700')}><span>{ic}</span><span className="text-[9px] font-medium leading-tight">{l}</span></button>)}</div></div>
+
+      {/* Page Content */}
+      <div className="flex-1 overflow-hidden">
+        {currentPage === 'home' ? (
+          <HomePage
+            state={avatarState}
+            stats={stats}
+            onNavigate={setCurrentPage}
+            onSleep={handleSleep}
+            onEat={handleEat}
+            onPlay={handlePlay}
+          />
+        ) : (
+          <GamePage
+            position={position}
+            onMove={handleMove}
+            energy={stats.energy}
+            onSleep={handleSleep}
+            onEat={handleEat}
+            onPlay={handlePlay}
+          />
+        )}
       </div>
     </div>
-    <div className="hidden md:flex items-center justify-center py-1 px-3 text-[10px] text-gray-400 bg-gray-50/80 flex-shrink-0">💡 Setas ← ↑ ↓ → ou WASD | ⭕ Raio 2.5m | Mundo {WS}x{WS}m</div>
-  </div>
+  );
 }
-function App(){
-  const[page,setPage]=useState('home');const[as,setAs]=useState('idle');
-  const[pos,setPos]=useState({x:0.5,y:0.5});const[st,setSt]=useState({energy:100,hunger:80,happiness:70});
-  useEffect(()=>{const i=setInterval(()=>setSt(p=>({energy:Math.max(0,p.energy-ED),hunger:Math.max(0,p.hunger-ED*0.5),happiness:Math.max(0,p.happiness-ED*0.3)})),2000);return()=>clearInterval(i)},[]);
-  useEffect(()=>{if(st.energy<=15)setAs('tired');else if(as==='tired')setAs('idle')},[st.energy,as]);
-  const sleep=()=>{setAs('sleeping');setSt(p=>({...p,energy:Math.min(100,p.energy+30),hunger:Math.max(0,p.hunger-5)}));setTimeout(()=>setAs('idle'),2000)};
-  const eat=()=>{setAs('eating');setSt(p=>({...p,energy:Math.min(100,p.energy+15),hunger:Math.min(100,p.hunger+25)}));setTimeout(()=>setAs('idle'),1500)};
-  const play=()=>{if(st.energy<=0)return;setAs('playing');setSt(p=>({...p,energy:Math.max(0,p.energy-10),happiness:Math.min(100,p.happiness+20),hunger:Math.max(0,p.hunger-5)}));setTimeout(()=>setAs('idle'),1500)};
-  const moveFn=(np)=>{setPos(np);setAs('walking');setSt(p=>({...p,energy:Math.max(0,p.energy-2)}));setTimeout(()=>setAs(c=>c==='walking'?'idle':c),500)};
-  return <div className="h-[100dvh] w-screen overflow-hidden bg-gradient-to-br from-slate-50 via-white to-zinc-100 flex flex-col">
-    <div className="order-last bg-white border-t border-gray-200 shadow-lg flex-shrink-0"><div className="flex items-center justify-around py-2 max-w-md mx-auto">
-      <button onClick={()=>setPage('home')} className={'flex flex-col items-center gap-0.5 px-4 py-1 rounded-xl transition-all '+(page==='home'?'text-blue-600 bg-blue-50':'text-gray-400 hover:text-gray-600')}><span className="text-xl">🏠</span><span className="text-[10px] font-bold">Casa</span></button>
-      <div className="flex flex-col items-center gap-0.5 px-3"><div className="flex items-center gap-1"><span className="text-sm">⚡</span><div className="w-16 bg-gray-200 rounded-full h-2 overflow-hidden"><div className={'h-full rounded-full transition-all '+(st.energy<20?'bg-red-500':st.energy<50?'bg-yellow-500':'bg-green-500')} style={{width:st.energy+'%'}}></div></div></div><span className="text-[10px] text-gray-400 font-medium">{Math.round(st.energy)}%</span></div>
-      <button onClick={()=>setPage('game')} className={'flex flex-col items-center gap-0.5 px-4 py-1 rounded-xl transition-all '+(page==='game'?'text-blue-600 bg-blue-50':'text-gray-400 hover:text-gray-600')}><span className="text-xl">🎮</span><span className="text-[10px] font-bold">Jogo</span></button>
-    </div></div>
-    <div className="flex-1 overflow-hidden">{page==='home'?<HomePage avatarState={as} stats={st} onNavigate={setPage} onSleep={sleep} onEat={eat} onPlay={play}/>:<GamePage position={pos} onMove={moveFn} energy={st.energy} onSleep={sleep} onEat={eat} onPlay={play}/>}</div>
-  </div>
-}
-ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
-</script>
-</body>
-</html>
