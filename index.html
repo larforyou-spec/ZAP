@@ -1,380 +1,136 @@
 <!DOCTYPE html>
 <html lang="pt">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>ZAP FLAGS | Larforyou&reg;</title>
-  
-  <!-- LEAFLET CSS (Mapa Real) -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-
-  <style>
-    /* ================= DESIGN GERAL ================= */
-    * { box-sizing: border-box; user-select: none; font-family: 'Courier New', Courier, monospace; }
-    html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #000; color: #0f0; }
-    .hidden { display: none !important; }
-    
-    button { background: #0f0; color: #000; border: none; padding: 12px 15px; border-radius: 4px; font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 14px; }
-    button:hover { filter: brightness(1.2); }
-    .btn-dark { background: #111; color: #0f0; border: 1px solid #0f0; }
-    .btn-dark:hover { background: #222; }
-    .btn-link { background: none; border: none; color: #a7fca7; text-decoration: underline; padding: 0; font-size: 12px; font-weight: normal; margin-top: 10px; }
-    .btn-link:hover { color: #fff; }
-    
-    input, select { width: 100%; padding: 10px; margin-bottom: 10px; border-radius: 4px; border: 1px solid #0f0; background: #111; color: #0f0; }
-    input::placeholder { color: #0a0; opacity: 0.7; }
-    
-    /* ================= LOGIN E REGISTO ================= */
-    #login-screen { position: absolute; inset: 0; background: radial-gradient(circle, #002200 0%, #000000 100%); display: flex; align-items: center; justify-content: center; z-index: 10000; padding: 15px; overflow-y: auto; }
-    .login-box { width: 100%; max-width: 500px; background: rgba(0, 0, 0, 0.9); border: 2px solid #0f0; border-radius: 8px; padding: 25px; box-shadow: 0 0 20px rgba(0,255,0,0.2) inset; margin: auto; }
-    
-    .tab-container { display: flex; margin-bottom: 15px; border-radius: 4px; overflow: hidden; border: 1px solid #0f0; }
-    .tab-btn { flex: 1; padding: 12px; background: #111; color: #0f0; border-radius: 0; }
-    .tab-btn.active { background: #0f0; color: #000; }
-    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-
-    .title-h1 { text-align: center; color: #0f0; margin-top:0; text-shadow: 0 0 10px #0f0; font-size: 28px; }
-    .title-h3 { font-size: 16px; margin: 10px 0; border-bottom: 1px dashed #0f0; padding-bottom: 5px; color: #fff; }
-
-    /* ================= MAPA E JOGO ================= */
-    #map-wrap { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; }
-    #map { width: 100%; height: 100%; background: #000; }
-    
-    /* FOG OVERLAY (Nevoeiro do Mapa) */
-    #fog-overlay {
-      position: absolute; inset: 0; pointer-events: none; z-index: 450;
-      --fog-x: 50%; --fog-y: 50%; --fog-r: 90px;
-      background: radial-gradient(circle var(--fog-r) at var(--fog-x) var(--fog-y), rgba(0,0,0,0) 0%, rgba(0,0,0,0) 60%, rgba(0,30,90,0.60) 78%, rgba(0,30,90,0.86) 100%);
-    }
-
-    /* Icones do Mapa */
-    .player-marker { width: 30px; height: 30px; background: linear-gradient(135deg,#00f0ff,#0066ff); border: 3px solid #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 14px; font-weight: bold; box-shadow: 0 0 10px rgba(0,255,255,0.8); }
-    .flag-marker { width: 24px; height: 24px; background: #FF0000; border: 2px solid white; border-radius: 50%; box-shadow: 0 0 10px #FF0000; }
-
-    /* UI DO JOGO (Top Bar) */
-    #top-bar { position: absolute; top: 10px; left: 10px; right: 10px; background: rgba(0, 0, 0, 0.9); border: 1px solid #0f0; border-radius: 6px; padding: 10px; z-index: 2000; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
-    .stat { flex: 1; text-align: center; font-size: 12px; font-weight: bold; color: #0f0; }
-    .stat-bar { height: 6px; background: #222; border-radius: 3px; margin-top: 4px; overflow: hidden; border: 1px solid rgba(0,255,0,0.3); }
-    .stat-fill { height: 100%; background: linear-gradient(90deg, #008f1f, #00ff66); width: 100%; transition: width 0.3s; }
-
-    /* CONTROLOS OFFLINE (Painel arrastável que não desaparece) */
-    #offline-controls { position: absolute; bottom: 80px; left: 20px; z-index: 3000; background: rgba(0,0,0,0.9); border: 1px solid #0f0; border-radius: 6px; padding: 10px; text-align: center; box-shadow: 0 0 15px rgba(0,255,0,0.2) inset; }
-    .dpad { display: grid; grid-template-columns: 50px 50px 50px; gap: 5px; margin-top: 10px; }
-    .dpad button { width: 50px; height: 50px; font-size: 20px; padding: 0; }
-
-    /* AVISO DE DESCANSO */
-    #sleep-modal { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.95); padding: 20px; border: 2px solid #0f0; border-radius: 8px; text-align: center; z-index: 4000; display: none; box-shadow: 0 0 20px rgba(0,255,0,0.4); }
-
-    /* ================= MARCAS LARFORYOU ================= */
-    .watermark { position: fixed; bottom: 35px; left: 15px; font-size: 20px; font-weight: bold; color: rgba(0, 255, 0, 0.5); text-shadow: 2px 2px 4px #000; z-index: 9999; pointer-events: none; }
-    .copyright { position: fixed; bottom: 5px; width: 100%; text-align: center; font-size: 11px; color: rgba(0, 255, 0, 0.5); z-index: 9999; pointer-events: none; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Avatar Life - Mundo Aberto</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+  @keyframes bounce-slow{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+  @keyframes pulse-glow{0%,100%{opacity:.6}50%{opacity:1}}
+  .bounce-slow{animation:bounce-slow 1.5s ease-in-out infinite}
+  .pulse-glow{animation:pulse-glow 2s ease-in-out infinite}
+  body{overscroll-behavior:none;user-select:none;-webkit-user-select:none}
+  button:active{transform:scale(0.92)}
+</style>
 </head>
-<body>
-
-  <!-- MARCA REGISTADA LARFORYOU -->
-  <div class="watermark">Larforyou&reg;</div>
-  <div class="copyright">&copy; 2024 Larforyou&reg; - Marca Registada. Todos os direitos reservados.</div>
-
-  <!-- ECRÃ DE LOGIN COMPLETO -->
-  <div id="login-screen">
-    <div class="login-box">
-      <h1 class="title-h1">ZAP FLAGS</h1>
-      
-      <!-- ESCOLHA: JOGADOR OU PR -->
-      <div style="display:flex; gap:10px; margin-bottom:15px;">
-        <button id="btn-tab-jg" class="tab-btn active" onclick="switchMainTab('JG')">JOGADOR</button>
-        <button id="btn-tab-pr" class="tab-btn btn-dark" onclick="switchMainTab('PR')">EMPRESA / PR</button>
+<body class="bg-slate-100">
+<div id="root"></div>
+<script type="text/babel">
+const{useState,useEffect,useCallback,useRef}=React;
+const WS=20,PR=2.5,ED=0.3,VC=8;
+function dist(a,b){return Math.sqrt((a.x-b.x)**2+(a.y-b.y)**2)}
+function genFlags(n,ex){const f=[];let id=0;while(f.length<n){const x=Math.floor(Math.random()*WS)+0.5,y=Math.floor(Math.random()*WS)+0.5;if(!ex.some(e=>dist(e,{x,y})<3)&&!f.some(g=>dist(g,{x,y})<1.5))f.push({id:id++,x,y,collected:false})}return f}
+function SpeechBubble({t}){if(!t)return null;return <div className="absolute -top-16 left-1/2 -translate-x-1/2 z-30 bounce-slow"><div className="bg-white border-2 border-gray-300 rounded-2xl px-3 py-2 shadow-xl relative whitespace-nowrap"><p className="text-xs font-semibold text-gray-700">{t}</p></div></div>}
+function Avatar({state,energy,hunger,happiness,size='md'}){
+  const sz={sm:'w-10 h-10 text-lg',md:'w-16 h-16 text-3xl',lg:'w-24 h-24 text-5xl'};
+  const isTired=energy<=15;
+  const emoji=isTired?'😴':state==='eating'?'🍕':state==='sleeping'?'😴':state==='playing'?'🎮':state==='walking'?'🚶':'😊';
+  let sp=null;
+  if(isTired&&state!=='sleeping')sp='Estou cansado, preciso dormir 15 minutos 💤';
+  else if(hunger<=15&&state!=='eating')sp='Estou com fome, preciso comer! 🍔';
+  else if(happiness<=15&&state!=='playing')sp='Estou triste, preciso brincar! 🎯';
+  return <div className="flex flex-col items-center gap-2 relative">
+    <SpeechBubble t={sp}/>
+    <div className={sz[size]+' rounded-full flex items-center justify-center shadow-xl '+(isTired?'bg-red-100 ring-4 ring-red-300':'bg-gradient-to-br from-blue-100 to-purple-100 ring-4 ring-blue-200')}>
+      <span>{emoji}</span></div>
+    <div className="w-full max-w-[120px]"><div className="flex items-center gap-1"><span className="text-xs">⚡</span>
+      <div className="flex-1 bg-gray-200 rounded-full h-2 overflow-hidden">
+        <div className={'h-full rounded-full transition-all '+(isTired?'bg-red-500':energy<40?'bg-yellow-500':'bg-green-500')} style={{width:energy+'%'}}></div></div>
+      <span className="text-xs font-bold text-gray-600 w-8 text-right">{Math.round(energy)}%</span></div></div></div>
+}
+function HomePage({avatarState,stats,onNavigate,onSleep,onEat,onPlay}){
+  return <div className="flex flex-col h-full bg-gradient-to-b from-sky-100 via-blue-50 to-white">
+    <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-4 py-3 shadow-lg"><h1 className="text-lg font-bold text-center">🏠 Casa do Avatar</h1></div>
+    <div className="flex-1 flex flex-col items-center justify-center gap-4 p-4">
+      <Avatar state={avatarState} energy={stats.energy} hunger={stats.hunger} happiness={stats.happiness} size="lg"/>
+      <div className="w-full max-w-xs bg-white/80 backdrop-blur-sm rounded-2xl p-4 shadow-lg space-y-3">
+        <h2 className="text-sm font-bold text-gray-700 text-center mb-2">Estado do Avatar</h2>
+        {[{icon:'⚡',label:'Energia',val:stats.energy},{icon:'🍔',label:'Fome',val:stats.hunger},{icon:'😄',label:'Felicidade',val:stats.happiness}].map(s=>
+          <div key={s.label}><div className="flex justify-between text-xs mb-1"><span>{s.icon} {s.label}</span><span className="font-bold">{Math.round(s.val)}%</span></div>
+            <div className="bg-gray-200 rounded-full h-3 overflow-hidden"><div className={'h-full rounded-full transition-all '+(s.val<20?'bg-red-500':s.val<50?'bg-yellow-500':'bg-green-500')} style={{width:s.val+'%'}}></div></div></div>
+        )}</div>
+      <div className="flex gap-3">
+        <button onClick={onEat} className="bg-orange-500 text-white rounded-2xl px-5 py-3 shadow-lg active:scale-95 flex flex-col items-center"><span className="text-xl">🍕</span><span className="text-xs font-medium mt-1">Comer</span></button>
+        <button onClick={onSleep} className="bg-indigo-500 text-white rounded-2xl px-5 py-3 shadow-lg active:scale-95 flex flex-col items-center"><span className="text-xl">😴</span><span className="text-xs font-medium mt-1">Dormir</span></button>
+        <button onClick={onPlay} className="bg-pink-500 text-white rounded-2xl px-5 py-3 shadow-lg active:scale-95 flex flex-col items-center"><span className="text-xl">🎮</span><span className="text-xs font-medium mt-1">Brincar</span></button></div>
+      <button onClick={()=>onNavigate('game')} className="bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-2xl px-8 py-3 shadow-lg active:scale-95 font-bold text-base">🎮 Ir Jogar!</button>
+    </div></div>
+}
+function GamePage({position,onMove,energy,onSleep,onEat,onPlay}){
+  const[ap,setAp]=useState([]);const[mh,setMh]=useState(0);
+  const[flags,setFlags]=useState(()=>genFlags(12,[]));const[col,setCol]=useState(0);
+  const[toast,setToast]=useState(null);const[wf,setWf]=useState(0);const tRef=useRef(null);
+  useEffect(()=>{const i=setInterval(()=>setWf(f=>(f+1)%2),300);return()=>clearInterval(i)},[]);
+  const hTS=(e)=>{tRef.current={x:e.touches[0].clientX,y:e.touches[0].clientY}};
+  const hTE=(e)=>{if(!tRef.current)return;const dx=e.changedTouches[0].clientX-tRef.current.x,dy=e.changedTouches[0].clientY-tRef.current.y;if(Math.max(Math.abs(dx),Math.abs(dy))<20)return;Math.abs(dx)>Math.abs(dy)?move(dx>0?'right':'left'):move(dy>0?'down':'up');tRef.current=null};
+  useEffect(()=>{setFlags(prev=>{let ch=false;const up=prev.map(f=>{if(f.collected)return f;if(dist(position,{x:f.x,y:f.y})<=PR){ch=true;setToast('🚩 Bandeira apanhada!');setTimeout(()=>setToast(null),2000);return{...f,collected:true}}return f});if(ch){setCol(c=>c+1);const r=up.filter(f=>!f.collected);if(r.length===0){setToast('🎉 Todas apanhadas!');setTimeout(()=>setToast(null),3000);setTimeout(()=>setFlags(genFlags(12,[])),1500)}}return up})},[position]);
+  const move=useCallback((dir)=>{if(energy<=0)return;const sp=0.8,np={...position};if(dir==='up')np.y=Math.max(0.5,position.y-sp);if(dir==='down')np.y=Math.min(WS-0.5,position.y+sp);if(dir==='left')np.x=Math.max(0.5,position.x-sp);if(dir==='right')np.x=Math.min(WS-0.5,position.x+sp);if(Math.abs(np.x-position.x)>0.01||Math.abs(np.y-position.y)>0.01){onMove(np);setMh(h=>h+1)}},[position,onMove,energy]);
+  useEffect(()=>{const h=(e)=>{if(e.key==='ArrowUp'||e.key==='w'||e.key==='W'){e.preventDefault();move('up')}if(e.key==='ArrowDown'||e.key==='s'||e.key==='S'){e.preventDefault();move('down')}if(e.key==='ArrowLeft'||e.key==='a'||e.key==='A'){e.preventDefault();move('left')}if(e.key==='ArrowRight'||e.key==='d'||e.key==='D'){e.preventDefault();move('right')}};window.addEventListener('keydown',h);return()=>window.removeEventListener('keydown',h)},[move]);
+  const toggle=(p)=>setAp(prev=>{if(prev.includes(p))return prev.filter(x=>x!==p);if(prev.length>=2)return[p];return[...prev,p]});
+  const sc=Math.max(0,Math.floor(position.x-VC/2)),sr=Math.max(0,Math.floor(position.y-VC/2));
+  const vc=Math.min(VC,WS-sc),vr=Math.min(VC,WS-sr);
+  const cir=new Set();for(let y=0;y<WS;y++)for(let x=0;x<WS;x++)if(dist(position,{x:x+0.5,y:y+0.5})<=PR)cir.add(x+','+y);
+  const unc=flags.filter(f=>!f.collected).length;
+  const defs=[{type:'inventory',icon:'🎒',label:'Inventário',color:'bg-amber-500'},{type:'map',icon:'🗺️',label:'Mapa',color:'bg-green-500'},{type:'stats',icon:'📊',label:'Estatísticas',color:'bg-blue-500'},{type:'settings',icon:'⚙️',label:'Definições',color:'bg-gray-500'}];
+  const ico={inventory:'🎒',map:'🗺️',stats:'📊',settings:'⚙️'};
+  const lbl={inventory:'Inventário',map:'Mapa',stats:'Estatísticas',settings:'Definições'};
+  const svgR=(PR/VC)*100;
+  const getDec=(gx,gy)=>{const v=(gx*31+gy*17+gx*gy*7)%23;return v===0?'🌳':v===1?'🏠':v===2?'🌸':v===3?'🪨':v===4?'🌻':v===5?'🍄':v===6?'⛲':v===7?'🌲':null};
+  const pCnt=(p)=>{
+    if(!p)return null;
+    if(p==='inventory')return <div className="p-3"><h3 className="font-bold text-sm mb-2">🎒 Inventário</h3><div className="flex items-center gap-2 mb-2 bg-yellow-50 rounded-lg p-2"><span className="text-lg">🚩</span><span className="text-xs font-bold text-yellow-700">{col} apanhadas</span></div><div className="grid grid-cols-4 gap-1.5">{['🍎','🍞','🧃','💊','🗝️','📦','🎁','🧸'].map((it,i)=><div key={i} className="bg-white/80 rounded-lg p-1.5 text-center text-lg">{it}</div>)}</div></div>;
+    if(p==='map')return <div className="p-3"><h3 className="font-bold text-sm mb-2">🗺️ Mapa</h3><div className="bg-green-50 rounded-xl p-3 text-center"><p className="text-[10px] text-gray-600 mb-1">Pos: ({position.x.toFixed(1)},{position.y.toFixed(1)}) | 🚩 {unc}</p><div className="grid grid-cols-8 gap-[2px] max-w-[180px] mx-auto">{Array.from({length:64}).map((_,i)=>{const gx=i%8,gy=Math.floor(i/8);const isP=Math.floor(position.x)===gx&&Math.floor(position.y)===gy;const fl=flags.find(f=>Math.floor(f.x)===gx&&Math.floor(f.y)===gy&&!f.collected);return<div key={i} className={'aspect-square rounded-[1px] text-[6px] flex items-center justify-center '+(isP?'bg-blue-500 ring-[1px] ring-blue-300':fl?'bg-yellow-100 border border-yellow-300':'bg-green-200')}>{fl&&<span>🚩</span>}</div>})}</div></div></div>;
+    if(p==='stats')return <div className="p-3"><h3 className="font-bold text-sm mb-2">📊 Estatísticas</h3><div className="space-y-2"><div><div className="flex justify-between text-[10px] mb-0.5"><span>⚡ Energia</span><span className="font-bold">{Math.round(energy)}%</span></div><div className="bg-gray-200 rounded-full h-2 overflow-hidden"><div className={'h-full rounded-full '+(energy<20?'bg-red-500':energy<50?'bg-yellow-500':'bg-green-500')} style={{width:energy+'%'}}></div></div></div><div className="text-[10px] text-gray-600 space-y-0.5"><p>🚶 Passos: {mh}</p><p>📍 ({position.x.toFixed(1)}, {position.y.toFixed(1)})</p><p>🚩 Apanhadas: <span className="font-bold text-green-600">{col}</span></p><p>🏳️ Restantes: <span className="font-bold text-yellow-600">{unc}</span></p></div></div></div>;
+    return <div className="p-3"><h3 className="font-bold text-sm mb-2">⚙️ Definições</h3><div className="space-y-1.5"><button onClick={onSleep} className="w-full bg-indigo-500 text-white rounded-lg py-1.5 px-3 text-[11px]">😴 Dormir</button><button onClick={onEat} className="w-full bg-orange-500 text-white rounded-lg py-1.5 px-3 text-[11px]">🍕 Comer</button><button onClick={onPlay} className="w-full bg-pink-500 text-white rounded-lg py-1.5 px-3 text-[11px]">🎮 Brincar</button></div></div>;
+  };
+  const aEmoji=energy<=15?'😴':wf===0?'😊':'🚶';
+  return <div className="flex flex-col h-[100dvh] max-h-[100dvh] overflow-hidden">
+    {toast&&<div className="fixed top-3 left-1/2 -translate-x-1/2 z-[100] bg-green-500 text-white px-4 py-2 rounded-xl shadow-xl text-xs font-bold animate-bounce pointer-events-none whitespace-nowrap">{toast}</div>}
+    {ap.length>0&&<div className="flex-shrink-0 max-h-[45%] overflow-hidden"><div className={'flex gap-2 p-2 transition-all '+(ap.length===1?'':'gap-1')}>{ap.map((p,idx)=>{const sm=ap.length>1&&idx===0;return <div key={p} className={'bg-gradient-to-br from-gray-800/95 to-gray-900/95 rounded-2xl text-white shadow-2xl border border-gray-600/50 overflow-hidden backdrop-blur-sm transition-all relative '+(sm?'w-1/3 min-w-[120px] max-h-[100px]':'flex-1 min-w-0 max-h-[160px]')}><button onClick={()=>toggle(p)} className="absolute top-2 right-2 w-5 h-5 bg-white/20 rounded-full flex items-center justify-center text-xs z-10">✕</button>{sm&&<div className="p-2 text-center border-b border-white/10"><span className="text-lg">{ico[p]}</span><p className="text-[10px] text-gray-300 mt-0.5">{lbl[p]}</p></div>}<div className={'overflow-y-auto '+(sm?'max-h-[70px]':'max-h-[150px]')}>{pCnt(p)}</div></div>})}</div></div>}
+    <div className="flex-1 flex flex-row gap-2 p-2 min-h-0 overflow-hidden">
+      <div className="flex-1 flex items-center justify-center min-h-0 relative" onTouchStart={hTS} onTouchEnd={hTE}>
+        <div className="relative w-full max-w-[340px] aspect-square max-h-full rounded-2xl overflow-hidden shadow-xl border-2 border-gray-400">
+          <div className="grid w-full h-full" style={{gridTemplateColumns:'repeat('+vc+',1fr)',gridTemplateRows:'repeat('+vr+',1fr)'}}>
+            {Array.from({length:vc*vr}).map((_,i)=>{const col=i%vc,row=Math.floor(i/vc);const gx=sc+col,gy=sr+row;const isAv=Math.floor(position.x)===gx&&Math.floor(position.y)===gy;const cfx=position.x-gx,cfy=position.y-gy;const isE=(gx+gy)%2===0;const inR=cir.has(gx+','+gy);const fl=flags.find(f=>!f.collected&&Math.floor(f.x)===gx&&Math.floor(f.y)===gy);const dec=getDec(gx,gy);return <div key={gx+'-'+gy} className={'relative '+(isAv?'bg-blue-200/60':fl?'bg-yellow-100/80':inR?'bg-emerald-100':isE?'bg-emerald-200':'bg-emerald-300')} style={{borderRight:'1px solid rgba(0,0,0,0.06)',borderBottom:'1px solid rgba(0,0,0,0.06)'}}>{inR&&!isAv&&<div className="absolute inset-0 bg-blue-300/15"/>}{gx===0&&<div className="absolute left-0 top-0 bottom-0 w-0.5 bg-red-400/40"/>}{gy===0&&<div className="absolute top-0 left-0 right-0 h-0.5 bg-red-400/40"/>}{gx===WS-1&&<div className="absolute right-0 top-0 bottom-0 w-0.5 bg-red-400/40"/>}{gy===WS-1&&<div className="absolute bottom-0 left-0 right-0 h-0.5 bg-red-400/40"/>}{dec&&!isAv&&!fl&&<span className="absolute inset-0 flex items-center justify-center text-sm opacity-50">{dec}</span>}{fl&&!isAv&&<div className="absolute inset-0 flex items-center justify-center pulse-glow z-10"><span className="text-lg sm:text-xl drop-shadow-md">🚩</span></div>}{isAv&&<div className="absolute z-20 transition-all duration-200 ease-out" style={{left:cfx*100+'%',top:cfy*100+'%',width:100/VC+'%',height:100/VC+'%',display:'flex',alignItems:'center',justifyContent:'center'}}><span className="text-2xl sm:text-3xl drop-shadow-lg">{aEmoji}</span></div>}</div>})}
+          </div>
+          <svg className="absolute inset-0 w-full h-full pointer-events-none z-10" viewBox="0 0 100 100" preserveAspectRatio="none"><circle cx="50" cy="50" r={svgR} fill="none" stroke="rgba(59,130,246,0.7)" strokeWidth="0.8" strokeDasharray="3 2" strokeLinecap="round"/><circle cx="50" cy="50" r={svgR} fill="rgba(59,130,246,0.06)"/><rect x="45" y={50-svgR-3.5} width="10" height="2.8" rx="1" fill="rgba(59,130,246,0.85)"/><text x="50" y={50-svgR-1.7} textAnchor="middle" dominantBaseline="middle" fill="white" fontSize="1.8" fontWeight="bold">2.5m</text></svg>
+          <div className="absolute top-1 left-1 bg-black/40 backdrop-blur-sm rounded-lg px-1.5 py-0.5 z-20"><span className="text-[9px] text-white font-mono">📍 ({position.x.toFixed(1)}, {position.y.toFixed(1)})</span></div>
+          <div className="absolute bottom-1 left-1/2 -translate-x-1/2 text-[9px] text-white/60 font-mono whitespace-nowrap z-20 bg-black/30 rounded px-2 py-0.5">Mundo {WS}x{WS}m | 🚩 {col}/{flags.length}</div>
+        </div>
       </div>
-
-      <!-- ====================== ÁREA DO JOGADOR ====================== -->
-      <div id="area-jg">
-        
-        <!-- JG: LOGIN SIMPLES -->
-        <div id="jg-login-view">
-          <div style="font-size:12px; color:#a7fca7; margin-bottom:15px; text-align:center;">Entrar na Conta Jogador</div>
-          <input type="text" id="jg-log-nome" placeholder="* Nome do Jogador" />
-          <input type="password" id="jg-log-senha" placeholder="* Senha" />
-          
-          <div style="display:flex; justify-content:space-between; margin-bottom:15px;">
-            <button class="btn-link" onclick="alert('Funcionalidade de Recuperação em breve.')">Esqueci a Senha?</button>
-          </div>
-          
-          <button style="width:100%; padding:14px; font-size:16px;" onclick="startGame('GPS')">ENTRAR NO JOGO</button>
-          <div style="text-align:center; margin-top:15px; border-top: 1px dashed #0f0; padding-top: 15px;">
-            <span style="font-size:13px; color:#fff;">Ainda não tens conta?</span><br>
-            <button class="btn-dark" style="margin-top:10px; width:100%;" onclick="switchView('JG', 'REG')">CRIAR CONTA (Registar)</button>
-          </div>
-        </div>
-
-        <!-- JG: REGISTO COMPLETO -->
-        <div id="jg-reg-view" class="hidden">
-          <h3 class="title-h3">Registo de Jogador</h3>
-          <input type="text" placeholder="* Nome" />
-          <div class="form-grid">
-            <input type="email" placeholder="* E-mail" />
-            <input type="text" placeholder="Contacto (Telemóvel)" />
-          </div>
-          <input type="text" placeholder="Morada" />
-          <div class="form-grid">
-            <input type="text" placeholder="Localidade" />
-            <input type="text" placeholder="Distrito" />
-          </div>
-          <div class="form-grid">
-            <input type="password" placeholder="* Senha" />
-            <input type="password" placeholder="* Confirmar Senha" />
-          </div>
-          
-          <button style="width:100%; margin-top:10px; padding:14px; font-size:16px;" onclick="alert('Jogador Registado com Sucesso!'); switchView('JG', 'LOG');">CONCLUIR REGISTO</button>
-          <button class="btn-link" style="width:100%; text-align:center; margin-top:15px;" onclick="switchView('JG', 'LOG')">Voltar para o Login</button>
-        </div>
-
+      <div className="flex flex-col gap-2 w-[100px] flex-shrink-0 overflow-y-auto pb-1" style={{maxHeight:'100%'}}>
+        <div className="bg-gradient-to-br from-yellow-400 to-orange-400 rounded-xl p-1.5 shadow-lg text-center flex-shrink-0"><p className="text-[9px] font-bold text-white/90 uppercase tracking-wider">🚩 Band.</p><p className="text-xl font-black text-white leading-tight">{col}</p><p className="text-[8px] text-white/80">{unc} rest.</p></div>
+        <div className="bg-white/90 backdrop-blur-sm rounded-xl p-1.5 shadow-lg border border-gray-200 flex-shrink-0"><p className="text-[9px] font-bold text-gray-500 text-center mb-0.5 uppercase tracking-wider">Mover</p><div className="grid grid-cols-3 gap-0.5 w-full"><div></div><button onClick={()=>move('up')} disabled={energy<=0} className="aspect-square bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 text-white rounded-lg flex items-center justify-center text-sm shadow-sm">▲</button><div></div><button onClick={()=>move('left')} disabled={energy<=0} className="aspect-square bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 text-white rounded-lg flex items-center justify-center text-sm shadow-sm">◄</button><button onClick={()=>move('down')} disabled={energy<=0} className="aspect-square bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 text-white rounded-lg flex items-center justify-center text-sm shadow-sm">▼</button><button onClick={()=>move('right')} disabled={energy<=0} className="aspect-square bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 text-white rounded-lg flex items-center justify-center text-sm shadow-sm">►</button></div></div>
+        <div className="bg-white/90 backdrop-blur-sm rounded-xl p-1.5 shadow-lg border border-gray-200 flex-shrink-0"><p className="text-[9px] font-bold text-gray-500 text-center mb-0.5 uppercase tracking-wider">Ações</p><div className="grid grid-cols-2 gap-0.5"><button onClick={onEat} className="aspect-square bg-orange-100 hover:bg-orange-200 rounded-lg flex flex-col items-center justify-center"><span className="text-base">🍕</span><span className="text-[7px] text-gray-500">Comer</span></button><button onClick={onSleep} className="aspect-square bg-indigo-100 hover:bg-indigo-200 rounded-lg flex flex-col items-center justify-center"><span className="text-base">😴</span><span className="text-[7px] text-gray-500">Dormir</span></button><button onClick={onPlay} className="aspect-square bg-pink-100 hover:bg-pink-200 rounded-lg flex flex-col items-center justify-center"><span className="text-base">🎮</span><span className="text-[7px] text-gray-500">Brincar</span></button><div className="aspect-square bg-gray-50 rounded-lg flex flex-col items-center justify-center"><span className="text-base">🔋</span><span className="text-[7px] text-gray-500">{Math.round(energy)}%</span></div></div></div>
+        <div className="bg-white/90 backdrop-blur-sm rounded-xl p-1.5 shadow-lg border border-gray-200 flex-1 min-h-0"><p className="text-[9px] font-bold text-gray-500 text-center mb-1 uppercase tracking-wider">Painéis</p><div className="space-y-0.5">{defs.map(({type:t,icon:ic,label:l,color:c})=><button key={t} onClick={()=>toggle(t)} className={'w-full flex items-center gap-1.5 px-1.5 py-1 rounded-lg text-xs transition-all '+(ap.includes(t)?c+' text-white shadow-md':'bg-gray-50 hover:bg-gray-100 text-gray-700')}><span>{ic}</span><span className="text-[9px] font-medium leading-tight">{l}</span></button>)}</div></div>
       </div>
-
-
-      <!-- ====================== ÁREA DA EMPRESA (PR) ====================== -->
-      <div id="area-pr" class="hidden">
-        
-        <!-- PR: LOGIN SIMPLES -->
-        <div id="pr-login-view">
-          <div style="font-size:12px; color:#a7fca7; margin-bottom:15px; text-align:center;">Painel de Gestão da Empresa (Sede / Filial)</div>
-          <input type="email" id="pr-log-email" placeholder="* E-mail da Empresa" />
-          <input type="password" id="pr-log-senha" placeholder="* Senha" />
-          
-          <div style="display:flex; justify-content:space-between; margin-bottom:15px;">
-            <button class="btn-link" onclick="alert('Funcionalidade de Recuperação em breve.')">Esqueci a Senha?</button>
-          </div>
-          
-          <button style="width:100%; padding:14px; font-size:16px;" onclick="alert('Acesso validado! Dashboard de gestão a abrir.')">ENTRAR NA ADMINISTRAÇÃO</button>
-          <div style="text-align:center; margin-top:15px; border-top: 1px dashed #0f0; padding-top: 15px;">
-            <span style="font-size:13px; color:#fff;">Nova Parceria Comercial?</span><br>
-            <button class="btn-dark" style="margin-top:10px; width:100%;" onclick="switchView('PR', 'REG')">REGISTAR EMPRESA</button>
-          </div>
-        </div>
-
-        <!-- PR: REGISTO COMPLETO E FATURAÇÃO -->
-        <div id="pr-reg-view" class="hidden">
-          <h3 class="title-h3">Dados da Empresa / Faturação</h3>
-          <input type="text" placeholder="* Nome da Empresa Sede" />
-          <div class="form-grid">
-            <input type="text" placeholder="* NIF" />
-            <input type="text" placeholder="* E-mail Faturação" />
-          </div>
-          <input type="text" placeholder="* Morada da Sede" />
-          <div class="form-grid">
-            <input type="text" placeholder="* Localidade" />
-            <input type="text" placeholder="* Distrito" />
-          </div>
-          
-          <h3 class="title-h3">Gestor Responsável pelo Jogo</h3>
-          <input type="text" placeholder="* Nome do Responsável" />
-          <div class="form-grid">
-            <input type="email" placeholder="* E-mail Pessoal (Login)" />
-            <input type="text" placeholder="* Contacto (Telemóvel)" />
-          </div>
-          <div class="form-grid">
-            <input type="password" placeholder="* Senha" />
-            <input type="password" placeholder="* Confirmar Senha" />
-          </div>
-          
-          <button style="width:100%; margin-top:10px; padding:14px; font-size:16px;" onclick="alert('Empresa registada com Sucesso! Aguarde aprovação.'); switchView('PR', 'LOG');">CONCLUIR REGISTO DA EMPRESA</button>
-          <button class="btn-link" style="width:100%; text-align:center; margin-top:15px;" onclick="switchView('PR', 'LOG')">Voltar para o Login</button>
-        </div>
-
-      </div>
-
     </div>
+    <div className="hidden md:flex items-center justify-center py-1 px-3 text-[10px] text-gray-400 bg-gray-50/80 flex-shrink-0">💡 Setas ← ↑ ↓ → ou WASD | ⭕ Raio 2.5m | Mundo {WS}x{WS}m</div>
   </div>
-
-  <!-- JOGO E MAPA LEAFLET -->
-  <div id="game-screen" class="hidden">
-    <div id="map-wrap">
-      <div id="map"></div>
-      <div id="fog-overlay"></div>
-    </div>
-
-    <!-- Top Bar -->
-    <div id="top-bar">
-      <div class="stat">Energia <span id="val-ener">100</span>%<div class="stat-bar"><div id="bar-ener" class="stat-fill"></div></div></div>
-      <div class="stat">Visão <span id="val-visao">25</span>m<div class="stat-bar"><div class="stat-fill" style="background:#00f0ff;"></div></div></div>
-      <div class="stat">Bandeiras: <span id="val-flags" style="color:#fff; font-size:16px;">0</span></div>
-      <button class="btn-dark" style="padding:5px;" onclick="rest15Min()">💤 Descansar</button>
-    </div>
-
-    <!-- Painel Offline (Não Desaparece!) -->
-    <div id="offline-controls" class="hidden">
-      <div style="font-size:12px; color:#0f0;">Controlos de Movimento</div>
-      <div class="dpad">
-        <div></div><button onclick="movePlayer(0, 1)">▲</button><div></div>
-        <button onclick="movePlayer(-1, 0)">◀</button><button onclick="refreshFlags()">🔄</button><button onclick="movePlayer(1, 0)">▶</button>
-        <div></div><button onclick="movePlayer(0, -1)">▼</button><div></div>
-      </div>
-    </div>
+}
+function App(){
+  const[page,setPage]=useState('home');const[as,setAs]=useState('idle');
+  const[pos,setPos]=useState({x:0.5,y:0.5});const[st,setSt]=useState({energy:100,hunger:80,happiness:70});
+  useEffect(()=>{const i=setInterval(()=>setSt(p=>({energy:Math.max(0,p.energy-ED),hunger:Math.max(0,p.hunger-ED*0.5),happiness:Math.max(0,p.happiness-ED*0.3)})),2000);return()=>clearInterval(i)},[]);
+  useEffect(()=>{if(st.energy<=15)setAs('tired');else if(as==='tired')setAs('idle')},[st.energy,as]);
+  const sleep=()=>{setAs('sleeping');setSt(p=>({...p,energy:Math.min(100,p.energy+30),hunger:Math.max(0,p.hunger-5)}));setTimeout(()=>setAs('idle'),2000)};
+  const eat=()=>{setAs('eating');setSt(p=>({...p,energy:Math.min(100,p.energy+15),hunger:Math.min(100,p.hunger+25)}));setTimeout(()=>setAs('idle'),1500)};
+  const play=()=>{if(st.energy<=0)return;setAs('playing');setSt(p=>({...p,energy:Math.max(0,p.energy-10),happiness:Math.min(100,p.happiness+20),hunger:Math.max(0,p.hunger-5)}));setTimeout(()=>setAs('idle'),1500)};
+  const moveFn=(np)=>{setPos(np);setAs('walking');setSt(p=>({...p,energy:Math.max(0,p.energy-2)}));setTimeout(()=>setAs(c=>c==='walking'?'idle':c),500)};
+  return <div className="h-[100dvh] w-screen overflow-hidden bg-gradient-to-br from-slate-50 via-white to-zinc-100 flex flex-col">
+    <div className="order-last bg-white border-t border-gray-200 shadow-lg flex-shrink-0"><div className="flex items-center justify-around py-2 max-w-md mx-auto">
+      <button onClick={()=>setPage('home')} className={'flex flex-col items-center gap-0.5 px-4 py-1 rounded-xl transition-all '+(page==='home'?'text-blue-600 bg-blue-50':'text-gray-400 hover:text-gray-600')}><span className="text-xl">🏠</span><span className="text-[10px] font-bold">Casa</span></button>
+      <div className="flex flex-col items-center gap-0.5 px-3"><div className="flex items-center gap-1"><span className="text-sm">⚡</span><div className="w-16 bg-gray-200 rounded-full h-2 overflow-hidden"><div className={'h-full rounded-full transition-all '+(st.energy<20?'bg-red-500':st.energy<50?'bg-yellow-500':'bg-green-500')} style={{width:st.energy+'%'}}></div></div></div><span className="text-[10px] text-gray-400 font-medium">{Math.round(st.energy)}%</span></div>
+      <button onClick={()=>setPage('game')} className={'flex flex-col items-center gap-0.5 px-4 py-1 rounded-xl transition-all '+(page==='game'?'text-blue-600 bg-blue-50':'text-gray-400 hover:text-gray-600')}><span className="text-xl">🎮</span><span className="text-[10px] font-bold">Jogo</span></button>
+    </div></div>
+    <div className="flex-1 overflow-hidden">{page==='home'?<HomePage avatarState={as} stats={st} onNavigate={setPage} onSleep={sleep} onEat={eat} onPlay={play}/>:<GamePage position={pos} onMove={moveFn} energy={st.energy} onSleep={sleep} onEat={eat} onPlay={play}/>}</div>
   </div>
-
-  <!-- AVISO DE DESCANSO -->
-  <div id="sleep-modal">
-    <h2 style="color:#0f0;">💤 A Descansar...</h2>
-    <p>O avatar está a recuperar energia (15 min simulados em 5 seg).</p>
-    <div class="stat-bar" style="width:100%; height:15px; margin-top:10px;"><div id="sleep-progress" class="stat-fill" style="width:0%;"></div></div>
-  </div>
-
-  <!-- LEAFLET JS -->
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script>
-    // --- LÓGICA DAS JANELAS DE LOGIN / REGISTO ---
-    function switchMainTab(mode) {
-      document.getElementById('area-jg').classList.toggle('hidden', mode !== 'JG');
-      document.getElementById('area-pr').classList.toggle('hidden', mode !== 'PR');
-      document.getElementById('btn-tab-jg').className = mode === 'JG' ? 'tab-btn active' : 'tab-btn btn-dark';
-      document.getElementById('btn-tab-pr').className = mode === 'PR' ? 'tab-btn active' : 'tab-btn btn-dark';
-      
-      // Ao mudar de separador, mostra sempre o Login primeiro
-      switchView(mode, 'LOG');
-    }
-
-    function switchView(context, view) {
-      if (context === 'JG') {
-        document.getElementById('jg-login-view').classList.toggle('hidden', view !== 'LOG');
-        document.getElementById('jg-reg-view').classList.toggle('hidden', view !== 'REG');
-      } else {
-        document.getElementById('pr-login-view').classList.toggle('hidden', view !== 'LOG');
-        document.getElementById('pr-reg-view').classList.toggle('hidden', view !== 'REG');
-      }
-    }
-
-
-    // --- VARIÁVEIS DO JOGO ---
-    let map = null;
-    let playerMarker = null;
-    let visionCircle = null; 
-    let currentPos = { lat: 41.1496, lng: -8.6109 }; // Porto
-    let energy = 100;
-    let visionRadius = 25; // 25 metros
-    let flagsCount = 0;
-    let isSleeping = false;
-    let allFlags = [];
-
-    // --- ARRANCAR JOGO ---
-    function startGame(mode) {
-      // Validar Campos de Entrada
-      const nomeInput = document.getElementById('jg-log-nome').value.trim();
-      const senhaInput = document.getElementById('jg-log-senha').value.trim();
-      if(!nomeInput || !senhaInput) {
-        alert("Atenção: Nome e Senha são obrigatórios para jogar!");
-        return;
-      }
-
-      document.getElementById('login-screen').classList.add('hidden');
-      document.getElementById('game-screen').classList.remove('hidden');
-      
-      initMap();
-
-      // Ativa painel offline (porque as pessoas jogam muito em casa)
-      document.getElementById('offline-controls').classList.remove('hidden');
-      updatePlayerLocation(currentPos.lat, currentPos.lng, true);
-    }
-
-    // --- INICIAR MAPA LEAFLET ---
-    function initMap() {
-      if (map) return;
-      map = L.map('map', { zoomControl: false }).setView([currentPos.lat, currentPos.lng], 18);
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution: '© OSM' }).addTo(map);
-      map.on("move zoom", updateFogOverlay);
-    }
-
-    // --- UPDATE PLAYER LOCATION (Com Fix do Circulo Verde) ---
-    function updatePlayerLocation(lat, lng, centerMap) {
-      currentPos = { lat, lng };
-
-      if (!playerMarker) {
-        let icon = L.divIcon({ className: '', html: `<div class="player-marker">JG</div>`, iconSize: [30,30], iconAnchor: [15,15] });
-        playerMarker = L.marker([lat, lng], { icon: icon }).addTo(map);
-      } else {
-        playerMarker.setLatLng([lat, lng]); 
-      }
-
-      if (!visionCircle) {
-        visionCircle = L.circle([lat, lng], { radius: visionRadius, color: "#00ff00", fillOpacity: 0.05, weight: 2 }).addTo(map);
-      } else {
-        visionCircle.setLatLng([lat, lng]); 
-        visionCircle.setRadius(visionRadius);
-        visionCircle.bringToFront(); 
-      }
-
-      if (centerMap) map.setView([lat, lng], 18);
-      
-      updateFogOverlay();
-      refreshFlags(); 
-    }
-
-    // --- NEVOEIRO (Fog Overlay) ---
-    function updateFogOverlay() {
-      if (!map || !currentPos) return;
-      const point = map.latLngToContainerPoint([currentPos.lat, currentPos.lng]);
-      document.getElementById("fog-overlay").style.setProperty("--fog-x", point.x + "px");
-      document.getElementById("fog-overlay").style.setProperty("--fog-y", point.y + "px");
-      document.getElementById("fog-overlay").style.setProperty("--fog-r", Math.max(60, visionRadius * 2) + "px");
-    }
-
-    // --- MOVIMENTO MANUAL OFFLINE ---
-    function movePlayer(dx, dy) {
-      if (isSleeping) return;
-      if (energy <= 0) { alert("Sem energia! Clica em Descansar."); return; }
-      
-      energy -= 1;
-      document.getElementById('val-ener').innerText = energy;
-      document.getElementById('bar-ener').style.width = energy + "%";
-
-      let lat = currentPos.lat + (dy / 111320);
-      let lng = currentPos.lng + (dx / (111320 * Math.cos(currentPos.lat * Math.PI / 180)));
-      
-      updatePlayerLocation(lat, lng, true);
-    }
-
-    // --- BANDEIRAS VERMELHAS ---
-    function refreshFlags() {
-      allFlags.forEach(f => map.removeLayer(f.marker));
-      allFlags = [];
-
-      for(let i=0; i<3; i++) {
-        let fLat = currentPos.lat + ((Math.random() - 0.5) * 0.0015);
-        let fLng = currentPos.lng + ((Math.random() - 0.5) * 0.0015);
-        
-        let flagIcon = L.divIcon({ className: '', html: `<div class="flag-marker"></div>`, iconSize: [24,24] });
-        let marker = L.marker([fLat, fLng], { icon: flagIcon }).addTo(map);
-        
-        marker.on('click', () => {
-          flagsCount++;
-          document.getElementById('val-flags').innerText = flagsCount;
-          map.removeLayer(marker);
-        });
-        
-        allFlags.push({ marker });
-      }
-    }
-
-    // --- SISTEMA DE DESCANSO ---
-    function rest15Min() {
-      if (isSleeping) return;
-      isSleeping = true;
-      document.getElementById('sleep-modal').style.display = 'block';
-      
-      let progress = 0;
-      let interval = setInterval(() => {
-        progress += 20;
-        document.getElementById('sleep-progress').style.width = progress + "%";
-        if (progress >= 100) {
-          clearInterval(interval);
-          isSleeping = false;
-          energy = 100;
-          document.getElementById('val-ener').innerText = energy;
-          document.getElementById('bar-ener').style.width = "100%";
-          document.getElementById('sleep-modal').style.display = 'none';
-          document.getElementById('sleep-progress').style.width = "0%";
-        }
-      }, 1000);
-    }
-  </script>
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
 </body>
 </html>
