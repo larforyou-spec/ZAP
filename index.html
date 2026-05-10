@@ -1,1135 +1,1384 @@
-(function init() {
-  // NÃO entrar automaticamente em nenhuma página
-  // Mostrar sempre a homepage com as sessões ativas
-  ir('p-inicio');
-})();
-</script>
-</body>
-</html>
-
 <!DOCTYPE html>
 <html lang="pt">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>ZAP FLAGS | Larforyou&reg;</title>
-
-  <link rel="icon" href="./icon.png" type="image/png" />
-  <link rel="manifest" href="./manifest.json" />
-  <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
+  <title>ZAP FLAGS | Larforyou®</title>
   <meta name="theme-color" content="#000000" />
-
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-
   <style>
-    * { box-sizing: border-box; }
-
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html, body {
-      margin: 0;
-      padding: 0;
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-      font-family: Arial, sans-serif;
-      background: #000;
-      color: #0f0;
+      width: 100%; height: 100%; overflow: hidden;
+      font-family: 'Segoe UI', Roboto, Arial, sans-serif;
+      background: #000; color: #fff;
+      user-select: none; -webkit-user-select: none;
     }
-
     .hidden { display: none !important; }
 
+    /* PÁGINAS */
+    .pag { display: none; min-height: 100vh; overflow-y: auto; }
+    .pag.ativa { display: block; }
+    .cx { max-width: 500px; margin: 0 auto; padding: 20px; }
+
+    /* BOTÕES */
     button {
-      background: #0f0;
-      color: #000;
-      border: none;
-      border-radius: 10px;
-      padding: 10px 14px;
-      font-size: 14px;
-      font-weight: 800;
-      cursor: pointer;
+      cursor: pointer; transition: 0.2s; border: none; border-radius: 8px;
+      font-weight: 700; font-size: 14px; padding: 10px 14px;
+    }
+    button:active { transform: scale(0.94); }
+    .btn-main {
+      width: 100%; padding: 14px; font-size: 15px;
+      background: linear-gradient(135deg, #4CAF50, #45a049); color: #fff;
+      box-shadow: 0 4px 12px rgba(76,175,80,0.3);
+    }
+    .btn-main:hover { box-shadow: 0 6px 18px rgba(76,175,80,0.4); }
+    .bb { display: block; width: 100%; margin: 5px 0; text-align: center; }
+    .bv { background: #4CAF50; color: #fff; }
+    .bc { background: #1a1a1a; color: #4CAF50; border: 1px solid #4CAF50; }
+    .bo { background: linear-gradient(135deg, #f90, #fc0); color: #000; }
+    .bvol { background: #111; color: #aaa; border: 1px solid #333; }
+    .bsair { background: #200; color: #f66; border: 1px solid #a00; font-size: 12px; padding: 6px 10px; }
+    .bbo { background: linear-gradient(135deg, #003, #006); color: #0ff; border: 2px solid #0ff; }
+    .btn-dark { background: #1a1a1a; color: #4CAF50; border: 1px solid #4CAF50; }
+    .btn-small { padding: 5px 9px; font-size: 11px; }
+    .btn-link { background: none; border: none; color: #81c784; text-decoration: underline; font-size: 12px; padding: 0; cursor: pointer; }
+
+    /* INPUTS */
+    input, select, textarea {
+      width: 100%; padding: 13px 14px; margin-bottom: 10px;
+      border-radius: 8px; border: 1px solid rgba(76,175,80,0.4);
+      background: rgba(0,0,0,0.5); color: #fff; font-size: 14px; outline: none;
+    }
+    input::placeholder { color: rgba(255,255,255,0.35); }
+    input:focus, select:focus {
+      border-color: #81c784; box-shadow: 0 0 8px rgba(76,175,80,0.3);
+      background: rgba(0,0,0,0.7);
+    }
+    select option { background: #111; }
+    textarea { resize: vertical; min-height: 60px; }
+
+    /* LABELS */
+    .lbl { font-size: 12px; color: #81c784; display: block; margin: 8px 0 3px; }
+    .lbl em { color: #f44; font-style: normal; }
+
+    /* PASSWORD TOGGLE */
+    .pw-wrap { position: relative; }
+    .pw-wrap input { padding-right: 44px; margin: 0; }
+    .pw-toggle {
+      position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+      background: none; border: none; cursor: pointer; font-size: 14px; color: #555; padding: 3px;
     }
 
-    .btn-dark {
-      background: #181818;
-      color: #0f0;
-      border: 1px solid #0f0;
+    /* MENSAGENS */
+    .msg { padding: 10px; margin: 6px 0; border-radius: 6px; display: none; font-size: 12px; }
+    .msg.e { background: #200; border: 1px solid #f44; color: #f66; display: block; }
+    .msg.s { background: #020; border: 1px solid #4CAF50; color: #81c784; display: block; }
+    .msg.i { background: #002; border: 1px solid #0ff; color: #0ff; display: block; }
+
+    /* ÁREAS */
+    .aj { background: rgba(0,30,0,0.4); border: 1px solid #4CAF50; border-radius: 12px; padding: 16px; margin: 8px 0; }
+    .aj h3 { color: #4CAF50; margin-bottom: 10px; font-size: 14px; }
+    .apr { background: rgba(30,20,0,0.4); border: 1px solid #f90; border-radius: 12px; padding: 16px; margin: 8px 0; }
+    .apr h3 { color: #f90; margin-bottom: 10px; font-size: 14px; }
+    .abo {
+      background: linear-gradient(135deg, rgba(0,5,20,0.6), rgba(0,15,40,0.4));
+      border: 1px solid #0ff; border-radius: 12px; padding: 16px; margin: 8px 0;
+      position: relative; overflow: hidden;
+    }
+    .abo::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+      background: linear-gradient(90deg, transparent, #0ff, transparent);
+      animation: scan 3s linear infinite;
+    }
+    @keyframes scan { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
+    .abo h3 { color: #0ff; margin-bottom: 10px; font-size: 14px; }
+    .badge-bo {
+      background: #0ff; color: #000; padding: 2px 7px; border-radius: 9px;
+      font-size: 10px; font-weight: 700; margin-left: 5px;
     }
 
-    .btn-danger {
-      background: #8b0000;
-      color: #fff;
-      border: 1px solid #ff6b6b;
+    /* SESSÃO HOME */
+    .sess-bar {
+      border-radius: 10px; padding: 12px; margin: 8px 0;
+      display: flex; justify-content: space-between; align-items: center; gap: 8px;
     }
+    .sess-j { background: rgba(0,30,0,0.5); border: 1px solid #4CAF50; }
+    .sess-pr { background: rgba(30,20,0,0.5); border: 1px solid #f90; }
 
-    input, select {
-      width: 100%;
-      margin-bottom: 10px;
-      padding: 12px;
-      border-radius: 10px;
-      border: 1px solid #0f0;
-      background: #101010;
-      color: #0f0;
-      font-size: 14px;
+    /* CARTÃO UTILIZADOR */
+    .ucard { border-radius: 12px; padding: 18px; margin-bottom: 14px; text-align: center; }
+    .ucard-j { border: 1px solid #4CAF50; background: linear-gradient(135deg, rgba(0,40,0,0.4), rgba(0,15,0,0.3)); }
+    .ucard-pr { border: 1px solid #f90; background: linear-gradient(135deg, rgba(40,25,0,0.4), rgba(15,10,0,0.3)); }
+    .uavt {
+      width: 70px; height: 70px; border-radius: 50%; margin: 0 auto 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 28px; position: relative;
     }
+    .uavt-j { background: rgba(0,40,0,0.5); border: 3px solid #4CAF50; box-shadow: 0 0 12px rgba(76,175,80,0.3); }
+    .uavt-pr { background: rgba(40,25,0,0.5); border: 3px solid #f90; box-shadow: 0 0 12px rgba(255,150,0,0.3); }
+    .udot {
+      position: absolute; bottom: 2px; right: 2px; width: 14px; height: 14px;
+      border-radius: 50%; border: 2px solid #000; animation: pulse 2s ease-in-out infinite;
+    }
+    .udot-j { background: #4CAF50; }
+    .udot-pr { background: #f90; }
+    @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+    .u-nome { font-size: 18px; font-weight: 700; margin-bottom: 3px; }
+    .u-sub { font-size: 11px; color: #888; margin-bottom: 12px; }
+    .u-stats { display: flex; justify-content: center; gap: 16px; }
+    .u-stat-n { font-size: 14px; font-weight: 700; }
+    .u-stat-l { font-size: 10px; color: #666; margin-top: 1px; }
 
-    /* LOGIN SCREEN */
-    #login-screen {
-      background: linear-gradient(180deg, #000, #051005);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 18px;
-      height: 100vh;
-    }
+    /* CHECKBOX */
+    .ckl { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #aaa; cursor: pointer; margin: 6px 0; }
+    .ckl input[type=checkbox] { width: 16px; height: 16px; accent-color: #4CAF50; cursor: pointer; flex-shrink: 0; }
 
-    .login-box {
-      width: 100%;
-      max-width: 600px;
-      border: 2px solid #0f0;
-      border-radius: 16px;
-      background: rgba(0,20,0,.30);
-      padding: 18px;
-      box-shadow: 0 0 20px rgba(0,255,0,.10);
-      text-align: center;
-    }
+    /* SEPARADORES */
+    .sep { display: flex; align-items: center; gap: 8px; margin: 12px 0; }
+    .sep-l { flex: 1; border-top: 1px solid #222; }
+    .sep-t { color: #444; font-size: 11px; white-space: nowrap; }
 
-    /* GAME SCREEN */
-    #map-wrap {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-    }
+    /* FORÇA SENHA */
+    .fbar { height: 4px; border-radius: 2px; margin-top: 4px; transition: 0.3s; background: #333; width: 0%; }
+    .ftxt { font-size: 10px; margin-top: 2px; color: #666; min-height: 13px; }
 
-    #map {
-      width: 100%;
-      height: 100%;
-      z-index: 1;
-    }
+    /* CARDS */
+    .card { background: rgba(255,255,255,0.03); border: 1px solid #222; border-radius: 8px; padding: 12px; margin: 7px 0; }
+    .card-b { border-color: #0ff; background: rgba(0,20,40,0.3); }
+    .card-v { border-color: #4CAF50; background: rgba(0,30,0,0.2); }
+    .card-y { border-color: #f90; background: rgba(30,20,0,0.2); }
+    .form-grid, .g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 10px; }
+    .lnk { color: #0ff; cursor: pointer; text-decoration: underline; font-size: 13px; }
+    .scroll { max-height: 65vh; overflow-y: auto; }
+
+    /* MAPA */
+    #mapa { position: fixed; inset: 0; z-index: 1; }
+    .leaflet-container { background: #0a0a0a; }
 
     #fog-overlay {
-      position: absolute;
-      inset: 0;
-      pointer-events: none;
-      z-index: 450;
-      --fog-x: 50%;
-      --fog-y: 50%;
-      --fog-r: 90px;
-      background:
-        radial-gradient(
-          circle var(--fog-r) at var(--fog-x) var(--fog-y),
-          rgba(0,0,0,0) 0%,
-          rgba(0,0,0,0) 60%,
-          rgba(0,30,90,0.60) 78%,
-          rgba(0,30,90,0.86) 100%
-        );
+      position: fixed; inset: 0; pointer-events: none; z-index: 450;
+      --fx: 50%; --fy: 50%; --fr: 90px;
+      background: radial-gradient(
+        circle var(--fr) at var(--fx) var(--fy),
+        transparent 0%, transparent 55%,
+        rgba(0,20,60,0.55) 75%, rgba(0,15,50,0.88) 100%
+      );
     }
 
-    #top-strip {
-      position: absolute;
-      top: 8px;
-      left: 8px;
-      right: 8px;
-      z-index: 1000;
-      background: rgba(0,0,0,.82);
-      border: 1px solid #0f0;
-      border-radius: 12px;
-      padding: 8px;
+    /* HUD JOGO */
+    #hud-j {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 2000;
+      background: rgba(0,0,0,0.88); backdrop-filter: blur(6px);
+      border-bottom: 1px solid rgba(76,175,80,0.3);
+      padding: 8px 12px;
+      display: flex; justify-content: space-between; align-items: center;
     }
+    .hn { font-size: 10px; color: #aaa; text-align: center; }
+    .hv { font-size: 13px; color: #0ff; font-weight: 700; display: block; }
 
-    .energy-bar {
-      width: 100%;
-      height: 8px;
-      background: #222;
-      border-radius: 999px;
-      overflow: hidden;
-      border: 1px solid rgba(0,255,0,.35);
+    /* PAINEL SKILL */
+    #pan-sk {
+      position: fixed; left: 8px; top: 54px; z-index: 2000;
+      background: rgba(0,0,0,0.9); backdrop-filter: blur(4px);
+      border: 1px solid rgba(76,175,80,0.3);
+      border-radius: 8px; padding: 8px; font-size: 11px; min-width: 100px;
     }
+    .psk { display: flex; justify-content: space-between; padding: 2px 0; border-bottom: 1px solid #111; }
+    .psk:last-child { border-bottom: none; }
+    .pskl { color: #888; } .pskv { color: #0ff; font-weight: 700; }
+    #bsk { height: 4px; background: #222; border-radius: 2px; overflow: hidden; margin-top: 3px; border: 1px solid rgba(76,175,80,0.2); }
+    #bskf { height: 100%; background: linear-gradient(90deg, #4CAF50, #0ff); border-radius: 2px; transition: width 0.4s; }
+    #bskt { font-size: 9px; color: #555; text-align: center; margin-top: 2px; }
 
-    #energy-fill {
-      height: 100%;
-      width: 100%;
-      background: linear-gradient(90deg,#008f1f,#00ff66);
-      transition: width 0.3s;
-    }
-
-    #floating-buttons {
-      position: absolute;
-      right: 10px;
-      bottom: 90px;
-      z-index: 1100;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-
-    .float-btn {
-      width: 46px;
-      height: 46px;
-      border-radius: 50%;
-      padding: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 18px;
-      box-shadow: 0 0 10px rgba(0,255,0,.15);
-    }
-
-    #offline-controls {
-      position: absolute;
-      left: 10px;
-      bottom: 90px;
-      z-index: 2600;
-      background: rgba(0,0,0,.88);
-      border: 1px solid #0f0;
-      border-radius: 12px;
-      padding: 8px;
-      width: 118px;
-      height: 138px;
-      text-align: center;
+    /* JOYSTICK */
+    #ctrl {
+      position: fixed; z-index: 2000;
+      background: rgba(0,0,0,0.88); backdrop-filter: blur(4px);
+      border: 1px solid rgba(76,175,80,0.3);
+      border-radius: 12px; padding: 8px;
+      bottom: 50px; right: 10px; cursor: move;
       touch-action: none;
-      user-select: none;
-      cursor: move;
+    }
+    #ctrl-g { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin-bottom: 4px; }
+    .cbtn {
+      background: rgba(255,255,255,0.06); border: 1px solid rgba(76,175,80,0.3);
+      color: #fff; border-radius: 50%; font-size: 16px; font-weight: 700;
+      cursor: pointer; width: 44px; height: 44px;
+      display: flex; align-items: center; justify-content: center;
+      transition: 0.1s; -webkit-tap-highlight-color: transparent; touch-action: none;
+    }
+    .cbtn:active, .cbtn.on { background: #4CAF50; border-color: #81c784; color: #fff; }
+    #ctrl-tam { display: flex; gap: 4px; justify-content: center; }
+    .tbtn {
+      background: #111; border: 1px solid #333; color: #888;
+      border-radius: 4px; font-size: 10px; font-weight: 700; cursor: pointer; padding: 3px 8px;
     }
 
-    .dpad {
-      display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      gap: 4px;
-      margin-top: 6px;
+    /* BOTÕES FLUTUANTES */
+    #float-buttons {
+      position: fixed; right: 10px; bottom: 110px; z-index: 2000;
+      display: flex; flex-direction: column; gap: 8px;
+    }
+    .float-btn {
+      width: 44px; height: 44px; border-radius: 50%; padding: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; background: rgba(0,0,0,0.8); color: #4CAF50;
+      border: 1px solid rgba(76,175,80,0.3); backdrop-filter: blur(4px);
     }
 
-    .dpad button {
-      padding: 8px;
-      font-size: 14px;
-      min-width: 0;
+    /* RODAPÉ TICKER */
+    #rodape {
+      position: fixed; bottom: 0; left: 0; right: 0; z-index: 2000;
+      background: rgba(0,0,0,0.92); border-top: 1px solid #f90;
+      height: 36px; overflow: hidden; display: flex; align-items: center;
+    }
+    #ticker {
+      display: inline-flex; gap: 80px; white-space: nowrap;
+      animation: scroll 25s linear infinite; padding-left: 100vw;
+    }
+    @keyframes scroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+    .tick { color: #f90; font-size: 11px; font-weight: 700; }
+    .tick b { color: #0ff; }
+
+    /* GPS */
+    #gps-txt {
+      position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%);
+      z-index: 2000; font-size: 9px; color: #555;
+      background: rgba(0,0,0,0.7); border-radius: 10px; padding: 2px 8px;
     }
 
+    /* NOTIFICAÇÃO */
+    #notif {
+      position: fixed; top: 60px; left: 50%; transform: translateX(-50%);
+      z-index: 3000; background: #000; border: 2px solid #0ff; border-radius: 10px;
+      padding: 10px 16px; text-align: center; display: none; min-width: 200px;
+    }
+
+    /* PAINEL LATERAL */
     #side-panel {
-      position: absolute;
-      left: 8px;
-      right: 8px;
-      bottom: 30px;
-      z-index: 2500;
-      background: rgba(0,0,0,.92);
-      border: 2px solid #0f0;
-      border-radius: 14px;
-      padding: 12px;
-      max-height: 36vh;
-      overflow-y: auto;
+      position: fixed; left: 8px; right: 8px; bottom: 40px; z-index: 2500;
+      background: rgba(10,15,20,0.96); backdrop-filter: blur(6px);
+      border: 1px solid rgba(76,175,80,0.3);
+      border-radius: 14px; padding: 14px;
+      max-height: 40vh; overflow-y: auto;
     }
-
+    .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
     .item {
-      border: 1px solid #0f0;
-      background: rgba(0,25,0,.16);
-      border-radius: 10px;
-      padding: 10px;
-      margin-bottom: 8px;
+      background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 10px; padding: 12px; margin-bottom: 8px;
+      font-size: 13px; line-height: 1.5; color: #ccc;
     }
 
-    .player-marker {
-      width: 28px;
-      height: 28px;
-      border-radius: 50%;
-      background: linear-gradient(135deg,#00f0ff,#0066ff);
-      border: 3px solid #fff;
-      box-shadow: 0 0 10px rgba(0,255,255,.55);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: white;
-      font-size: 12px;
-      font-weight: 900;
-      overflow: hidden;
+    /* MODAIS */
+    .modal-overlay {
+      position: fixed; inset: 0; z-index: 5000;
+      background: rgba(0,0,0,0.8); backdrop-filter: blur(3px);
+      display: flex; align-items: center; justify-content: center; padding: 16px;
+    }
+    .modal-box {
+      width: 100%; max-width: 440px;
+      background: rgba(10,15,20,0.97); border: 1px solid rgba(76,175,80,0.4);
+      border-radius: 14px; padding: 22px;
+      max-height: 80vh; overflow-y: auto;
     }
 
-    .player-marker img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      border-radius: 50%;
+    /* CONFIRMAÇÃO */
+    #conf-ovl { position: fixed; inset: 0; background: rgba(0,0,0,0.88); z-index: 9500; display: none; }
+    #conf-box {
+      position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%);
+      background: #050505; border: 2px solid #f44; border-radius: 12px;
+      padding: 22px; z-index: 9501; width: 90%; max-width: 360px;
+      text-align: center; display: none;
     }
 
-    .flag-marker {
-      width: 34px;
-      height: 34px;
-      position: relative;
+    /* MARCADORES MAPA */
+    .player-icon {
+      width: 30px; height: 30px; border-radius: 50%;
+      background: linear-gradient(135deg, #4CAF50, #81c784);
+      border: 3px solid #fff; box-shadow: 0 0 14px rgba(76,175,80,0.6);
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-size: 13px; font-weight: 900;
     }
-
-    .flag-stick {
-      position: absolute;
-      width: 2px;
-      height: 18px;
-      left: 14px;
-      top: 12px;
-      border-radius: 2px;
-      background: #aaa;
-    }
-
+    .flag-marker { width: 28px; height: 28px; position: relative; cursor: pointer; }
+    .flag-stick { position: absolute; width: 2px; height: 14px; left: 11px; top: 10px; background: #ccc; border-radius: 1px; }
     .flag-banner {
-      position: absolute;
-      left: 14px;
-      top: 4px;
-      width: 16px;
-      height: 10px;
-      clip-path: polygon(0 0, 100% 28%, 0 100%);
-      border: 1px solid #fff;
-      background: #FF0000;
+      position: absolute; left: 11px; top: 3px; width: 13px; height: 8px;
+      clip-path: polygon(0 0, 100% 30%, 0 100%);
+    }
+    .pr-badge {
+      width: 40px; height: 40px; border-radius: 10px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 900; font-size: 14px; color: #fff;
+    }
+    .qr-box {
+      display: block; margin-top: 8px; padding: 10px; border-radius: 8px;
+      background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+      font-family: monospace; word-break: break-all; color: #81c784; font-size: 12px;
     }
 
-    .modal {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      z-index: 3000;
-      width: 92%;
-      max-width: 480px;
-      background: #000;
-      border: 3px solid #0f0;
-      border-radius: 14px;
-      padding: 16px;
-      box-shadow: 0 0 25px rgba(0,255,0,.22);
+    /* MARCAS */
+    .watermark {
+      position: fixed; bottom: 38px; left: 14px; font-size: 16px; font-weight: 900;
+      color: rgba(255,255,255,0.15); z-index: 9999; pointer-events: none;
     }
-
-    .panel-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 8px;
-      gap: 10px;
+    .copyright {
+      position: fixed; bottom: 4px; width: 100%; text-align: center;
+      font-size: 9px; color: rgba(255,255,255,0.1);
+      z-index: 9999; pointer-events: none;
     }
-
-    .qr-code {
-      display: inline-block;
-      margin-top: 8px;
-      padding: 8px;
-      border-radius: 10px;
-      border: 1px solid #0f0;
-      background: #111;
-      font-family: monospace;
-      word-break: break-all;
-      color: #fff;
-    }
-    
-    /* MARCAS LARFORYOU */
-    .watermark { position: fixed; bottom: 35px; left: 15px; font-size: 20px; font-weight: bold; color: rgba(0, 255, 0, 0.5); text-shadow: 2px 2px 4px #000; z-index: 9999; pointer-events: none; }
-    .copyright { position: fixed; bottom: 5px; width: 100%; text-align: center; font-size: 11px; color: rgba(0, 255, 0, 0.5); z-index: 9999; pointer-events: none; }
   </style>
 </head>
 <body>
 
-  <div class="watermark">Larforyou&reg;</div>
-  <div class="copyright">&copy; 2024 Larforyou&reg; - Marca Registada. Todos os direitos reservados.</div>
+<div class="watermark">Larforyou®</div>
+<div class="copyright">© 2025 Larforyou® — Todos os direitos reservados.</div>
 
-  <!-- LOGIN -->
-  <div id="login-screen">
-    <div class="login-box">
-      <h1>ZAP FLAGS</h1>
-      <div style="color:#a7fca7; font-size:13px; margin-bottom:16px; line-height:1.45;">
-        Escolhe como queres entrar. O jogador é a opção principal.
+<!-- ================================================================ -->
+<!-- INÍCIO                                                            -->
+<!-- ================================================================ -->
+<div id="p-inicio" class="pag ativa">
+<div class="cx" style="padding-top:22px;text-align:center;">
+  <h1 style="font-size:28px;text-shadow:0 0 15px rgba(76,175,80,0.4);">🏴 ZAP FLAGS</h1>
+  <p style="color:#81c784;font-size:13px;margin-bottom:14px;">Caça ao Tesouro Digital</p>
+
+  <div id="home-j" style="display:none;">
+    <div class="sess-bar sess-j">
+      <div style="text-align:left;">
+        <div style="font-weight:700;font-size:14px;color:#4CAF50;" id="home-j-nm">👤 —</div>
+        <div style="font-size:11px;color:#aaa;margin-top:2px;" id="home-j-info">—</div>
       </div>
-
-      <div style="display:flex; flex-direction:column; gap:10px; margin:18px 0;">
-        <button style="padding:18px 16px; font-size:20px; background:linear-gradient(135deg,#00ff66,#00c853);" onclick="switchEntryMode('JG')">ENTRAR COMO JOGADOR</button>
-        <button style="padding:12px 14px; font-size:14px; background:#202020; border:1px solid #0f0;" onclick="switchEntryMode('PR')">SOU EMPRESA / PR</button>
-      </div>
-
-      <!-- JG FORM -->
-      <div id="jg-form">
-        <div style="text-align:left; margin:8px 0; font-size:14px; font-weight:700; color:#d1ffd1;">Jogador</div>
-        <input id="player-name" type="text" placeholder="Nome do jogador" />
-        <input id="player-contact" type="text" placeholder="Email ou nº de telefone" />
-        <input id="player-password" type="password" placeholder="Criar senha" />
-        <input id="player-password-confirm" type="password" placeholder="Confirmar senha" />
-
-        <select id="player-avatar-mode">
-          <option value="male">Avatar masculino</option>
-          <option value="female">Avatar feminino</option>
-          <option value="photo">Usar foto por URL</option>
-        </select>
-
-        <input id="player-photo-url" type="text" placeholder="URL da foto (opcional)" />
-
-        <div style="display:flex; gap:8px; justify-content:center; margin-top:10px;">
-          <button onclick="registerAccount('JG')">REGISTAR</button>
-          <button class="btn-dark" onclick="loginAccount('JG')">ENTRAR</button>
-        </div>
-        <div id="jg-auth-msg" style="text-align:left; min-height:20px; margin-top:6px; font-size:12px; color:#a7fca7;"></div>
-      </div>
-
-      <!-- PR FORM -->
-      <div id="pr-form" class="hidden">
-        <div style="text-align:left; margin:8px 0; font-size:14px; font-weight:700; color:#d1ffd1;">Empresa / PR</div>
-        <input id="pr-company-name" type="text" placeholder="Nome da empresa" />
-        <input id="pr-contact" type="text" placeholder="Email ou nº de telefone" />
-        <input id="pr-password" type="password" placeholder="Criar senha" />
-        <input id="pr-password-confirm" type="password" placeholder="Confirmar senha" />
-        <input id="pr-postal-code" type="text" placeholder="Código postal da loja" />
-
-        <div style="display:flex; gap:8px; justify-content:center; margin-top:10px;">
-          <button onclick="registerAccount('PR')">REGISTAR</button>
-          <button class="btn-dark" onclick="loginAccount('PR')">ENTRAR</button>
-        </div>
-        <div id="pr-auth-msg" style="text-align:left; min-height:20px; margin-top:6px; font-size:12px; color:#a7fca7;"></div>
+      <div style="display:flex;gap:5px;">
+        <button class="bv" style="padding:6px 12px;font-size:12px;border-radius:8px;" onclick="reentrarJogo()">🎮 Jogar</button>
+        <button class="bsair" onclick="confirmarSair('j')">🚪</button>
       </div>
     </div>
   </div>
 
-  <!-- GAME -->
-  <div id="game-screen" class="hidden">
-    <div id="map-wrap">
-      <div id="map"></div>
-      <div id="fog-overlay"></div>
-    </div>
-
-    <div id="top-strip">
-      <div class="energy-bar"><div id="energy-fill"></div></div>
-      <div style="margin-top:6px; font-size:12px; color:#bfffbf; display:flex; justify-content:space-between; flex-wrap:wrap;">
-        <span id="energy-text">Energia: 100%</span>
-        <span id="mode-text">Modo: -</span>
+  <div id="home-pr" style="display:none;">
+    <div class="sess-bar sess-pr">
+      <div style="text-align:left;">
+        <div style="font-weight:700;font-size:14px;color:#f90;" id="home-pr-nm">🏪 —</div>
+        <div style="font-size:11px;color:#aaa;margin-top:2px;" id="home-pr-info">—</div>
       </div>
-    </div>
-
-    <div id="floating-buttons">
-      <button class="float-btn btn-dark" onclick="openPanel('progress')">📈</button>
-      <button class="float-btn btn-dark" onclick="openPanel('qrs')">🎫</button>
-      <button class="float-btn btn-dark" onclick="openPanel('account')">👤</button>
-      <button class="float-btn btn-dark" onclick="centerOnPlayer()">📍</button>
-    </div>
-
-    <div id="offline-controls" class="hidden">
-      <div style="font-size:14px; color:#bfffbf; margin-bottom:4px; padding:2px; border-bottom:1px solid rgba(0,255,0,.25);">⋮⋮</div>
-      <div style="display:flex; justify-content:center; gap:4px; margin:4px 0;">
-        <button class="btn-dark btn-small" onclick="resizeOfflineControls(-10)">A-</button>
-        <button class="btn-dark btn-small" onclick="resizeOfflineControls(10)">A+</button>
+      <div style="display:flex;gap:5px;">
+        <button class="bo" style="padding:6px 12px;font-size:12px;border-radius:8px;" onclick="reentrarPR()">🏪 Painel</button>
+        <button class="bsair" onclick="confirmarSair('pr')">🚪</button>
       </div>
-      <div class="dpad">
-        <div style="visibility:hidden;">.</div>
-        <button onclick="moveHomePlayer(0, 1)">⬆</button>
-        <div style="visibility:hidden;">.</div>
-        <button onclick="moveHomePlayer(-1, 0)">⬅</button>
-        <button onclick="manualRefreshFlags()">⟳</button>
-        <button onclick="moveHomePlayer(1, 0)">➡</button>
-        <div style="visibility:hidden;">.</div>
-        <button onclick="moveHomePlayer(0, -1)">⬇</button>
-        <div style="visibility:hidden;">.</div>
-      </div>
-    </div>
-
-    <div id="side-panel" class="hidden">
-      <div class="panel-header">
-        <b id="side-panel-title">Painel</b>
-        <button class="btn-dark btn-small" onclick="closePanel()">X</button>
-      </div>
-      <div id="side-panel-content"></div>
     </div>
   </div>
 
-  <!-- MODAL MODO -->
-  <div id="mode-modal" class="modal hidden">
-    <div class="panel-header">
-      <h2 style="margin:0;">Como queres jogar?</h2>
-      <button class="btn-dark btn-small" onclick="closeModeModal()">X</button>
+  <div class="aj">
+    <h3>🎮 ÁREA DO JOGADOR</h3>
+    <button class="bv bb" onclick="ir('p-login-j')">▶ ENTRAR NO JOGO</button>
+    <button class="bc bb" onclick="ir('p-reg-j')">📝 CRIAR CONTA</button>
+  </div>
+  <div class="apr">
+    <h3>🏪 ÁREA DO LOJISTA</h3>
+    <button class="bv bb" onclick="ir('p-login-pr')">▶ ENTRAR NA CONTA</button>
+    <button class="bo bb" onclick="ir('p-reg-pr')">📝 REGISTAR EMPRESA</button>
+  </div>
+  <div class="abo">
+    <h3>🖥️ BACKOFFICE <span class="badge-bo">SISTEMA</span></h3>
+    <button class="bbo bb" onclick="ir('p-bo-login')">🖥️ ACEDER</button>
+  </div>
+  <p style="color:#333;font-size:10px;margin-top:14px;">v10.0 © 2025 ZAP FLAGS by Larforyou®</p>
+</div>
+</div>
+
+<!-- ================================================================ -->
+<!-- LOGIN JOGADOR                                                      -->
+<!-- ================================================================ -->
+<div id="p-login-j" class="pag">
+<div class="cx">
+  <button class="bvol bb" onclick="ir('p-inicio')" style="margin-bottom:14px;">← VOLTAR</button>
+  <div class="aj">
+    <h3>🎮 ENTRAR NO JOGO</h3>
+    <div id="m-lj" class="msg"></div>
+
+    <div id="lj-com">
+      <div class="ucard ucard-j">
+        <div class="uavt uavt-j"><span id="lj-emoji">🎮</span><div class="udot udot-j"></div></div>
+        <div class="u-nome" style="color:#4CAF50;" id="lj-nm">—</div>
+        <div class="u-sub" id="lj-sub">Jogador · Nível 1</div>
+        <div class="u-stats">
+          <div><div class="u-stat-n" style="color:#0ff;" id="lj-fl">0</div><div class="u-stat-l">🏴 Flags</div></div>
+          <div><div class="u-stat-n" style="color:#4CAF50;" id="lj-en">100%</div><div class="u-stat-l">⚡ Energia</div></div>
+          <div><div class="u-stat-n" style="color:#f90;" id="lj-sk">0</div><div class="u-stat-l">🎯 Skill</div></div>
+          <div><div class="u-stat-n" style="color:#0ff;" id="lj-vis">5m</div><div class="u-stat-l">👁 Visão</div></div>
+        </div>
+      </div>
+      <div class="lbl">🔑 Senha</div>
+      <div class="pw-wrap">
+        <input type="password" id="lj-pw" placeholder="A tua senha" autocomplete="current-password" onkeydown="if(event.key==='Enter')loginJCom()">
+        <button class="pw-toggle" onclick="tPW('lj-pw',this)">👁</button>
+      </div>
+      <label class="ckl"><input type="checkbox" id="lj-lbr-pw"> Lembrar senha</label>
+      <button class="btn-main" onclick="loginJCom()" style="margin-top:8px;">▶ ENTRAR COMO <span id="lj-btn-nm">—</span></button>
+      <div class="sep"><div class="sep-l"></div><span class="sep-t">não és tu?</span><div class="sep-l"></div></div>
+      <button class="bc bb" onclick="trocarContaJ()" style="font-size:12px;">🔄 Usar outra conta</button>
     </div>
-    <div class="item">
-      <b>GPS / Rua</b><br>
-      Joga a caminhar na rua com localização real.
+
+    <div id="lj-sem" style="display:none;">
+      <div class="lbl">📧 Email</div>
+      <input type="email" id="lj-em" placeholder="email@exemplo.com" autocomplete="email" oninput="verEmJ()" onkeydown="if(event.key==='Enter')G('lj-pw-m').focus()">
+      <div id="lj-em-i" style="display:none;background:rgba(0,0,0,0.5);border:1px solid #4CAF50;border-radius:6px;padding:7px 11px;margin:4px 0;font-size:12px;color:#aaa;"></div>
+      <div class="lbl">🔑 Senha</div>
+      <div class="pw-wrap">
+        <input type="password" id="lj-pw-m" placeholder="A tua senha" autocomplete="current-password" onkeydown="if(event.key==='Enter')loginJSem()">
+        <button class="pw-toggle" onclick="tPW('lj-pw-m',this)">👁</button>
+      </div>
+      <label class="ckl"><input type="checkbox" id="lj-lbr" checked> Lembrar conta</label>
+      <button class="btn-main" onclick="loginJSem()" style="margin-top:8px;">▶ ENTRAR NO JOGO</button>
     </div>
-    <div class="item">
-      <b>Offline / Casa</b><br>
-      Joga sem GPS real, com movimento manual e sem exploração física real.
+
+    <div style="display:flex;gap:14px;justify-content:center;margin-top:14px;padding-top:12px;border-top:1px solid #222;flex-wrap:wrap;">
+      <span class="lnk" onclick="ir('p-reg-j')">📝 Criar conta</span>
+      <span class="lnk" onclick="irRec('j')">🔑 Recuperar senha</span>
     </div>
-    <div style="display:flex; gap:8px;">
-      <button onclick="requestGPSMode()">ATIVAR GPS</button>
-      <button class="btn-dark" onclick="activateHomeMode()">ENTRAR OFFLINE</button>
+  </div>
+</div>
+</div>
+
+<!-- ================================================================ -->
+<!-- REGISTO JOGADOR                                                    -->
+<!-- ================================================================ -->
+<div id="p-reg-j" class="pag">
+<div class="cx">
+  <button class="bvol bb" onclick="ir('p-inicio')" style="margin-bottom:14px;">← VOLTAR</button>
+  <div class="aj">
+    <h3>📝 CRIAR CONTA DE JOGADOR</h3>
+    <div class="card card-b" style="text-align:center;margin-bottom:12px;">
+      <p style="color:#0ff;font-weight:700;">🎁 OFERTA DE BOAS-VINDAS</p>
+      <p style="color:#aaa;font-size:12px;margin-top:4px;">1.000 bandeiras GRÁTIS ao criar conta!</p>
+    </div>
+    <div id="m-regj" class="msg"></div>
+    <div class="lbl">👤 Nome <em>*</em></div>
+    <input type="text" id="rj-nm" placeholder="O teu nome no jogo" maxlength="30">
+    <div class="lbl">📧 Email <em>*</em></div>
+    <input type="email" id="rj-em" placeholder="email@exemplo.com">
+    <div class="lbl">📱 Telemóvel</div>
+    <input type="tel" id="rj-tl" placeholder="912 345 678">
+    <div class="lbl">🔑 Senha <em>*</em> <span id="rj-ft" class="ftxt"></span></div>
+    <div class="pw-wrap"><input type="password" id="rj-pw" placeholder="Mín. 4 caracteres" oninput="calcF(this.value,'rj-fb','rj-ft')"><button class="pw-toggle" onclick="tPW('rj-pw',this)">👁</button></div>
+    <div id="rj-fb" class="fbar"></div>
+    <div class="lbl">🔑 Confirmar <em>*</em></div>
+    <div class="pw-wrap"><input type="password" id="rj-pw2" placeholder="Repete" onkeydown="if(event.key==='Enter')fazerRegJ()"><button class="pw-toggle" onclick="tPW('rj-pw2',this)">👁</button></div>
+    <label class="ckl" style="margin-top:8px;"><input type="checkbox" id="rj-lbr" checked> Lembrar conta e senha</label>
+    <button class="btn-main" onclick="fazerRegJ()" style="margin-top:8px;">✅ CRIAR CONTA GRÁTIS</button>
+  </div>
+  <div style="text-align:center;margin-top:10px;"><span class="lnk" onclick="ir('p-login-j')">Já tens conta? Entra aqui</span></div>
+</div>
+</div>
+
+<!-- ================================================================ -->
+<!-- LOGIN PR                                                           -->
+<!-- ================================================================ -->
+<div id="p-login-pr" class="pag">
+<div class="cx">
+  <button class="bvol bb" onclick="ir('p-inicio')" style="margin-bottom:14px;">← VOLTAR</button>
+  <div class="apr">
+    <h3>🏪 ENTRAR COMO LOJISTA</h3>
+    <div id="m-lpr" class="msg"></div>
+
+    <div id="lpr-com">
+      <div class="ucard ucard-pr">
+        <div class="uavt uavt-pr"><span>🏪</span><div class="udot udot-pr"></div></div>
+        <div class="u-nome" style="color:#f90;" id="lpr-nm">—</div>
+        <div class="u-sub" id="lpr-sub">Lojista</div>
+        <div class="u-stats">
+          <div><div class="u-stat-n" style="color:#f90;" id="lpr-loc">—</div><div class="u-stat-l">📍 Local</div></div>
+          <div><div class="u-stat-n" style="color:#0ff;" id="lpr-packs">0</div><div class="u-stat-l">📦 Packs</div></div>
+          <div><div class="u-stat-n" style="color:#4CAF50;" id="lpr-qrs">0</div><div class="u-stat-l">🎫 QRs</div></div>
+        </div>
+      </div>
+      <div class="lbl">🔑 Senha</div>
+      <div class="pw-wrap">
+        <input type="password" id="lpr-pw" placeholder="Senha da empresa" autocomplete="current-password" onkeydown="if(event.key==='Enter')loginPRCom()">
+        <button class="pw-toggle" onclick="tPW('lpr-pw',this)">👁</button>
+      </div>
+      <label class="ckl"><input type="checkbox" id="lpr-lbr-pw"> Lembrar senha</label>
+      <button class="bo bb" style="margin-top:8px;padding:14px;font-size:15px;" onclick="loginPRCom()">▶ ENTRAR COMO <span id="lpr-btn-nm">—</span></button>
+      <div class="sep"><div class="sep-l"></div><span class="sep-t">não é a tua empresa?</span><div class="sep-l"></div></div>
+      <button class="bc bb" onclick="trocarContaPR()" style="font-size:12px;">🔄 Usar outra conta</button>
+    </div>
+
+    <div id="lpr-sem" style="display:none;">
+      <div class="lbl">📧 Email da Empresa</div>
+      <input type="email" id="lpr-em" placeholder="loja@email.com" autocomplete="email" oninput="verEmPR()" onkeydown="if(event.key==='Enter')G('lpr-pw-m').focus()">
+      <div id="lpr-em-i" style="display:none;background:rgba(0,0,0,0.5);border:1px solid #f90;border-radius:6px;padding:7px 11px;margin:4px 0;font-size:12px;color:#f90;"></div>
+      <div class="lbl">🔑 Senha</div>
+      <div class="pw-wrap">
+        <input type="password" id="lpr-pw-m" placeholder="Senha" autocomplete="current-password" onkeydown="if(event.key==='Enter')loginPRSem()">
+        <button class="pw-toggle" onclick="tPW('lpr-pw-m',this)">👁</button>
+      </div>
+      <label class="ckl"><input type="checkbox" id="lpr-lbr" checked> Lembrar empresa</label>
+      <button class="bo bb" style="margin-top:8px;padding:14px;font-size:15px;" onclick="loginPRSem()">▶ ENTRAR</button>
+    </div>
+
+    <div style="display:flex;gap:14px;justify-content:center;margin-top:14px;padding-top:12px;border-top:1px solid #222;flex-wrap:wrap;">
+      <span class="lnk" onclick="ir('p-reg-pr')">📝 Registar empresa</span>
+      <span class="lnk" onclick="irRec('pr')">🔑 Recuperar senha</span>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ================================================================ -->
+<!-- REGISTO PR                                                         -->
+<!-- ================================================================ -->
+<div id="p-reg-pr" class="pag">
+<div class="cx">
+  <button class="bvol bb" onclick="ir('p-inicio')" style="margin-bottom:14px;">← VOLTAR</button>
+  <div class="apr"><h3>📝 REGISTAR EMPRESA</h3></div>
+  <div id="m-regpr" class="msg"></div>
+  <div class="scroll">
+    <div class="card card-y"><h3 style="color:#f90;margin-bottom:8px;">📍 MORADA</h3>
+      <input type="text" id="prr-rua" placeholder="* Rua e Número">
+      <div class="g2"><input type="text" id="prr-cp" placeholder="* Código Postal"><input type="text" id="prr-loc" placeholder="* Localidade"></div>
+      <select id="prr-dist"><option value="">* Distrito</option><option>Aveiro</option><option>Beja</option><option>Braga</option><option>Bragança</option><option>Castelo Branco</option><option>Coimbra</option><option>Évora</option><option>Faro</option><option>Guarda</option><option>Leiria</option><option>Lisboa</option><option>Portalegre</option><option>Porto</option><option>Santarém</option><option>Setúbal</option><option>Viana do Castelo</option><option>Vila Real</option><option>Viseu</option><option>Madeira</option><option>Açores</option></select>
+    </div>
+    <div class="card card-y"><h3 style="color:#f90;margin-bottom:8px;">🏢 EMPRESA</h3>
+      <input type="text" id="prr-ne" placeholder="* Nome da Empresa">
+      <input type="text" id="prr-nif" placeholder="* NIF (9 dígitos)" maxlength="9">
+      <select id="prr-ativ"><option value="">* Setor de Atividade</option><optgroup label="🍽 Restauração"><option>Restaurante</option><option>Café / Pastelaria</option><option>Bar</option><option>Hotel</option></optgroup><optgroup label="🛍 Comércio"><option>Supermercado</option><option>Roupa / Moda</option><option>Eletrónica</option><option>Farmácia</option><option>Outro Comércio</option></optgroup><optgroup label="💆 Serviços"><option>Cabeleireiro</option><option>Ginásio</option><option>Clínica</option><option>Outro Serviço</option></optgroup></select>
+    </div>
+    <div class="card card-y"><h3 style="color:#f90;margin-bottom:8px;">📞 CONTACTOS</h3>
+      <input type="tel" id="prr-tel" placeholder="* Telefone da Empresa">
+      <input type="email" id="prr-email" placeholder="* Email (Login)">
+      <input type="tel" id="prr-tel-r" placeholder="* Telemóvel Responsável">
+    </div>
+    <div class="card card-y"><h3 style="color:#f90;margin-bottom:8px;">👤 RESPONSÁVEL</h3>
+      <input type="text" id="prr-resp" placeholder="* Nome do Responsável">
+      <div class="lbl">🔑 Senha <em>*</em> <span id="prr-ft" class="ftxt"></span></div>
+      <div class="pw-wrap"><input type="password" id="prr-pw" placeholder="Mín. 4 car." oninput="calcF(this.value,'prr-fb','prr-ft')"><button class="pw-toggle" onclick="tPW('prr-pw',this)">👁</button></div>
+      <div id="prr-fb" class="fbar"></div>
+      <div class="lbl">🔑 Confirmar <em>*</em></div>
+      <div class="pw-wrap"><input type="password" id="prr-pw2" placeholder="Repete"><button class="pw-toggle" onclick="tPW('prr-pw2',this)">👁</button></div>
+    </div>
+    <label class="ckl"><input type="checkbox" id="prr-trm"> Aceito os Termos e Condições</label>
+    <label class="ckl"><input type="checkbox" id="prr-lbr" checked> Lembrar empresa e senha</label>
+    <button class="bo bb" onclick="fazerRegPR()" style="padding:14px;font-size:15px;">✅ REGISTAR EMPRESA</button>
+  </div>
+</div>
+</div>
+
+<!-- ================================================================ -->
+<!-- RECUPERAR SENHA                                                    -->
+<!-- ================================================================ -->
+<div id="p-rec" class="pag">
+<div class="cx">
+  <button class="bvol bb" onclick="irVoltarRec()" style="margin-bottom:14px;">← VOLTAR</button>
+  <div id="rec-area-j" class="aj" style="display:none;"><h3>🔑 RECUPERAR SENHA — JOGADOR</h3></div>
+  <div id="rec-area-pr" class="apr" style="display:none;"><h3>🔑 RECUPERAR SENHA — LOJISTA</h3></div>
+  <div id="m-rec" class="msg"></div>
+
+  <div id="rec-p1">
+    <div class="card card-b" style="text-align:center;padding:14px;margin-bottom:12px;">
+      <p style="color:#0ff;font-weight:700;">Como queres receber o código?</p>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0;">
+      <div id="rec-oem" onclick="selRec('email')" style="background:rgba(0,0,0,0.4);border:2px solid #333;border-radius:10px;padding:14px;text-align:center;cursor:pointer;">
+        <div style="font-size:24px;margin-bottom:5px;">📧</div><div style="font-weight:700;font-size:13px;">Email</div>
+      </div>
+      <div id="rec-osms" onclick="selRec('sms')" style="background:rgba(0,0,0,0.4);border:2px solid #333;border-radius:10px;padding:14px;text-align:center;cursor:pointer;">
+        <div style="font-size:24px;margin-bottom:5px;">📱</div><div style="font-weight:700;font-size:13px;">SMS</div>
+      </div>
+    </div>
+    <div id="rec-fem" style="display:none;"><div class="lbl">📧 Email registado</div><input type="email" id="rec-em" placeholder="email@exemplo.com"></div>
+    <div id="rec-fsms" style="display:none;"><div class="lbl">📱 Telemóvel registado</div><input type="tel" id="rec-tl" placeholder="912 345 678"></div>
+    <button class="btn-main" id="rec-btn-env" onclick="enviarCod()" style="display:none;margin-top:10px;">📨 ENVIAR CÓDIGO</button>
+  </div>
+
+  <div id="rec-p2" style="display:none;">
+    <div class="card card-v" style="text-align:center;margin-bottom:12px;">
+      <p style="color:#666;font-size:11px;">⚠ SIMULAÇÃO — O teu código:</p>
+      <p id="rec-cshow" style="font-size:28px;color:#0ff;font-weight:700;letter-spacing:10px;">----</p>
+    </div>
+    <div class="lbl">🔢 Código de 4 dígitos</div>
+    <input type="number" id="rec-cin" placeholder="0 0 0 0" style="text-align:center;font-size:20px;letter-spacing:8px;" maxlength="4" oninput="this.value=this.value.slice(0,4)" onkeydown="if(event.key==='Enter')verCod()">
+    <button class="btn-main" onclick="verCod()" style="margin-top:8px;">✅ VERIFICAR</button>
+    <button class="bc bb" onclick="reenvCod()" style="font-size:12px;margin-top:4px;">🔄 Reenviar</button>
+  </div>
+
+  <div id="rec-p3" style="display:none;">
+    <div class="card card-v" style="text-align:center;padding:14px;margin-bottom:12px;">
+      <p style="color:#4CAF50;font-weight:700;">✅ Identidade confirmada!</p>
+      <p style="color:#aaa;font-size:12px;margin-top:4px;">Define a nova senha:</p>
+    </div>
+    <div class="lbl">🔑 Nova Senha <span id="rec-ft" class="ftxt"></span></div>
+    <div class="pw-wrap"><input type="password" id="rec-np" placeholder="Mín. 4 car." oninput="calcF(this.value,'rec-fb','rec-ft')"><button class="pw-toggle" onclick="tPW('rec-np',this)">👁</button></div>
+    <div id="rec-fb" class="fbar"></div>
+    <div class="lbl">🔑 Confirmar</div>
+    <div class="pw-wrap"><input type="password" id="rec-np2" placeholder="Repete" onkeydown="if(event.key==='Enter')guardarNovaSenha()"><button class="pw-toggle" onclick="tPW('rec-np2',this)">👁</button></div>
+    <button class="btn-main" onclick="guardarNovaSenha()" style="margin-top:10px;">💾 GUARDAR</button>
+  </div>
+</div>
+</div>
+
+<!-- ================================================================ -->
+<!-- BACKOFFICE LOGIN                                                   -->
+<!-- ================================================================ -->
+<div id="p-bo-login" class="pag">
+<div class="cx">
+  <button class="bvol bb" onclick="ir('p-inicio')" style="margin-bottom:14px;">← VOLTAR</button>
+  <div class="abo">
+    <h3>🖥 BACKOFFICE <span class="badge-bo">SISTEMA</span></h3>
+    <div id="m-bo" class="msg"></div>
+    <div class="lbl">🔑 Código de Acesso</div>
+    <div class="pw-wrap">
+      <input type="password" id="bo-pw" placeholder="Código" style="text-align:center;letter-spacing:6px;border-color:#0ff;color:#0ff;font-size:18px;" onkeydown="if(event.key==='Enter')loginBO()">
+      <button class="pw-toggle" onclick="tPW('bo-pw',this)">👁</button>
+    </div>
+    <button class="bbo bb" onclick="loginBO()" style="margin-top:8px;padding:14px;font-size:15px;">🖥 ENTRAR</button>
+  </div>
+</div>
+</div>
+
+<!-- ================================================================ -->
+<!-- JOGO (MAPA)                                                        -->
+<!-- ================================================================ -->
+<div id="p-jogo" class="pag" style="padding:0;overflow:hidden;height:100vh;">
+  <div id="mapa"></div>
+  <div id="fog-overlay"></div>
+
+  <div id="hud-j">
+    <div>
+      <div style="font-weight:700;font-size:13px;" id="j-nm">👤 —</div>
+      <div style="font-size:10px;color:#888;" id="j-nv">Nível 1</div>
+    </div>
+    <div style="display:flex;gap:8px;font-size:10px;text-align:center;">
+      <div class="hn">🏴<span class="hv" id="h-fl">0</span></div>
+      <div class="hn">⚡<span class="hv" id="h-en">100%</span></div>
+      <div class="hn">🎯<span class="hv" id="h-sk">0</span></div>
+      <div class="hn">👁<span class="hv" id="h-vis">5m</span></div>
+    </div>
+    <div style="display:flex;gap:4px;">
+      <button class="bvol" style="padding:5px 8px;font-size:10px;" onclick="voltarHome()">← Início</button>
+      <button class="bsair" style="padding:5px 8px;font-size:10px;" onclick="confirmarSair('j')">Sair</button>
     </div>
   </div>
 
-  <!-- MODAL BANDEIRA -->
-  <div id="flag-modal" class="modal hidden">
-    <div id="flag-modal-content"></div>
+  <div id="pan-sk">
+    <div style="color:#4CAF50;font-weight:700;text-align:center;margin-bottom:3px;font-size:10px;">📊 SKILL</div>
+    <div class="psk"><span class="pskl">Nível</span><span class="pskv" id="sk-nv">1</span></div>
+    <div class="psk"><span class="pskl">Skill</span><span class="pskv" id="sk-sk">0</span></div>
+    <div class="psk"><span class="pskl">Visão</span><span class="pskv" id="sk-vis">5m</span></div>
+    <div class="psk"><span class="pskl">Prox.</span><span class="pskv" id="sk-px">500</span></div>
+    <div id="bsk"><div id="bskf" style="width:0%"></div></div>
+    <div id="bskt">0/500</div>
   </div>
 
-  <!-- Audio para QR -->
-  <audio id="qr-sound" src="https://assets.mixkit.co/sfx/preview/mixkit-retro-game-emergency-alarm-1005.mp3" preload="auto"></audio>
+  <div id="float-buttons">
+    <button class="float-btn" onclick="openPanel('progress')">📈</button>
+    <button class="float-btn" onclick="openPanel('qrs')">🎫</button>
+    <button class="float-btn" onclick="openPanel('account')">👤</button>
+    <button class="float-btn" onclick="centerPlayer()">📍</button>
+  </div>
 
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script>
-    const STORAGE_KEY = "zap_flags_v2";
+  <div id="ctrl">
+    <div style="font-size:9px;color:#666;text-align:center;margin-bottom:4px;cursor:move;" class="drag-handle">⠿ mover</div>
+    <div id="ctrl-g">
+      <div></div>
+      <div class="cbtn" onpointerdown="pd('c')" onpointerup="pu('c')">▲</div>
+      <div></div>
+      <div class="cbtn" onpointerdown="pd('e')" onpointerup="pu('e')">◀</div>
+      <div class="cbtn" style="font-size:8px;color:#333;">●</div>
+      <div class="cbtn" onpointerdown="pd('d')" onpointerup="pu('d')">▶</div>
+      <div></div>
+      <div class="cbtn" onpointerdown="pd('b')" onpointerup="pu('b')">▼</div>
+      <div></div>
+    </div>
+    <div id="ctrl-tam">
+      <button class="tbtn" onclick="mudarTam(-1)">A−</button>
+      <span id="tam-lbl" style="font-size:9px;color:#555;align-self:center;">44px</span>
+      <button class="tbtn" onclick="mudarTam(1)">A+</button>
+    </div>
+  </div>
 
-    const PACKS = {
-      MINIMO:  { key:"MINIMO", label:"Mínimo", price:10, flags:1000, radiusKm:5, paid:true, maxLots:50, bingos:0 },
-      MEDIO:   { key:"MEDIO",  label:"Médio",   price:15, flags:2500, radiusKm:15, paid:true, maxLots:125, bingos:2 },
-      GRANDE:  { key:"GRANDE", label:"Grande",  price:25, flags:10000, radiusKm:50, paid:true, maxLots:500, bingos:3 },
-      ENORME:  { key:"ENORME", label:"Enorme", price:50, flags:25000, radiusKm:Infinity, paid:true, maxLots:1250, bingos:5 }
-    };
+  <div id="rodape"><div id="ticker"></div></div>
+  <div id="gps-txt">📡 GPS: a iniciar...</div>
+  <div id="notif"><div id="ntf-ico" style="font-size:16px;margin-bottom:3px;"></div><div id="ntf-txt" style="color:#0ff;font-weight:700;font-size:13px;"></div><div id="ntf-sub" style="color:#888;font-size:11px;margin-top:2px;"></div></div>
 
-    let map = null;
-    let playerMarker = null;
-    let visionCircle = null;
-    let currentPosition = null;
-    let watchId = null;
-    let allFlags = [];
-    let offlineMode = false;
-    let currentOpenPanel = null;
-    let lastPosForEnergy = null;
-    let movedMetersBuffer = 0;
-    let lastMovementTime = Date.now();
-    let lastFlagRefreshCenter = null;
-    let lastFlagRefreshTime = 0;
-    let lastOfflineSuggestion = 0;
-    let gpsCenteredOnce = false;
+  <div id="side-panel" class="hidden">
+    <div class="panel-header"><b id="panel-title">Painel</b><button class="btn-dark btn-small" onclick="closePanel()">✕</button></div>
+    <div id="panel-content"></div>
+  </div>
+</div>
 
-    function defaultState() {
-      return {
-        player: {
-          name:"", contact:"", password:"", avatarMode:"male", avatarPhoto:"",
-          energy:100, zapFlags:0, prFlags:0, totalFlags:0, skill:1, vision:5,
-          promoProgressByPR: {}, totalSeenByPR: {}, qrs:[], usedQrs:[]
-        },
-        prs: [
-          {
-            id:"seed1", ownerContact:"demo@zapflags.pt", ownerPassword:"123456",
-            name:"Café Central", short:"CC", color:"#FF4D4F",
-            website:"https://cafe-central.pt", contact:"913000001",
-            address:"Rua Central, Porto", postalCode:"4000-100",
-            lat:41.1496, lng:-8.6109,
-            packages: [
-              { id:"pkg1", key:"MEDIO", label:"Médio", price:15, flagsInitial:2500, flagsLeft:2500,
-                radiusKm:15, maxLots:125, bingos:2, paid:true, source:"demo", createdAt:Date.now() }
-            ],
-            campaign: { rewardsEnabled:true, rewardType:"discount", rewardText:"5% de desconto",
-              promoLotsActive:10, promoBudgetLeft:200, bingoCountActive:1, bingoText:"Oferta surpresa", rewardsGiven:0 }
-          }
-        ],
-        currentPRId: null
-      };
+<!-- MODAL BANDEIRA -->
+<div id="flag-modal" class="modal-overlay hidden">
+  <div class="modal-box" id="flag-modal-content"></div>
+</div>
+
+<!-- CONFIRMAÇÃO -->
+<div id="conf-ovl"></div>
+<div id="conf-box">
+  <div id="conf-ico" style="font-size:28px;margin-bottom:7px;">❓</div>
+  <h2 id="conf-tit" style="color:#f44;margin-bottom:8px;font-size:14px;"></h2>
+  <p id="conf-txt" style="color:#888;font-size:12px;margin-bottom:16px;line-height:1.5;"></p>
+  <div style="display:flex;gap:8px;">
+    <button class="bvol" style="flex:1;padding:11px;" onclick="fecharConf()">❌ CANCELAR</button>
+    <button class="bsair" style="flex:1;padding:11px;" onclick="exConf()">✅ CONFIRMAR</button>
+  </div>
+</div>
+
+<audio id="qr-sound" src="https://assets.mixkit.co/sfx/preview/mixkit-retro-game-emergency-alarm-1005.mp3" preload="auto"></audio>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+'use strict';
+
+// ================================================================
+// CONSTANTES
+// ================================================================
+const PASSE = '321321';
+const CFG = {
+  VISAO_MIN: 5, VISAO_MAX: 100,
+  SKILL_P_METRO: 10, QR_N: 20,
+  APANHAR_RAIO: 12, VEL_PX: 2.5,
+  N_BAND: 28, SPAWN_RAIO: 140,
+};
+const flagsParaSk = sk => 500 * Math.pow(2, sk);
+const calcVisao = sk => Math.min(CFG.VISAO_MAX, CFG.VISAO_MIN + Math.floor(sk / CFG.SKILL_P_METRO));
+
+// ================================================================
+// BASE DE DADOS
+// ================================================================
+const BD = {
+  jogs:  () => { try { return JSON.parse(localStorage.getItem('zf_jogs') || '[]'); } catch { return []; } },
+  emps:  () => { try { return JSON.parse(localStorage.getItem('zf_emps') || '[]'); } catch { return []; } },
+  saveJ: l => localStorage.setItem('zf_jogs', JSON.stringify(l)),
+  saveE: l => localStorage.setItem('zf_emps', JSON.stringify(l)),
+  getSJ: () => { try { return JSON.parse(localStorage.getItem('zf_sj') || 'null'); } catch { return null; } },
+  getSP: () => { try { return JSON.parse(localStorage.getItem('zf_sp') || 'null'); } catch { return null; } },
+  setSJ: u => localStorage.setItem('zf_sj', JSON.stringify(u)),
+  setSP: p => localStorage.setItem('zf_sp', JSON.stringify(p)),
+  delSJ: () => localStorage.removeItem('zf_sj'),
+  delSP: () => localStorage.removeItem('zf_sp'),
+  getPwJ: () => localStorage.getItem('zf_pwj') || '',
+  setPwJ: pw => localStorage.setItem('zf_pwj', pw),
+  delPwJ: () => localStorage.removeItem('zf_pwj'),
+  getPwP: () => localStorage.getItem('zf_pwp') || '',
+  setPwP: pw => localStorage.setItem('zf_pwp', pw),
+  delPwP: () => localStorage.removeItem('zf_pwp'),
+  getProg: () => { try { return JSON.parse(localStorage.getItem('zf_prog') || '{}'); } catch { return {}; } },
+  saveProg: o => localStorage.setItem('zf_prog', JSON.stringify(o)),
+};
+
+// ================================================================
+// UTILS
+// ================================================================
+const G = id => document.getElementById(id);
+const val = id => G(id)?.value?.trim() || '';
+const vE = e => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(e).toLowerCase());
+const vN = n => /^[0-9]{9}$/.test(String(n).replace(/\s/g, ''));
+const fN = n => (n || 0).toLocaleString('pt-PT');
+
+function msg(id, t, tp) {
+  const e = G(id); if (!e) return;
+  e.className = 'msg ' + tp; e.innerText = t;
+  setTimeout(() => { if (e) { e.className = 'msg'; e.innerText = ''; } }, 5000);
+}
+function tPW(id, btn) {
+  const i = G(id); if (!i) return;
+  const v = i.type === 'text'; i.type = v ? 'password' : 'text';
+  btn.innerText = v ? '👁' : '🙈';
+}
+function calcF(pw, bid, tid) {
+  const b = G(bid), t = G(tid); if (!b) return;
+  let s = 0;
+  if (pw.length >= 4) s++; if (pw.length >= 8) s++;
+  if (/[0-9]/.test(pw)) s++; if (/[^a-zA-Z0-9]/.test(pw)) s++;
+  const ns = [{ c: '#333', l: '' }, { c: '#f44', l: 'Fraca' }, { c: '#f90', l: 'Razoável' }, { c: '#fc0', l: 'Boa' }, { c: '#4CAF50', l: 'Forte' }];
+  b.style.background = ns[s].c; b.style.width = (s / 4 * 100) + '%';
+  if (t) t.innerText = ns[s].l ? '— ' + ns[s].l : '';
+}
+
+function haversine(lat1, lng1, lat2, lng2) {
+  const R = 6371000, dLat = (lat2 - lat1) * Math.PI / 180, dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+function rndNear(lat, lng, m) {
+  const r = m / 111320, u = Math.random(), v = Math.random();
+  const w = r * Math.sqrt(u), t = 2 * Math.PI * v;
+  return { lat: lat + w * Math.sin(t), lng: lng + (w * Math.cos(t)) / Math.cos(lat * Math.PI / 180) };
+}
+function uid(p) { return p + '_' + Math.random().toString(36).slice(2, 10).toUpperCase(); }
+
+// ================================================================
+// NAVEGAÇÃO
+// ================================================================
+function ir(id) {
+  document.querySelectorAll('.pag').forEach(p => p.classList.remove('ativa'));
+  G(id)?.classList.add('ativa');
+  document.querySelectorAll('.msg').forEach(m => { m.className = 'msg'; m.innerText = ''; });
+  window.scrollTo(0, 0);
+  if (id === 'p-inicio') atualizarHome();
+  if (id === 'p-login-j') prepararLoginJ();
+  if (id === 'p-login-pr') prepararLoginPR();
+  if (id === 'p-jogo') iniciarMapa();
+}
+function voltarHome() { pararJogo(); ir('p-inicio'); }
+
+// ================================================================
+// HOME
+// ================================================================
+function atualizarHome() {
+  const sj = BD.getSJ(), sp = BD.getSP();
+  if (sj) {
+    G('home-j-nm').innerText = '👤 ' + sj.nm;
+    G('home-j-info').innerText = '🏴 ' + fN(sj.fl || 0) + ' flags · 👁 ' + (sj.visao || 5) + 'm · Nível ' + (sj.nivel || 1);
+    G('home-j').style.display = 'block';
+  } else { G('home-j').style.display = 'none'; }
+  if (sp) {
+    G('home-pr-nm').innerText = '🏪 ' + sp.ne;
+    G('home-pr-info').innerText = '📍 ' + (sp.loc || '-') + ' · ' + (sp.ativ || '-');
+    G('home-pr').style.display = 'block';
+  } else { G('home-pr').style.display = 'none'; }
+}
+function reentrarJogo() { const sj = BD.getSJ(); if (!sj) { ir('p-login-j'); return; } entrarNoJogo(sj); }
+function reentrarPR() { const sp = BD.getSP(); if (!sp) { ir('p-login-pr'); return; } entrarNoPR(sp); }
+
+// ================================================================
+// CONFIRMAÇÕES
+// ================================================================
+let confAcao = null;
+function confirmarSair(q) {
+  const t = { j: 'SAIR DO JOGO?', pr: 'SAIR DA CONTA?' };
+  mostrConf('🚪', t[q], 'Progresso guardado. Podes voltar.', 'sair-' + q);
+}
+function mostrConf(ico, tit, txt, acao) {
+  confAcao = acao;
+  G('conf-ico').innerText = ico; G('conf-tit').innerText = tit; G('conf-txt').innerText = txt;
+  G('conf-ovl').style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:9500;display:block;';
+  G('conf-box').style.display = 'block';
+}
+function fecharConf() { confAcao = null; G('conf-ovl').style.display = 'none'; G('conf-box').style.display = 'none'; }
+function exConf() {
+  const a = confAcao; fecharConf();
+  if (a === 'sair-j') { BD.delSJ(); BD.delPwJ(); pararJogo(); ir('p-inicio'); }
+  else if (a === 'sair-pr') { BD.delSP(); BD.delPwP(); ir('p-inicio'); }
+}
+
+// ================================================================
+// LOGIN JOGADOR
+// ================================================================
+function prepararLoginJ() {
+  const sessao = BD.getSJ();
+  if (sessao) {
+    G('lj-com').style.display = 'block'; G('lj-sem').style.display = 'none';
+    G('lj-nm').innerText = sessao.nm || 'Jogador';
+    G('lj-btn-nm').innerText = sessao.nm || 'Jogador';
+    G('lj-sub').innerText = 'Jogador · Nível ' + (sessao.nivel || 1);
+    G('lj-fl').innerText = fN(sessao.fl || 0);
+    G('lj-en').innerText = Math.round(sessao.en || 100) + '%';
+    G('lj-sk').innerText = sessao.sk || 0;
+    G('lj-vis').innerText = (sessao.visao || 5) + 'm';
+    const emojis = ['🌱', '🥉', '🥈', '🥇', '💎', '👑'];
+    G('lj-emoji').innerText = emojis[Math.min(5, Math.floor((sessao.sk || 0) / 10))];
+    const pwG = BD.getPwJ();
+    if (pwG) { G('lj-pw').value = pwG; G('lj-lbr-pw').checked = true; }
+    else { G('lj-pw').value = ''; G('lj-lbr-pw').checked = false; }
+    setTimeout(() => G('lj-pw')?.focus(), 200);
+  } else {
+    G('lj-com').style.display = 'none'; G('lj-sem').style.display = 'block';
+    G('lj-em').value = ''; G('lj-em-i').style.display = 'none';
+    setTimeout(() => G('lj-em')?.focus(), 200);
+  }
+}
+
+function loginJCom() {
+  const sessao = BD.getSJ(); if (!sessao) { prepararLoginJ(); return; }
+  const senha = G('lj-pw').value;
+  if (!senha) { msg('m-lj', '❌ Insere a senha!', 'e'); return; }
+  if (senha === PASSE) { finalizarLoginJ(sessao); return; }
+  const jog = BD.jogs().find(j => j.em === sessao.em && j.pw === senha);
+  if (!jog) { msg('m-lj', '❌ Senha incorreta!', 'e'); G('lj-pw').value = ''; G('lj-pw').focus(); return; }
+  if (G('lj-lbr-pw').checked) BD.setPwJ(senha); else BD.delPwJ();
+  finalizarLoginJ(jog);
+}
+
+function loginJSem() {
+  const email = val('lj-em').toLowerCase(), senha = G('lj-pw-m').value;
+  if (!email) { msg('m-lj', '❌ Insere o email!', 'e'); return; }
+  if (!vE(email)) { msg('m-lj', '❌ Email inválido!', 'e'); return; }
+  if (!senha) { msg('m-lj', '❌ Insere a senha!', 'e'); return; }
+  if (senha === PASSE) { finalizarLoginJ({ nm: 'ADMIN', em: email, fl: 0, en: 100, sk: 0, nivel: 1, visao: 5 }); return; }
+  const jog = BD.jogs().find(j => j.em === email && j.pw === senha);
+  if (!jog) { msg('m-lj', BD.jogs().find(j => j.em === email) ? '❌ Senha incorreta!' : '❌ Email não encontrado!', 'e'); return; }
+  if (G('lj-lbr').checked) BD.setPwJ(senha); else BD.delPwJ();
+  finalizarLoginJ(jog);
+}
+
+function finalizarLoginJ(jog) {
+  jog.ult = Date.now();
+  const jogs = BD.jogs();
+  const idx = jogs.findIndex(j => j.em === jog.em);
+  if (idx >= 0) jogs[idx] = jog; else if (jog.em) jogs.push(jog);
+  BD.saveJ(jogs); BD.setSJ(jog);
+  entrarNoJogo(jog);
+}
+
+function verEmJ() {
+  const em = val('lj-em').toLowerCase(), div = G('lj-em-i');
+  if (!div) return;
+  if (!vE(em)) { div.style.display = 'none'; return; }
+  const jog = BD.jogs().find(j => j.em === em);
+  if (jog) { div.style.display = 'block'; div.style.borderColor = '#4CAF50'; div.style.color = '#81c784'; div.innerHTML = '✅ Conta: <b style="color:#0ff;">' + jog.nm + '</b>'; setTimeout(() => G('lj-pw-m')?.focus(), 50); }
+  else { div.style.display = 'block'; div.style.borderColor = '#f44'; div.style.color = '#f66'; div.innerHTML = '❌ Não encontrado. <span class="lnk" onclick="ir(\'p-reg-j\')">Criar conta</span>'; }
+}
+function trocarContaJ() { BD.delSJ(); BD.delPwJ(); prepararLoginJ(); }
+
+// ================================================================
+// REGISTO JOGADOR
+// ================================================================
+function fazerRegJ() {
+  const nm = val('rj-nm'), em = val('rj-em').toLowerCase(), tl = val('rj-tl');
+  const pw = G('rj-pw').value, pw2 = G('rj-pw2').value;
+  if (!nm) { msg('m-regj', '❌ Insere o nome!', 'e'); return; }
+  if (!em || !vE(em)) { msg('m-regj', '❌ Email inválido!', 'e'); return; }
+  if (!pw || pw.length < 4) { msg('m-regj', '❌ Senha mínimo 4 caracteres!', 'e'); return; }
+  if (pw !== pw2) { msg('m-regj', '❌ Senhas não coincidem!', 'e'); return; }
+  const jogs = BD.jogs();
+  if (jogs.find(j => j.em === em)) { msg('m-regj', '❌ Email já registado!', 'e'); return; }
+  const novoJog = { nm, em, tl: tl.replace(/\s/g, ''), pw, fl: 0, en: 100, sk: 0, nivel: 1, visao: 5, qrsGerados: [], reg: Date.now(), ult: Date.now() };
+  jogs.push(novoJog); BD.saveJ(jogs); BD.setSJ(novoJog);
+  if (G('rj-lbr').checked) BD.setPwJ(pw);
+  entrarNoJogo(novoJog);
+}
+
+// ================================================================
+// LOGIN PR
+// ================================================================
+function prepararLoginPR() {
+  const sessao = BD.getSP();
+  if (sessao) {
+    G('lpr-com').style.display = 'block'; G('lpr-sem').style.display = 'none';
+    G('lpr-nm').innerText = sessao.ne || 'Empresa';
+    G('lpr-btn-nm').innerText = sessao.ne || 'Empresa';
+    G('lpr-sub').innerText = (sessao.ativ || 'Lojista') + ' · ' + (sessao.loc || '-');
+    G('lpr-loc').innerText = sessao.loc || '-';
+    G('lpr-packs').innerText = '0'; G('lpr-qrs').innerText = sessao.qrsGerados || 0;
+    const pwG = BD.getPwP();
+    if (pwG) { G('lpr-pw').value = pwG; G('lpr-lbr-pw').checked = true; }
+    else { G('lpr-pw').value = ''; G('lpr-lbr-pw').checked = false; }
+    setTimeout(() => G('lpr-pw')?.focus(), 200);
+  } else {
+    G('lpr-com').style.display = 'none'; G('lpr-sem').style.display = 'block';
+    G('lpr-em').value = ''; G('lpr-em-i').style.display = 'none';
+    setTimeout(() => G('lpr-em')?.focus(), 200);
+  }
+}
+
+function loginPRCom() {
+  const sessao = BD.getSP(); if (!sessao) { prepararLoginPR(); return; }
+  const senha = G('lpr-pw').value;
+  if (!senha) { msg('m-lpr', '❌ Insere a senha!', 'e'); return; }
+  if (senha === PASSE) { finalizarLoginPR(sessao); return; }
+  const pr = BD.emps().find(p => p.em === sessao.em && p.pw === senha);
+  if (!pr) { msg('m-lpr', '❌ Senha incorreta!', 'e'); G('lpr-pw').value = ''; return; }
+  if (G('lpr-lbr-pw').checked) BD.setPwP(senha); else BD.delPwP();
+  finalizarLoginPR(pr);
+}
+
+function loginPRSem() {
+  const email = val('lpr-em').toLowerCase(), senha = G('lpr-pw-m').value;
+  if (!email || !vE(email)) { msg('m-lpr', '❌ Email inválido!', 'e'); return; }
+  if (!senha) { msg('m-lpr', '❌ Insere a senha!', 'e'); return; }
+  if (senha === PASSE) {
+    const pr = BD.emps().find(p => p.em === email) || { ne: 'Admin', em: email, loc: '-', ativ: '-', qrsGerados: 0 };
+    finalizarLoginPR(pr); return;
+  }
+  const pr = BD.emps().find(p => p.em === email && p.pw === senha);
+  if (!pr) { msg('m-lpr', BD.emps().find(p => p.em === email) ? '❌ Senha incorreta!' : '❌ Não encontrada!', 'e'); return; }
+  if (G('lpr-lbr').checked) BD.setPwP(senha); else BD.delPwP();
+  finalizarLoginPR(pr);
+}
+
+function finalizarLoginPR(pr) { BD.setSP(pr); entrarNoPR(pr); }
+function verEmPR() {
+  const em = val('lpr-em').toLowerCase(), div = G('lpr-em-i'); if (!div) return;
+  if (!vE(em)) { div.style.display = 'none'; return; }
+  const pr = BD.emps().find(p => p.em === em);
+  if (pr) { div.style.display = 'block'; div.style.borderColor = '#f90'; div.style.color = '#f90'; div.innerHTML = '✅ <b style="color:#0ff;">' + pr.ne + '</b> · 📍 ' + (pr.loc || '-'); }
+  else { div.style.display = 'block'; div.style.borderColor = '#f44'; div.style.color = '#f66'; div.innerHTML = '❌ Não encontrada. <span class="lnk" onclick="ir(\'p-reg-pr\')">Registar</span>'; }
+}
+function trocarContaPR() { BD.delSP(); BD.delPwP(); prepararLoginPR(); }
+
+// ================================================================
+// REGISTO PR
+// ================================================================
+function fazerRegPR() {
+  const ne = val('prr-ne'), nif = val('prr-nif'), rua = val('prr-rua'), cp = val('prr-cp');
+  const loc = val('prr-loc'), dist = val('prr-dist'), ativ = val('prr-ativ');
+  const tel = val('prr-tel'), email = val('prr-email').toLowerCase(), telR = val('prr-tel-r');
+  const resp = val('prr-resp'), pw = G('prr-pw').value, pw2 = G('prr-pw2').value;
+  if (!ne || !nif || !rua || !cp || !loc || !dist || !ativ || !tel || !email || !telR || !resp || !pw)
+    { msg('m-regpr', '❌ Preenche todos os campos obrigatórios (*).', 'e'); return; }
+  if (!vN(nif)) { msg('m-regpr', '❌ NIF inválido (9 dígitos).', 'e'); return; }
+  if (!vE(email)) { msg('m-regpr', '❌ Email inválido!', 'e'); return; }
+  if (pw.length < 4) { msg('m-regpr', '❌ Senha mínimo 4 caracteres!', 'e'); return; }
+  if (pw !== pw2) { msg('m-regpr', '❌ Senhas não coincidem!', 'e'); return; }
+  if (!G('prr-trm').checked) { msg('m-regpr', '❌ Aceita os Termos e Condições.', 'e'); return; }
+  const emps = BD.emps();
+  if (emps.find(p => p.em === email)) { msg('m-regpr', '❌ Email já registado!', 'e'); return; }
+  const novaPR = { id: uid('PR'), ne, nif, em: email, pw, rua, cp, loc, dist, ativ, tel, telR, resp, qrsGerados: 0, reg: Date.now() };
+  emps.push(novaPR); BD.saveE(emps); BD.setSP(novaPR);
+  if (G('prr-lbr').checked) BD.setPwP(pw);
+  msg('m-regpr', '✅ Empresa registada com sucesso!', 's');
+  setTimeout(() => entrarNoPR(novaPR), 800);
+}
+
+// ================================================================
+// RECUPERAR SENHA
+// ================================================================
+let recTipo = 'j', recModo = '', recCod = '', recUser = null;
+
+function irRec(tipo) { recTipo = tipo; ir('p-rec');
+  G('rec-area-j').style.display = tipo === 'j' ? 'block' : 'none';
+  G('rec-area-pr').style.display = tipo === 'pr' ? 'block' : 'none';
+  G('rec-p1').style.display = 'block'; G('rec-p2').style.display = 'none'; G('rec-p3').style.display = 'none';
+  G('rec-fem').style.display = 'none'; G('rec-fsms').style.display = 'none'; G('rec-btn-env').style.display = 'none';
+  G('rec-oem').style.borderColor = '#333'; G('rec-osms').style.borderColor = '#333'; recModo = '';
+}
+function irVoltarRec() { ir(recTipo === 'j' ? 'p-login-j' : 'p-login-pr'); }
+
+function selRec(modo) {
+  recModo = modo;
+  G('rec-oem').style.borderColor = modo === 'email' ? '#0ff' : '#333';
+  G('rec-osms').style.borderColor = modo === 'sms' ? '#0ff' : '#333';
+  G('rec-fem').style.display = modo === 'email' ? 'block' : 'none';
+  G('rec-fsms').style.display = modo === 'sms' ? 'block' : 'none';
+  G('rec-btn-env').style.display = 'block';
+}
+
+function enviarCod() {
+  const lista = recTipo === 'j' ? BD.jogs() : BD.emps();
+  if (recModo === 'email') {
+    const em = val('rec-em').toLowerCase();
+    if (!vE(em)) { msg('m-rec', '❌ Email inválido!', 'e'); return; }
+    recUser = lista.find(u => u.em === em);
+  } else {
+    const tl = val('rec-tl').replace(/\s/g, '');
+    recUser = lista.find(u => (u.tl || u.telR || '') === tl);
+  }
+  if (!recUser) { msg('m-rec', '❌ Não encontrado!', 'e'); return; }
+  recCod = String(Math.floor(1000 + Math.random() * 9000));
+  G('rec-cshow').innerText = recCod;
+  G('rec-p1').style.display = 'none'; G('rec-p2').style.display = 'block';
+}
+function reenvCod() { recCod = String(Math.floor(1000 + Math.random() * 9000)); G('rec-cshow').innerText = recCod; msg('m-rec', '📨 Código reenviado!', 'i'); }
+
+function verCod() {
+  if (val('rec-cin') !== recCod) { msg('m-rec', '❌ Código incorreto!', 'e'); return; }
+  G('rec-p2').style.display = 'none'; G('rec-p3').style.display = 'block';
+}
+
+function guardarNovaSenha() {
+  const np = G('rec-np').value, np2 = G('rec-np2').value;
+  if (!np || np.length < 4) { msg('m-rec', '❌ Mínimo 4 caracteres!', 'e'); return; }
+  if (np !== np2) { msg('m-rec', '❌ Senhas não coincidem!', 'e'); return; }
+  recUser.pw = np;
+  if (recTipo === 'j') { const l = BD.jogs(); const i = l.findIndex(j => j.em === recUser.em); if (i >= 0) l[i] = recUser; BD.saveJ(l); }
+  else { const l = BD.emps(); const i = l.findIndex(p => p.em === recUser.em); if (i >= 0) l[i] = recUser; BD.saveE(l); }
+  msg('m-rec', '✅ Senha alterada! A redirecionar...', 's');
+  setTimeout(() => ir(recTipo === 'j' ? 'p-login-j' : 'p-login-pr'), 1200);
+}
+
+// ================================================================
+// BACKOFFICE
+// ================================================================
+function loginBO() {
+  if (G('bo-pw').value !== PASSE) { msg('m-bo', '❌ Código incorreto!', 'e'); return; }
+  alert('Backoffice em desenvolvimento.\nJogadores: ' + BD.jogs().length + '\nEmpresas: ' + BD.emps().length);
+}
+
+// ================================================================
+// JOGO — MAPA LEAFLET
+// ================================================================
+let map = null, playerMarker = null, visionCircle = null;
+let pos = null, watchId = null, allFlags = [], openPanelType = null;
+let lastRefreshPos = null, lastRefreshTime = 0, movedBuffer = 0, lastEnergyPos = null;
+let jogAtual = null;
+const movKeys = { c: false, b: false, e: false, d: false };
+let moveInterval = null, ctrlSize = 44;
+
+function entrarNoJogo(jog) {
+  jogAtual = jog;
+  ir('p-jogo');
+}
+
+function entrarNoPR(pr) {
+  G('pr-hud-n') && (G('pr-hud-n').innerText = '🏪 ' + pr.ne);
+  alert('Painel do Lojista "' + pr.ne + '" em desenvolvimento.');
+  ir('p-inicio');
+}
+
+function iniciarMapa() {
+  if (!jogAtual) return;
+  if (!map) {
+    map = L.map('mapa', { zoomControl: true, dragging: true, touchZoom: true, scrollWheelZoom: false, doubleClickZoom: false, boxZoom: false, keyboard: false })
+      .setView([41.1496, -8.6109], 18);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 20 }).addTo(map);
+    map.on('move moveend zoom zoomend', updateFog);
+  }
+  updateHUD();
+  initTicker();
+  tryGPS();
+}
+
+function tryGPS() {
+  G('gps-txt').innerText = '📡 GPS: a tentar...';
+  if (!navigator.geolocation) { fallbackManual(); return; }
+  navigator.geolocation.getCurrentPosition(
+    p => { setPos(p.coords.latitude, p.coords.longitude, false, true); G('gps-txt').innerText = '📡 GPS: ativo';
+      watchId = navigator.geolocation.watchPosition(wp => setPos(wp.coords.latitude, wp.coords.longitude, true, false), () => {}, { enableHighAccuracy: true, maximumAge: 5000, timeout: 20000 }); },
+    () => fallbackManual(),
+    { enableHighAccuracy: true, timeout: 10000 }
+  );
+}
+
+function fallbackManual() {
+  G('gps-txt').innerText = '📡 GPS: offline (manual)';
+  if (!pos) pos = { lat: 41.1496, lng: -8.6109 };
+  setPos(pos.lat, pos.lng, false, true);
+  refreshFlags(true); showFlags();
+}
+
+function setPos(lat, lng, moved, center) {
+  pos = { lat, lng };
+  if (lastEnergyPos && moved && jogAtual) {
+    const d = haversine(lastEnergyPos.lat, lastEnergyPos.lng, lat, lng);
+    if (d > 0.5) { movedBuffer += d; while (movedBuffer >= 20) { movedBuffer -= 20; jogAtual.en = Math.max(0, (jogAtual.en || 100) - 1); } }
+  }
+  lastEnergyPos = { lat, lng };
+  const icon = L.divIcon({ className: '', html: '<div class="player-icon">👤</div>', iconSize: [30, 30], iconAnchor: [15, 15] });
+  if (!playerMarker) playerMarker = L.marker([lat, lng], { icon, zIndexOffset: 1000 }).addTo(map);
+  else playerMarker.setLatLng([lat, lng]);
+  const vis = jogAtual?.visao || 5;
+  if (!visionCircle) visionCircle = L.circle([lat, lng], { radius: vis, color: '#4CAF50', fillOpacity: 0.06, weight: 1.5, dashArray: '6 4' }).addTo(map);
+  else { visionCircle.setLatLng([lat, lng]); visionCircle.setRadius(vis); }
+  if (center) map.setView([lat, lng], map.getZoom() || 18);
+  updateFog(); refreshFlags(false); showFlags(); updateHUD(); saveJogador();
+}
+
+function updateFog() {
+  if (!map || !pos) return;
+  const pt = map.latLngToContainerPoint([pos.lat, pos.lng]);
+  const f = G('fog-overlay');
+  f.style.setProperty('--fx', pt.x + 'px'); f.style.setProperty('--fy', pt.y + 'px');
+  f.style.setProperty('--fr', Math.max(60, (jogAtual?.visao || 5) * 16) + 'px');
+}
+
+function centerPlayer() { if (map && pos) map.setView([pos.lat, pos.lng], 18); }
+
+// JOYSTICK
+function pd(dir) { movKeys[dir] = true; G('bc-' + dir)?.classList.add('on'); startMove(); }
+function pu(dir) { movKeys[dir] = false; G('bc-' + dir)?.classList.remove('on'); if (!movKeys.c && !movKeys.b && !movKeys.e && !movKeys.d) stopMove(); }
+
+function startMove() {
+  if (moveInterval) return;
+  moveInterval = setInterval(() => {
+    if (!pos || !jogAtual) return;
+    if ((jogAtual.en || 100) <= 0) return;
+    let dx = 0, dy = 0;
+    if (movKeys.c) dy = 1; if (movKeys.b) dy = -1;
+    if (movKeys.e) dx = -1; if (movKeys.d) dx = 1;
+    if (dx === 0 && dy === 0) return;
+    const lat = pos.lat + (dy * 6) / 111320;
+    const lng = pos.lng + (dx * 6) / (111320 * Math.cos(pos.lat * Math.PI / 180));
+    setPos(lat, lng, true, true);
+  }, 80);
+}
+function stopMove() { clearInterval(moveInterval); moveInterval = null; }
+
+window.addEventListener('keydown', e => {
+  if (e.key === 'ArrowUp' || e.key === 'w') pd('c');
+  if (e.key === 'ArrowDown' || e.key === 's') pd('b');
+  if (e.key === 'ArrowLeft' || e.key === 'a') pd('e');
+  if (e.key === 'ArrowRight' || e.key === 'd') pd('d');
+});
+window.addEventListener('keyup', e => {
+  if (e.key === 'ArrowUp' || e.key === 'w') pu('c');
+  if (e.key === 'ArrowDown' || e.key === 's') pu('b');
+  if (e.key === 'ArrowLeft' || e.key === 'a') pu('e');
+  if (e.key === 'ArrowRight' || e.key === 'd') pu('d');
+});
+
+function mudarTam(delta) {
+  ctrlSize = Math.max(30, Math.min(60, ctrlSize + delta * 4));
+  document.querySelectorAll('.cbtn').forEach(b => { b.style.width = ctrlSize + 'px'; b.style.height = ctrlSize + 'px'; });
+  G('tam-lbl').innerText = ctrlSize + 'px';
+}
+
+// DRAG JOYSTICK
+(function () {
+  const el = G('ctrl'); if (!el) return;
+  const handle = el.querySelector('.drag-handle') || el;
+  let dragging = false, sx = 0, sy = 0, sl = 0, st = 0;
+  handle.addEventListener('pointerdown', e => {
+    dragging = true; const r = el.getBoundingClientRect();
+    el.style.left = r.left + 'px'; el.style.top = r.top + 'px'; el.style.right = 'auto'; el.style.bottom = 'auto';
+    sl = r.left; st = r.top; sx = e.clientX; sy = e.clientY;
+    handle.setPointerCapture(e.pointerId); e.preventDefault();
+  });
+  window.addEventListener('pointermove', e => { if (!dragging) return; el.style.left = (sl + e.clientX - sx) + 'px'; el.style.top = (st + e.clientY - sy) + 'px'; });
+  window.addEventListener('pointerup', () => { dragging = false; });
+})();
+
+// ================================================================
+// BANDEIRAS
+// ================================================================
+function refreshFlags(force) {
+  if (!pos) return;
+  const now = Date.now();
+  let should = force;
+  if (!lastRefreshPos) should = true;
+  else if (now - lastRefreshTime > 12000) should = true;
+  else if (haversine(lastRefreshPos.lat, lastRefreshPos.lng, pos.lat, pos.lng) > 12) should = true;
+  if (!should) return;
+  clearAllFlags();
+  for (let i = 0; i < 3; i++) {
+    const fp = rndNear(pos.lat, pos.lng, 15 + Math.random() * 20);
+    allFlags.push({ id: uid('F'), type: 'ZAP', lat: fp.lat, lng: fp.lng, marker: null });
+  }
+  lastRefreshPos = { ...pos }; lastRefreshTime = now;
+}
+
+function showFlags() {
+  if (!pos || !map) return;
+  const vis = jogAtual?.visao || 5;
+  allFlags.forEach(f => {
+    const d = haversine(pos.lat, pos.lng, f.lat, f.lng);
+    if (d <= vis && !f.marker) {
+      const icon = L.divIcon({ className: '', html: '<div class="flag-marker"><div class="flag-stick"></div><div class="flag-banner" style="background:#f44;"></div></div>', iconSize: [28, 28], iconAnchor: [12, 25] });
+      f.marker = L.marker([f.lat, f.lng], { icon }).addTo(map);
+      f.marker.on('click', () => collectFlag(f));
     }
+    if (d > vis && f.marker) { map.removeLayer(f.marker); f.marker = null; }
+  });
+}
 
-    let state = loadState();
+function collectFlag(flag) {
+  if (!pos || !jogAtual) return;
+  const d = haversine(pos.lat, pos.lng, flag.lat, flag.lng);
+  if (d > CFG.APANHAR_RAIO) {
+    showNotif('⚠️', 'Muito longe!', 'Aproxima-te (' + Math.round(d) + 'm)');
+    return;
+  }
+  jogAtual.fl = (jogAtual.fl || 0) + 1;
+  jogAtual.sk = (jogAtual.sk || 0) + 1;
+  jogAtual.en = Math.min(100, (jogAtual.en || 100) + 5);
+  jogAtual.visao = calcVisao(jogAtual.sk);
+  jogAtual.nivel = Math.floor((jogAtual.sk || 0) / 10) + 1;
+  if (visionCircle) visionCircle.setRadius(jogAtual.visao);
+  if (flag.marker) map.removeLayer(flag.marker);
+  allFlags = allFlags.filter(f => f.id !== flag.id);
+  const np = rndNear(pos.lat, pos.lng, 15 + Math.random() * 20);
+  allFlags.push({ id: uid('F'), type: 'ZAP', lat: np.lat, lng: np.lng, marker: null });
+  showFlags(); updateHUD(); saveJogador();
+  showNotif('🏴', 'Bandeira apanhada!', '+1 Skill · +5% Energia');
+}
 
-    function loadState() {
-      try {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        if (!raw) return defaultState();
-        const parsed = JSON.parse(raw);
-        if (!parsed.player) parsed.player = defaultState().player;
-        if (!parsed.player.password) parsed.player.password = "";
-        if (!parsed.prs) parsed.prs = defaultState().prs;
-        if (!parsed.currentPRId) parsed.currentPRId = null;
-        return parsed;
-      } catch(e) { return defaultState(); }
-    }
+function clearAllFlags() { allFlags.forEach(f => { if (f.marker) map.removeLayer(f.marker); }); allFlags = []; }
 
-    function saveState() {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-    }
+// ================================================================
+// HUD
+// ================================================================
+function updateHUD() {
+  if (!jogAtual) return;
+  G('j-nm').innerText = '👤 ' + (jogAtual.nm || '-');
+  G('j-nv').innerText = 'Nível ' + (jogAtual.nivel || 1);
+  G('h-fl').innerText = fN(jogAtual.fl || 0);
+  G('h-en').innerText = Math.round(jogAtual.en || 100) + '%';
+  G('h-sk').innerText = jogAtual.sk || 0;
+  G('h-vis').innerText = (jogAtual.visao || 5) + 'm';
+  G('sk-nv').innerText = jogAtual.nivel || 1;
+  G('sk-sk').innerText = jogAtual.sk || 0;
+  G('sk-vis').innerText = (jogAtual.visao || 5) + 'm';
+  const next = flagsParaSk(jogAtual.nivel || 1);
+  const current = jogAtual.fl || 0;
+  G('sk-px').innerText = fN(next);
+  G('bskf').style.width = Math.min(100, (current / next * 100)) + '%';
+  G('bskt').innerText = fN(current) + '/' + fN(next);
+}
 
-    function randomId(prefix) {
-      return prefix + "_" + Math.random().toString(36).slice(2,10).toUpperCase();
-    }
+function showNotif(ico, txt, sub) {
+  G('ntf-ico').innerText = ico; G('ntf-txt').innerText = txt; G('ntf-sub').innerText = sub || '';
+  G('notif').style.display = 'block';
+  setTimeout(() => G('notif').style.display = 'none', 2500);
+}
 
-    function initMap() {
-      if (map) return;
-      map = L.map("map", { zoomControl:true, dragging:true, scrollWheelZoom:false, doubleClickZoom:false, touchZoom:true, boxZoom:false, keyboard:false }).setView([41.1496, -8.6109], 18);
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution:"© OSM" }).addTo(map);
-      map.on("move zoom", updateFogOverlay);
-    }
+// PAINÉIS
+function openPanel(t) {
+  openPanelType = t;
+  G('side-panel').classList.remove('hidden');
+  G('panel-title').innerText = { progress: 'Progresso', qrs: 'QR Codes', account: 'Conta' }[t] || t;
+  renderPanel(t);
+}
+function closePanel() { openPanelType = null; G('side-panel').classList.add('hidden'); }
 
-    function createPlayerIcon() {
-      let inner = "JG";
-      if (state.player.avatarMode === "male") inner = "♂";
-      if (state.player.avatarMode === "female") inner = "♀";
-      if (state.player.avatarMode === "photo" && state.player.avatarPhoto) {
-        inner = `<img src="${state.player.avatarPhoto}" alt="avatar" />`;
-      }
-      return L.divIcon({
-        className:"", html:`<div class="player-marker">${inner}</div>`,
-        iconSize:[28,28], iconAnchor:[14,14]
-      });
-    }
+function renderPanel(t) {
+  const el = G('panel-content');
+  if (t === 'progress') {
+    el.innerHTML = '<div class="item">🏴 Flags: <b>' + fN(jogAtual?.fl || 0) + '</b><br>🎯 Skill: <b>' + (jogAtual?.sk || 0) + '</b><br>👁 Visão: <b>' + (jogAtual?.visao || 5) + 'm</b><br>⭐ Nível: <b>' + (jogAtual?.nivel || 1) + '</b></div>';
+  } else if (t === 'qrs') {
+    el.innerHTML = '<div class="item">Sistema de QR em desenvolvimento.</div>';
+  } else if (t === 'account') {
+    el.innerHTML = '<div class="item"><b>Nome:</b> ' + (jogAtual?.nm || '-') + '<br><b>Email:</b> ' + (jogAtual?.em || '-') + '<br><b>Energia:</b> ' + Math.round(jogAtual?.en || 100) + '%</div>' +
+      '<div style="display:flex;gap:8px;margin-top:8px;"><button class="bc" style="flex:1;padding:10px;" onclick="voltarHome()">← Início</button><button class="bsair" style="flex:1;padding:10px;" onclick="confirmarSair(\'j\')">Sair</button></div>';
+  }
+}
 
-    function createFlagIcon() {
-      return L.divIcon({
-        className:"", html:`<div class="flag-marker"><div class="flag-stick"></div><div class="flag-banner" style="background:#FF0000;"></div></div>`,
-        iconSize:[34,34], iconAnchor:[17,28]
-      });
-    }
+// TICKER
+function initTicker() {
+  const t = G('ticker');
+  if (t.children.length > 0) return;
+  const msgs = [
+    '🏴 ZAP FLAGS — Caça ao Tesouro Digital',
+    '👁 A tua visão aumenta com o skill!',
+    '⚡ Apanha bandeiras para ganhar energia',
+    '🎯 Sobe de nível e desbloqueia prémios',
+    '📍 Ativa o GPS para jogar na rua',
+  ];
+  const html = msgs.map(m => '<span class="tick">' + m + '</span>').join('');
+  t.innerHTML = html + html;
+}
 
-    function updatePlayerLocation(lat, lng, fromMovement, centerMap) {
-      currentPosition = { lat, lng };
+// GUARDAR
+function saveJogador() {
+  if (!jogAtual) return;
+  BD.setSJ(jogAtual);
+  if (jogAtual.em) {
+    const jogs = BD.jogs();
+    const idx = jogs.findIndex(j => j.em === jogAtual.em);
+    if (idx >= 0) jogs[idx] = jogAtual;
+    BD.saveJ(jogs);
+  }
+}
 
-      if (lastPosForEnergy && fromMovement) {
-        const moved = getDistanceMeters(lastPosForEnergy.lat, lastPosForEnergy.lng, lat, lng);
-        if (moved > 0.5) {
-          movedMetersBuffer += moved;
-          lastMovementTime = Date.now();
-          while (movedMetersBuffer >= 20) { movedMetersBuffer -= 20; state.player.energy = Math.max(0, state.player.energy - 1); }
-        }
-      }
-      lastPosForEnergy = { lat, lng };
+function pararJogo() {
+  stopMove();
+  if (watchId !== null) { navigator.geolocation.clearWatch(watchId); watchId = null; }
+  clearAllFlags();
+  if (playerMarker && map) { map.removeLayer(playerMarker); playerMarker = null; }
+  if (visionCircle && map) { map.removeLayer(visionCircle); visionCircle = null; }
+  pos = null; jogAtual = null; lastRefreshPos = null;
+}
 
-      if (!playerMarker) {
-        playerMarker = L.marker([lat, lng], { icon:createPlayerIcon() }).addTo(map);
-      } else {
-        playerMarker.setLatLng([lat, lng]);
-        playerMarker.setIcon(createPlayerIcon());
-      }
+// ENERGIA PASSIVA
+setInterval(() => {
+  if (jogAtual && (jogAtual.en || 100) < 100) {
+    jogAtual.en = Math.min(100, (jogAtual.en || 100) + 1);
+    updateHUD(); saveJogador();
+  }
+}, 30000);
 
-      if (!visionCircle) {
-        visionCircle = L.circle([lat, lng], { radius:state.player.vision, color:"#00ff00", fillOpacity:0.05, weight:1 }).addTo(map);
-      } else {
-        visionCircle.setLatLng([lat, lng]);
-        visionCircle.setRadius(state.player.vision);
-      }
+// ARRANQUE
+atualizarHome();
 
-      if (centerMap) map.setView([lat, lng], 18);
-
-      updateFogOverlay();
-      refreshFlags(false);
-      updateVisibleFlags();
-      renderTopBar();
-      renderPanelIfOpen();
-      saveState();
-    }
-
-    function updateFogOverlay() {
-      if (!map || !currentPosition) return;
-      const point = map.latLngToContainerPoint([currentPosition.lat, currentPosition.lng]);
-      document.getElementById("fog-overlay").style.setProperty("--fog-x", point.x + "px");
-      document.getElementById("fog-overlay").style.setProperty("--fog-y", point.y + "px");
-      document.getElementById("fog-overlay").style.setProperty("--fog-r", Math.max(55, state.player.vision * 18) + "px");
-    }
-
-    function getDistanceMeters(lat1, lng1, lat2, lng2) {
-      const R = 6371e3;
-      const phi1 = lat1 * Math.PI/180, phi2 = lat2 * Math.PI/180;
-      const dPhi = (lat2-lat1)*Math.PI/180, dLambda = (lng2-lng1)*Math.PI/180;
-      const a = Math.sin(dPhi/2)*Math.sin(dPhi/2) + Math.cos(phi1)*Math.cos(phi2)*Math.sin(dLambda/2)*Math.sin(dLambda/2);
-      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-    }
-
-    function calculateVision(zapFlags) {
-      if (zapFlags <= 0) return 5;
-      if (zapFlags <= 100000) return +(5 + 45 * Math.pow(zapFlags/100000, 0.72)).toFixed(2);
-      const extra = Math.min(1, (zapFlags-100000)/900000);
-      return +(50 + 50 * Math.pow(extra, 0.82)).toFixed(2);
-    }
-
-    function calculateSkill(zapFlags) {
-      if (zapFlags < 10) return 1; if (zapFlags < 50) return 2; if (zapFlags < 100) return 3;
-      if (zapFlags < 250) return 4; if (zapFlags < 500) return 5; if (zapFlags < 1000) return 6;
-      if (zapFlags < 2500) return 7; if (zapFlags < 5000) return 8; if (zapFlags < 10000) return 9;
-      return 10 + Math.floor(Math.log10(zapFlags));
-    }
-
-    function updateSkillAndVision() {
-      state.player.skill = calculateSkill(state.player.zapFlags);
-      state.player.vision = calculateVision(state.player.zapFlags);
-    }
-
-    function randomOffset(lat, lng, radiusMeters) {
-      const r = radiusMeters / 111320;
-      const u = Math.random(), v = Math.random();
-      const w = r * Math.sqrt(u), t = 2*Math.PI*v;
-      return { lat: lat + w*Math.sin(t), lng: lng + (w*Math.cos(t))/Math.cos(lat*Math.PI/180) };
-    }
-
-    function refreshFlags(force) {
-      if (!currentPosition) return;
-      const now = Date.now();
-      let should = force;
-      if (!lastFlagRefreshCenter) should = true;
-      if (!should && now - lastFlagRefreshTime > 15000) should = true;
-      if (!should && lastFlagRefreshCenter) {
-        const d = getDistanceMeters(lastFlagRefreshCenter.lat, lastFlagRefreshCenter.lng, currentPosition.lat, currentPosition.lng);
-        if (d > 10) should = true;
-      }
-      if (!should) return;
-
-      clearFlags();
-      const p = randomOffset(currentPosition.lat, currentPosition.lng, 10);
-      allFlags.push({ id:randomId("FLAG"), type:"ZAP", lat:p.lat, lng:p.lng, marker:null });
-      state.prs.forEach(pr => {
-        pr.packages.forEach(pkg => {
-          if (pkg.flagsLeft > 0) {
-            const dist = getDistanceMeters(pr.lat, pr.lng, currentPosition.lat, currentPosition.lng);
-            if (dist <= (pkg.radiusKm === Infinity ? 999999 : pkg.radiusKm*1000)) {
-              const p2 = randomOffset(currentPosition.lat, currentPosition.lng, 15);
-              allFlags.push({ id:randomId("FLAG"), type:"PR", prId:pr.id, packageId:pkg.id, lat:p2.lat, lng:p2.lng, marker:null, promo:Math.random()<0.1 });
-            }
-          }
-        });
-      });
-      lastFlagRefreshCenter = { ...currentPosition };
-      lastFlagRefreshTime = now;
-    }
-
-    function updateVisibleFlags() {
-      if (!currentPosition || !map) return;
-      let visCount = 0;
-      allFlags.forEach(flag => {
-        const dist = getDistanceMeters(currentPosition.lat, currentPosition.lng, flag.lat, flag.lng);
-        const visible = dist <= state.player.vision && visCount < 2;
-        if (visible && !flag.marker) {
-          flag.marker = L.marker([flag.lat, flag.lng], { icon:createFlagIcon() }).addTo(map);
-          flag.marker.on("click", () => openFlagModal(flag.id));
-          visCount++;
-        }
-        if (!visible && flag.marker) { map.removeLayer(flag.marker); flag.marker = null; }
-      });
-    }
-
-    function clearFlags() {
-      allFlags.forEach(f => { if (f.marker) map.removeLayer(f.marker); });
-      allFlags = [];
-    }
-
-    function requestGPSMode() {
-      document.getElementById("mode-modal").classList.add("hidden");
-      document.getElementById("offline-controls").classList.add("hidden");
-      offlineMode = false; gpsCenteredOnce = false; renderTopBar();
-      if (!navigator.geolocation) { alert("Este dispositivo não suporta GPS."); activateHomeMode(); return; }
-      if (watchId !== null) navigator.geolocation.clearWatch(watchId);
-      navigator.geolocation.getCurrentPosition(
-        pos => { updatePlayerLocation(pos.coords.latitude, pos.coords.longitude, true, true); watchId = navigator.geolocation.watchPosition(p => updatePlayerLocation(p.coords.latitude, p.coords.longitude, true, false), err => handleGeoError(), { enableHighAccuracy:true, maximumAge:5000, timeout:20000 }); },
-        err => { alert("Não foi possível ativar GPS."); document.getElementById("mode-modal").classList.remove("hidden"); },
-        { enableHighAccuracy:true, maximumAge:5000, timeout:20000 }
-      );
-    }
-
-    function activateHomeMode() {
-      document.getElementById("mode-modal").classList.add("hidden");
-      offlineMode = true;
-      document.getElementById("offline-controls").classList.remove("hidden");
-      if (!currentPosition) currentPosition = { lat:41.1496, lng:-8.6109 };
-      updatePlayerLocation(currentPosition.lat, currentPosition.lng, false, true);
-      manualRefreshFlags(); renderTopBar();
-    }
-
-    function updatePosition(position, forceCenter) {
-      updatePlayerLocation(position.coords.latitude, position.coords.longitude, true, forceCenter || !gpsCenteredOnce);
-      gpsCenteredOnce = true;
-    }
-
-    function handleGeoError() { activateHomeMode(); }
-
-    function moveHomePlayer(dx, dy) {
-      if (!offlineMode || !currentPosition) return;
-      const lat = currentPosition.lat + (dy / 111320);
-      const lng = currentPosition.lng + (dx / (111320 * Math.cos(currentPosition.lat*Math.PI/180)));
-      updatePlayerLocation(lat, lng, true, true);
-      manualRefreshFlags();
-    }
-
-    function centerOnPlayer() {
-      if (!map || !currentPosition) return;
-      map.setView([currentPosition.lat, currentPosition.lng], 18);
-    }
-
-    function resizeOfflineControls(delta) {
-      const box = document.getElementById("offline-controls");
-      const w = parseInt(box.style.width || box.offsetWidth, 10);
-      const h = parseInt(box.style.height || box.offsetHeight, 10);
-      box.style.width = Math.max(95, Math.min(180, w+delta)) + "px";
-      box.style.height = Math.max(115, Math.min(200, h+delta)) + "px";
-    }
-
-    function renderTopBar() {
-      document.getElementById("energy-fill").style.width = state.player.energy + "%";
-      document.getElementById("energy-text").innerText = "Energia: " + state.player.energy + "%";
-      document.getElementById("mode-text").innerText = offlineMode ? "Modo: Offline" : "Modo: GPS";
-    }
-
-    function openPanel(type) {
-      currentOpenPanel = type;
-      document.getElementById("side-panel").classList.remove("hidden");
-      document.getElementById("side-panel-title").innerText = type === "progress" ? "Progresso" : type === "qrs" ? "QRs" : "Conta";
-      document.getElementById("side-panel-content").innerHTML = type === "progress" ? renderProgress() : type === "qrs" ? renderQRs() : renderAccount();
-    }
-
-    function closePanel() { currentOpenPanel = null; document.getElementById("side-panel").classList.add("hidden"); }
-    function renderPanelIfOpen() { if (currentOpenPanel) openPanel(currentOpenPanel); }
-
-    function renderProgress() {
-      return `<div class="item">Total: ${state.player.totalFlags} | ZAP: ${state.player.zapFlags} | PR: ${state.player.prFlags}<br>Skill: ${state.player.skill} | Visão: ${state.player.vision.toFixed(2)}m</div>` +
-        state.prs.map(pr => {
-          const t = state.player.totalSeenByPR[pr.id] || 0;
-          const p = state.player.promoProgressByPR[pr.id] || { current:0, total:0 };
-          return `<div class="item"><span style="background:${pr.color};color:#fff;padding:4px 8px;border-radius:999px;">${pr.short}</span> <b>${pr.name}</b><br>Visto: ${t} | Promo: ${p.current}/20</div>`;
-        }).join("");
-    }
-
-    function renderQRs() {
-      if (!state.player.qrs.length) return '<div class="item">Nenhum QR ativo.</div>';
-      return state.player.qrs.map(qr => `
-        <div class="item">
-          <b>${qr.prName}</b><br>
-          Prémio: ${qr.rewardText}<br>
-          Validade: ${Math.ceil((qr.expiresAt - Date.now())/(24*60*60*1000))} dia(s)
-          <div class="qr-code">${qr.code}</div><br>
-          <img src="https://quickchart.io/qr?text=${encodeURIComponent(qr.code)}&size=140" style="margin-top:8px;background:#fff;padding:8px;border-radius:10px;" />
-        </div>
-      `).join("");
-    }
-
-    // AQUI ESTÁ A FUNÇÃO RECONSTRUÍDA E CORRIGIDA!
-    function renderAccount() {
-      return `
-        <div class="item">Jogador: ${state.player.name}<br>Contacto: ${state.player.contact}<br>Energia: ${state.player.energy}%</div>
-        <div class="item">
-          <select id="account-avatar-mode" onchange="updateAvatar()">
-            <option value="male" ${state.player.avatarMode==='male'?'selected':''}>Masculino</option>
-            <option value="female" ${state.player.avatarMode==='female'?'selected':''}>Feminino</option>
-            <option value="photo" ${state.player.avatarMode==='photo'?'selected':''}>Foto</option>
-          </select>
-          <input id="account-photo" value="${state.player.avatarPhoto}" placeholder="URL da foto" style="margin-top:8px;" />
-          <button style="margin-top:8px;" onclick="saveAvatar()">GUARDAR</button>
-        </div>
-        <div style="display:flex; gap:8px; margin-top:10px;">
-          <button class="btn-dark" onclick="document.getElementById('mode-modal').classList.remove('hidden')">MODO</button>
-          <button class="btn-dark" onclick="manualRefreshFlags()">REFRESH</button>
-          <button class="btn-danger" onclick="logout()">TERMINAR</button>
-        </div>
-      `;
-    }
-
-    function updateAvatar() {
-      state.player.avatarMode = document.getElementById("account-avatar-mode").value;
-      state.player.avatarPhoto = document.getElementById("account-photo").value.trim();
-      if (playerMarker) playerMarker.setIcon(createPlayerIcon());
-      saveState(); renderPanelIfOpen();
-    }
-
-    function saveAvatar() { updateAvatar(); alert("Avatar atualizado."); }
-
-    function logout() { if (confirm("Terminar sessão?")) location.reload(); }
-
-    function openFlagModal(flagId) {
-      const flag = allFlags.find(f => f.id === flagId);
-      if (!flag || !currentPosition) return;
-      const dist = getDistanceMeters(currentPosition.lat, currentPosition.lng, flag.lat, flag.lng);
-      const can = dist <= 5;
-
-      if (flag.type === "ZAP") {
-        document.getElementById("flag-modal-content").innerHTML = `
-          <div class="panel-header"><h2 style="margin:0;">🔵 BANDEIRA ZAP</h2><button class="btn-dark btn-small" onclick="closeFlagModal()">X</button></div>
-          <div class="item">Dá <b>+10% energia</b> e aumenta o teu <b>skill</b>.</div>
-          <div class="item">Distância: <b>${Math.round(dist)}m</b> | Podes recolher até <b>5m</b>.</div>
-          <button ${can?"":"disabled"} onclick="collectZapFlag('${flag.id}')">${can?"RECOLHER":"APROXIMA-TE"}</button>
-        `;
-      } else {
-        const pr = state.prs.find(p => p.id === flag.prId);
-        if (!pr) return;
-        document.getElementById("flag-modal-content").innerHTML = `
-          <div class="panel-header"><h2 style="margin:0;">🚩 EMPRESA / PR</h2><button class="btn-dark btn-small" onclick="closeFlagModal()">X</button></div>
-          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
-            <div style="width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:13px;color:#fff;background:${pr.color};">${pr.short}</div>
-            <div><b>${pr.name}</b><br><span style="font-size:12px;color:#a7fca7;">Empresa / PR</span></div>
-          </div>
-          <div class="item">Morada: ${pr.address||"Sem morada"}</div>
-          <div class="item">Distância: <b>${Math.round(dist)}m</b> | Recolhe para descobrir se conta para prémio.</div>
-          <button ${can?"":"disabled"} onclick="collectPRFlag('${flag.id}')">${can?"RECOLHER":"APROXIMA-TE"}</button>
-        `;
-      }
-      document.getElementById("flag-modal").classList.remove("hidden");
-    }
-
-    function closeFlagModal() { document.getElementById("flag-modal").classList.add("hidden"); }
-
-    function collectZapFlag(flagId) {
-      const flag = allFlags.find(f => f.id === flagId);
-      if (!flag || !currentPosition) return;
-      if (getDistanceMeters(currentPosition.lat, currentPosition.lng, flag.lat, flag.lng) > 5) { alert("Tens de estar a 5m ou menos."); return; }
-      state.player.energy = Math.min(100, state.player.energy + 10);
-      state.player.zapFlags++; state.player.totalFlags++;
-      updateSkillAndVision();
-      if (visionCircle) visionCircle.setRadius(state.player.vision);
-      removeFlag(flag.id);
-      allFlags.push({ id:randomId("FLAG"), type:"ZAP", lat:randomOffset(currentPosition.lat, currentPosition.lng, 10).lat, lng:randomOffset(currentPosition.lat, currentPosition.lng, 10).lng, marker:null });
-      renderTopBar(); renderPanelIfOpen(); saveState();
-      document.getElementById("flag-modal-content").innerHTML = `
-        <div class="panel-header"><h2 style="margin:0;">🔵 BANDEIRA ZAP RECOLHIDA</h2><button class="btn-dark btn-small" onclick="closeFlagModal()">X</button></div>
-        <div class="item">Ganhaste <b>+10% energia</b> e aumentaste o teu skill.</div>
-        <div class="item">Energia: ${state.player.energy}% | Skill: ${state.player.skill} | Visão: ${state.player.vision.toFixed(2)}m</div>
-      `;
-    }
-
-    function collectPRFlag(flagId) {
-      const flag = allFlags.find(f => f.id === flagId);
-      if (!flag || !currentPosition) return;
-      if (getDistanceMeters(currentPosition.lat, currentPosition.lng, flag.lat, flag.lng) > 5) { alert("Tens de estar a 5m ou menos."); return; }
-      if (state.player.energy <= 0) { alert("Sem energia."); return; }
-
-      const pr = state.prs.find(p => p.id === flag.prId);
-      if (!pr) return;
-      const pkg = pr.packages.find(p => p.id === flag.packageId);
-      if (pkg && pkg.flagsLeft > 0) pkg.flagsLeft--;
-
-      state.player.prFlags++; state.player.totalFlags++;
-      state.player.totalSeenByPR[pr.id] = (state.player.totalSeenByPR[pr.id]||0) + 1;
-
-      let body = `Atingiste <b>20 bandeiras</b> da empresa <b>${pr.name}</b>.`;
-      let rewardBox = "";
-
-      if (flag.promo && pr.campaign.rewardsEnabled && pr.campaign.promoBudgetLeft > 0) {
-        pr.campaign.promoBudgetLeft--;
-        state.player.promoProgressByPR[pr.id] = state.player.promoProgressByPR[pr.id] || { current:0, total:0 };
-        state.player.promoProgressByPR[pr.id].current++;
-        state.player.promoProgressByPR[pr.id].total++;
-      }
-
-      const totalSeen = state.player.totalSeenByPR[pr.id];
-      const promoCurrent = (state.player.promoProgressByPR[pr.id]||{current:0}).current;
-
-      if (promoCurrent >= 20 && pr.campaign.rewardsEnabled && pr.campaign.rewardsGiven < pr.campaign.promoLotsActive) {
-        state.player.promoProgressByPR[pr.id].current -= 20;
-        pr.campaign.rewardsGiven++;
-        document.getElementById("qr-sound").play();
-        const qr = { id:randomId("QR"), code:"ZAP-"+pr.short+"-"+Math.random().toString(36).slice(2,8).toUpperCase(), prId:pr.id, prName:pr.name, rewardText:pr.campaign.rewardText||"Oferta", createdAt:Date.now(), expiresAt:Date.now()+15*24*60*60*1000, status:"active" };
-        state.player.qrs.push(qr);
-        body = `Atingiste <b>20 bandeiras</b> da empresa <b>${pr.name}</b>.`;
-        rewardBox = `<div class="item"><b>Prémio:</b> ${pr.campaign.rewardText}<br><b>QR criado:</b> ${qr.code}<br><div class="qr-code">${qr.code}</div><br><img src="https://quickchart.io/qr?text=${encodeURIComponent(qr.code)}&size=140" style="margin-top:8px;background:#fff;padding:8px;border-radius:10px;" /></div>`;
-      }
-
-      removeFlag(flag.id);
-      const selected = weightedPackagePick();
-      if (selected) {
-        const r = randomOffset(currentPosition.lat, currentPosition.lng, 15);
-        allFlags.push({ id:randomId("FLAG"), type:"PR", prId:selected.pr.id, packageId:selected.pkg.id, lat:r.lat, lng:r.lng, marker:null, promo:Math.random()<0.1 });
-      }
-      renderTopBar(); renderPanelIfOpen(); saveState();
-      document.getElementById("flag-modal-content").innerHTML = `
-        <div class="panel-header"><h2 style="margin:0;">🚩 BANDEIRA RECOLHIDA</h2><button class="btn-dark btn-small" onclick="closeFlagModal()">X</button></div>
-        <div class="brand-head" style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
-          <div style="width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:13px;color:#fff;background:${pr.color};">${pr.short}</div>
-          <div><b>${pr.name}</b><br><span style="font-size:12px;color:#a7fca7;">Empresa / PR</span></div>
-        </div>
-        <div class="item">${body}</div>
-        ${rewardBox}
-      `;
-    }
-
-    function weightedPackagePick() {
-      if (!currentPosition) return null;
-      const candidates = [];
-      state.prs.forEach(pr => {
-        pr.packages.forEach(pkg => {
-          if (pkg.flagsLeft <= 0) return;
-          const distKm = getDistanceMeters(pr.lat, pr.lng, currentPosition.lat, currentPosition.lng) / 1000;
-          let weight = 0;
-          if (pkg.radiusKm === Infinity) weight = 0.4;
-          else if (distKm <= pkg.radiusKm) {
-            const closeness = 1 - (distKm/pkg.radiusKm);
-            let bonus = 1;
-            if (pkg.radiusKm <= 5) bonus = 2.2; else if (pkg.radiusKm <= 15) bonus = 1.8; else if (pkg.radiusKm <= 50) bonus = 1.3; else bonus = 1.0;
-            weight = (1 + closeness*4) * bonus;
-          } else weight = 0.03;
-          const stockFactor = Math.max(0.3, Math.min(2, pkg.flagsLeft / Math.max(pkg.flagsInitial,1)));
-          weight *= stockFactor;
-          candidates.push({ pr, pkg, weight });
-        });
-      });
-      const totalWeight = candidates.reduce((a,c)=>a+c.weight,0);
-      if (!totalWeight) return null;
-      let rnd = Math.random()*totalWeight;
-      for (const c of candidates) { rnd -= c.weight; if (rnd <= 0) return c; }
-      return candidates[candidates.length-1];
-    }
-
-    function removeFlag(flagId) {
-      const flag = allFlags.find(f => f.id === flagId);
-      if (flag && flag.marker) map.removeLayer(flag.marker);
-      allFlags = allFlags.filter(f => f.id !== flagId);
-    }
-
-    function manualRefreshFlags() { refreshFlags(true); updateVisibleFlags(); }
-
-    function switchEntryMode(mode) {
-      document.getElementById("jg-form").classList.toggle("hidden", mode !== "JG");
-      document.getElementById("pr-form").classList.toggle("hidden", mode !== "PR");
-    }
-
-    function registerAccount(type) {
-      if (type === "JG") {
-        const name = document.getElementById("player-name").value.trim();
-        const contact = document.getElementById("player-contact").value.trim();
-        const pass = document.getElementById("player-password").value.trim();
-        const conf = document.getElementById("player-password-confirm").value.trim();
-        const msg = document.getElementById("jg-auth-msg");
-        if (!name || !contact || !pass || !conf) { msg.innerText = "Preenche todos os campos."; return; }
-        if (pass !== conf) { msg.innerText = "Senhas não coincidem."; return; }
-        if (state.player.contact && state.player.contact !== contact) { msg.innerText = "Já existe um jogador neste navegador."; return; }
-        state.player.name = name; state.player.contact = contact; state.player.password = pass;
-        state.player.avatarMode = document.getElementById("player-avatar-mode").value;
-        state.player.avatarPhoto = document.getElementById("player-photo-url").value.trim();
-        updateSkillAndVision(); saveState();
-        msg.innerText = "Registo criado!";
-        startGame();
-      } else {
-        const name = document.getElementById("pr-company-name").value.trim();
-        const contact = document.getElementById("pr-contact").value.trim();
-        const pass = document.getElementById("pr-password").value.trim();
-        const conf = document.getElementById("pr-password-confirm").value.trim();
-        const postal = document.getElementById("pr-postal-code").value.trim();
-        const msg = document.getElementById("pr-auth-msg");
-        if (!name || !contact || !pass || !conf) { msg.innerText = "Preenche todos os campos."; return; }
-        if (pass !== conf) { msg.innerText = "Senhas não coincidem."; return; }
-        if (!postal) { msg.innerText = "Indica código postal."; return; }
-        const pr = {
-          id:randomId("PR"), ownerContact:contact, ownerPassword:pass, name,
-          short: name.split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase(),
-          color: ["#FF4D4F","#1677FF","#52C41A","#FADB14","#722ED1","#FA8C16"][Math.floor(Math.random()*6)],
-          website:"", contact, address:"", postalCode:postal, lat:41.1496, lng:-8.6109,
-          packages:[{ id:randomId("PKG"), key:"FREE", label:"Grátis", price:0, flagsInitial:1000, flagsLeft:1000, radiusKm:5, maxLots:50, bingos:0, paid:false, source:"register", createdAt:Date.now() }],
-          campaign:{ rewardsEnabled:false, rewardType:"none", rewardText:"Sem prémio", promoLotsActive:0, promoBudgetLeft:0, bingoCountActive:0, bingoText:"", rewardsGiven:0 }
-        };
-        state.prs.push(pr); saveState();
-        msg.innerText = "Empresa registada!";
-        startPRDashboard(pr.id);
-      }
-    }
-
-    function loginAccount(type) {
-      if (type === "JG") {
-        const contact = document.getElementById("player-contact").value.trim();
-        const pass = document.getElementById("player-password").value.trim();
-        const msg = document.getElementById("jg-auth-msg");
-        if (!contact || !pass) { msg.innerText = "Indica contacto e senha."; return; }
-        if (!state.player.contact || !state.player.password) { msg.innerText = "Nenhum jogador registado."; return; }
-        if (state.player.contact !== contact || state.player.password !== pass) { msg.innerText = "Dados incorretos."; return; }
-        msg.innerText = "Entrada com sucesso!";
-        startGame();
-      } else {
-        const contact = document.getElementById("pr-contact").value.trim();
-        const pass = document.getElementById("pr-password").value.trim();
-        const msg = document.getElementById("pr-auth-msg");
-        const pr = state.prs.find(p => p.ownerContact === contact);
-        if (!pr) { msg.innerText = "Empresa não encontrada."; return; }
-        if (pr.ownerPassword !== pass) { msg.innerText = "Senha incorreta."; return; }
-        msg.innerText = "Entrada com sucesso!";
-        startPRDashboard(pr.id);
-      }
-    }
-
-    function startGame() {
-      document.getElementById("login-screen").classList.add("hidden");
-      document.getElementById("game-screen").classList.remove("hidden");
-      initMap(); renderTopBar();
-      document.getElementById("mode-modal").classList.remove("hidden");
-    }
-
-    function startPRDashboard(prId) {
-      document.getElementById("login-screen").classList.add("hidden");
-      document.getElementById("game-screen").classList.add("hidden");
-      alert("Área da Empresa - Dashboard de faturação em desenvolvimento.");
-    }
-
-    function makeDraggable(el, handleSelector=".drag-handle") {
-      const handle = el.querySelector(handleSelector) || el;
-      let dragging = false, startX=0, startY=0, startLeft=0, startTop=0;
-      handle.addEventListener("pointerdown", e => {
-        dragging = true;
-        const r = el.getBoundingClientRect();
-        el.style.left = r.left+"px"; el.style.top = r.top+"px"; el.style.right="auto"; el.style.bottom="auto";
-        startLeft=r.left; startTop=r.top; startX=e.clientX; startY=e.clientY;
-        handle.setPointerCapture(e.pointerId);
-      });
-      window.addEventListener("pointermove", e => {
-        if (!dragging) return;
-        el.style.left = (startLeft + e.clientX-startX)+"px"; el.style.top = (startTop + e.clientY-startY)+"px";
-      });
-      window.addEventListener("pointerup", () => { dragging=false; });
-    }
-
-    updateSkillAndVision(); renderTopBar(); switchEntryMode("JG");
-    if (state.player.name) {
-      document.getElementById("player-name").value = state.player.name;
-      document.getElementById("player-contact").value = state.player.contact;
-      document.getElementById("player-password").value = state.player.password;
-      document.getElementById("player-avatar-mode").value = state.player.avatarMode;
-      document.getElementById("player-photo-url").value = state.player.avatarPhoto;
-    }
-    makeDraggable(document.getElementById("offline-controls"));
-  </script>
-
+</script>
 </body>
 </html>
-<!DOCTYPE html>
-<html lang="pt">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>ZAP FLAGS</title>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<style>
-*{box-sizing:border-box;margin:0;padding:0;}
-body{font-family:'Courier New',monospace;background:#000;color:#0f0;min-height:100vh;}
-
-/* PÁGINAS */
-.pag{display:none;min-height:100vh;}
-.pag.ativa{display:block;}
-.cx{max-width:460px;margin:0 auto;padding:20px;}
-
-/* INPUTS */
-input,select,textarea{
-  width:100%;background:#0a0a0a;color:#0f0;
-  border:1px solid #0f0;padding:11px;margin:4px 0;
-  font-size:.9rem;font-family:'Courier New',monospace;border-radius:5px;
-}
-input:focus,select:focus{outline:none;border-color:#0ff;box-shadow:0 0 6px rgba(0,255,255,.3);}
-select option{background:#0a0a0a;}
-textarea{resize:vertical;min-height:60px;}
-.lbl{font-size:.78rem;color:#0aa;display:block;margin-top:9px;margin-bottom:2px;}
-.lbl em{color:#f00;font-style:normal;}
-
-/* BOTÕES */
-.btn{display:inline-block;padding:11px 16px;margin:3px 2px;font-size:.88rem;
-  font-weight:bold;cursor:pointer;font-family:'Courier New',monospace;
-  border:none;border-radius:5px;transition:all .2s;}
-.bb{display:block;width:100%;margin:5px 0;padding:12px;text-align:center;}
-.bv {background:#0f0;color:#000;}.bv:hover{background:#0ff;}
-.bc {background:#111;color:#0f0;border:1px solid #0f0;}.bc:hover{background:#1a1a1a;}
-.bo {background:linear-gradient(45deg,#f80,#ff0);color:#000;}.bo:hover{background:#ff0;}
-.br {background:#1a0000;color:#f00;border:1px solid #f00;}.br:hover{background:#300;}
-.bvol{background:#000;color:#0aa;border:1px solid #0aa;}.bvol:hover{background:#0aa;color:#000;}
-.bsair{background:#1a0000;color:#f00;border:1px solid #f00;font-size:.8rem;padding:6px 11px;}
-.bsair:hover{background:#300;}
-.bbo{background:linear-gradient(135deg,#003,#006);color:#0ff;border:2px solid #0ff;}
-.bbo:hover{background:#006;}
-
-/* PASS TOGGLE */
-.pw-wrap{position:relative;}
-.pw-wrap input{padding-right:44px;margin:0;}
-.pw-toggle{position:absolute;right:11px;top:50%;transform:translateY(-50%);
-  background:none;border:none;cursor:pointer;font-size:.95rem;color:#555;padding:3px;}
-.pw-toggle:hover{color:#0ff;}
-
-/* MENSAGENS */
-.msg{padding:10px;margin:6px 0;border-radius:5px;display:none;font-size:.83rem;}
-.msg.e{background:#200;border:1px solid #f00;color:#f00;display:block;}
-.msg.s{background:#020;border:1px solid #0f0;color:#0f0;display:block;}
-.msg.i{background:#002;border:1px solid #0ff;color:#0ff;display:block;}
-.msg.a{background:#220;border:1px solid #ff0;color:#ff0;display:block;}
-
-/* ÁREAS */
-.aj {background:#000a00;border:2px solid #0f0;border-radius:11px;padding:16px;margin:8px 0;}
-.aj h3{color:#0f0;margin-bottom:10px;font-size:.9rem;}
-.apr{background:#0a0800;border:2px solid #ff0;border-radius:11px;padding:16px;margin:8px 0;}
-.apr h3{color:#ff0;margin-bottom:10px;font-size:.9rem;}
-.abo{background:linear-gradient(135deg,#000510,#001020);border:2px solid #0ff;
-  border-radius:11px;padding:16px;margin:8px 0;position:relative;overflow:hidden;}
-.abo::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;
-  background:linear-gradient(90deg,transparent,#0ff,transparent);
-  animation:varre 3s linear infinite;}
-@keyframes varre{from{transform:translateX(-100%)}to{transform:translateX(100%)}}
-.abo h3{color:#0ff;margin-bottom:10px;font-size:.9rem;}
-.badge-bo{background:#0ff;color:#000;padding:2px 7px;border-radius:9px;
-  font-size:.62rem;font-weight:bold;margin-left:5px;}
-
-/* SESSÃO ATIVA NA HOME */
-.sess-bar{border-radius:11px;padding:12px 14px;margin:8px 0;
-  display:flex;justify-content:space-between;align-items:center;gap:8px;}
-.sess-j {background:#001a00;border:2px solid #0f0;}
-.sess-pr{background:#1a0e00;border:2px solid #ff0;}
