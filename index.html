@@ -1,1821 +1,1136 @@
 <!DOCTYPE html>
 <html lang="pt">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
 <title>ZAP FLAGS | Larforyou®</title>
-<meta name="theme-color" content="#000000" />
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-
+<meta name="theme-color" content="#000"/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <style>
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;overflow:hidden;font-family:'Segoe UI',Arial,sans-serif;background:#000;color:#0f0;user-select:none;-webkit-user-select:none}
+.hidden{display:none!important}
 
-html,
-body {
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  font-family: Arial, sans-serif;
-  background: #000;
-  color: #0f0;
-  user-select: none;
-  -webkit-user-select: none;
-}
+button{background:#0f0;color:#000;border:none;border-radius:12px;padding:12px 18px;font-size:15px;font-weight:800;cursor:pointer;transition:.15s}
+button:active{transform:scale(.94)}
+button:disabled{opacity:.4;cursor:not-allowed}
+.btn-dark{background:#181818;color:#0f0;border:1px solid #0f0}
+.btn-danger{background:#600;color:#f88;border:1px solid #f44}
+.btn-small{padding:6px 10px;font-size:12px}
+.bb{display:block;width:100%;margin:5px 0;text-align:center}
 
-.hidden {
-  display: none !important;
-}
+input,select{width:100%;margin-bottom:10px;padding:12px;border-radius:10px;border:1px solid #0f0;background:#101010;color:#0f0;font-size:14px;outline:none}
+input:focus,select:focus{border-color:#0ff;box-shadow:0 0 6px rgba(0,255,255,.3)}
+input::placeholder{color:rgba(0,255,0,.3)}
+select option{background:#101010}
+label{font-size:13px;color:#a7fca7;display:block;margin-bottom:3px}
+label .req{color:#f44;font-weight:700}
 
-.page {
-  display: none;
-  width: 100%;
-  min-height: 100vh;
-  overflow-y: auto;
-  background: linear-gradient(180deg, #000, #051005);
-}
+.item{border:1px solid #0f0;background:rgba(0,25,0,.16);border-radius:10px;padding:10px;margin-bottom:8px;font-size:13px;line-height:1.5;color:#ccc}
+.card{background:rgba(0,15,0,.2);border:1px solid #0a0;border-radius:10px;padding:12px;margin:8px 0}
+.row{padding:4px 0;border-bottom:1px solid #0a0a0a;font-size:13px;display:flex;justify-content:space-between;gap:8px}
+.row:last-child{border-bottom:none}
+.rl{color:#0aa;font-size:11px;white-space:nowrap;flex-shrink:0}
+.rv{text-align:right;word-break:break-word}
+.msg{min-height:18px;font-size:12px;margin:6px 0;padding:6px;border-radius:6px}
+.msg.err{color:#f66;background:rgba(255,0,0,.1);border:1px solid #f44}
+.msg.ok{color:#0f0;background:rgba(0,255,0,.05);border:1px solid #0f0}
+.pw-wrap{position:relative}.pw-wrap input{padding-right:44px;margin:0}
+.pw-toggle{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:14px;color:#555;padding:3px}
+.scroll{max-height:65vh;overflow-y:auto}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:0 10px}
 
-.page.active {
-  display: block;
-}
-
-.box {
-  width: 100%;
-  max-width: 520px;
-  margin: 0 auto;
-  padding: 20px;
-}
-
-h1,
-h2,
-h3 {
-  color: #0f0;
-}
-
-button {
-  background: #0f0;
-  color: #000;
-  border: none;
-  border-radius: 12px;
-  padding: 12px 16px;
-  font-size: 15px;
-  font-weight: 800;
-  cursor: pointer;
-  transition: 0.15s;
-}
-
-button:active {
-  transform: scale(0.95);
-}
-
-button:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
-.btn-dark {
-  background: #181818;
-  color: #0f0;
-  border: 1px solid #0f0;
-}
-
-.btn-danger {
-  background: #7a0000;
-  color: #fff;
-  border: 1px solid #ff5555;
-}
-
-.btn-warning {
-  background: linear-gradient(135deg, #ff9900, #ffcc00);
-  color: #000;
-}
-
-.btn-small {
-  padding: 6px 10px;
-  font-size: 12px;
-}
-
-.btn-full {
-  width: 100%;
-  margin-top: 8px;
-}
-
-input,
-select,
-textarea {
-  width: 100%;
-  margin-bottom: 10px;
-  padding: 12px;
-  border-radius: 10px;
-  border: 1px solid #0f0;
-  background: #101010;
-  color: #0f0;
-  font-size: 14px;
-  outline: none;
-}
-
-input:focus,
-select:focus,
-textarea:focus {
-  border-color: #0ff;
-  box-shadow: 0 0 8px rgba(0,255,255,0.35);
-}
-
-input::placeholder {
-  color: rgba(0,255,0,0.35);
-}
-
-label {
-  display: block;
-  margin-bottom: 3px;
-  font-size: 13px;
-  color: #a7fca7;
-}
-
-.req {
-  color: #ff4444;
-  font-weight: bold;
-}
-
-.card {
-  border: 1px solid #0f0;
-  background: rgba(0,25,0,0.16);
-  border-radius: 12px;
-  padding: 14px;
-  margin-bottom: 12px;
-}
-
-.card-yellow {
-  border-color: #ffcc00;
-  background: rgba(40,25,0,0.25);
-}
-
-.card-blue {
-  border-color: #00ffff;
-  background: rgba(0,20,40,0.25);
-}
-
-.msg {
-  min-height: 20px;
-  font-size: 13px;
-  margin: 6px 0;
-  color: #a7fca7;
-}
-
-.msg.err {
-  color: #ff6666;
-}
-
-.row {
-  display: flex;
-  justify-content: space-between;
-  gap: 10px;
-  padding: 5px 0;
-  border-bottom: 1px solid rgba(255,255,255,0.08);
-  font-size: 13px;
-}
-
-.row:last-child {
-  border-bottom: none;
-}
-
-.row .l {
-  color: #0aa;
-  white-space: nowrap;
-}
-
-.row .r {
-  color: #fff;
-  text-align: right;
-  word-break: break-word;
-}
-
-.grid2 {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-}
-
-.link {
-  color: #00ffff;
-  cursor: pointer;
-  text-decoration: underline;
-  font-size: 13px;
-}
+/* PÁGINAS */
+.pag{display:none;min-height:100vh;overflow-y:auto}
+.pag.ativa{display:block}
+.cx{max-width:500px;margin:0 auto;padding:20px}
 
 /* LANDING */
-#home {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  padding: 24px;
-}
+#p-landing{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;background:linear-gradient(180deg,#000,#051005);gap:20px;padding:24px;text-align:center}
+#p-landing h1{font-size:46px;text-shadow:0 0 30px rgba(0,255,0,.4);letter-spacing:3px}
 
-.logo {
-  font-size: 46px;
-  letter-spacing: 3px;
-  text-shadow: 0 0 30px rgba(0,255,0,0.45);
-  margin-bottom: 10px;
-}
-
-.subtitle {
-  color: #a7fca7;
-  font-size: 15px;
-  line-height: 1.5;
-  margin-bottom: 24px;
-}
-
-.big-play {
-  padding: 26px 60px;
-  font-size: 28px;
-  border-radius: 20px;
-  background: linear-gradient(135deg, #00ff66, #00c853);
-  box-shadow: 0 0 40px rgba(0,255,100,0.28);
-  letter-spacing: 2px;
-}
-
-.secondary-actions {
-  display: flex;
-  gap: 10px;
-  justify-content: center;
-  flex-wrap: wrap;
-  margin-top: 16px;
-}
+/* AUTH */
+.auth-box{border:2px solid #0f0;border-radius:16px;background:rgba(0,20,0,.3);padding:20px;box-shadow:0 0 20px rgba(0,255,0,.1)}
+.auth-box h2{margin-bottom:12px;text-align:center}
 
 /* GAME */
-#game {
-  position: absolute;
-  inset: 0;
-  overflow: hidden;
-  background: #000;
-}
+#p-jogo{padding:0;overflow:hidden;height:100vh}
+#mapa{position:fixed;inset:0;z-index:1}
+.leaflet-container{background:#0a0a0a}
 
-#map {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-}
+/* HUD */
+#hud{position:fixed;top:0;left:0;right:0;z-index:2000;background:rgba(0,0,0,.9);border-bottom:1px solid #0f0;padding:6px 10px}
+.hud-row{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:4px}
+.hud-stat{text-align:center;font-size:10px;color:#0aa}
+.hud-val{font-size:14px;color:#0ff;font-weight:700;display:block}
+.ebar{width:100%;height:6px;background:#222;border-radius:3px;overflow:hidden;margin-top:4px}
+.ebar-fill{height:100%;background:linear-gradient(90deg,#008f1f,#00ff66);transition:width .3s;border-radius:3px}
 
-#top-hud {
-  position: absolute;
-  top: 8px;
-  left: 8px;
-  right: 8px;
-  z-index: 1000;
-  background: rgba(0,0,0,0.88);
-  border: 1px solid #0f0;
-  border-radius: 12px;
-  padding: 10px;
-}
+/* RAIOS DO AVATAR */
+#avatar-cx{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:500;pointer-events:none}
+#raio-visao{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);border-radius:50%;border:2px solid rgba(0,255,0,.5);pointer-events:none;box-shadow:0 0 0 3000px rgba(0,0,0,.75),0 0 15px rgba(0,255,0,.3);transition:width .6s,height .6s}
+#raio-pegar{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);border-radius:50%;border:2px dashed rgba(255,255,0,.6);pointer-events:none;display:none}
+#btn-pegar{position:absolute;left:50%;top:calc(50% - 70px);transform:translateX(-50%);background:rgba(0,255,0,.95);color:#000;font-weight:700;font-size:13px;padding:6px 16px;border-radius:20px;display:none;z-index:502;cursor:pointer;white-space:nowrap;pointer-events:all;animation:bounce .3s ease-in-out infinite alternate}
+@keyframes bounce{from{transform:translateX(-50%) translateY(0)}to{transform:translateX(-50%) translateY(-4px)}}
+#avatar-dot{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:16px;height:16px;background:#0f0;border-radius:50%;border:2px solid #fff;box-shadow:0 0 10px #0f0;z-index:501}
 
-.energy-bar {
-  width: 100%;
-  height: 9px;
-  background: #222;
-  border-radius: 999px;
-  overflow: hidden;
-  border: 1px solid rgba(0,255,0,0.4);
-}
+/* JOYSTICK */
+#ctrl{position:fixed;z-index:2000;background:rgba(0,0,0,.9);border:2px solid rgba(0,255,0,.4);border-radius:12px;padding:9px;bottom:50px;right:10px;touch-action:none;cursor:move}
+.ctrl-g{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-bottom:4px}
+.cbtn{background:rgba(0,255,0,.06);border:1px solid rgba(0,255,0,.3);color:#fff;border-radius:50%;font-size:16px;font-weight:700;cursor:pointer;width:46px;height:46px;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent;touch-action:none}
+.cbtn:active,.cbtn.on{background:#0f0;color:#000}
 
-#energy-fill {
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, #008f1f, #00ff66);
-  transition: width 0.3s;
-}
+/* BOTÕES FLUTUANTES */
+#fbtns{position:fixed;left:10px;bottom:50px;z-index:2000;display:flex;flex-direction:column;gap:6px}
+.fb{width:40px;height:40px;border-radius:50%;padding:0;display:flex;align-items:center;justify-content:center;font-size:16px}
 
-.hud-line {
-  margin-top: 7px;
-  display: flex;
-  justify-content: space-between;
-  gap: 6px;
-  flex-wrap: wrap;
-  font-size: 12px;
-  color: #bfffbf;
-}
+/* JANELA BANDEIRA (bottom sheet) */
+#janela-band{position:fixed;bottom:0;left:0;right:0;z-index:4000;background:rgba(0,10,0,.97);border-top:2px solid #0f0;border-radius:16px 16px 0 0;padding:16px 18px;transform:translateY(100%);transition:transform .33s ease;max-height:65vh;overflow-y:auto}
+#janela-band.aberta{transform:translateY(0)}
+.jb-fechar{position:absolute;top:10px;right:14px;background:#111;border:1px solid #555;color:#888;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px}
 
-#map-controls {
-  position: absolute;
-  right: 10px;
-  bottom: 95px;
-  z-index: 1100;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
+/* JANELA QR */
+#janela-qr{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:4500;background:rgba(0,5,0,.97);border:3px solid #ff0;border-radius:14px;padding:18px;width:93%;max-width:400px;display:none;max-height:85vh;overflow-y:auto;box-shadow:0 0 30px rgba(255,200,0,.3)}
 
-.float-btn {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  padding: 0;
-  font-size: 18px;
-  background: #181818;
-  color: #0f0;
-  border: 1px solid #0f0;
-}
+/* INVENTÁRIO (bandeiras acumuladas) */
+#janela-inv{position:fixed;bottom:0;left:0;right:0;z-index:3500;background:rgba(0,5,0,.97);border-top:2px solid #0ff;border-radius:16px 16px 0 0;padding:16px 18px;transform:translateY(100%);transition:transform .33s ease;max-height:70vh;overflow-y:auto}
+#janela-inv.aberta{transform:translateY(0)}
 
-#offline-controls {
-  position: absolute;
-  left: 10px;
-  bottom: 95px;
-  z-index: 1200;
-  background: rgba(0,0,0,0.9);
-  border: 1px solid #0f0;
-  border-radius: 14px;
-  padding: 9px;
-  width: 145px;
-  text-align: center;
-  touch-action: none;
-}
+/* GPS INFO */
+#gps-txt{position:fixed;bottom:40px;left:50%;transform:translateX(-50%);z-index:2000;font-size:9px;color:#555;background:rgba(0,0,0,.8);border-radius:10px;padding:2px 10px}
 
-.dpad {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 5px;
-  margin-top: 7px;
-}
+/* PR + BO */
+.pr-header{background:rgba(0,255,0,.08);border-bottom:1px solid #0f0;padding:10px 16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+#bo-screen .bo-card{border:1px solid #0ff;background:rgba(0,20,40,.2);border-radius:10px;padding:14px;margin-bottom:10px}
 
-.dpad button {
-  padding: 10px;
-  font-size: 15px;
-  border-radius: 9px;
-}
-
-#side-panel {
-  position: absolute;
-  left: 8px;
-  right: 8px;
-  bottom: 8px;
-  z-index: 2500;
-  background: rgba(0,0,0,0.94);
-  border: 2px solid #0f0;
-  border-radius: 14px;
-  padding: 12px;
-  max-height: 42vh;
-  overflow-y: auto;
-}
-
-.panel-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 8px;
-}
-
-.leaflet-container {
-  background: #050505;
-}
-
-/* MARKERS */
-.player-marker {
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  background: linear-gradient(135deg,#00f0ff,#0066ff);
-  border: 3px solid #fff;
-  box-shadow: 0 0 12px rgba(0,255,255,0.75);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #fff;
-  font-weight: 900;
-  font-size: 13px;
-}
-
-.flag-marker {
-  width: 34px;
-  height: 34px;
-  position: relative;
-}
-
-.flag-stick {
-  position: absolute;
-  width: 2px;
-  height: 18px;
-  left: 14px;
-  top: 12px;
-  border-radius: 2px;
-  background: #ccc;
-}
-
-.flag-banner {
-  position: absolute;
-  left: 14px;
-  top: 4px;
-  width: 17px;
-  height: 11px;
-  clip-path: polygon(0 0,100% 28%,0 100%);
-  border: 1px solid #fff;
-}
-
-.flag-energy {
-  background: #00ffff !important;
-}
-
-.flag-prize {
-  background: #ff0000 !important;
-}
-
-.flag-bingo {
-  background: #ffaa00 !important;
-}
-
-.flag-empty {
-  background: #777 !important;
-}
-
-/* MODALS */
-.modal {
-  position: fixed;
-  z-index: 5000;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%,-50%);
-  width: 92%;
-  max-width: 520px;
-  max-height: 90vh;
-  overflow-y: auto;
-  background: #000;
-  border: 3px solid #0f0;
-  border-radius: 16px;
-  padding: 16px;
-  box-shadow: 0 0 30px rgba(0,255,0,0.25);
-}
-
-.modal-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
-}
-
-.qr-code {
-  display: inline-block;
-  padding: 10px;
-  border: 1px solid #0f0;
-  background: #111;
-  color: #fff;
-  font-family: monospace;
-  word-break: break-all;
-  border-radius: 10px;
-  margin-top: 8px;
-}
-
-/* BACKOFFICE */
-#backoffice-panel {
-  background: linear-gradient(180deg,#000,#001020);
-}
-
-.bo-box {
-  border: 1px solid #0ff;
-  background: rgba(0,20,40,0.25);
-  border-radius: 12px;
-  padding: 14px;
-  margin-bottom: 12px;
-}
-
-/* BRAND */
-.watermark {
-  position: fixed;
-  bottom: 36px;
-  left: 14px;
-  z-index: 9999;
-  pointer-events: none;
-  color: rgba(0,255,0,0.23);
-  font-weight: 900;
-}
-
-.copyright {
-  position: fixed;
-  bottom: 5px;
-  width: 100%;
-  text-align: center;
-  z-index: 9999;
-  pointer-events: none;
-  color: rgba(0,255,0,0.18);
-  font-size: 10px;
-}
+.watermark{position:fixed;bottom:36px;left:14px;font-size:16px;font-weight:900;color:rgba(0,255,0,.2);z-index:9999;pointer-events:none}
+.copyright{position:fixed;bottom:4px;width:100%;text-align:center;font-size:9px;color:rgba(0,255,0,.15);z-index:9999;pointer-events:none}
 </style>
 </head>
-
 <body>
-
 <div class="watermark">Larforyou®</div>
 <div class="copyright">© 2025 Larforyou® — Marca Registada</div>
 
-<!-- ========================================================= -->
-<!-- HOME -->
-<!-- ========================================================= -->
-<div id="home" class="page active">
-  <div>
-    <div class="logo">🚩 ZAP FLAGS</div>
-    <div class="subtitle">
-      Caça bandeiras no mapa.<br>
-      Ganha energia, skill, bingos e prémios de empresas.
+<!-- ==================== LANDING ==================== -->
+<div id="p-landing" class="pag ativa">
+  <h1>🚩 ZAP FLAGS</h1>
+  <div style="color:#a7fca7;font-size:15px;line-height:1.6">Encontra bandeiras. Ganha prémios.<br>Desafia empresas.</div>
+  <button style="padding:24px 55px;font-size:26px;background:linear-gradient(135deg,#00ff66,#00c853);color:#000;border-radius:20px;box-shadow:0 0 40px rgba(0,255,100,.3);letter-spacing:2px" onclick="ir('p-login-j')">▶ JOGAR</button>
+  <button style="padding:16px 36px;font-size:17px" class="btn-dark" onclick="ir('p-login-pr')">🏢 EMPRESA / PR</button>
+  <button style="padding:12px 28px;font-size:14px;background:linear-gradient(135deg,#004,#008);color:#0ff;border:1px solid #0ff;border-radius:14px" onclick="ir('p-bo-login')">🖥️ BACKOFFICE</button>
+  <p style="font-size:10px;color:#0a0;margin-top:8px">v14 © 2025 ZAP FLAGS by Larforyou®</p>
+</div>
+
+<!-- ==================== LOGIN JOGADOR ==================== -->
+<div id="p-login-j" class="pag">
+<div class="cx" style="padding-top:40px">
+  <div class="auth-box">
+    <h2>🎮 ENTRAR NO JOGO</h2>
+    <div style="text-align:center;margin-bottom:16px"><button class="btn-dark btn-small" onclick="ir('p-landing')">← Voltar</button></div>
+    <div id="login-j-card" style="display:none;text-align:center;margin-bottom:14px;padding:14px;border:1px solid #0f0;border-radius:12px;background:rgba(0,40,0,.2)">
+      <div style="font-size:28px;margin-bottom:4px">🎮</div>
+      <div style="font-size:18px;font-weight:700;color:#0f0" id="login-j-nome">—</div>
+      <div style="font-size:11px;color:#888" id="login-j-info">—</div>
     </div>
-
-    <button class="big-play" onclick="openPlayerLogin()">JOGAR</button>
-
-    <div class="secondary-actions">
-      <button class="btn-dark" onclick="openPRLogin()">EMPRESA / PR</button>
-      <button class="btn-dark" onclick="openBackofficeLogin()">BACKOFFICE</button>
+    <label><span class="req">*</span> Nome</label>
+    <input id="lj-nome" placeholder="O teu nome de jogador" oninput="verificarNomeLogin()">
+    <label><span class="req">*</span> Senha</label>
+    <div class="pw-wrap"><input id="lj-senha" type="password" placeholder="A tua senha" onkeydown="if(event.key==='Enter')tentarLogin()"><button class="pw-toggle" onclick="tPW('lj-senha',this)">👁</button></div>
+    <div id="lj-msg" class="msg" style="display:none"></div>
+    <button onclick="tentarLogin()" class="bb" style="padding:14px;font-size:16px;margin-top:6px">▶ ENTRAR</button>
+    <div style="text-align:center;margin-top:12px;padding-top:12px;border-top:1px solid #1a1a1a">
+      <span style="color:#0ff;cursor:pointer;text-decoration:underline;font-size:13px" onclick="ir('p-rec-j')">🔑 Esqueci a senha</span>
     </div>
   </div>
 </div>
+</div>
 
-<!-- ========================================================= -->
-<!-- LOGIN JOGADOR -->
-<!-- ========================================================= -->
-<div id="player-login" class="page">
-  <div class="box">
-    <button class="btn-dark btn-small" onclick="showPage('home')">← Voltar</button>
-    <div class="card">
-      <h2>🎮 Entrar no Jogo</h2>
+<!-- ==================== REGISTO JOGADOR ==================== -->
+<div id="p-reg-j" class="pag">
+<div class="cx">
+  <div class="auth-box">
+    <h2>📝 CRIAR CONTA</h2>
+    <div style="text-align:center;margin-bottom:16px"><button class="btn-dark btn-small" onclick="ir('p-login-j')">← Voltar ao Login</button></div>
+    <label><span class="req">*</span> Nome de Jogador</label>
+    <input id="rj-nome" placeholder="Obrigatório — será o teu nome no jogo">
+    <label><span class="req">*</span> E-mail</label>
+    <input id="rj-email" type="email" placeholder="Para recuperação de senha">
+    <label><span class="req">*</span> Senha</label>
+    <div class="pw-wrap"><input id="rj-pw1" type="password" placeholder="Mínimo 4 caracteres"><button class="pw-toggle" onclick="tPW('rj-pw1',this)">👁</button></div>
+    <label><span class="req">*</span> Confirmar Senha</label>
+    <div class="pw-wrap"><input id="rj-pw2" type="password" placeholder="Repete a senha"><button class="pw-toggle" onclick="tPW('rj-pw2',this)">👁</button></div>
+    <label>Contacto (opcional)</label>
+    <input id="rj-tel" placeholder="Telefone">
+    <label>Morada (opcional)</label>
+    <input id="rj-morada" placeholder="Rua, nº">
+    <label>Localidade (opcional)</label>
+    <input id="rj-local" placeholder="Cidade">
+    <label>Distrito (opcional)</label>
+    <select id="rj-dist"><option value="">Selecionar</option><option>Aveiro</option><option>Beja</option><option>Braga</option><option>Bragança</option><option>Castelo Branco</option><option>Coimbra</option><option>Évora</option><option>Faro</option><option>Guarda</option><option>Leiria</option><option>Lisboa</option><option>Portalegre</option><option>Porto</option><option>Santarém</option><option>Setúbal</option><option>Viana do Castelo</option><option>Vila Real</option><option>Viseu</option></select>
+    <div id="rj-msg" class="msg" style="display:none"></div>
+    <button onclick="fazerRegJ()" class="bb" style="padding:14px;font-size:16px;margin-top:6px">✅ CRIAR CONTA E JOGAR</button>
+    <div style="text-align:center;margin-top:12px;padding-top:12px;border-top:1px solid #1a1a1a">
+      <span style="color:#0ff;cursor:pointer;text-decoration:underline;font-size:13px" onclick="ir('p-rec-j')">🔑 Esqueci a senha</span>
+    </div>
+  </div>
+</div>
+</div>
 
-      <label><span class="req">*</span> Nome</label>
-      <input id="login-player-name" placeholder="O teu nome" />
-
-      <label><span class="req">*</span> Senha</label>
-      <input id="login-player-pass" type="password" placeholder="A tua senha" onkeydown="if(event.key==='Enter')loginPlayer()" />
-
-      <div class="msg" id="login-player-msg"></div>
-
-      <button class="btn-full" onclick="loginPlayer()">ENTRAR</button>
-
-      <div style="margin-top:12px;text-align:center;">
-        <span class="link" onclick="openPlayerRegister()">Criar conta</span>
-        &nbsp;|&nbsp;
-        <span class="link" onclick="openForgot('player')">Esqueci senha</span>
+<!-- ==================== RECUPERAR SENHA JOGADOR ==================== -->
+<div id="p-rec-j" class="pag">
+<div class="cx">
+  <div class="auth-box">
+    <h2>🔑 RECUPERAR SENHA</h2>
+    <div style="text-align:center;margin-bottom:16px"><button class="btn-dark btn-small" onclick="ir('p-login-j')">← Voltar</button></div>
+    <div id="rec-j-p1">
+      <label><span class="req">*</span> E-mail registado</label>
+      <input id="rec-j-email" type="email" placeholder="O e-mail que usaste no registo">
+      <div id="rec-j-msg1" class="msg" style="display:none"></div>
+      <button onclick="recJ_enviar()" class="bb" style="padding:14px">📨 ENVIAR CÓDIGO</button>
+    </div>
+    <div id="rec-j-p2" style="display:none">
+      <div class="card" style="text-align:center;border-color:#0ff">
+        <div style="color:#888;font-size:11px">⚠ SIMULAÇÃO — Código:</div>
+        <div id="rec-j-codigo" style="font-size:28px;color:#0ff;font-weight:700;letter-spacing:10px">----</div>
       </div>
+      <label><span class="req">*</span> Código de 4 dígitos</label>
+      <input id="rec-j-cin" type="number" style="text-align:center;font-size:20px;letter-spacing:8px" maxlength="4" oninput="this.value=this.value.slice(0,4)">
+      <div id="rec-j-msg2" class="msg" style="display:none"></div>
+      <button onclick="recJ_verificar()" class="bb" style="padding:14px">✅ VERIFICAR</button>
     </div>
-  </div>
-</div>
-
-<!-- ========================================================= -->
-<!-- REGISTO JOGADOR -->
-<!-- ========================================================= -->
-<div id="player-register" class="page">
-  <div class="box">
-    <button class="btn-dark btn-small" onclick="openPlayerLogin()">← Voltar</button>
-    <div class="card">
-      <h2>📝 Registo de Jogador</h2>
-
-      <label><span class="req">*</span> Nome</label>
-      <input id="reg-player-name" placeholder="Nome de jogador" />
-
-      <label><span class="req">*</span> Senha</label>
-      <input id="reg-player-pass" type="password" placeholder="Mínimo 4 caracteres" />
-
-      <label><span class="req">*</span> Confirmar Senha</label>
-      <input id="reg-player-pass2" type="password" placeholder="Repetir senha" />
-
-      <label>Morada</label>
-      <input id="reg-player-address" placeholder="Opcional" />
-
-      <label>Contacto</label>
-      <input id="reg-player-contact" placeholder="Opcional" />
-
-      <div class="msg" id="reg-player-msg"></div>
-
-      <button class="btn-full" onclick="registerPlayer()">REGISTAR E ENTRAR</button>
-
-      <div style="margin-top:12px;text-align:center;">
-        <span class="link" onclick="openForgot('player')">Esqueci senha</span>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ========================================================= -->
-<!-- LOGIN PR -->
-<!-- ========================================================= -->
-<div id="pr-login" class="page">
-  <div class="box">
-    <button class="btn-dark btn-small" onclick="showPage('home')">← Voltar</button>
-    <div class="card card-yellow">
-      <h2>🏢 Entrar Empresa / PR</h2>
-
-      <label><span class="req">*</span> E-mail ou NIF</label>
-      <input id="login-pr-id" placeholder="E-mail ou NIF" />
-
-      <label><span class="req">*</span> Senha</label>
-      <input id="login-pr-pass" type="password" placeholder="Senha" onkeydown="if(event.key==='Enter')loginPR()" />
-
-      <div class="msg" id="login-pr-msg"></div>
-
-      <button class="btn-full btn-warning" onclick="loginPR()">ENTRAR</button>
-
-      <div style="margin-top:12px;text-align:center;">
-        <span class="link" onclick="openPRRegister()">Registar empresa</span>
-        &nbsp;|&nbsp;
-        <span class="link" onclick="openForgot('pr')">Esqueci senha</span>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ========================================================= -->
-<!-- REGISTO PR -->
-<!-- ========================================================= -->
-<div id="pr-register" class="page">
-  <div class="box">
-    <button class="btn-dark btn-small" onclick="openPRLogin()">← Voltar</button>
-    <div class="card card-yellow">
-      <h2>📝 Registar Empresa</h2>
-
-      <label><span class="req">*</span> Nome da Empresa</label>
-      <input id="reg-pr-name" />
-
-      <label><span class="req">*</span> NIF</label>
-      <input id="reg-pr-nif" maxlength="9" placeholder="9 dígitos" />
-
-      <label><span class="req">*</span> Atividade</label>
-      <select id="reg-pr-activity">
-        <option value="">Selecionar</option>
-        <option>Restaurante</option>
-        <option>Café / Pastelaria</option>
-        <option>Bar</option>
-        <option>Hotel</option>
-        <option>Supermercado</option>
-        <option>Roupa / Moda</option>
-        <option>Eletrónica</option>
-        <option>Farmácia</option>
-        <option>Cabeleireiro</option>
-        <option>Ginásio</option>
-        <option>Clínica</option>
-        <option>Outro</option>
-      </select>
-
-      <label><span class="req">*</span> Morada Completa</label>
-      <input id="reg-pr-address" placeholder="Rua, número, andar" />
-
-      <label><span class="req">*</span> Localidade</label>
-      <input id="reg-pr-city" />
-
-      <label><span class="req">*</span> Distrito</label>
-      <select id="reg-pr-district">
-        <option value="">Selecionar distrito</option>
-        <option>Aveiro</option><option>Beja</option><option>Braga</option><option>Bragança</option>
-        <option>Castelo Branco</option><option>Coimbra</option><option>Évora</option><option>Faro</option>
-        <option>Guarda</option><option>Leiria</option><option>Lisboa</option><option>Portalegre</option>
-        <option>Porto</option><option>Santarém</option><option>Setúbal</option>
-        <option>Viana do Castelo</option><option>Vila Real</option><option>Viseu</option>
-      </select>
-
-      <label><span class="req">*</span> Código Postal</label>
-      <input id="reg-pr-postal" placeholder="0000-000" />
-
-      <label><span class="req">*</span> Contacto Empresa</label>
-      <input id="reg-pr-contact" />
-
-      <label><span class="req">*</span> Nome Responsável</label>
-      <input id="reg-pr-resp-name" />
-
-      <label><span class="req">*</span> E-mail Responsável</label>
-      <input id="reg-pr-resp-mail" type="email" />
-
-      <label><span class="req">*</span> Senha</label>
-      <input id="reg-pr-pass" type="password" />
-
-      <label><span class="req">*</span> Confirmar Senha</label>
-      <input id="reg-pr-pass2" type="password" />
-
-      <div class="msg" id="reg-pr-msg"></div>
-
-      <button class="btn-full btn-warning" onclick="registerPR()">REGISTAR EMPRESA</button>
-
-      <div style="margin-top:12px;text-align:center;">
-        <span class="link" onclick="openForgot('pr')">Esqueci senha</span>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ========================================================= -->
-<!-- ESQUECI SENHA -->
-<!-- ========================================================= -->
-<div id="forgot-page" class="page">
-  <div class="box">
-    <button class="btn-dark btn-small" onclick="backFromForgot()">← Voltar</button>
-    <div class="card card-blue">
-      <h2>🔑 Recuperar Senha</h2>
-
-      <label><span class="req">*</span> Nome / E-mail / NIF</label>
-      <input id="forgot-id" placeholder="Identificação da conta" />
-
+    <div id="rec-j-p3" style="display:none">
+      <div class="card" style="text-align:center;border-color:#0f0"><div style="color:#0f0;font-weight:700">✅ Identidade confirmada!</div></div>
       <label><span class="req">*</span> Nova Senha</label>
-      <input id="forgot-pass" type="password" />
-
-      <label><span class="req">*</span> Confirmar Nova Senha</label>
-      <input id="forgot-pass2" type="password" />
-
-      <div class="msg" id="forgot-msg"></div>
-
-      <button class="btn-full" onclick="resetPassword()">GUARDAR NOVA SENHA</button>
+      <div class="pw-wrap"><input id="rec-j-np1" type="password" placeholder="Mín. 4"><button class="pw-toggle" onclick="tPW('rec-j-np1',this)">👁</button></div>
+      <label><span class="req">*</span> Confirmar</label>
+      <div class="pw-wrap"><input id="rec-j-np2" type="password" placeholder="Repete"><button class="pw-toggle" onclick="tPW('rec-j-np2',this)">👁</button></div>
+      <div id="rec-j-msg3" class="msg" style="display:none"></div>
+      <button onclick="recJ_guardar()" class="bb" style="padding:14px">💾 GUARDAR</button>
     </div>
   </div>
 </div>
+</div>
 
-<!-- ========================================================= -->
-<!-- GAME -->
-<!-- ========================================================= -->
-<div id="game" class="page">
-  <div id="map"></div>
+<!-- ==================== LOGIN PR ==================== -->
+<div id="p-login-pr" class="pag">
+<div class="cx" style="padding-top:30px">
+  <div class="auth-box" style="border-color:#f90">
+    <h2 style="color:#f90">🏢 EMPRESA / PR</h2>
+    <div style="text-align:center;margin-bottom:16px"><button class="btn-dark btn-small" onclick="ir('p-landing')">← Voltar</button></div>
+    <label><span class="req">*</span> E-mail ou NIF</label>
+    <input id="lpr-id" placeholder="E-mail ou NIF da empresa">
+    <label><span class="req">*</span> Senha</label>
+    <div class="pw-wrap"><input id="lpr-pw" type="password" placeholder="Senha" onkeydown="if(event.key==='Enter')loginPR()"><button class="pw-toggle" onclick="tPW('lpr-pw',this)">👁</button></div>
+    <hr style="border-color:#333;margin:12px 0">
+    <label>Código de Filial (opcional)</label>
+    <input id="lpr-code" placeholder="Código da empresa mãe">
+    <div id="lpr-msg" class="msg" style="display:none"></div>
+    <button onclick="loginPR()" class="bb" style="padding:14px;font-size:15px;background:linear-gradient(135deg,#f90,#fc0);color:#000">▶ ENTRAR</button>
+    <div style="text-align:center;margin-top:12px"><span style="color:#0ff;cursor:pointer;text-decoration:underline;font-size:13px" onclick="ir('p-reg-pr')">📝 Registar Empresa</span> · <span style="color:#0ff;cursor:pointer;text-decoration:underline;font-size:13px" onclick="ir('p-rec-j')">🔑 Esqueci senha</span></div>
+  </div>
+</div>
+</div>
 
-  <div id="top-hud">
-    <div class="energy-bar">
-      <div id="energy-fill"></div>
+<!-- ==================== REGISTO PR ==================== -->
+<div id="p-reg-pr" class="pag">
+<div class="cx">
+  <div class="auth-box" style="border-color:#f90">
+    <h2 style="color:#f90">📝 REGISTAR EMPRESA</h2>
+    <div style="text-align:center;margin-bottom:16px"><button class="btn-dark btn-small" onclick="ir('p-login-pr')">← Voltar</button></div>
+    <div class="scroll">
+      <label><span class="req">*</span> Nome da Empresa</label><input id="prr-ne" placeholder="Obrigatório">
+      <label><span class="req">*</span> NIF (9 dígitos)</label><input id="prr-nif" placeholder="Obrigatório" maxlength="9">
+      <label><span class="req">*</span> E-mail</label><input id="prr-email" type="email" placeholder="Obrigatório">
+      <label><span class="req">*</span> Senha</label><div class="pw-wrap"><input id="prr-pw1" type="password" placeholder="Mín. 4"><button class="pw-toggle" onclick="tPW('prr-pw1',this)">👁</button></div>
+      <label><span class="req">*</span> Confirmar Senha</label><div class="pw-wrap"><input id="prr-pw2" type="password" placeholder="Repete"><button class="pw-toggle" onclick="tPW('prr-pw2',this)">👁</button></div>
+      <label><span class="req">*</span> Contacto</label><input id="prr-tel" placeholder="Telefone">
+      <label><span class="req">*</span> Morada Completa</label><input id="prr-morada" placeholder="Rua, nº, andar">
+      <label><span class="req">*</span> Localidade</label><input id="prr-local" placeholder="Cidade">
+      <label><span class="req">*</span> Distrito</label>
+      <select id="prr-dist"><option value="">Selecionar</option><option>Aveiro</option><option>Beja</option><option>Braga</option><option>Bragança</option><option>Castelo Branco</option><option>Coimbra</option><option>Évora</option><option>Faro</option><option>Guarda</option><option>Leiria</option><option>Lisboa</option><option>Portalegre</option><option>Porto</option><option>Santarém</option><option>Setúbal</option><option>Viana do Castelo</option><option>Vila Real</option><option>Viseu</option></select>
+      <label><span class="req">*</span> Código Postal</label><input id="prr-cp" placeholder="0000-000">
+      <label><span class="req">*</span> Atividade</label>
+      <select id="prr-ativ"><option value="">Selecionar setor</option><option>Restaurante</option><option>Café</option><option>Bar</option><option>Hotel</option><option>Supermercado</option><option>Roupa</option><option>Eletrónica</option><option>Farmácia</option><option>Cabeleireiro</option><option>Ginásio</option><option>Clínica</option><option>Outro</option></select>
+      <label><span class="req">*</span> Nome do Responsável</label><input id="prr-resp" placeholder="Obrigatório">
+      <label>E-mail do Responsável</label><input id="prr-resp-email" type="email" placeholder="Opcional">
+      <label>Telemóvel do Responsável</label><input id="prr-resp-tel" placeholder="Opcional">
     </div>
-    <div class="hud-line">
-      <span id="hud-player">👤 -</span>
-      <span id="hud-energy">⚡ 100%</span>
-      <span id="hud-skill">🎯 0.0%</span>
-      <span id="hud-flags">🚩 0</span>
-      <span id="hud-gps">📍 Offline</span>
-      <span id="hud-radius">👁 5m | ✋ 2.5m</span>
+    <div id="prr-msg" class="msg" style="display:none"></div>
+    <button onclick="regPR()" class="bb" style="padding:14px;font-size:15px;background:linear-gradient(135deg,#f90,#fc0);color:#000;margin-top:8px">✅ REGISTAR EMPRESA</button>
+  </div>
+</div>
+</div>
+
+<!-- ==================== BACKOFFICE LOGIN ==================== -->
+<div id="p-bo-login" class="pag">
+<div class="cx" style="padding-top:40px">
+  <div class="auth-box" style="border-color:#0ff">
+    <h2 style="color:#0ff">🖥️ BACKOFFICE</h2>
+    <div style="text-align:center;margin-bottom:16px"><button class="btn-dark btn-small" onclick="ir('p-landing')">← Voltar</button></div>
+    <label><span class="req">*</span> Código de Acesso</label>
+    <div class="pw-wrap"><input id="bo-pw" type="password" placeholder="Código secreto" style="text-align:center;letter-spacing:4px;border-color:#0ff;color:#0ff;font-size:18px" onkeydown="if(event.key==='Enter')loginBO()"><button class="pw-toggle" onclick="tPW('bo-pw',this)">👁</button></div>
+    <div id="bo-msg" class="msg" style="display:none"></div>
+    <button onclick="loginBO()" class="bb" style="padding:14px;font-size:15px;background:linear-gradient(135deg,#004,#008);color:#0ff;border:1px solid #0ff">🖥️ ENTRAR</button>
+  </div>
+</div>
+</div>
+
+<!-- ==================== BACKOFFICE ==================== -->
+<div id="p-bo" class="pag" style="background:linear-gradient(180deg,#000,#040820)">
+  <div style="background:rgba(0,200,255,.08);border-bottom:1px solid #0ff;padding:10px 16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;position:sticky;top:0;z-index:100">
+    <span style="font-size:17px;font-weight:700;color:#0ff">🖥️ BACKOFFICE</span>
+    <div style="display:flex;gap:6px"><button class="btn-dark btn-small" onclick="renderBO()">🔄</button><button class="btn-danger btn-small" onclick="ir('p-landing')">⏎ Sair</button></div>
+  </div>
+  <div id="bo-body" class="cx"></div>
+</div>
+
+<!-- ==================== PR PAINEL ==================== -->
+<div id="p-pr" class="pag">
+  <div class="pr-header" style="border-color:#f90">
+    <span id="pr-hdr-title" style="font-size:17px;font-weight:700;color:#f90">🏢 PAINEL</span>
+    <button class="btn-danger btn-small" onclick="ir('p-landing')">⏎ Sair</button>
+  </div>
+  <div id="pr-body" class="cx"></div>
+</div>
+
+<!-- ==================== JOGO ==================== -->
+<div id="p-jogo" class="pag">
+  <div id="mapa"></div>
+  <div id="avatar-cx">
+    <div id="raio-visao"></div>
+    <div id="raio-pegar"></div>
+    <div id="btn-pegar" onclick="pegarManual()">👆 PEGAR!</div>
+    <div id="avatar-dot"></div>
+  </div>
+  <div id="hud">
+    <div class="hud-row">
+      <div class="hud-stat">🏴<span class="hud-val" id="h-flags">0</span></div>
+      <div class="hud-stat">⚡<span class="hud-val" id="h-energia">100%</span></div>
+      <div class="hud-stat">🎯<span class="hud-val" id="h-skill">0</span></div>
+      <div class="hud-stat">👁<span class="hud-val" id="h-visao">5m</span></div>
+      <div class="hud-stat">📡<span class="hud-val" id="h-gps">—</span></div>
+      <div style="display:flex;gap:4px">
+        <button class="btn-dark btn-small" onclick="ir('p-landing')">⏎</button>
+      </div>
+    </div>
+    <div class="ebar" style="margin-top:4px"><div class="ebar-fill" id="h-ebar" style="width:100%"></div></div>
+  </div>
+  <div id="fbtns">
+    <button class="fb btn-dark" onclick="abrirInv()" title="Inventário">📋</button>
+    <button class="fb btn-dark" onclick="centrarMapa()" title="Centrar">📍</button>
+  </div>
+  <div id="ctrl">
+    <div style="font-size:9px;color:rgba(0,255,0,.4);text-align:center;margin-bottom:3px;cursor:move" class="drag-h">⠿ WASD</div>
+    <div class="ctrl-g">
+      <div></div><div class="cbtn" id="bc-c" onpointerdown="pd('c')" onpointerup="pu('c')">▲</div><div></div>
+      <div class="cbtn" id="bc-e" onpointerdown="pd('e')" onpointerup="pu('e')">◀</div><div class="cbtn" style="font-size:8px;color:#333;cursor:default">●</div><div class="cbtn" id="bc-d" onpointerdown="pd('d')" onpointerup="pu('d')">▶</div>
+      <div></div><div class="cbtn" id="bc-b" onpointerdown="pd('b')" onpointerup="pu('b')">▼</div><div></div>
     </div>
   </div>
+  <div id="gps-txt">📡 a iniciar...</div>
 
-  <div id="map-controls">
-    <button class="float-btn" onclick="openCollectedPanel()">📚</button>
-    <button class="float-btn" onclick="openQRPanel()">🎫</button>
-    <button class="float-btn" onclick="centerPlayer()">📍</button>
-    <button class="float-btn btn-danger" onclick="exitGame()">⏎</button>
-  </div>
+  <!-- JANELA BANDEIRA -->
+  <div id="janela-band"><div class="jb-fechar" onclick="fecharJanelaBand()">✕</div><div id="jb-conteudo"></div><button onclick="fecharJanelaBand()" class="bb" style="margin-top:10px">✅ FECHAR</button></div>
 
-  <div id="offline-controls">
-    <div style="font-size:12px;color:#a7fca7;">PC / Offline</div>
-    <div class="dpad">
-      <div></div>
-      <button onclick="movePlayer(0,1)">▲</button>
-      <div></div>
-      <button onclick="movePlayer(-1,0)">◀</button>
-      <button onclick="spawnFlags(true)">⟳</button>
-      <button onclick="movePlayer(1,0)">▶</button>
-      <div></div>
-      <button onclick="movePlayer(0,-1)">▼</button>
-      <div></div>
-    </div>
-  </div>
-</div>
+  <!-- INVENTÁRIO -->
+  <div id="janela-inv"><div class="jb-fechar" onclick="fecharInv()">✕</div><h3 style="color:#0ff;margin-bottom:10px">📋 Inventário de Bandeiras</h3><div id="inv-conteudo"></div><button onclick="fecharInv()" class="bb" style="margin-top:10px">✅ FECHAR</button></div>
 
-<!-- ========================================================= -->
-<!-- MODAIS / PAINÉIS -->
-<!-- ========================================================= -->
-<div id="flag-modal" class="modal hidden">
-  <div class="modal-head">
-    <h2 id="flag-modal-title">🚩 Bandeira</h2>
-    <button class="btn-dark btn-small" onclick="closeFlagModal()">✕</button>
-  </div>
-  <div id="flag-modal-content"></div>
-</div>
-
-<div id="collection-panel" class="modal hidden">
-  <div class="modal-head">
-    <h2>📚 Bandeiras Recolhidas</h2>
-    <button class="btn-dark btn-small" onclick="closeCollectedPanel()">✕</button>
-  </div>
-  <div id="collection-content"></div>
-</div>
-
-<div id="qr-panel" class="modal hidden">
-  <div class="modal-head">
-    <h2>🎫 QR Codes Ativos</h2>
-    <button class="btn-dark btn-small" onclick="closeQRPanel()">✕</button>
-  </div>
-  <div id="qr-content"></div>
-</div>
-
-<!-- ========================================================= -->
-<!-- BACKOFFICE -->
-<!-- ========================================================= -->
-<div id="backoffice-login" class="page">
-  <div class="box">
-    <button class="btn-dark btn-small" onclick="showPage('home')">← Voltar</button>
-    <div class="card card-blue">
-      <h2>🖥️ BackOffice</h2>
-      <label><span class="req">*</span> Senha de acesso</label>
-      <input id="backoffice-pass" type="password" placeholder="Senha" />
-      <div class="msg" id="backoffice-login-msg"></div>
-      <button class="btn-full" onclick="loginBackoffice()">ENTRAR</button>
-    </div>
-  </div>
-</div>
-
-<div id="backoffice-panel" class="page">
-  <div class="box">
-    <button class="btn-danger btn-small" onclick="showPage('home')">⏎ Sair</button>
-    <h2 style="margin:14px 0;">🖥️ BackOffice Geral</h2>
-    <div id="backoffice-content"></div>
-  </div>
+  <!-- JANELA QR -->
+  <div id="janela-qr"><div class="jb-fechar" onclick="fecharJanelaQR()" style="border-color:#ff0;color:#ff0">✕</div><div id="jq-conteudo"></div><button onclick="fecharJanelaQR()" class="bb" style="margin-top:10px;background:linear-gradient(135deg,#f90,#fc0);color:#000">✅ FECHAR</button></div>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 'use strict';
 
-/* ============================================================
-   CONFIGURAÇÃO
-============================================================ */
-const STORAGE_KEY = 'zap_flags_jogador_v1';
-const BO_PASS = '321321';
-const VISION_RADIUS = 5;
-const PICKUP_RADIUS = 2.5;
-const SKILL_PER_FLAG = 0.1;
-const QR_TARGET = 20;
-const QR_EXPIRY_HOURS = 48;
-const QR_WARN_INTERVAL_HOURS = 5;
+// ================================================================
+// CONFIGURAÇÃO
+// ================================================================
+var SK='zf7', BO_PASS='321321';
+var CFG = {
+  RAIO_VISAO: 5,        // metros
+  RAIO_PEGAR: 2.5,      // metros
+  SKILL_POR_BAND: 0.1,  // % skill por bandeira
+  ENERGIA_BASE: 1,      // % energia bandeira normal
+  QR_CADA: 20,          // bandeiras para QR
+  QR_EXPIRA_H: 48,      // horas para expirar QR
+  QR_AVISO_H: 5,        // avisar de X em X horas
+  VEL: 2.5,             // velocidade px/frame
+  N_BAND: 8,            // bandeiras no mapa
+  SPAWN_RAIO: 100       // raio spawn metros
+};
 
-let state = loadState();
-
-let currentPlayer = null;
-let currentForgotType = 'player';
-
-let map = null;
-let playerMarker = null;
-let visionCircle = null;
-let pickupCircle = null;
-let currentPos = { lat: 41.1496, lng: -8.6109 };
-let flags = [];
-let gpsWatch = null;
-let isGPSMode = false;
-
-/* ============================================================
-   ESTADO
-============================================================ */
-function defaultState() {
-  return {
-    lastPlayerName: '',
-    players: [],
-    prs: [
-      {
-        id: 'EMP_CAFE',
-        name: 'Café Central',
-        nif: '123456789',
-        activity: 'Café / Pastelaria',
-        address: 'Rua Central, Porto',
-        city: 'Porto',
-        district: 'Porto',
-        postal: '4000-100',
-        contact: '913000001',
-        responsible: 'Responsável Café',
-        responsibleMail: 'cafe@demo.pt',
-        password: '1234',
-        prize: 'Café grátis',
-        color: '#ff4d4f'
-      },
-      {
-        id: 'EMP_SPORT',
-        name: 'SportMax',
-        nif: '987654321',
-        activity: 'Desporto',
-        address: 'Avenida do Estádio, Porto',
-        city: 'Porto',
-        district: 'Porto',
-        postal: '4100-200',
-        contact: '914000002',
-        responsible: 'Responsável Sport',
-        responsibleMail: 'sport@demo.pt',
-        password: '1234',
-        prize: '10% desconto',
-        color: '#1677ff'
-      },
-      {
-        id: 'EMP_FARMA',
-        name: 'Farmácia Saúde',
-        nif: '111222333',
-        activity: 'Farmácia',
-        address: 'Rua da Saúde, Porto',
-        city: 'Porto',
-        district: 'Porto',
-        postal: '4200-300',
-        contact: '915000003',
-        responsible: 'Responsável Farmácia',
-        responsibleMail: 'farmacia@demo.pt',
-        password: '1234',
-        prize: 'Oferta surpresa',
-        color: '#52c41a'
-      }
-    ],
-    backofficeLogs: []
-  };
+// Distribuição de energia nas bandeiras:
+// 80% → 1% energia
+// 10% → 10% energia
+// 5% → 20% energia
+// 4% → 50% energia
+// 1% → 100% energia
+function sortearEnergia() {
+  var r = Math.random() * 100;
+  if (r < 80) return 1;
+  if (r < 90) return 10;
+  if (r < 95) return 20;
+  if (r < 99) return 50;
+  return 100;
 }
 
-function loadState() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return defaultState();
-    const parsed = JSON.parse(raw);
-    if (!parsed.players) parsed.players = [];
-    if (!parsed.prs) parsed.prs = defaultState().prs;
-    if (!parsed.backofficeLogs) parsed.backofficeLogs = [];
-    return parsed;
-  } catch(e) {
-    return defaultState();
+var PACKS = {
+  MINIMO:{key:'MINIMO',label:'Mínimo',price:10,flags:1000,radiusKm:5,maxLots:50,durDias:30},
+  MEDIO:{key:'MEDIO',label:'Médio',price:15,flags:2500,radiusKm:15,maxLots:125,durDias:60},
+  GRANDE:{key:'GRANDE',label:'Grande',price:25,flags:10000,radiusKm:50,maxLots:500,durDias:90},
+  ENORME:{key:'ENORME',label:'Enorme',price:50,flags:25000,radiusKm:Infinity,maxLots:1250,durDias:180}
+};
+
+// ================================================================
+// ESTADO
+// ================================================================
+var mapaJ=null, marcAvt=null, bands=[], bandProx=null;
+var jogoOk=false, animF=null, animT=0, ultF=0;
+var dirs={c:false,b:false,e:false,d:false};
+var AV={lat:39.5,lng:-8.0};
+var jogAtual=null, curPRId=null;
+var recJEmail='', recJCod='';
+var state=carregarEstado();
+
+function carregarEstado() {
+  try { var r=localStorage.getItem(SK); if(!r) return estadoPadrao(); var p=JSON.parse(r); if(!p.jogadores) p.jogadores=[]; if(!p.empresas) p.empresas=[]; return p; }
+  catch(e) { return estadoPadrao(); }
+}
+
+function estadoPadrao() { return { jogadores:[], empresas:[] }; }
+function guardar() { localStorage.setItem(SK, JSON.stringify(state)); }
+function gId(p) { return p+'_'+Math.random().toString(36).slice(2,10).toUpperCase(); }
+function gCode() { return Math.random().toString(36).slice(2,8).toUpperCase(); }
+function mkShort(n) { return (n||'').split(' ').map(function(w){return w[0]||''}).join('').slice(0,3).toUpperCase()||'XX'; }
+function fN(n) { return (n||0).toLocaleString('pt-PT'); }
+function fD(t) { return t?new Date(t).toLocaleDateString('pt-PT'):'—'; }
+function G(id) { return document.getElementById(id); }
+function V(id) { var e=G(id); return e?e.value.trim():''; }
+function vE(e) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(e).toLowerCase()); }
+function vN(n) { return /^[0-9]{9}$/.test(String(n).replace(/\s/g,'')); }
+function tPW(id,b) { var i=G(id);if(!i)return;i.type=i.type==='text'?'password':'text';b.innerText=i.type==='password'?'👁':'🙈'; }
+
+function setMsg(id,txt,tipo) {
+  var e=G(id);if(!e)return;
+  e.textContent=txt;
+  e.className='msg '+(tipo||'');
+  e.style.display=txt?'block':'none';
+}
+
+function calcDist(a,b,c,d) {
+  var x=(d-b)*111000*Math.cos(a*Math.PI/180), y=(c-a)*111000;
+  return Math.sqrt(x*x+y*y);
+}
+
+function distPx(m) {
+  if(!mapaJ) return m*5;
+  var z=mapaJ.getZoom();
+  return m/(156543.03392*Math.cos(AV.lat*Math.PI/180)/Math.pow(2,z));
+}
+
+// ================================================================
+// NAVEGAÇÃO
+// ================================================================
+function ir(id) {
+  var pags=document.querySelectorAll('.pag');
+  for(var i=0;i<pags.length;i++) pags[i].classList.remove('ativa');
+  var alvo=G(id); if(alvo) alvo.classList.add('ativa');
+  // Limpar mensagens
+  var msgs=document.querySelectorAll('.msg');
+  for(var j=0;j<msgs.length;j++) msgs[j].style.display='none';
+  window.scrollTo(0,0);
+  // Ações específicas
+  if(id==='p-login-j') prepararLoginJ();
+  if(id==='p-bo') renderBO();
+  if(id==='p-jogo') iniciarJogo();
+  if(id==='p-pr') renderPR(curPRId);
+  if(id==='p-rec-j') { G('rec-j-p1').style.display='block'; G('rec-j-p2').style.display='none'; G('rec-j-p3').style.display='none'; }
+}
+
+// ================================================================
+// LOGIN JOGADOR — nome memorizado
+// ================================================================
+function prepararLoginJ() {
+  // Verificar se há jogador guardado na última sessão
+  var ultimo = localStorage.getItem('zf_ultimo_nome');
+  if (ultimo) {
+    G('lj-nome').value = ultimo;
+    verificarNomeLogin();
+    setTimeout(function(){ var e=G('lj-senha');if(e)e.focus(); },200);
+  } else {
+    G('lj-nome').value = '';
+    G('login-j-card').style.display = 'none';
+    setTimeout(function(){ var e=G('lj-nome');if(e)e.focus(); },200);
   }
 }
 
-function saveState() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-}
-
-/* ============================================================
-   UTILIDADES
-============================================================ */
-function byId(id) {
-  return document.getElementById(id);
-}
-
-function showPage(id) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  byId(id).classList.add('active');
-
-  if (id === 'player-login') {
-    byId('login-player-name').value = state.lastPlayerName || '';
-    setTimeout(() => byId(state.lastPlayerName ? 'login-player-pass' : 'login-player-name').focus(), 100);
-  }
-
-  if (id === 'backoffice-panel') {
-    renderBackoffice();
+function verificarNomeLogin() {
+  var nome = V('lj-nome');
+  var card = G('login-j-card');
+  if (!nome) { card.style.display='none'; return; }
+  var jog = state.jogadores.find(function(j){return j.nome.toLowerCase()===nome.toLowerCase()});
+  if (jog) {
+    card.style.display='block';
+    G('login-j-nome').textContent = jog.nome;
+    G('login-j-info').textContent = '🏴 '+fN(jog.flags)+' flags · 🎯 Skill '+jog.skill.toFixed(1)+'% · 👁 '+CFG.RAIO_VISAO+'m';
+  } else {
+    card.style.display='none';
   }
 }
 
-function setMsg(id, text, error) {
-  const el = byId(id);
-  el.textContent = text;
-  el.className = 'msg' + (error ? ' err' : '');
-}
+function tentarLogin() {
+  var nome = V('lj-nome');
+  var senha = G('lj-senha').value;
+  if (!nome) return setMsg('lj-msg','❌ Nome obrigatório!','err');
+  if (!senha) return setMsg('lj-msg','❌ Senha obrigatória!','err');
 
-function uid(prefix) {
-  return prefix + '_' + Math.random().toString(36).slice(2, 10).toUpperCase();
-}
-
-function now() {
-  return Date.now();
-}
-
-function formatDate(ts) {
-  return new Date(ts).toLocaleString('pt-PT');
-}
-
-function distanceMeters(lat1, lng1, lat2, lng2) {
-  const R = 6371000;
-  const dLat = (lat2-lat1) * Math.PI / 180;
-  const dLng = (lng2-lng1) * Math.PI / 180;
-  const a =
-    Math.sin(dLat/2) ** 2 +
-    Math.cos(lat1*Math.PI/180) *
-    Math.cos(lat2*Math.PI/180) *
-    Math.sin(dLng/2) ** 2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-}
-
-function offsetMeters(lat, lng, dx, dy) {
-  return {
-    lat: lat + dy / 111320,
-    lng: lng + dx / (111320 * Math.cos(lat * Math.PI / 180))
-  };
-}
-
-function randomAround(lat, lng, radius) {
-  const angle = Math.random() * Math.PI * 2;
-  const dist = Math.random() * radius;
-  return offsetMeters(lat, lng, Math.cos(angle) * dist, Math.sin(angle) * dist);
-}
-
-function normalizeName(name) {
-  return String(name || '').trim().toLowerCase();
-}
-
-/* ============================================================
-   HOME / NAV
-============================================================ */
-function openPlayerLogin() {
-  showPage('player-login');
-}
-
-function openPlayerRegister() {
-  byId('reg-player-name').value = byId('login-player-name').value || '';
-  byId('reg-player-pass').value = byId('login-player-pass').value || '';
-  showPage('player-register');
-}
-
-function openPRLogin() {
-  showPage('pr-login');
-}
-
-function openPRRegister() {
-  showPage('pr-register');
-}
-
-function openForgot(type) {
-  currentForgotType = type;
-  byId('forgot-id').value = type === 'player' ? (byId('login-player-name').value || '') : (byId('login-pr-id').value || '');
-  byId('forgot-pass').value = '';
-  byId('forgot-pass2').value = '';
-  setMsg('forgot-msg', '', false);
-  showPage('forgot-page');
-}
-
-function backFromForgot() {
-  showPage(currentForgotType === 'player' ? 'player-login' : 'pr-login');
-}
-
-/* ============================================================
-   JOGADOR LOGIN / REGISTO
-============================================================ */
-function loginPlayer() {
-  const name = byId('login-player-name').value.trim();
-  const pass = byId('login-player-pass').value;
-
-  if (!name) return setMsg('login-player-msg', '❌ Nome obrigatório.', true);
-  if (!pass) return setMsg('login-player-msg', '❌ Senha obrigatória.', true);
-
-  const player = state.players.find(p => normalizeName(p.name) === normalizeName(name));
-
-  if (!player) {
-    setMsg('login-player-msg', '⚠️ Conta não encontrada. Cria o registo.', true);
-    byId('reg-player-name').value = name;
-    byId('reg-player-pass').value = pass;
-    setTimeout(() => showPage('player-register'), 700);
+  var jog = state.jogadores.find(function(j){return j.nome.toLowerCase()===nome.toLowerCase()});
+  if (!jog) {
+    // Não encontrado → redirecionar para registo
+    setMsg('lj-msg','Conta não encontrada. A abrir registo...','err');
+    setTimeout(function(){
+      ir('p-reg-j');
+      G('rj-nome').value = nome;
+    }, 1000);
     return;
   }
 
-  if (player.password !== pass) {
-    return setMsg('login-player-msg', '❌ Senha incorreta.', true);
-  }
+  if (jog.senha !== senha) return setMsg('lj-msg','❌ Senha incorreta!','err');
 
-  currentPlayer = player;
-  state.lastPlayerName = player.name;
-  saveState();
-
-  enterGame();
+  // Login com sucesso
+  jogAtual = jog;
+  localStorage.setItem('zf_ultimo_nome', jog.nome);
+  guardar();
+  ir('p-jogo');
 }
 
-function registerPlayer() {
-  const name = byId('reg-player-name').value.trim();
-  const pass = byId('reg-player-pass').value;
-  const pass2 = byId('reg-player-pass2').value;
-  const address = byId('reg-player-address').value.trim();
-  const contact = byId('reg-player-contact').value.trim();
+// ================================================================
+// REGISTO JOGADOR
+// ================================================================
+function fazerRegJ() {
+  var nome=V('rj-nome'), email=V('rj-email').toLowerCase();
+  var pw1=G('rj-pw1').value, pw2=G('rj-pw2').value;
+  var tel=V('rj-tel'), morada=V('rj-morada'), local=V('rj-local'), dist=G('rj-dist').value;
 
-  if (!name) return setMsg('reg-player-msg', '❌ Nome obrigatório.', true);
-  if (!pass) return setMsg('reg-player-msg', '❌ Senha obrigatória.', true);
-  if (!pass2) return setMsg('reg-player-msg', '❌ Confirmação de senha obrigatória.', true);
-  if (pass.length < 4) return setMsg('reg-player-msg', '❌ Senha mínimo 4 caracteres.', true);
-  if (pass !== pass2) return setMsg('reg-player-msg', '❌ Senhas não coincidem.', true);
+  if (!nome) return setMsg('rj-msg','❌ Nome obrigatório!','err');
+  if (!vE(email)) return setMsg('rj-msg','❌ E-mail inválido!','err');
+  if (!pw1||pw1.length<4) return setMsg('rj-msg','❌ Senha mín. 4 caracteres!','err');
+  if (pw1!==pw2) return setMsg('rj-msg','❌ Senhas não coincidem!','err');
+  if (state.jogadores.find(function(j){return j.nome.toLowerCase()===nome.toLowerCase()}))
+    return setMsg('rj-msg','❌ Nome já existe!','err');
+  if (state.jogadores.find(function(j){return j.email===email}))
+    return setMsg('rj-msg','❌ E-mail já registado!','err');
 
-  if (state.players.find(p => normalizeName(p.name) === normalizeName(name))) {
-    return setMsg('reg-player-msg', '❌ Este nome já está registado.', true);
-  }
-
-  const player = {
-    id: uid('PLAYER'),
-    name,
-    password: pass,
-    address,
-    contact,
-    energy: 100,
-    skill: 0,
-    totalFlags: 0,
-    companyCounts: {},
-    flagsLog: [],
-    qrs: [],
-    createdAt: now()
+  var novoJog = {
+    id: gId('J'),
+    nome: nome,
+    email: email,
+    senha: pw1,
+    tel: tel, morada: morada, local: local, dist: dist,
+    energia: 100,
+    flags: 0,
+    skill: 0,    // percentagem (0.1% por bandeira)
+    inventario: [], // {empId, empNome, tipo, energiaGanha, timestamp}
+    progresso: {},  // {empId: count} → ao chegar a 20, gera QR
+    qrs: [],        // {id, empId, empNome, premio, criadoEm, expiraEm, reclamado}
+    reg: Date.now()
   };
 
-  state.players.push(player);
-  state.lastPlayerName = name;
-  currentPlayer = player;
-  saveState();
-
-  enterGame();
+  state.jogadores.push(novoJog);
+  jogAtual = novoJog;
+  localStorage.setItem('zf_ultimo_nome', novoJog.nome);
+  guardar();
+  ir('p-jogo');
 }
 
-/* ============================================================
-   PR LOGIN / REGISTO
-============================================================ */
+// ================================================================
+// RECUPERAR SENHA JOGADOR
+// ================================================================
+function recJ_enviar() {
+  var email = V('rec-j-email').toLowerCase();
+  if (!vE(email)) return setMsg('rec-j-msg1','❌ E-mail inválido!','err');
+  var jog = state.jogadores.find(function(j){return j.email===email});
+  if (!jog) return setMsg('rec-j-msg1','❌ E-mail não encontrado!','err');
+  recJEmail = email;
+  recJCod = String(Math.floor(1000+Math.random()*9000));
+  G('rec-j-codigo').textContent = recJCod;
+  G('rec-j-p1').style.display='none';
+  G('rec-j-p2').style.display='block';
+}
+
+function recJ_verificar() {
+  if (V('rec-j-cin')!==recJCod) return setMsg('rec-j-msg2','❌ Código errado!','err');
+  G('rec-j-p2').style.display='none';
+  G('rec-j-p3').style.display='block';
+}
+
+function recJ_guardar() {
+  var p1=G('rec-j-np1').value, p2=G('rec-j-np2').value;
+  if (!p1||p1.length<4) return setMsg('rec-j-msg3','❌ Mín. 4!','err');
+  if (p1!==p2) return setMsg('rec-j-msg3','❌ Senhas!','err');
+  var jog=state.jogadores.find(function(j){return j.email===recJEmail});
+  if (jog) { jog.senha=p1; guardar(); }
+  setMsg('rec-j-msg3','✅ Senha alterada! A voltar...','ok');
+  setTimeout(function(){ir('p-login-j')},1500);
+}
+
+// ================================================================
+// REGISTO/LOGIN EMPRESA (mantido do anterior)
+// ================================================================
+function regPR() {
+  var ne=V('prr-ne'),nif=V('prr-nif'),email=V('prr-email').toLowerCase();
+  var pw1=G('prr-pw1').value,pw2=G('prr-pw2').value;
+  var tel=V('prr-tel'),morada=V('prr-morada'),local=V('prr-local'),dist=G('prr-dist').value;
+  var cp=V('prr-cp'),ativ=G('prr-ativ').value,resp=V('prr-resp');
+
+  if(!ne) return setMsg('prr-msg','❌ Nome!','err');
+  if(!vN(nif)) return setMsg('prr-msg','❌ NIF (9 dígitos)!','err');
+  if(!vE(email)) return setMsg('prr-msg','❌ E-mail!','err');
+  if(!pw1||pw1.length<4) return setMsg('prr-msg','❌ Senha mín. 4!','err');
+  if(pw1!==pw2) return setMsg('prr-msg','❌ Senhas!','err');
+  if(!tel) return setMsg('prr-msg','❌ Contacto!','err');
+  if(!morada) return setMsg('prr-msg','❌ Morada!','err');
+  if(!local) return setMsg('prr-msg','❌ Localidade!','err');
+  if(!dist) return setMsg('prr-msg','❌ Distrito!','err');
+  if(!cp) return setMsg('prr-msg','❌ Cód. Postal!','err');
+  if(!ativ) return setMsg('prr-msg','❌ Atividade!','err');
+  if(!resp) return setMsg('prr-msg','❌ Responsável!','err');
+  if(state.empresas.find(function(p){return p.nif===nif})) return setMsg('prr-msg','❌ NIF existe!','err');
+  if(state.empresas.find(function(p){return p.email===email})) return setMsg('prr-msg','❌ Email existe!','err');
+
+  var cores=['#FF4D4F','#1677FF','#52C41A','#FADB14','#722ED1','#FA8C16'];
+  var emp={
+    id:gId('PR'),branchCode:gCode(),
+    ne:ne,short:mkShort(ne),nif:nif,email:email,senha:pw1,
+    tel:tel,morada:morada,local:local,dist:dist,cp:cp,ativ:ativ,resp:resp,
+    respEmail:V('prr-resp-email'),respTel:V('prr-resp-tel'),
+    cor:cores[Math.floor(Math.random()*cores.length)],
+    lat:41.1496,lng:-8.6109,
+    packs:[],lotes:[],
+    campanha:{premio:'Desconto especial',premiosData:0},
+    isBranch:false,parentId:null,billing:'self',active:true,
+    criado:Date.now()
+  };
+  state.empresas.push(emp);
+  guardar();
+  curPRId=emp.id;
+  ir('p-pr');
+}
+
 function loginPR() {
-  const id = byId('login-pr-id').value.trim();
-  const pass = byId('login-pr-pass').value;
-
-  if (!id) return setMsg('login-pr-msg', '❌ E-mail ou NIF obrigatório.', true);
-  if (!pass) return setMsg('login-pr-msg', '❌ Senha obrigatória.', true);
-
-  const pr = state.prs.find(p =>
-    (p.responsibleMail === id || p.nif === id || p.name === id) &&
-    p.password === pass
-  );
-
-  if (!pr) return setMsg('login-pr-msg', '❌ Dados incorretos.', true);
-
-  renderPRPanel(pr);
-  showPage('pr-panel');
-}
-
-function registerPR() {
-  const name = byId('reg-pr-name').value.trim();
-  const nif = byId('reg-pr-nif').value.trim();
-  const activity = byId('reg-pr-activity').value;
-  const address = byId('reg-pr-address').value.trim();
-  const city = byId('reg-pr-city').value.trim();
-  const district = byId('reg-pr-district').value;
-  const postal = byId('reg-pr-postal').value.trim();
-  const contact = byId('reg-pr-contact').value.trim();
-  const respName = byId('reg-pr-resp-name').value.trim();
-  const respMail = byId('reg-pr-resp-mail').value.trim();
-  const pass = byId('reg-pr-pass').value;
-  const pass2 = byId('reg-pr-pass2').value;
-
-  if (!name) return setMsg('reg-pr-msg', '❌ Nome da empresa obrigatório.', true);
-  if (!/^\d{9}$/.test(nif)) return setMsg('reg-pr-msg', '❌ NIF inválido.', true);
-  if (!activity) return setMsg('reg-pr-msg', '❌ Atividade obrigatória.', true);
-  if (!address) return setMsg('reg-pr-msg', '❌ Morada obrigatória.', true);
-  if (!city) return setMsg('reg-pr-msg', '❌ Localidade obrigatória.', true);
-  if (!district) return setMsg('reg-pr-msg', '❌ Distrito obrigatório.', true);
-  if (!postal) return setMsg('reg-pr-msg', '❌ Código postal obrigatório.', true);
-  if (!contact) return setMsg('reg-pr-msg', '❌ Contacto obrigatório.', true);
-  if (!respName) return setMsg('reg-pr-msg', '❌ Responsável obrigatório.', true);
-  if (!respMail) return setMsg('reg-pr-msg', '❌ E-mail do responsável obrigatório.', true);
-  if (!pass) return setMsg('reg-pr-msg', '❌ Senha obrigatória.', true);
-  if (pass !== pass2) return setMsg('reg-pr-msg', '❌ Senhas não coincidem.', true);
-
-  if (state.prs.find(p => p.nif === nif)) return setMsg('reg-pr-msg', '❌ NIF já registado.', true);
-
-  const pr = {
-    id: uid('PR'),
-    name,
-    nif,
-    activity,
-    address,
-    city,
-    district,
-    postal,
-    contact,
-    responsible: respName,
-    responsibleMail: respMail,
-    password: pass,
-    prize: 'Prémio a definir',
-    color: '#' + Math.floor(Math.random() * 16777215).toString(16).padStart(6,'0'),
-    createdAt: now()
-  };
-
-  state.prs.push(pr);
-  saveState();
-
-  renderPRPanel(pr);
-  showPage('pr-panel');
-}
-
-/* ============================================================
-   PR PANEL SIMPLES
-============================================================ */
-function renderPRPanel(pr) {
-  if (!byId('pr-panel')) {
-    const div = document.createElement('div');
-    div.id = 'pr-panel';
-    div.className = 'page';
-    document.body.appendChild(div);
-  }
-
-  byId('pr-panel').innerHTML = `
-    <div class="box">
-      <button class="btn-danger btn-small" onclick="showPage('home')">⏎ Sair</button>
-      <div class="card card-yellow">
-        <h2>🏢 ${pr.name}</h2>
-        <div class="row"><div class="l">NIF</div><div class="r">${pr.nif}</div></div>
-        <div class="row"><div class="l">Atividade</div><div class="r">${pr.activity}</div></div>
-        <div class="row"><div class="l">Contacto</div><div class="r">${pr.contact}</div></div>
-        <div class="row"><div class="l">Responsável</div><div class="r">${pr.responsible}</div></div>
-        <div class="row"><div class="l">E-mail</div><div class="r">${pr.responsibleMail}</div></div>
-        <div class="row"><div class="l">Morada</div><div class="r">${pr.address}, ${pr.city}, ${pr.district}</div></div>
-      </div>
-      <div class="card">
-        <h3>🎁 Prémio da Empresa</h3>
-        <input id="pr-edit-prize" value="${pr.prize || ''}">
-        <button onclick="savePRPrize('${pr.id}')">Guardar Prémio</button>
-      </div>
-    </div>
-  `;
-}
-
-function savePRPrize(id) {
-  const pr = state.prs.find(p => p.id === id);
-  if (!pr) return;
-  pr.prize = byId('pr-edit-prize').value.trim() || 'Prémio a definir';
-  saveState();
-  alert('Prémio guardado.');
-}
-
-/* ============================================================
-   ESQUECI SENHA
-============================================================ */
-function resetPassword() {
-  const id = byId('forgot-id').value.trim();
-  const pass = byId('forgot-pass').value;
-  const pass2 = byId('forgot-pass2').value;
-
-  if (!id) return setMsg('forgot-msg', '❌ Identificação obrigatória.', true);
-  if (!pass) return setMsg('forgot-msg', '❌ Nova senha obrigatória.', true);
-  if (pass !== pass2) return setMsg('forgot-msg', '❌ Senhas não coincidem.', true);
-
-  if (currentForgotType === 'player') {
-    const p = state.players.find(x => normalizeName(x.name) === normalizeName(id));
-    if (!p) return setMsg('forgot-msg', '❌ Jogador não encontrado.', true);
-    p.password = pass;
-    saveState();
-    setMsg('forgot-msg', '✅ Senha alterada. Volta ao login.', false);
+  var id=V('lpr-id').toLowerCase(),pw=G('lpr-pw').value,code=V('lpr-code').toUpperCase();
+  if(!id) return setMsg('lpr-msg','❌ E-mail ou NIF!','err');
+  if(!pw) return setMsg('lpr-msg','❌ Senha!','err');
+  var pr=null;
+  if(code){
+    var mae=state.empresas.find(function(p){return p.branchCode===code&&!p.isBranch});
+    if(!mae) return setMsg('lpr-msg','❌ Código inválido!','err');
+    pr=state.empresas.find(function(p){return(p.email===id||p.nif===id)&&p.senha===pw&&p.parentId===mae.id});
   } else {
-    const pr = state.prs.find(x => x.nif === id || x.responsibleMail === id || x.name === id);
-    if (!pr) return setMsg('forgot-msg', '❌ Empresa não encontrada.', true);
-    pr.password = pass;
-    saveState();
-    setMsg('forgot-msg', '✅ Senha alterada. Volta ao login.', false);
+    pr=state.empresas.find(function(p){return(p.email===id||p.nif===id)&&p.senha===pw});
   }
+  if(!pr) return setMsg('lpr-msg','❌ Credenciais incorretas!','err');
+  guardar(); curPRId=pr.id; ir('p-pr');
 }
 
-/* ============================================================
-   GAME
-============================================================ */
-function enterGame() {
-  showPage('game');
-  initMap();
-  initPlayerPosition();
-  checkQRs(true);
-  updateHUD();
-  spawnFlags(true);
+// ================================================================
+// BACKOFFICE
+// ================================================================
+function loginBO() {
+  if(G('bo-pw').value!==BO_PASS) return setMsg('bo-msg','❌ Código incorreto!','err');
+  ir('p-bo');
 }
 
-function exitGame() {
-  currentPlayer = null;
-  showPage('home');
-}
+function renderBO() {
+  var h='';
+  var tj=state.jogadores.length, te=state.empresas.filter(function(p){return!p.isBranch}).length;
+  h+='<div class="card" style="border-color:#0ff;text-align:center;padding:18px"><h3 style="color:#0ff;margin-bottom:12px">📊 ESTATÍSTICAS</h3>';
+  h+='<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">';
+  h+='<div class="item" style="border-color:#0ff;text-align:center"><div style="font-size:22px;font-weight:700;color:#0ff">'+tj+'</div><div style="font-size:10px;color:#888">Jogadores</div></div>';
+  h+='<div class="item" style="border-color:#f90;text-align:center"><div style="font-size:22px;font-weight:700;color:#f90">'+te+'</div><div style="font-size:10px;color:#888">Empresas</div></div>';
+  var totalF=0; state.jogadores.forEach(function(j){totalF+=j.flags||0});
+  h+='<div class="item" style="border-color:#0f0;text-align:center"><div style="font-size:22px;font-weight:700;color:#0f0">'+fN(totalF)+'</div><div style="font-size:10px;color:#888">Flags Total</div></div>';
+  h+='</div></div>';
 
-function initMap() {
-  if (map) {
-    setTimeout(() => map.invalidateSize(), 200);
-    return;
-  }
-
-  map = L.map('map', {
-    zoomControl: true,
-    dragging: true,
-    scrollWheelZoom: true,
-    doubleClickZoom: false,
-    touchZoom: true,
-    boxZoom: false,
-    keyboard: false
-  }).setView([currentPos.lat,currentPos.lng], 18);
-
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '© OSM',
-    maxZoom: 20
-  }).addTo(map);
-}
-
-function initPlayerPosition() {
-  if (!currentPlayer) currentPlayer = state.players.find(p => p.name === state.lastPlayerName);
-  if (!currentPlayer) return;
-
-  // PC/offline por defeito.
-  setPosition(currentPos.lat,currentPos.lng,true);
-
-  // Se for telemóvel, pode tentar GPS, mas PC continua offline.
-  byId('hud-gps').textContent = '📍 Offline';
-}
-
-function playerIcon() {
-  return L.divIcon({
-    className: '',
-    html: `<div class="player-marker">👤</div>`,
-    iconSize: [30,30],
-    iconAnchor: [15,15]
+  // Jogadores
+  h+='<h3 style="color:#0ff;margin:16px 0 10px">👤 JOGADORES</h3>';
+  state.jogadores.forEach(function(j,idx){
+    h+='<div class="item"><b style="color:#0ff">'+j.nome+'</b><div class="row"><div class="rl">📧</div><div class="rv">'+j.email+'</div></div><div class="row"><div class="rl">🔑</div><div class="rv" style="color:#f90">'+j.senha+'</div></div><div class="row"><div class="rl">🏴</div><div class="rv">'+(j.flags||0)+'</div></div><div class="row"><div class="rl">🎯</div><div class="rv">'+(j.skill||0).toFixed(1)+'%</div></div><div class="row"><div class="rl">⚡</div><div class="rv">'+(j.energia||100)+'%</div></div><div class="row"><div class="rl">📅</div><div class="rv">'+fD(j.reg)+'</div></div><button class="btn-danger btn-small" onclick="boDelJ('+idx+')" style="margin-top:6px">🗑 Apagar</button></div>';
   });
-}
 
-function setPosition(lat,lng,center) {
-  currentPos = {lat,lng};
-
-  if (!playerMarker) {
-    playerMarker = L.marker([lat,lng], {icon:playerIcon(),zIndexOffset:1000}).addTo(map);
-  } else {
-    playerMarker.setLatLng([lat,lng]);
-  }
-
-  if (!visionCircle) {
-    visionCircle = L.circle([lat,lng], {
-      radius: VISION_RADIUS,
-      color: '#00ff66',
-      fillColor: '#00ff66',
-      fillOpacity: 0.08,
-      weight: 2
-    }).addTo(map);
-  } else {
-    visionCircle.setLatLng([lat,lng]);
-  }
-
-  if (!pickupCircle) {
-    pickupCircle = L.circle([lat,lng], {
-      radius: PICKUP_RADIUS,
-      color: '#ffcc00',
-      fillColor: '#ffcc00',
-      fillOpacity: 0.08,
-      weight: 2,
-      dashArray: '5 5'
-    }).addTo(map);
-  } else {
-    pickupCircle.setLatLng([lat,lng]);
-  }
-
-  pickupCircle.setStyle({opacity:0,fillOpacity:0});
-
-  if (center) map.setView([lat,lng],18);
-
-  updateFlagVisibility();
-  updatePickupRadiusVisibility();
-  updateHUD();
-}
-
-function movePlayer(dx,dy) {
-  if (!currentPlayer) return;
-
-  if (currentPlayer.energy <= 0) {
-    alert('Sem energia. Apanha bandeiras de energia ou espera recuperar.');
-    return;
-  }
-
-  const step = 1; // metros
-  const p = offsetMeters(currentPos.lat,currentPos.lng,dx*step,dy*step);
-
-  currentPlayer.energy = Math.max(0, +(currentPlayer.energy - 0.2).toFixed(1));
-  saveCurrentPlayer();
-
-  setPosition(p.lat,p.lng,true);
-}
-
-function offsetMeters(lat,lng,dx,dy) {
-  return {
-    lat: lat + dy/111320,
-    lng: lng + dx/(111320*Math.cos(lat*Math.PI/180))
-  };
-}
-
-function centerPlayer() {
-  if (map) map.setView([currentPos.lat,currentPos.lng],18);
-}
-
-/* ============================================================
-   BANDEIRAS
-============================================================ */
-function flagIcon(type) {
-  let cls = 'flag-empty';
-  if (type === 'ENERGY') cls = 'flag-energy';
-  if (type === 'PRIZE') cls = 'flag-prize';
-  if (type === 'BINGO') cls = 'flag-bingo';
-
-  return L.divIcon({
-    className:'',
-    html:`<div class="flag-marker"><div class="flag-stick"></div><div class="flag-banner ${cls}"></div></div>`,
-    iconSize:[34,34],
-    iconAnchor:[17,28]
+  // Empresas
+  h+='<h3 style="color:#f90;margin:16px 0 10px">🏢 EMPRESAS</h3>';
+  state.empresas.forEach(function(e,idx){
+    h+='<div class="item" style="border-color:#f90"><b style="color:#f90">'+e.ne+'</b> <span style="background:'+e.cor+';color:#fff;padding:1px 6px;border-radius:99px;font-size:10px">'+e.short+'</span><div class="row"><div class="rl">NIF</div><div class="rv">'+e.nif+'</div></div><div class="row"><div class="rl">📧</div><div class="rv">'+e.email+'</div></div><div class="row"><div class="rl">🔑</div><div class="rv" style="color:#f90">'+e.senha+'</div></div><div class="row"><div class="rl">📍</div><div class="rv">'+e.morada+', '+e.local+'</div></div><div class="row"><div class="rl">📦</div><div class="rv">'+(e.packs||[]).length+' packs</div></div><button class="btn-danger btn-small" onclick="boDelE('+idx+')" style="margin-top:6px">🗑 Apagar</button></div>';
   });
+
+  // Ferramentas
+  h+='<h3 style="color:#f44;margin:16px 0 10px">⚠️ FERRAMENTAS</h3>';
+  h+='<button class="btn-danger bb" onclick="boClear()">🗑 RESET TOTAL</button>';
+  h+='<button class="btn-dark bb" onclick="boExport()">📥 EXPORTAR JSON</button>';
+
+  G('bo-body').innerHTML=h;
 }
 
-function chooseFlagType() {
-  const r = Math.random();
-  if (r < 0.50) return 'ENERGY';
-  if (r < 0.85) return 'PRIZE';
-  if (r < 0.95) return 'BINGO';
-  return 'EMPTY';
+function boDelJ(i){if(!confirm('Apagar jogador?'))return;state.jogadores.splice(i,1);guardar();renderBO();}
+function boDelE(i){if(!confirm('Apagar empresa?'))return;var id=state.empresas[i].id;state.empresas=state.empresas.filter(function(e){return e.id!==id&&e.parentId!==id});guardar();renderBO();}
+function boClear(){if(!confirm('APAGAR TUDO?'))return;if(!confirm('ÚLTIMA CONFIRMAÇÃO?'))return;localStorage.removeItem(SK);state=estadoPadrao();renderBO();alert('✅ Limpo!');}
+function boExport(){var d=JSON.stringify(state,null,2);var b=new Blob([d],{type:'application/json'});var u=URL.createObjectURL(b);var a=document.createElement('a');a.href=u;a.download='zapflags_'+new Date().toISOString().slice(0,10)+'.json';a.click();}
+
+// ================================================================
+// PR PAINEL (simplificado — mantém estrutura anterior)
+// ================================================================
+function renderPR(prId) {
+  var pr=state.empresas.find(function(p){return p.id===prId});
+  if(!pr){G('pr-body').innerHTML='<div class="item">Empresa não encontrada.</div>';return;}
+  G('pr-hdr-title').textContent='🏢 '+pr.ne;
+  var h='<div class="item"><b>'+pr.ne+'</b> <span style="background:'+pr.cor+';color:#fff;padding:2px 8px;border-radius:99px;font-size:12px">'+pr.short+'</span><br>NIF: '+pr.nif+' | '+pr.email+'<br>'+pr.morada+', '+pr.local+', '+pr.dist+' '+pr.cp+'<br>Código filiais: <b style="color:#ff0">'+pr.branchCode+'</b></div>';
+  // Packs
+  h+='<div class="item"><b>📦 Packs</b><br>';
+  (pr.packs||[]).forEach(function(pk){h+='<div style="padding:4px 0;font-size:12px">'+pk.label+': '+fN(pk.flagsLeft)+'/'+fN(pk.flagsInitial)+' flags</div>';});
+  h+='<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">';
+  Object.keys(PACKS).forEach(function(k){var p=PACKS[k];h+='<button onclick="buyPk(\''+prId+'\',\''+k+'\')" class="btn-dark" style="font-size:11px;padding:8px;flex:1;min-width:90px">'+p.label+'<br>'+p.price+'€</button>';});
+  h+='</div></div>';
+  // Campanha
+  h+='<div class="item"><b>📢 Campanha</b><br><input id="pr-rew" value="'+pr.campanha.premio+'"><button onclick="saveCamp(\''+prId+'\')" style="width:100%;margin-top:6px;font-size:13px">💾 GUARDAR</button></div>';
+  G('pr-body').innerHTML=h;
 }
 
-function chooseEnergyBonus() {
-  const r = Math.random();
-  if (r < 0.80) return 10;
-  if (r < 0.95) return 20;
-  return 50;
+function buyPk(prId,pk){var pr=state.empresas.find(function(p){return p.id===prId});var pack=PACKS[pk];if(!pr||!pack)return;if(!pr.packs)pr.packs=[];pr.packs.push({id:gId('PK'),key:pack.key,label:pack.label,flagsInitial:pack.flags,flagsLeft:pack.flags,radiusKm:pack.radiusKm,criado:Date.now()});guardar();renderPR(prId);alert('✅ '+pack.label+' ativado!');}
+function saveCamp(prId){var pr=state.empresas.find(function(p){return p.id===prId});if(!pr)return;pr.campanha.premio=(G('pr-rew')||{}).value||'Prémio';guardar();renderPR(prId);alert('✅ Guardada!');}
+
+// ================================================================
+// MOTOR DE JOGO
+// ================================================================
+function iniciarJogo() {
+  if (!jogAtual){ir('p-login-j');return;}
+  atualizarHUD();
+  if (jogoOk){setTimeout(function(){if(mapaJ){mapaJ.invalidateSize();atualizarRaios()}},200);return;}
+  jogoOk=true;
+  mapaJ=L.map('mapa',{center:[AV.lat,AV.lng],zoom:18,zoomControl:true,attributionControl:false,dragging:false,touchZoom:true,scrollWheelZoom:true,doubleClickZoom:false,keyboard:false});
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{maxZoom:20}).addTo(mapaJ);
+  mapaJ.on('zoom',atualizarRaios);
+  var ic=L.divIcon({className:'',html:'<div style="width:1px;height:1px"></div>',iconSize:[1,1],iconAnchor:[0,0]});
+  marcAvt=L.marker([AV.lat,AV.lng],{icon:ic,zIndexOffset:1000}).addTo(mapaJ);
+  iniciarGPS();
+  setTimeout(spawnarBands,700);
+  arrastarCtrl();
+  animF=requestAnimationFrame(loopJogo);
+  // Verificar QRs que vão expirar
+  verificarQRsExpirar();
+  setInterval(verificarQRsExpirar, CFG.QR_AVISO_H * 3600000); // a cada 5h
 }
 
-function spawnFlags(force) {
-  if (!map || !currentPlayer) return;
+function pararJogo(){if(animF){cancelAnimationFrame(animF);animF=null}jogoOk=false;if(mapaJ)try{mapaJ.remove()}catch(e){}mapaJ=null;bands=[];marcAvt=null;}
 
-  if (force) {
-    flags.forEach(f => { if (f.marker) map.removeLayer(f.marker); });
-    flags = [];
-  }
-
-  while (flags.length < 10) {
-    const company = state.prs[Math.floor(Math.random()*state.prs.length)];
-    const type = chooseFlagType();
-    const pos = randomAround(currentPos.lat,currentPos.lng,4.7);
-
-    const flag = {
-      id: uid('FLAG'),
-      companyId: company.id,
-      type,
-      energyBonus: type === 'ENERGY' ? chooseEnergyBonus() : 0,
-      lat: pos.lat,
-      lng: pos.lng,
-      marker: null,
-      collected: false,
-      createdAt: now()
-    };
-
-    flags.push(flag);
-  }
-
-  updateFlagVisibility();
-  updatePickupRadiusVisibility();
+function iniciarGPS(){
+  if(!navigator.geolocation){G('gps-txt').textContent='❌ GPS indisponível — modo offline';G('h-gps').textContent='OFF';return;}
+  navigator.geolocation.getCurrentPosition(function(p){
+    AV.lat=p.coords.latitude;AV.lng=p.coords.longitude;
+    if(mapaJ)mapaJ.setView([AV.lat,AV.lng],18,{animate:false});
+    G('gps-txt').textContent='✅ GPS: '+AV.lat.toFixed(4)+', '+AV.lng.toFixed(4);
+    G('h-gps').textContent='ON';
+    bands.forEach(function(b){if(b.m&&mapaJ)try{mapaJ.removeLayer(b.m)}catch(e){}});
+    bands=[];spawnarBands();
+  },function(){G('gps-txt').textContent='⚠️ GPS indisponível — offline';G('h-gps').textContent='OFF';},{enableHighAccuracy:true,timeout:8000});
 }
 
-function randomAround(lat,lng,radius) {
-  const a = Math.random()*Math.PI*2;
-  const d = Math.random()*radius;
-  return offsetMeters(lat,lng,Math.cos(a)*d,Math.sin(a)*d);
-}
+// ================================================================
+// BANDEIRAS — com tipos e distribuição de energia
+// ================================================================
+function spawnarBands() {
+  if(!mapaJ) return;
+  var n=CFG.N_BAND-bands.filter(function(b){return!b.apanhada}).length;
+  // Obter empresas com packs
+  var empsOk=state.empresas.filter(function(e){return(e.packs||[]).some(function(p){return p.flagsLeft>0})&&e.active!==false});
 
-function updateFlagVisibility() {
-  flags.forEach(flag => {
-    if (flag.collected) return;
+  for(var i=0;i<n;i++){
+    var ang=Math.random()*2*Math.PI, dist=5+Math.random()*CFG.SPAWN_RAIO;
+    var la=(dist/111000)*Math.cos(ang), ln=(dist/(111000*Math.cos(AV.lat*Math.PI/180)))*Math.sin(ang);
 
-    const d = distanceMeters(currentPos.lat,currentPos.lng,flag.lat,flag.lng);
+    // Decidir tipo: energia pura (30%), PR (60% se há empresas), bingo (10%)
+    var tipo='energia', empRef=null, premio=false, bingo=false;
+    var r=Math.random();
 
-    if (d <= VISION_RADIUS && !flag.marker) {
-      flag.marker = L.marker([flag.lat,flag.lng], {icon:flagIcon(flag.type)}).addTo(map);
-      flag.marker.on('click', () => tryCollectFlag(flag.id));
+    if(r<0.6&&empsOk.length>0){
+      tipo='pr';
+      empRef=empsOk[Math.floor(Math.random()*empsOk.length)];
+      premio=Math.random()<0.15; // 15% chance prémio
+    } else if(r<0.9){
+      tipo='energia';
+    } else {
+      tipo='bingo'; // 10% bingo
     }
 
-    if (d > VISION_RADIUS && flag.marker) {
-      map.removeLayer(flag.marker);
-      flag.marker = null;
-    }
-  });
-}
+    var energiaSorteada = sortearEnergia();
 
-function updatePickupRadiusVisibility() {
-  const anyVisible = flags.some(flag => {
-    if (flag.collected) return false;
-    return distanceMeters(currentPos.lat,currentPos.lng,flag.lat,flag.lng) <= VISION_RADIUS;
-  });
-
-  if (pickupCircle) {
-    pickupCircle.setStyle({
-      opacity: anyVisible ? 1 : 0,
-      fillOpacity: anyVisible ? 0.08 : 0
+    bands.push({
+      lat:AV.lat+la,lng:AV.lng+ln,
+      tipo:tipo, empId:empRef?empRef.id:null, empNome:empRef?empRef.ne:null,
+      empShort:empRef?empRef.short:null, empCor:empRef?empRef.cor:null,
+      empAtiv:empRef?empRef.ativ:null, empTel:empRef?empRef.tel:null,
+      empMorada:empRef?empRef.morada:null, empLocal:empRef?empRef.local:null,
+      premio:premio, bingo:bingo,
+      premioTexto:empRef?empRef.campanha.premio:'',
+      energiaGanha:energiaSorteada,
+      apanhada:false,m:null,visivel:false
     });
   }
+  atualizarVisibilidade();
 }
 
-function tryCollectFlag(id) {
-  const flag = flags.find(f => f.id === id);
-  if (!flag) return;
-
-  const d = distanceMeters(currentPos.lat,currentPos.lng,flag.lat,flag.lng);
-
-  if (d > PICKUP_RADIUS) {
-    openFlagInfo(flag,false,d);
-    return;
-  }
-
-  collectFlag(flag,d);
+function corBand(b){
+  if(b.tipo==='energia') return {cor:'#0ff',emj:'⚡'};
+  if(b.tipo==='bingo') return {cor:'#f0f',emj:'🎰'};
+  if(b.premio) return {cor:'#ff0',emj:'🎁'};
+  return {cor:b.empCor||'#f00',emj:'🏴'};
 }
 
-function collectFlag(flag,distance) {
-  if (flag.collected) return;
-  flag.collected = true;
+function atualizarVisibilidade(){
+  if(!mapaJ) return;
+  var visM=CFG.RAIO_VISAO;
+  bands.forEach(function(b){
+    if(b.apanhada) return;
+    var d=calcDist(AV.lat,AV.lng,b.lat,b.lng);
+    if(d<=visM&&!b.visivel){
+      b.visivel=true;
+      var info=corBand(b);
+      var ic=L.divIcon({className:'',html:'<div style="background:'+info.cor+';color:#000;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;border:2px solid #fff;cursor:pointer;box-shadow:0 0 10px '+info.cor+'">'+info.emj+'</div>',iconSize:[24,24],iconAnchor:[12,12]});
+      b.m=L.marker([b.lat,b.lng],{icon:ic}).addTo(mapaJ);
+      (function(banda){banda.m.on('click',function(){tentarPegar(banda)})})(b);
+    } else if(d>visM&&b.visivel&&b.m){
+      b.visivel=false;try{mapaJ.removeLayer(b.m)}catch(e){}b.m=null;
+    }
+  });
+}
 
-  if (flag.marker) {
-    map.removeLayer(flag.marker);
-    flag.marker = null;
+function verificarProximidade(){
+  var md=Infinity; bandProx=null;
+  bands.forEach(function(b){
+    if(b.apanhada||!b.visivel) return;
+    var d=calcDist(AV.lat,AV.lng,b.lat,b.lng);
+    if(d<md){md=d;bandProx=b;}
+  });
+  var btnP=G('btn-pegar'),raioP=G('raio-pegar');
+  if(bandProx&&md<=CFG.RAIO_VISAO){
+    // Mostrar raio de pegar
+    var rPx=Math.max(15,distPx(CFG.RAIO_PEGAR))*2;
+    raioP.style.display='block';raioP.style.width=rPx+'px';raioP.style.height=rPx+'px';
+
+    if(md<=CFG.RAIO_PEGAR){
+      btnP.style.display='block';btnP.textContent='👆 PEGAR!';btnP.style.background='rgba(0,255,0,.95)';
+      raioP.style.borderColor='rgba(0,255,0,.7)';
+    } else {
+      btnP.style.display='block';btnP.textContent='📍 '+md.toFixed(1)+'m';btnP.style.background='rgba(255,200,0,.9)';
+      raioP.style.borderColor='rgba(255,255,0,.5)';
+    }
+  } else {
+    btnP.style.display='none';raioP.style.display='none';
   }
+}
 
-  const company = state.prs.find(c => c.id === flag.companyId);
+function tentarPegar(b){
+  var d=calcDist(AV.lat,AV.lng,b.lat,b.lng);
+  if(d<=CFG.RAIO_PEGAR) pegarBandeira(b);
+}
 
-  // Todas as bandeiras dão skill 0.1%
-  currentPlayer.skill = +(currentPlayer.skill + SKILL_PER_FLAG).toFixed(1);
+function pegarManual(){if(bandProx&&!bandProx.apanhada)tentarPegar(bandProx);}
 
-  // Todas as bandeiras contam
-  currentPlayer.totalFlags++;
+// ================================================================
+// PEGAR BANDEIRA — LÓGICA COMPLETA
+// ================================================================
+function pegarBandeira(b){
+  if(b.apanhada) return;
+  b.apanhada=true; b.visivel=false;
+  // Animação
+  try{var el=b.m?b.m.getElement():null;if(el){el.style.transition='all .3s';el.style.transform='scale(0)';el.style.opacity='0';}}catch(e){}
+  setTimeout(function(){try{if(mapaJ&&b.m)mapaJ.removeLayer(b.m)}catch(e){}},300);
 
-  // Todas dão 1% de energia base
-  let energyGain = 1;
+  // === SEMPRE: +skill ===
+  jogAtual.skill = (jogAtual.skill||0) + CFG.SKILL_POR_BAND;
+  jogAtual.flags = (jogAtual.flags||0) + 1;
 
-  if (flag.type === 'ENERGY') {
-    energyGain += flag.energyBonus;
-  }
+  // === Energia ===
+  jogAtual.energia = Math.min(100, (jogAtual.energia||100) + b.energiaGanha);
 
-  currentPlayer.energy = Math.min(100, +(currentPlayer.energy + energyGain).toFixed(1));
-
-  // Contagem por empresa
-  if (!currentPlayer.companyCounts) currentPlayer.companyCounts = {};
-  currentPlayer.companyCounts[company.id] = (currentPlayer.companyCounts[company.id] || 0) + 1;
-
-  let newQR = null;
-
-  if (currentPlayer.companyCounts[company.id] >= QR_TARGET) {
-    currentPlayer.companyCounts[company.id] -= QR_TARGET;
-    newQR = createQR(company);
-  }
-
-  // Log de bandeiras
-  if (!currentPlayer.flagsLog) currentPlayer.flagsLog = [];
-  currentPlayer.flagsLog.unshift({
-    id: flag.id,
-    companyId: company.id,
-    companyName: company.name,
-    activity: company.activity,
-    contact: company.contact,
-    address: company.address,
-    type: flag.type,
-    energyGain,
-    skillGain: SKILL_PER_FLAG,
-    distance: Math.round(distance),
-    createdQR: newQR ? newQR.id : null,
-    at: now()
+  // === Inventário ===
+  if(!jogAtual.inventario) jogAtual.inventario=[];
+  jogAtual.inventario.push({
+    empId: b.empId, empNome: b.empNome||'ZAP FLAGS',
+    tipo: b.tipo, premio: b.premio, bingo: b.bingo,
+    energiaGanha: b.energiaGanha,
+    premioTexto: b.premioTexto,
+    timestamp: Date.now()
   });
 
-  currentPlayer.flagsLog = currentPlayer.flagsLog.slice(0,200);
+  // === Progresso PR ===
+  if(b.empId){
+    if(!jogAtual.progresso) jogAtual.progresso={};
+    jogAtual.progresso[b.empId] = (jogAtual.progresso[b.empId]||0)+1;
 
-  saveCurrentPlayer();
-  updateHUD();
-  spawnFlags(false);
-  updatePickupRadiusVisibility();
-  openFlagInfo(flag,true,distance,newQR,energyGain);
-}
-
-function createQR(company) {
-  if (!currentPlayer.qrs) currentPlayer.qrs = [];
-
-  const qr = {
-    id: 'QR-' + company.name.substring(0,2).toUpperCase() + '-' + Math.random().toString(36).slice(2,8).toUpperCase(),
-    companyId: company.id,
-    companyName: company.name,
-    prize: company.prize || 'Prémio surpresa',
-    createdAt: now(),
-    expiresAt: now() + QR_EXPIRY_HOURS*60*60*1000,
-    lastWarnAt: 0,
-    status: 'active'
-  };
-
-  currentPlayer.qrs.push(qr);
-  return qr;
-}
-
-function openFlagInfo(flag,collected,distance,newQR,energyGain) {
-  const company = state.prs.find(c => c.id === flag.companyId);
-  const count = currentPlayer.companyCounts?.[company.id] || 0;
-
-  let typeText = '';
-  if (flag.type === 'ENERGY') typeText = `⚡ Energia +${energyGain}%`;
-  if (flag.type === 'PRIZE') typeText = `🎁 Prémio / Promoção`;
-  if (flag.type === 'BINGO') typeText = `🎲 Bingo`;
-  if (flag.type === 'EMPTY') typeText = `🏴 Bandeira normal`;
-
-  byId('flag-modal-title').innerText = collected ? '✅ Bandeira Apanhada' : '📍 Aproxima-te';
-
-  byId('flag-modal-content').innerHTML = `
-    <div class="card">
-      <h3 style="color:${company.color}">${company.name}</h3>
-      <div class="row"><div class="l">Atividade</div><div class="r">${company.activity}</div></div>
-      <div class="row"><div class="l">Contacto</div><div class="r">${company.contact}</div></div>
-      <div class="row"><div class="l">Morada</div><div class="r">${company.address}</div></div>
-      <div class="row"><div class="l">Tipo</div><div class="r">${typeText}</div></div>
-      <div class="row"><div class="l">Distância</div><div class="r">${Math.round(distance)}m</div></div>
-      <div class="row"><div class="l">Skill</div><div class="r">+${SKILL_PER_FLAG}%</div></div>
-      <div class="row"><div class="l">Progresso QR</div><div class="r">${count}/${QR_TARGET}</div></div>
-    </div>
-
-    ${
-      newQR ? `
-      <div class="card card-yellow">
-        <h3>🎉 QR Criado!</h3>
-        <p>Prémio: <b>${newQR.prize}</b></p>
-        <p>Prazo: <b>${formatDate(newQR.expiresAt)}</b></p>
-        <div class="qr-code">${newQR.id}</div>
-      </div>` : ''
+    // QR ao atingir 20
+    if(jogAtual.progresso[b.empId]>=CFG.QR_CADA){
+      jogAtual.progresso[b.empId]=0;
+      if(!jogAtual.qrs) jogAtual.qrs=[];
+      var qr={
+        id:'QR-'+(b.empShort||'ZF')+'-'+Math.random().toString(36).slice(2,8).toUpperCase(),
+        empId:b.empId, empNome:b.empNome,
+        premio:b.premioTexto||'Prémio Surpresa',
+        criadoEm:Date.now(),
+        expiraEm:Date.now()+CFG.QR_EXPIRA_H*3600000,
+        reclamado:false
+      };
+      jogAtual.qrs.push(qr);
+      // Mostrar QR
+      setTimeout(function(){mostrarQR(qr)},500);
     }
+  }
 
-    ${
-      !collected ? `<button class="btn-dark btn-full" disabled>Precisas estar a ${PICKUP_RADIUS}m ou menos</button>` : ''
-    }
-  `;
+  // === JANELA DA BANDEIRA (SEMPRE ABRE) ===
+  mostrarJanelaBand(b);
 
-  byId('flag-modal').classList.remove('hidden');
+  atualizarHUD();
+  syncJogador();
+  guardar();
+
+  // Respawnar
+  setTimeout(function(){
+    var ang=Math.random()*2*Math.PI, dist=10+Math.random()*CFG.SPAWN_RAIO;
+    b.lat=AV.lat+(dist/111000)*Math.cos(ang);
+    b.lng=AV.lng+(dist/(111000*Math.cos(AV.lat*Math.PI/180)))*Math.sin(ang);
+    b.apanhada=false;b.visivel=false;b.m=null;
+    // Re-sortear tipo
+    var empsOk=state.empresas.filter(function(e){return(e.packs||[]).some(function(p){return p.flagsLeft>0})&&e.active!==false});
+    var r=Math.random();
+    if(r<0.6&&empsOk.length>0){
+      b.tipo='pr';var emp=empsOk[Math.floor(Math.random()*empsOk.length)];
+      b.empId=emp.id;b.empNome=emp.ne;b.empShort=emp.short;b.empCor=emp.cor;b.empAtiv=emp.ativ;b.empTel=emp.tel;b.empMorada=emp.morada;b.empLocal=emp.local;
+      b.premio=Math.random()<0.15;b.premioTexto=emp.campanha.premio;
+    }else if(r<0.9){b.tipo='energia';b.empId=null;b.empNome=null;b.premio=false;}
+    else{b.tipo='bingo';b.empId=null;b.empNome=null;b.bingo=true;}
+    b.energiaGanha=sortearEnergia();
+  },5000+Math.random()*5000);
 }
 
-function closeFlagModal() {
-  byId('flag-modal').classList.add('hidden');
+// ================================================================
+// JANELA DA BANDEIRA — SEMPRE ABRE COM INFO DA EMPRESA
+// ================================================================
+function mostrarJanelaBand(b){
+  var h='';
+
+  // Tipo
+  if(b.tipo==='energia'){
+    h+='<div style="text-align:center;margin-bottom:10px"><div style="font-size:36px">⚡</div><h3 style="color:#0ff">Bandeira de Energia!</h3></div>';
+  } else if(b.tipo==='bingo'){
+    h+='<div style="text-align:center;margin-bottom:10px"><div style="font-size:36px">🎰</div><h3 style="color:#f0f">BINGO!</h3></div>';
+  } else if(b.premio){
+    h+='<div style="text-align:center;margin-bottom:10px"><div style="font-size:36px">🎁</div><h3 style="color:#ff0">PRÉMIO!</h3></div>';
+  } else {
+    h+='<div style="text-align:center;margin-bottom:10px"><div style="font-size:36px">🏴</div><h3 style="color:'+(b.empCor||'#0f0')+'">Bandeira'+(b.empNome?' — '+b.empNome:'')+'</h3></div>';
+  }
+
+  // Info da empresa (SEMPRE aparece se for PR)
+  if(b.empNome){
+    h+='<div class="item" style="border-color:'+(b.empCor||'#0f0')+'">';
+    h+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">';
+    h+='<div style="font-size:24px">🏪</div>';
+    h+='<div><b style="font-size:15px;color:'+(b.empCor||'#f90')+'">'+b.empNome+'</b><br><span style="font-size:11px;color:#888">'+(b.empAtiv||'-')+'</span></div>';
+    h+='</div>';
+    h+='<div class="row"><div class="rl">📞 Contacto</div><div class="rv">'+(b.empTel||'—')+'</div></div>';
+    h+='<div class="row"><div class="rl">📍 Morada</div><div class="rv">'+(b.empMorada||'—')+', '+(b.empLocal||'—')+'</div></div>';
+    // Progresso
+    var prog=(jogAtual.progresso||{})[b.empId]||0;
+    h+='<div style="margin-top:8px"><div style="display:flex;justify-content:space-between;font-size:12px;color:#888"><span>Progresso QR</span><span style="color:#0ff;font-weight:700">'+prog+'/'+CFG.QR_CADA+'</span></div>';
+    h+='<div style="background:#222;border-radius:3px;height:7px;overflow:hidden;margin-top:3px"><div style="height:100%;background:linear-gradient(90deg,#0f0,#0ff);width:'+Math.round(prog/CFG.QR_CADA*100)+'%;border-radius:3px"></div></div></div>';
+    h+='</div>';
+  }
+
+  // Ganhos
+  h+='<div class="item">';
+  h+='<div class="row"><div class="rl">⚡ Energia</div><div class="rv" style="color:#0ff;font-weight:700">+'+b.energiaGanha+'%</div></div>';
+  h+='<div class="row"><div class="rl">🎯 Skill</div><div class="rv" style="color:#0f0">+'+CFG.SKILL_POR_BAND+'%</div></div>';
+  if(b.premio&&b.premioTexto){
+    h+='<div class="row"><div class="rl">🎁 Prémio</div><div class="rv" style="color:#ff0;font-weight:700">'+b.premioTexto+'</div></div>';
+  }
+  if(b.bingo){
+    h+='<div class="row"><div class="rl">🎰 Bingo</div><div class="rv" style="color:#f0f;font-weight:700">BINGO! +50% Energia Extra</div></div>';
+    jogAtual.energia=Math.min(100,(jogAtual.energia||0)+50);
+  }
+  h+='</div>';
+
+  G('jb-conteudo').innerHTML=h;
+  G('janela-band').classList.add('aberta');
 }
 
-/* ============================================================
-   PAINEL BANDEIRAS
-============================================================ */
-function openCollectedPanel() {
-  if (!currentPlayer) return;
+function fecharJanelaBand(){G('janela-band').classList.remove('aberta');}
 
-  const logs = currentPlayer.flagsLog || [];
+// ================================================================
+// INVENTÁRIO — lista de bandeiras acumuladas
+// ================================================================
+function abrirInv(){
+  var inv=jogAtual.inventario||[];
+  var h='';
+  if(!inv.length){
+    h='<div class="item">Nenhuma bandeira recolhida ainda.</div>';
+  } else {
+    // Agrupar por empresa
+    var grupos={};
+    inv.forEach(function(b){
+      var key=b.empNome||'ZAP FLAGS (Energia)';
+      if(!grupos[key]) grupos[key]={count:0,items:[]};
+      grupos[key].count++;
+      grupos[key].items.push(b);
+    });
 
-  byId('collection-content').innerHTML = logs.length ? logs.map(log => `
-    <div class="card">
-      <h3>${log.companyName}</h3>
-      <div class="row"><div class="l">Atividade</div><div class="r">${log.activity}</div></div>
-      <div class="row"><div class="l">Contacto</div><div class="r">${log.contact}</div></div>
-      <div class="row"><div class="l">Tipo</div><div class="r">${log.type}</div></div>
-      <div class="row"><div class="l">Energia</div><div class="r">+${log.energyGain}%</div></div>
-      <div class="row"><div class="l">Skill</div><div class="r">+${log.skillGain}%</div></div>
-      <div class="row"><div class="l">Data</div><div class="r">${formatDate(log.at)}</div></div>
-      ${log.createdQR ? `<div class="row"><div class="l">QR</div><div class="r">${log.createdQR}</div></div>` : ''}
-    </div>
-  `).join('') : '<div class="card">Ainda não apanhaste bandeiras.</div>';
-
-  byId('collection-panel').classList.remove('hidden');
-}
-
-function closeCollectedPanel() {
-  byId('collection-panel').classList.add('hidden');
-}
-
-/* ============================================================
-   QR PANEL
-============================================================ */
-function openQRPanel() {
-  checkQRs(false);
-
-  const qrs = (currentPlayer.qrs || []).filter(q => q.status === 'active');
-
-  byId('qr-content').innerHTML = qrs.length ? qrs.map(qr => `
-    <div class="card card-yellow">
-      <h3>${qr.companyName}</h3>
-      <p>Prémio: <b>${qr.prize}</b></p>
-      <p>Expira: <b>${formatDate(qr.expiresAt)}</b></p>
-      <div class="qr-code">${qr.id}</div>
-      <br>
-      <img src="https://quickchart.io/qr?text=${encodeURIComponent(qr.id)}&size=160" style="background:#fff;padding:8px;border-radius:10px;margin-top:8px">
-      <button class="btn-full" onclick="claimQR('${qr.id}')">✅ Marcar como reclamado</button>
-    </div>
-  `).join('') : '<div class="card">Não tens QR Codes ativos.</div>';
-
-  byId('qr-panel').classList.remove('hidden');
-}
-
-function closeQRPanel() {
-  byId('qr-panel').classList.add('hidden');
-}
-
-function claimQR(id) {
-  const qr = currentPlayer.qrs.find(q => q.id === id);
-  if (!qr) return;
-  qr.status = 'claimed';
-  saveCurrentPlayer();
-  openQRPanel();
-}
-
-function checkQRs(showAlerts) {
-  if (!currentPlayer || !currentPlayer.qrs) return;
-
-  const t = now();
-
-  currentPlayer.qrs.forEach(qr => {
-    if (qr.status !== 'active') return;
-
-    if (t >= qr.expiresAt) {
-      qr.status = 'expired';
-      currentPlayer.skill = +(currentPlayer.skill + 1).toFixed(1);
-      if (showAlerts) alert(`O QR ${qr.id} expirou e foi convertido em +1% skill.`);
-      return;
-    }
-
-    if (qr.expiresAt - t <= 24*60*60*1000) {
-      if (!qr.lastWarnAt || t - qr.lastWarnAt >= QR_WARN_INTERVAL_HOURS*60*60*1000) {
-        qr.lastWarnAt = t;
-        if (showAlerts) alert(`⚠️ O QR ${qr.id} vai expirar em breve. Reclama o prémio em ${qr.companyName}.`);
+    Object.keys(grupos).forEach(function(key){
+      var g=grupos[key];
+      var prog=(jogAtual.progresso||{})[g.items[0].empId]||0;
+      h+='<div class="item">';
+      h+='<div style="display:flex;justify-content:space-between;margin-bottom:4px"><b style="color:#f90">'+key+'</b><span style="color:#0ff;font-weight:700">×'+g.count+'</span></div>';
+      if(g.items[0].empId){
+        h+='<div style="font-size:11px;color:#888">Progresso QR: '+prog+'/'+CFG.QR_CADA+'</div>';
+        h+='<div style="background:#222;border-radius:2px;height:4px;overflow:hidden;margin-top:3px"><div style="height:100%;background:#0ff;width:'+Math.round(prog/CFG.QR_CADA*100)+'%;border-radius:2px"></div></div>';
       }
+      h+='</div>';
+    });
+
+    // QRs ativos
+    var qrs=(jogAtual.qrs||[]).filter(function(q){return!q.reclamado&&q.expiraEm>Date.now()});
+    if(qrs.length){
+      h+='<h3 style="color:#ff0;margin:12px 0 8px">🎫 QR Codes Ativos ('+qrs.length+')</h3>';
+      qrs.forEach(function(q){
+        var horasRestantes=Math.max(0,Math.ceil((q.expiraEm-Date.now())/3600000));
+        h+='<div class="item" style="border-color:#ff0;cursor:pointer" onclick="mostrarQR(jogAtual.qrs.find(function(x){return x.id===\''+q.id+'\'}))">';
+        h+='<b style="color:#ff0">'+q.empNome+'</b><br>';
+        h+='<span style="font-size:12px">'+q.premio+'</span><br>';
+        h+='<span style="font-size:11px;color:'+(horasRestantes<12?'#f44':'#888')+'">⏰ '+horasRestantes+'h restantes</span>';
+        h+='</div>';
+      });
+    }
+  }
+
+  h+='<div style="margin-top:12px;padding-top:10px;border-top:1px solid #1a1a1a;text-align:center;font-size:12px;color:#888">Total: '+fN(jogAtual.flags||0)+' flags · Skill: '+(jogAtual.skill||0).toFixed(1)+'%</div>';
+
+  G('inv-conteudo').innerHTML=h;
+  G('janela-inv').classList.add('aberta');
+}
+
+function fecharInv(){G('janela-inv').classList.remove('aberta');}
+
+// ================================================================
+// QR CODE — janela com contagem regressiva
+// ================================================================
+function mostrarQR(qr){
+  if(!qr) return;
+  var horasR=Math.max(0,Math.ceil((qr.expiraEm-Date.now())/3600000));
+  var h='';
+  h+='<div style="text-align:center;margin-bottom:12px"><div style="font-size:32px">🎉🎫🎉</div><h3 style="color:#ff0">QR CODE GERADO!</h3></div>';
+  h+='<div class="item" style="border-color:#ff0"><b style="color:#ff0">'+qr.empNome+'</b><br>'+qr.premio+'</div>';
+  h+='<div class="item" style="border-color:#f90"><div style="text-align:center"><div style="font-family:monospace;font-size:16px;letter-spacing:3px;color:#0ff;margin:8px 0">'+qr.id+'</div>';
+  h+='<img src="https://quickchart.io/qr?text='+encodeURIComponent(qr.id)+'&size=160" style="margin:8px auto;display:block;background:#fff;padding:8px;border-radius:8px"/>';
+  h+='<div style="font-size:12px;color:'+(horasR<12?'#f44':'#888')+'">⏰ Expira em <b>'+horasR+' horas</b></div>';
+  h+='</div></div>';
+  G('jq-conteudo').innerHTML=h;
+  G('janela-qr').style.display='block';
+}
+
+function fecharJanelaQR(){G('janela-qr').style.display='none';}
+
+// ================================================================
+// VERIFICAR QRs A EXPIRAR — avisar e converter em skill
+// ================================================================
+function verificarQRsExpirar(){
+  if(!jogAtual||!jogAtual.qrs) return;
+  var agora=Date.now();
+  var mudou=false;
+  jogAtual.qrs.forEach(function(qr){
+    if(qr.reclamado) return;
+    if(agora>=qr.expiraEm){
+      // Expirou! Converter em skill
+      qr.reclamado=true;
+      qr.convertido=true;
+      jogAtual.skill=(jogAtual.skill||0)+5; // +5% skill como compensação
+      mudou=true;
+      alert('⏰ QR "'+qr.id+'" expirou!\nConvertido em +5% Skill.');
     }
   });
-
-  saveCurrentPlayer();
+  if(mudou){syncJogador();guardar();atualizarHUD();}
 }
 
-/* ============================================================
-   HUD
-============================================================ */
-function updateHUD() {
-  if (!currentPlayer) return;
-
-  byId('hud-player').textContent = `👤 ${currentPlayer.name}`;
-  byId('hud-energy').textContent = `⚡ ${Math.round(currentPlayer.energy)}%`;
-  byId('hud-skill').textContent = `🎯 ${currentPlayer.skill.toFixed(1)}%`;
-  byId('hud-flags').textContent = `🚩 ${currentPlayer.totalFlags}`;
-  byId('energy-fill').style.width = currentPlayer.energy + '%';
+// ================================================================
+// HUD
+// ================================================================
+function atualizarHUD(){
+  if(!jogAtual) return;
+  G('h-flags').textContent=fN(jogAtual.flags||0);
+  G('h-energia').textContent=Math.round(jogAtual.energia||100)+'%';
+  G('h-skill').textContent=(jogAtual.skill||0).toFixed(1)+'%';
+  G('h-visao').textContent=CFG.RAIO_VISAO+'m';
+  G('h-ebar').style.width=(jogAtual.energia||100)+'%';
 }
 
-/* ============================================================
-   SAVE PLAYER
-============================================================ */
-function saveCurrentPlayer() {
-  const idx = state.players.findIndex(p => p.id === currentPlayer.id);
-  if (idx >= 0) state.players[idx] = currentPlayer;
-  saveState();
+function atualizarRaios(){
+  if(!mapaJ) return;
+  var rVis=Math.max(60,distPx(CFG.RAIO_VISAO))*2;
+  var cv=G('raio-visao');
+  cv.style.width=rVis+'px';cv.style.height=rVis+'px';
 }
 
-/* ============================================================
-   BACKOFFICE
-============================================================ */
-function openBackofficeLogin() {
-  showPage('backoffice-login');
+function syncJogador(){
+  if(!jogAtual) return;
+  var i=state.jogadores.findIndex(function(j){return j.id===jogAtual.id});
+  if(i>=0) state.jogadores[i]=JSON.parse(JSON.stringify(jogAtual));
 }
 
-function loginBackoffice() {
-  if (byId('backoffice-pass').value !== BO_PASS) {
-    return setMsg('backoffice-login-msg','❌ Senha incorreta.',true);
+function centrarMapa(){if(mapaJ)mapaJ.setView([AV.lat,AV.lng],18);}
+
+// ================================================================
+// LOOP PRINCIPAL
+// ================================================================
+function loopJogo(ts){
+  animF=requestAnimationFrame(loopJogo);
+  var dt=Math.min(ts-ultF,50);ultF=ts;animT+=dt*0.001;
+  var vel=CFG.VEL*(dt/16),mx=0,my=0;
+  if(dirs.c)my-=vel;if(dirs.b)my+=vel;if(dirs.e)mx-=vel;if(dirs.d)mx+=vel;
+  if(mx&&my){mx*=0.707;my*=0.707;}
+  var andando=!!(mx||my);
+  if(andando&&mapaJ){
+    var z=mapaJ.getZoom(),esc=156543.03392*Math.cos(AV.lat*Math.PI/180)/Math.pow(2,z);
+    AV.lat+=(-my*esc)/111319.9; AV.lng+=(mx*esc)/111319.9;
+    mapaJ.panTo([AV.lat,AV.lng],{animate:false,duration:0});
+    if(marcAvt)marcAvt.setLatLng([AV.lat,AV.lng]);
+    atualizarRaios();atualizarVisibilidade();verificarProximidade();
   }
-  renderBackoffice();
-  showPage('backoffice-panel');
 }
 
-function renderBackoffice() {
-  const players = state.players || [];
-  const prs = state.prs || [];
+// ================================================================
+// CONTROLOS
+// ================================================================
+document.addEventListener('keydown',function(e){
+  var m={ArrowUp:'c',ArrowDown:'b',ArrowLeft:'e',ArrowRight:'d',w:'c',s:'b',a:'e',d:'d',W:'c',S:'b',A:'e',D:'d'};
+  if(m[e.key]){dirs[m[e.key]]=true;var b=G('bc-'+m[e.key]);if(b)b.classList.add('on');e.preventDefault();}
+  if(e.key===' '||e.key==='Enter')pegarManual();
+  if(e.key==='Escape'){fecharJanelaBand();fecharInv();fecharJanelaQR();}
+});
+document.addEventListener('keyup',function(e){
+  var m={ArrowUp:'c',ArrowDown:'b',ArrowLeft:'e',ArrowRight:'d',w:'c',s:'b',a:'e',d:'d',W:'c',S:'b',A:'e',D:'d'};
+  if(m[e.key]){dirs[m[e.key]]=false;var b=G('bc-'+m[e.key]);if(b)b.classList.remove('on');}
+});
+function pd(d){dirs[d]=true;var b=G('bc-'+d);if(b)b.classList.add('on');}
+function pu(d){dirs[d]=false;var b=G('bc-'+d);if(b)b.classList.remove('on');}
 
-  let html = `
-    <div class="bo-box">
-      <h3>📊 Resumo Geral</h3>
-      <div class="row"><div class="l">Jogadores</div><div class="r">${players.length}</div></div>
-      <div class="row"><div class="l">Empresas PR</div><div class="r">${prs.length}</div></div>
-      <div class="row"><div class="l">Bandeiras totais</div><div class="r">${players.reduce((a,p)=>a+(p.totalFlags||0),0)}</div></div>
-      <div class="row"><div class="l">QRs ativos</div><div class="r">${players.reduce((a,p)=>a+(p.qrs||[]).filter(q=>q.status==='active').length,0)}</div></div>
-    </div>
-
-    <div class="bo-box">
-      <h3>👤 Jogadores</h3>
-      ${players.length ? players.map(p => `
-        <div class="card">
-          <h3>${p.name}</h3>
-          <div class="row"><div class="l">Senha</div><div class="r">${p.password}</div></div>
-          <div class="row"><div class="l">Contacto</div><div class="r">${p.contact || '-'}</div></div>
-          <div class="row"><div class="l">Morada</div><div class="r">${p.address || '-'}</div></div>
-          <div class="row"><div class="l">Flags</div><div class="r">${p.totalFlags}</div></div>
-          <div class="row"><div class="l">Skill</div><div class="r">${p.skill.toFixed(1)}%</div></div>
-          <div class="row"><div class="l">QRs</div><div class="r">${(p.qrs||[]).length}</div></div>
-        </div>
-      `).join('') : '<div class="card">Sem jogadores.</div>'}
-    </div>
-
-    <div class="bo-box">
-      <h3>🏢 Empresas PR</h3>
-      ${prs.length ? prs.map(pr => `
-        <div class="card card-yellow">
-          <h3>${pr.name}</h3>
-          <div class="row"><div class="l">NIF</div><div class="r">${pr.nif}</div></div>
-          <div class="row"><div class="l">Atividade</div><div class="r">${pr.activity}</div></div>
-          <div class="row"><div class="l">Contacto</div><div class="r">${pr.contact}</div></div>
-          <div class="row"><div class="l">Morada</div><div class="r">${pr.address}, ${pr.city}, ${pr.district}</div></div>
-          <div class="row"><div class="l">Responsável</div><div class="r">${pr.responsible}</div></div>
-          <div class="row"><div class="l">E-mail Resp.</div><div class="r">${pr.responsibleMail}</div></div>
-          <div class="row"><div class="l">Senha</div><div class="r">${pr.password}</div></div>
-          <div class="row"><div class="l">Prémio</div><div class="r">${pr.prize}</div></div>
-        </div>
-      `).join('') : '<div class="card">Sem empresas.</div>'}
-    </div>
-
-    <div class="bo-box">
-      <h3>⚠️ Ferramentas</h3>
-      <button class="btn-danger btn-full" onclick="resetAll()">Apagar todos os dados</button>
-    </div>
-  `;
-
-  byId('backoffice-content').innerHTML = html;
+function arrastarCtrl(){
+  var c=G('ctrl');if(!c)return;
+  var ar=false,ox=0,oy=0;
+  c.addEventListener('pointerdown',function(e){
+    if(e.target.classList.contains('cbtn'))return;
+    ar=true;ox=e.clientX-c.getBoundingClientRect().left;oy=e.clientY-c.getBoundingClientRect().top;
+    c.setPointerCapture(e.pointerId);e.preventDefault();
+  });
+  c.addEventListener('pointermove',function(e){if(!ar)return;c.style.left=(e.clientX-ox)+'px';c.style.top=(e.clientY-oy)+'px';c.style.right='auto';c.style.bottom='auto';});
+  c.addEventListener('pointerup',function(){ar=false;});
 }
-
-function resetAll() {
-  if (!confirm('Apagar todos os dados?')) return;
-  localStorage.removeItem(STORAGE_KEY);
-  state = loadState();
-  renderBackoffice();
-}
-
-/* ============================================================
-   GPS / PC
-============================================================ */
-if (!/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)) {
-  // PC: sempre offline
-  isGPSMode = false;
-}
-
-/* ============================================================
-   INIT
-============================================================ */
-(function init() {
-  state.lastPlayerName = state.lastPlayerName || '';
-  saveState();
-})();
 </script>
 </body>
 </html>
