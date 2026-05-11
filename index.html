@@ -8,1076 +8,896 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-html,body{width:100%;height:100%;overflow:hidden;font-family:'Segoe UI',Roboto,Arial,sans-serif;background:#000;color:#fff;user-select:none;-webkit-user-select:none}
-.pag{display:none;min-height:100vh;overflow-y:auto}.pag.ativa{display:block}
-.cx{max-width:480px;margin:0 auto;padding:20px}
-button{cursor:pointer;transition:.15s;border:none;border-radius:8px;font-weight:700;font-size:14px;padding:10px 14px}
+html,body{width:100%;height:100%;overflow:hidden;font-family:'Segoe UI',Arial,sans-serif;background:#000;color:#0f0;user-select:none;-webkit-user-select:none}
+.hidden{display:none!important}
+button{background:#0f0;color:#000;border:none;border-radius:12px;padding:12px 18px;font-size:15px;font-weight:800;cursor:pointer;transition:.15s}
 button:active{transform:scale(.94)}
-.bb{display:block;width:100%;margin:5px 0;text-align:center}
-.bv{background:#4CAF50;color:#fff}.bv:hover{background:#66BB6A}
-.bc{background:#1a1a1a;color:#4CAF50;border:1px solid #4CAF50}
-.bo{background:linear-gradient(135deg,#f90,#fc0);color:#000;font-weight:800}
-.bvol{background:#111;color:#999;border:1px solid #333}
-.bsair{background:#200;color:#f66;border:1px solid #a00;font-size:12px;padding:6px 10px}
-.bbo{background:linear-gradient(135deg,#004,#008);color:#0ff;border:1px solid #0ff}
-input,select{width:100%;padding:12px 14px;margin-bottom:10px;border-radius:8px;border:1px solid rgba(76,175,80,.4);background:rgba(0,0,0,.5);color:#fff;font-size:14px;outline:none}
-input::placeholder{color:rgba(255,255,255,.3)}input:focus{border-color:#81c784;box-shadow:0 0 8px rgba(76,175,80,.3)}
-select option{background:#111}
-.lbl{font-size:12px;color:#81c784;display:block;margin:8px 0 3px}.lbl em{color:#f44;font-style:normal}
-.g2{display:grid;grid-template-columns:1fr 1fr;gap:0 10px}
-.pw-wrap{position:relative}.pw-wrap input{padding-right:44px;margin:0}
-.pw-toggle{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:14px;color:#555;padding:3px}
-.msg{padding:10px;margin:6px 0;border-radius:6px;display:none;font-size:12px}
-.msg.e{background:#200;border:1px solid #f44;color:#f66;display:block}
-.msg.s{background:#020;border:1px solid #4CAF50;color:#81c784;display:block}
-.aj{background:rgba(0,30,0,.4);border:1px solid #4CAF50;border-radius:12px;padding:16px;margin:8px 0}.aj h3{color:#4CAF50;margin-bottom:10px;font-size:14px}
-.apr{background:rgba(30,20,0,.4);border:1px solid #f90;border-radius:12px;padding:16px;margin:8px 0}.apr h3{color:#f90;margin-bottom:10px;font-size:14px}
-.abo{background:linear-gradient(135deg,rgba(0,5,20,.6),rgba(0,15,40,.4));border:1px solid #0ff;border-radius:12px;padding:16px;margin:8px 0;position:relative;overflow:hidden}
-.abo::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#0ff,transparent);animation:scan 3s linear infinite}
-@keyframes scan{from{transform:translateX(-100%)}to{transform:translateX(100%)}}
-.abo h3{color:#0ff;margin-bottom:10px;font-size:14px}
-.badge-bo{background:#0ff;color:#000;padding:2px 7px;border-radius:9px;font-size:10px;font-weight:700;margin-left:5px}
-.sess-bar{border-radius:10px;padding:12px;margin:8px 0;display:flex;justify-content:space-between;align-items:center;gap:8px}
-.sess-j{background:rgba(0,30,0,.5);border:1px solid #4CAF50}.sess-pr{background:rgba(30,20,0,.5);border:1px solid #f90}
-.ucard{border-radius:12px;padding:18px;margin-bottom:14px;text-align:center}
-.ucard-j{border:1px solid #4CAF50;background:linear-gradient(135deg,rgba(0,40,0,.4),rgba(0,15,0,.3));box-shadow:0 0 18px rgba(76,175,80,.1)}
-.ucard-pr{border:1px solid #f90;background:linear-gradient(135deg,rgba(40,25,0,.4),rgba(15,10,0,.3))}
-.uavt{width:78px;height:78px;border-radius:50%;margin:0 auto 11px;display:flex;align-items:center;justify-content:center;font-size:28px;position:relative}
-.uavt-j{background:rgba(0,40,0,.5);border:3px solid #4CAF50;box-shadow:0 0 14px rgba(76,175,80,.3)}
-.uavt-pr{background:rgba(40,25,0,.5);border:3px solid #f90}
-.udot{position:absolute;bottom:3px;right:3px;width:15px;height:15px;border-radius:50%;border:2px solid #000;animation:pulse 2s ease-in-out infinite}
-.udot-j{background:#4CAF50}.udot-pr{background:#f90}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
-.u-nome{font-size:18px;font-weight:700;margin-bottom:3px}.u-sub{font-size:11px;color:#888;margin-bottom:12px}
-.u-stats{display:flex;justify-content:center;gap:16px}.u-stat-n{font-size:14px;font-weight:700}.u-stat-l{font-size:10px;color:#666;margin-top:1px}
-.ckl{display:flex;align-items:center;gap:8px;font-size:12px;color:#aaa;cursor:pointer;margin:6px 0}
-.ckl input[type=checkbox]{width:16px;height:16px;accent-color:#4CAF50;cursor:pointer;flex-shrink:0}
-.sep{display:flex;align-items:center;gap:8px;margin:12px 0}.sep-l{flex:1;border-top:1px solid #222}.sep-t{color:#444;font-size:11px;white-space:nowrap}
-.lnk{color:#0ff;cursor:pointer;text-decoration:underline;font-size:13px}
-.fbar{height:4px;border-radius:2px;margin-top:4px;transition:.3s;background:#333;width:0%}.ftxt{font-size:10px;color:#666}
-.card{background:rgba(255,255,255,.03);border:1px solid #222;border-radius:8px;padding:12px;margin:7px 0}
-.card-b{border-color:#0ff}.card-y{border-color:#f90}.card-v{border-color:#4CAF50}
-.item{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:12px;margin-bottom:8px;font-size:13px;line-height:1.5;color:#ccc}
-.row{padding:5px 0;border-bottom:1px solid #111;font-size:13px;display:flex;justify-content:space-between;gap:8px}.row:last-child{border-bottom:none}
-.rl{color:#888;font-size:11px;white-space:nowrap;flex-shrink:0}.rv{text-align:right;word-break:break-word}
-.scroll{max-height:65vh;overflow-y:auto}
-#mapa{position:fixed;inset:0;z-index:1}.leaflet-container{background:#0a0a0a}
-#avt-cx{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:500;pointer-events:none}
-#circ-vis{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);border-radius:50%;border:3px solid rgba(76,175,80,.6);pointer-events:none;box-shadow:0 0 0 3000px rgba(0,0,0,.76),0 0 20px rgba(76,175,80,.3);transition:width .6s,height .6s;width:120px;height:120px}
-#circ-alc{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);border-radius:50%;border:2px dashed #ff0;pointer-events:none;display:none;animation:gir 3s linear infinite}
-@keyframes gir{from{transform:translate(-50%,-50%) rotate(0)}to{transform:translate(-50%,-50%) rotate(360deg)}}
-#aviso-ap{position:absolute;left:50%;top:calc(50% - 78px);transform:translateX(-50%);background:rgba(76,175,80,.95);color:#000;font-weight:700;font-size:13px;padding:5px 14px;border-radius:20px;display:none;z-index:502;cursor:pointer;white-space:nowrap;pointer-events:all;animation:bounce .3s ease-in-out infinite alternate}
-@keyframes bounce{from{transform:translateX(-50%) translateY(0)}to{transform:translateX(-50%) translateY(-4px)}}
-#avt-svg{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:52px;height:66px;z-index:501;filter:drop-shadow(0 0 10px rgba(76,175,80,.5))}
-#hud-j{position:fixed;top:0;left:0;right:0;z-index:2000;background:rgba(0,0,0,.88);backdrop-filter:blur(6px);border-bottom:1px solid rgba(76,175,80,.3);padding:8px 12px;display:flex;justify-content:space-between;align-items:center}
-.hn{font-size:10px;color:#aaa;text-align:center}.hv{font-size:13px;color:#0ff;font-weight:700;display:block}
-#pan-sk{position:fixed;left:8px;top:54px;z-index:2000;background:rgba(0,0,0,.92);border:1px solid rgba(76,175,80,.3);border-radius:8px;padding:8px;font-size:11px;min-width:110px}
-.psk{display:flex;justify-content:space-between;padding:2px 0;border-bottom:1px solid #111}.psk:last-child{border-bottom:none}
-.pskl{color:#888}.pskv{color:#0ff;font-weight:700}
-#bsk{height:5px;background:#222;border-radius:3px;overflow:hidden;margin-top:3px;border:1px solid rgba(76,175,80,.2)}
-#bskf{height:100%;background:linear-gradient(90deg,#4CAF50,#0ff);border-radius:3px;transition:width .4s}
-#bskt{font-size:9px;color:#555;text-align:center;margin-top:2px}
-#ctrl{position:fixed;z-index:2000;background:rgba(0,0,0,.9);border:2px solid rgba(76,175,80,.4);border-radius:12px;padding:9px;bottom:50px;right:10px;touch-action:none;cursor:move;box-shadow:0 0 12px rgba(76,175,80,.15)}
-#ctrl-g{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-bottom:5px}
-.cbtn{background:rgba(76,175,80,.08);border:1px solid rgba(76,175,80,.35);color:#fff;border-radius:50%;font-size:16px;font-weight:700;cursor:pointer;width:46px;height:46px;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent;touch-action:none;transition:.1s}
-.cbtn:active,.cbtn.on{background:#4CAF50;border-color:#81c784;color:#fff;box-shadow:0 0 8px #4CAF50}
-#ctrl-tam{display:flex;gap:4px;justify-content:center}
-.tbtn{background:#0a0a0a;border:1px solid #333;color:#888;border-radius:4px;font-size:10px;font-weight:700;cursor:pointer;padding:3px 8px}
-.tbtn:hover{background:#1a1a1a;border-color:#4CAF50;color:#4CAF50}
-.drag-handle{font-size:10px;color:rgba(76,175,80,.4);text-align:center;margin-bottom:4px;cursor:move;padding:2px}
-#aba-band{position:fixed;bottom:0;left:0;right:0;z-index:4000;background:rgba(5,10,5,.97);border-top:2px solid #4CAF50;border-radius:16px 16px 0 0;padding:16px 18px;transform:translateY(100%);transition:transform .33s ease;max-height:60vh;overflow-y:auto}
-#aba-band.aberta{transform:translateY(0)}
-.aba-fechar{position:absolute;top:11px;right:13px;background:#111;border:1px solid #555;color:#888;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px}
-.aba-fechar:hover{background:#300;border-color:#f00;color:#f00}
-#aba-qr{position:fixed;top:58px;left:50%;transform:translateX(-50%);z-index:4500;background:rgba(5,5,0,.97);border:2px solid #f90;border-radius:14px;padding:16px 18px;width:93%;max-width:380px;display:none;max-height:80vh;overflow-y:auto;box-shadow:0 0 28px rgba(255,150,0,.3)}
-#aba-qr.aberta{display:block;animation:popUp .33s ease}
-@keyframes popUp{from{transform:translateX(-50%) scale(.85);opacity:0}to{transform:translateX(-50%) scale(1);opacity:1}}
-#rodape{position:fixed;bottom:0;left:0;right:0;z-index:2000;background:rgba(0,0,0,.92);border-top:1px solid #f90;height:36px;overflow:hidden;display:flex;align-items:center}
-#ticker{display:inline-flex;gap:80px;white-space:nowrap;animation:rolar 28s linear infinite;padding-left:100vw}
-@keyframes rolar{from{transform:translateX(0)}to{transform:translateX(-50%)}}
-.tick{color:#f90;font-size:11px;font-weight:700}.tick b{color:#0ff}
-#gps-txt{position:fixed;bottom:40px;left:50%;transform:translateX(-50%);z-index:2000;font-size:9px;color:#555;background:rgba(0,0,0,.8);border-radius:10px;padding:2px 10px;white-space:nowrap}
-#notif{position:fixed;top:62px;left:50%;transform:translateX(-50%);z-index:3000;background:rgba(0,0,0,.95);border:2px solid #0ff;border-radius:10px;padding:10px 18px;text-align:center;display:none;min-width:220px;pointer-events:none}
-.pr-header{background:rgba(15,10,0,.97);border-bottom:1px solid #f90;padding:8px 12px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:100}
-#conf-ovl{position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:9500;display:none}
-#conf-box{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#060606;border:2px solid #f44;border-radius:12px;padding:22px;z-index:9501;width:90%;max-width:360px;text-align:center;display:none}
-.watermark{position:fixed;bottom:38px;left:14px;font-size:17px;font-weight:900;color:rgba(255,255,255,.12);z-index:9999;pointer-events:none;letter-spacing:1px}
-.copyright{position:fixed;bottom:4px;width:100%;text-align:center;font-size:9px;color:rgba(255,255,255,.08);z-index:9999;pointer-events:none}
+button:disabled{opacity:.4;cursor:not-allowed}
+.btn-dark{background:#181818;color:#0f0;border:1px solid #0f0}
+.btn-danger{background:#8b0000;color:#fff;border:1px solid #f66}
+.btn-small{padding:6px 10px;font-size:12px}
+input,select{width:100%;margin-bottom:10px;padding:12px;border-radius:10px;border:1px solid #0f0;background:#101010;color:#0f0;font-size:14px;outline:none}
+input:focus,select:focus{border-color:#0ff;box-shadow:0 0 6px rgba(0,255,255,.3)}
+select option{background:#101010}
+label{font-size:13px;color:#a7fca7;display:block;margin-bottom:3px}
+label .req{color:#f44;font-weight:700}
+.item{border:1px solid #0f0;background:rgba(0,25,0,.16);border-radius:10px;padding:10px;margin-bottom:8px}
+.tab-bar{display:flex;margin-bottom:14px;border-bottom:2px solid #0f0}
+.tab{flex:1;text-align:center;padding:10px;cursor:pointer;font-weight:700;color:#0a0;border-bottom:3px solid transparent;transition:.2s}
+.tab.active{color:#0f0;border-bottom-color:#0f0}
+
+/* LANDING */
+#landing{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;background:linear-gradient(180deg,#000,#051005);gap:20px;padding:24px;text-align:center}
+#landing h1{font-size:46px;text-shadow:0 0 30px rgba(0,255,0,.4);letter-spacing:3px}
+.sub{color:#a7fca7;font-size:15px;line-height:1.6}
+.bp{padding:22px 55px;font-size:26px;background:linear-gradient(135deg,#00ff66,#00c853);color:#000;border-radius:20px;box-shadow:0 0 40px rgba(0,255,100,.3);letter-spacing:2px}
+.be{padding:16px 36px;font-size:17px;background:#181818;color:#0f0;border:2px solid #0f0;border-radius:16px}
+
+/* AUTH */
+.auth-wrap{height:100vh;overflow-y:auto;padding:20px;background:linear-gradient(180deg,#000,#051005)}
+.auth-box{max-width:500px;margin:0 auto;border:2px solid #0f0;border-radius:16px;background:rgba(0,20,0,.3);padding:20px;box-shadow:0 0 20px rgba(0,255,0,.1)}
+.auth-box h2{margin-bottom:12px;text-align:center}
+.auth-msg{min-height:18px;font-size:12px;margin:6px 0;color:#a7fca7}
+.auth-msg.err{color:#f66}
+
+/* GAME */
+#game-screen{position:absolute;inset:0}
+#map-wrap{position:absolute;inset:0}
+#map{width:100%;height:100%;z-index:1}
+#fog-overlay{position:absolute;inset:0;pointer-events:none;z-index:450;--fog-x:50%;--fog-y:50%;--fog-r:90px;background:radial-gradient(circle var(--fog-r) at var(--fog-x) var(--fog-y),transparent 0%,transparent 60%,rgba(0,30,90,.6)78%,rgba(0,30,90,.86)100%)}
+#top-strip{position:absolute;top:8px;left:8px;right:8px;z-index:1000;background:rgba(0,0,0,.85);border:1px solid #0f0;border-radius:12px;padding:8px}
+.ebar{width:100%;height:8px;background:#222;border-radius:999px;overflow:hidden;border:1px solid rgba(0,255,0,.35)}
+#efill{height:100%;width:100%;background:linear-gradient(90deg,#008f1f,#00ff66);transition:width .3s}
+#fbtns{position:absolute;right:10px;bottom:100px;z-index:1100;display:flex;flex-direction:column;gap:8px}
+.fb{width:46px;height:46px;border-radius:50%;padding:0;display:flex;align-items:center;justify-content:center;font-size:18px}
+#offctrl{position:absolute;left:10px;bottom:100px;z-index:2600;background:rgba(0,0,0,.88);border:1px solid #0f0;border-radius:12px;padding:8px;width:118px;text-align:center;touch-action:none;cursor:move}
+.dpad{display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;margin-top:6px}
+.dpad button{padding:8px;font-size:14px;border-radius:8px}
+#sidep{position:absolute;left:8px;right:8px;bottom:8px;z-index:2500;background:rgba(0,0,0,.92);border:2px solid #0f0;border-radius:14px;padding:12px;max-height:38vh;overflow-y:auto}
+.ph{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;gap:10px}
+
+/* MARCADORES */
+.pm{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#00f0ff,#0066ff);border:3px solid #fff;box-shadow:0 0 10px rgba(0,255,255,.55);display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:900;overflow:hidden}
+.pm img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+.fm{width:34px;height:34px;position:relative}
+.fs{position:absolute;width:2px;height:18px;left:14px;top:12px;border-radius:2px;background:#aaa}
+.fbn{position:absolute;left:14px;top:4px;width:16px;height:10px;clip-path:polygon(0 0,100% 28%,0 100%);border:1px solid #fff}
+.fc-z{background:#00ff66!important}
+.fc-p{background:#f00!important}
+.fc-r{background:#fa0!important}
+
+/* MODAL */
+.modal{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:3000;width:92%;max-width:480px;background:#000;border:3px solid #0f0;border-radius:14px;padding:16px;box-shadow:0 0 25px rgba(0,255,0,.22)}
+.qrc{display:inline-block;margin-top:8px;padding:8px;border-radius:10px;border:1px solid #0f0;background:#111;font-family:monospace;word-break:break-all;color:#fff;font-size:12px}
+
+/* PR SCREEN */
+#pr-screen{display:flex;flex-direction:column;height:100vh;background:linear-gradient(180deg,#000,#051005)}
+#pr-hdr{background:rgba(0,255,0,.08);border-bottom:1px solid #0f0;padding:10px 16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+#pr-body{flex:1;overflow-y:auto;padding:16px;max-width:640px;margin:0 auto;width:100%}
+.branch-card{border:1px solid #0a0;background:rgba(0,25,0,.1);border-radius:10px;padding:12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.pr-tabs{display:flex;border-bottom:2px solid #0f0;margin-bottom:14px}
+.pr-tab{flex:1;text-align:center;padding:10px;cursor:pointer;font-weight:700;color:#0a0;border-bottom:3px solid transparent}
+.pr-tab.active{color:#0f0;border-bottom-color:#0f0}
+
+/* MARCAS */
+.watermark{position:fixed;bottom:36px;left:14px;font-size:16px;font-weight:900;color:rgba(0,255,0,.25);z-index:9999;pointer-events:none}
+.copyright{position:fixed;bottom:4px;width:100%;text-align:center;font-size:9px;color:rgba(0,255,0,.2);z-index:9999;pointer-events:none}
 </style>
 </head>
 <body>
+
 <div class="watermark">Larforyou®</div>
 <div class="copyright">© 2025 Larforyou® — Marca Registada</div>
 
-<!-- INÍCIO -->
-<div id="p-inicio" class="pag ativa">
-<div class="cx" style="padding-top:22px;text-align:center">
-  <h1 style="font-size:30px;text-shadow:0 0 18px rgba(76,175,80,.5);letter-spacing:2px">🏴 ZAP FLAGS</h1>
-  <p style="color:#81c784;font-size:13px;margin-bottom:16px">Caça ao Tesouro Digital</p>
-  <div id="home-j" style="display:none"><div class="sess-bar sess-j"><div style="text-align:left"><div style="font-weight:700;font-size:14px;color:#4CAF50" id="home-j-nm">👤 —</div><div style="font-size:11px;color:#aaa;margin-top:2px" id="home-j-info">—</div></div><div style="display:flex;gap:5px"><button class="bv" style="padding:6px 12px;font-size:12px" onclick="reentrarJogo()">🎮 Jogar</button><button class="bsair" onclick="confirmarSair('j')">🚪</button></div></div></div>
-  <div id="home-pr" style="display:none"><div class="sess-bar sess-pr"><div style="text-align:left"><div style="font-weight:700;font-size:14px;color:#f90" id="home-pr-nm">🏪 —</div><div style="font-size:11px;color:#aaa;margin-top:2px" id="home-pr-info">—</div></div><div style="display:flex;gap:5px"><button class="bo" style="padding:6px 12px;font-size:12px" onclick="reentrarPR()">🏪 Painel</button><button class="bsair" onclick="confirmarSair('pr')">🚪</button></div></div></div>
-  <div class="aj"><h3>🎮 ÁREA DO JOGADOR</h3><button class="bv bb" onclick="ir('p-login-j')">▶ ENTRAR NO JOGO</button><button class="bc bb" onclick="ir('p-reg-j')">📝 CRIAR CONTA</button></div>
-  <div class="apr"><h3>🏪 ÁREA DO LOJISTA</h3><button class="bv bb" onclick="ir('p-login-pr')">▶ ENTRAR NA CONTA</button><button class="bo bb" onclick="ir('p-reg-pr')">📝 REGISTAR EMPRESA</button></div>
-  <div class="abo"><h3>🖥️ BACKOFFICE <span class="badge-bo">ADMIN</span></h3><button class="bbo bb" onclick="ir('p-bo-login')">🖥️ ACEDER</button></div>
-  <p style="color:#333;font-size:10px;margin-top:16px">v12.0 © 2025 ZAP FLAGS by Larforyou®</p>
-</div></div>
-
-<!-- LOGIN JOGADOR -->
-<div id="p-login-j" class="pag"><div class="cx">
-  <button class="bvol bb" onclick="ir('p-inicio')" style="margin-bottom:14px">← VOLTAR</button>
-  <div class="aj"><h3>🎮 ENTRAR NO JOGO</h3><div id="m-lj" class="msg"></div>
-    <div id="lj-com"><div class="ucard ucard-j"><div class="uavt uavt-j"><span id="lj-emoji">🎮</span><div class="udot udot-j"></div></div><div class="u-nome" style="color:#4CAF50" id="lj-nm">—</div><div class="u-sub" id="lj-sub">Jogador · Nível 1</div><div class="u-stats"><div><div class="u-stat-n" style="color:#0ff" id="lj-fl">0</div><div class="u-stat-l">🏴 Flags</div></div><div><div class="u-stat-n" style="color:#4CAF50" id="lj-en">100%</div><div class="u-stat-l">⚡ Energia</div></div><div><div class="u-stat-n" style="color:#f90" id="lj-sk">0</div><div class="u-stat-l">🎯 Skill</div></div><div><div class="u-stat-n" style="color:#0ff" id="lj-vis">5m</div><div class="u-stat-l">👁 Visão</div></div></div></div>
-      <div class="lbl">🔑 Senha</div><div class="pw-wrap"><input type="password" id="lj-pw" placeholder="A tua senha" onkeydown="if(event.key==='Enter')loginJCom()"><button class="pw-toggle" onclick="tPW('lj-pw',this)">👁</button></div>
-      <label class="ckl"><input type="checkbox" id="lj-lbr-pw"> Lembrar senha</label>
-      <button class="bv bb" onclick="loginJCom()" style="padding:14px;font-size:15px">▶ ENTRAR COMO <span id="lj-btn-nm">—</span></button>
-      <div class="sep"><div class="sep-l"></div><span class="sep-t">não és tu?</span><div class="sep-l"></div></div>
-      <button class="bc bb" onclick="trocarContaJ()" style="font-size:12px">🔄 Outra conta</button></div>
-    <div id="lj-sem" style="display:none"><div class="lbl">📧 Email</div><input type="email" id="lj-em" placeholder="email@exemplo.com" oninput="verEmJ()" onkeydown="if(event.key==='Enter')document.getElementById('lj-pw-m').focus()"><div id="lj-em-i" style="display:none;background:rgba(0,0,0,.5);border:1px solid #4CAF50;border-radius:6px;padding:7px 11px;margin:4px 0;font-size:12px"></div><div class="lbl">🔑 Senha</div><div class="pw-wrap"><input type="password" id="lj-pw-m" placeholder="A tua senha" onkeydown="if(event.key==='Enter')loginJSem()"><button class="pw-toggle" onclick="tPW('lj-pw-m',this)">👁</button></div><label class="ckl"><input type="checkbox" id="lj-lbr" checked> Lembrar conta</label><button class="bv bb" onclick="loginJSem()" style="padding:14px;font-size:15px">▶ ENTRAR</button></div>
-    <div style="display:flex;gap:14px;justify-content:center;margin-top:14px;padding-top:12px;border-top:1px solid #222"><span class="lnk" onclick="ir('p-reg-j')">📝 Criar conta</span><span class="lnk" onclick="irRec('j')">🔑 Recuperar</span></div>
-  </div>
-</div></div>
-
-<!-- REGISTO JOGADOR -->
-<div id="p-reg-j" class="pag"><div class="cx">
-  <button class="bvol bb" onclick="ir('p-inicio')" style="margin-bottom:14px">← VOLTAR</button>
-  <div class="aj"><h3>📝 CRIAR CONTA</h3><div class="card card-b" style="text-align:center;margin-bottom:12px"><p style="color:#0ff;font-weight:700">🎁 1.000 bandeiras GRÁTIS!</p></div><div id="m-regj" class="msg"></div>
-    <div class="lbl">👤 Nome <em>*</em></div><input id="rj-nm" placeholder="O teu nome" maxlength="30">
-    <div class="lbl">📧 Email <em>*</em></div><input type="email" id="rj-em" placeholder="email@exemplo.com">
-    <div class="lbl">📱 Telemóvel</div><input type="tel" id="rj-tl" placeholder="912 345 678">
-    <div class="lbl">🔑 Senha <em>*</em> <span id="rj-ft" class="ftxt"></span></div><div class="pw-wrap"><input type="password" id="rj-pw" placeholder="Mín. 4" oninput="calcF(this.value,'rj-fb','rj-ft')"><button class="pw-toggle" onclick="tPW('rj-pw',this)">👁</button></div><div id="rj-fb" class="fbar"></div>
-    <div class="lbl">🔑 Confirmar <em>*</em></div><div class="pw-wrap"><input type="password" id="rj-pw2" placeholder="Repete" onkeydown="if(event.key==='Enter')fazerRegJ()"><button class="pw-toggle" onclick="tPW('rj-pw2',this)">👁</button></div>
-    <label class="ckl"><input type="checkbox" id="rj-lbr" checked> Lembrar</label>
-    <button class="bv bb" onclick="fazerRegJ()" style="padding:14px;font-size:15px">✅ CRIAR CONTA</button></div>
-</div></div>
-
-<!-- LOGIN PR -->
-<div id="p-login-pr" class="pag"><div class="cx">
-  <button class="bvol bb" onclick="ir('p-inicio')" style="margin-bottom:14px">← VOLTAR</button>
-  <div class="apr"><h3>🏪 ENTRAR</h3><div id="m-lpr" class="msg"></div>
-    <div id="lpr-com"><div class="ucard ucard-pr"><div class="uavt uavt-pr"><span>🏪</span><div class="udot udot-pr"></div></div><div class="u-nome" style="color:#f90" id="lpr-nm">—</div><div class="u-sub" id="lpr-sub">Lojista</div><div class="u-stats"><div><div class="u-stat-n" style="color:#f90" id="lpr-loc">—</div><div class="u-stat-l">📍 Local</div></div><div><div class="u-stat-n" style="color:#0ff" id="lpr-packs">0</div><div class="u-stat-l">📦 Packs</div></div></div></div>
-      <div class="lbl">🔑 Senha</div><div class="pw-wrap"><input type="password" id="lpr-pw" placeholder="Senha" onkeydown="if(event.key==='Enter')loginPRCom()"><button class="pw-toggle" onclick="tPW('lpr-pw',this)">👁</button></div><label class="ckl"><input type="checkbox" id="lpr-lbr-pw"> Lembrar</label>
-      <button class="bo bb" onclick="loginPRCom()" style="padding:14px;font-size:15px">▶ ENTRAR COMO <span id="lpr-btn-nm">—</span></button><div class="sep"><div class="sep-l"></div><span class="sep-t">não é a tua?</span><div class="sep-l"></div></div><button class="bc bb" onclick="trocarContaPR()" style="font-size:12px">🔄 Outra</button></div>
-    <div id="lpr-sem" style="display:none"><div class="lbl">📧 Email</div><input type="email" id="lpr-em" placeholder="loja@email.com" oninput="verEmPR()"><div id="lpr-em-i" style="display:none;background:rgba(0,0,0,.5);border:1px solid #f90;border-radius:6px;padding:7px 11px;margin:4px 0;font-size:12px;color:#f90"></div><div class="lbl">🔑 Senha</div><div class="pw-wrap"><input type="password" id="lpr-pw-m" placeholder="Senha" onkeydown="if(event.key==='Enter')loginPRSem()"><button class="pw-toggle" onclick="tPW('lpr-pw-m',this)">👁</button></div><label class="ckl"><input type="checkbox" id="lpr-lbr" checked> Lembrar</label><button class="bo bb" onclick="loginPRSem()" style="padding:14px;font-size:15px">▶ ENTRAR</button></div>
-    <div style="display:flex;gap:14px;justify-content:center;margin-top:14px;padding-top:12px;border-top:1px solid #222"><span class="lnk" onclick="ir('p-reg-pr')">📝 Registar</span><span class="lnk" onclick="irRec('pr')">🔑 Recuperar</span></div>
-  </div>
-</div></div>
-
-<!-- REGISTO PR -->
-<div id="p-reg-pr" class="pag"><div class="cx">
-  <button class="bvol bb" onclick="ir('p-inicio')" style="margin-bottom:14px">← VOLTAR</button>
-  <div class="apr"><h3>📝 REGISTAR EMPRESA</h3></div><div id="m-regpr" class="msg"></div>
-  <div class="scroll">
-    <div class="card card-y"><h3 style="color:#f90;margin-bottom:8px">📍 MORADA</h3><input id="prr-rua" placeholder="* Rua"><div class="g2"><input id="prr-cp" placeholder="* Cód.Postal"><input id="prr-loc" placeholder="* Localidade"></div><select id="prr-dist"><option value="">* Distrito</option><option>Aveiro</option><option>Beja</option><option>Braga</option><option>Bragança</option><option>Castelo Branco</option><option>Coimbra</option><option>Évora</option><option>Faro</option><option>Guarda</option><option>Leiria</option><option>Lisboa</option><option>Portalegre</option><option>Porto</option><option>Santarém</option><option>Setúbal</option><option>Viana do Castelo</option><option>Vila Real</option><option>Viseu</option><option>Madeira</option><option>Açores</option></select></div>
-    <div class="card card-y"><h3 style="color:#f90;margin-bottom:8px">🏢 EMPRESA</h3><input id="prr-ne" placeholder="* Nome"><input id="prr-nif" placeholder="* NIF" maxlength="9"><select id="prr-ativ"><option value="">* Setor</option><option>Restaurante</option><option>Café</option><option>Bar</option><option>Supermercado</option><option>Roupa</option><option>Eletrónica</option><option>Farmácia</option><option>Cabeleireiro</option><option>Ginásio</option><option>Clínica</option><option>Outro</option></select></div>
-    <div class="card card-y"><h3 style="color:#f90;margin-bottom:8px">📞 CONTACTOS</h3><input type="tel" id="prr-tel" placeholder="* Telefone"><input type="email" id="prr-email" placeholder="* Email"><input type="tel" id="prr-tel-r" placeholder="* Telemóvel Resp."></div>
-    <div class="card card-y"><h3 style="color:#f90;margin-bottom:8px">👤 RESPONSÁVEL</h3><input id="prr-resp" placeholder="* Nome"><div class="lbl">🔑 Senha <em>*</em> <span id="prr-ft" class="ftxt"></span></div><div class="pw-wrap"><input type="password" id="prr-pw" placeholder="Mín. 4" oninput="calcF(this.value,'prr-fb','prr-ft')"><button class="pw-toggle" onclick="tPW('prr-pw',this)">👁</button></div><div id="prr-fb" class="fbar"></div><div class="lbl">🔑 Confirmar <em>*</em></div><div class="pw-wrap"><input type="password" id="prr-pw2" placeholder="Repete"><button class="pw-toggle" onclick="tPW('prr-pw2',this)">👁</button></div></div>
-    <label class="ckl"><input type="checkbox" id="prr-trm"> Aceito os Termos</label><label class="ckl"><input type="checkbox" id="prr-lbr" checked> Lembrar</label>
-    <button class="bo bb" onclick="fazerRegPR()" style="padding:14px;font-size:15px">✅ REGISTAR</button></div>
-</div></div>
-
-<!-- RECUPERAR -->
-<div id="p-rec" class="pag"><div class="cx">
-  <button class="bvol bb" onclick="irVoltarRec()" style="margin-bottom:14px">← VOLTAR</button>
-  <div id="rec-area-j" class="aj" style="display:none"><h3>🔑 RECUPERAR — JOGADOR</h3></div>
-  <div id="rec-area-pr" class="apr" style="display:none"><h3>🔑 RECUPERAR — LOJISTA</h3></div>
-  <div id="m-rec" class="msg"></div>
-  <div id="rec-p1"><div class="card card-b" style="text-align:center"><p style="color:#0ff;font-weight:700">Como receber o código?</p></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0"><div id="rec-oem" onclick="selRec('email')" style="background:rgba(0,0,0,.4);border:2px solid #333;border-radius:10px;padding:14px;text-align:center;cursor:pointer"><div style="font-size:24px">📧</div><div style="font-weight:700">Email</div></div><div id="rec-osms" onclick="selRec('sms')" style="background:rgba(0,0,0,.4);border:2px solid #333;border-radius:10px;padding:14px;text-align:center;cursor:pointer"><div style="font-size:24px">📱</div><div style="font-weight:700">SMS</div></div></div><div id="rec-fem" style="display:none"><div class="lbl">📧 Email</div><input type="email" id="rec-em"></div><div id="rec-fsms" style="display:none"><div class="lbl">📱 Telemóvel</div><input type="tel" id="rec-tl"></div><button class="bv bb" id="rec-btn-env" onclick="enviarCod()" style="display:none;padding:14px">📨 ENVIAR</button></div>
-  <div id="rec-p2" style="display:none"><div class="card card-v" style="text-align:center"><p style="color:#666;font-size:11px">⚠ SIMULAÇÃO</p><p id="rec-cshow" style="font-size:28px;color:#0ff;font-weight:700;letter-spacing:10px">----</p></div><div class="lbl">🔢 Código</div><input type="number" id="rec-cin" style="text-align:center;font-size:20px;letter-spacing:8px" maxlength="4" oninput="this.value=this.value.slice(0,4)" onkeydown="if(event.key==='Enter')verCod()"><button class="bv bb" onclick="verCod()" style="padding:14px">✅ VERIFICAR</button><button class="bc bb" onclick="reenvCod()" style="font-size:12px">🔄 Reenviar</button></div>
-  <div id="rec-p3" style="display:none"><div class="card card-v" style="text-align:center"><p style="color:#4CAF50;font-weight:700">✅ Confirmado!</p></div><div class="lbl">🔑 Nova Senha <span id="rec-ft" class="ftxt"></span></div><div class="pw-wrap"><input type="password" id="rec-np" oninput="calcF(this.value,'rec-fb','rec-ft')"><button class="pw-toggle" onclick="tPW('rec-np',this)">👁</button></div><div id="rec-fb" class="fbar"></div><div class="lbl">🔑 Confirmar</div><div class="pw-wrap"><input type="password" id="rec-np2" onkeydown="if(event.key==='Enter')guardarNovaSenha()"><button class="pw-toggle" onclick="tPW('rec-np2',this)">👁</button></div><button class="bv bb" onclick="guardarNovaSenha()" style="padding:14px">💾 GUARDAR</button></div>
-</div></div>
-
-<!-- BACKOFFICE -->
-<div id="p-bo-login" class="pag"><div class="cx">
-  <button class="bvol bb" onclick="ir('p-inicio')" style="margin-bottom:14px">← VOLTAR</button>
-  <div class="abo"><h3>🖥️ BACKOFFICE <span class="badge-bo">SISTEMA</span></h3><div id="m-bo" class="msg"></div><div class="lbl">🔑 Código</div><div class="pw-wrap"><input type="password" id="bo-pw" style="text-align:center;letter-spacing:6px;border-color:#0ff;color:#0ff;font-size:18px" onkeydown="if(event.key==='Enter')loginBO()"><button class="pw-toggle" onclick="tPW('bo-pw',this)">👁</button></div><button class="bbo bb" onclick="loginBO()" style="padding:14px;font-size:15px">🖥️ ENTRAR</button></div>
-</div></div>
-
-<!-- JOGO -->
-<div id="p-jogo" class="pag" style="padding:0;overflow:hidden;height:100vh">
-  <div id="mapa"></div>
-  <div id="avt-cx"><div id="circ-vis"></div><div id="circ-alc"></div><div id="aviso-ap" onclick="apanharManual()">👆 APANHAR!</div>
-    <svg id="avt-svg" viewBox="0 0 52 66" xmlns="http://www.w3.org/2000/svg"><ellipse cx="26" cy="63" rx="11" ry="3" fill="rgba(0,0,0,.5)"/><g><g id="ape" style="transform-origin:22px 43px"><rect x="17" y="41" width="8" height="17" rx="4" fill="#0a4a0a"/><ellipse cx="21" cy="57" rx="7" ry="3.5" fill="#083808"/></g><g id="apd" style="transform-origin:30px 43px"><rect x="26" y="41" width="8" height="17" rx="4" fill="#0a4a0a"/><ellipse cx="30" cy="57" rx="7" ry="3.5" fill="#083808"/></g><rect x="17" y="26" width="18" height="17" rx="5" fill="#0d6a0d"/><rect x="21" y="29" width="10" height="2.5" rx="1.2" fill="#0ff" opacity=".5"/><rect x="21" y="34" width="10" height="1.5" rx=".75" fill="#0ff" opacity=".3"/><g id="abe" style="transform-origin:17px 28px"><rect x="8" y="26" width="9" height="13" rx="4.5" fill="#0b5a0b"/><circle cx="12.5" cy="40" r="4" fill="#094a09"/></g><g id="abd" style="transform-origin:35px 28px"><rect x="35" y="26" width="9" height="13" rx="4.5" fill="#0b5a0b"/><circle cx="39.5" cy="40" r="4" fill="#094a09"/></g><rect x="23" y="22" width="6" height="6" rx="3" fill="#0b5a0b"/><g id="acab" style="transform-origin:26px 13px"><circle cx="26" cy="13" r="12" fill="#0d6a0d"/><ellipse cx="26" cy="3.5" rx="11" ry="5" fill="#050"/><rect x="15" y="3" width="22" height="6" rx="2.5" fill="#050"/><rect x="17" y="9" width="18" height="4" rx="2" fill="#0ff" opacity=".55"/><circle cx="21" cy="15" r="3.2" fill="#000"/><circle cx="31" cy="15" r="3.2" fill="#000"/><circle cx="21" cy="15" r="2" fill="#0ff"/><circle cx="31" cy="15" r="2" fill="#0ff"/><circle cx="21.9" cy="14.1" r=".8" fill="#fff"/><circle cx="31.9" cy="14.1" r=".8" fill="#fff"/><path d="M22 19Q26 21.5 30 19" stroke="#0ff" stroke-width="1.3" fill="none" opacity=".6"/><line x1="26" y1="3" x2="26" y2="0" stroke="#4CAF50" stroke-width="2"/><circle cx="26" cy="0" r="3" fill="#0ff"><animate attributeName="opacity" values="1;.2;1" dur="1.4s" repeatCount="indefinite"/><animate attributeName="r" values="3;4;3" dur="1.4s" repeatCount="indefinite"/></circle></g></g></svg>
-  </div>
-  <div id="hud-j"><div><div style="font-weight:700;font-size:13px" id="j-nm">👤 —</div><div style="font-size:10px;color:#888" id="j-nv">Nível 1</div></div><div style="display:flex;gap:10px;font-size:10px;text-align:center"><div class="hn">🏴<span class="hv" id="h-fl">0</span></div><div class="hn">⚡<span class="hv" id="h-en">100%</span></div><div class="hn">🎯<span class="hv" id="h-sk">0</span></div><div class="hn">👁<span class="hv" id="h-vis">5m</span></div></div><div style="display:flex;gap:4px"><button class="bvol" style="padding:5px 8px;font-size:10px" onclick="voltarHome()">← Início</button><button class="bsair" style="padding:5px 8px;font-size:10px" onclick="confirmarSair('j')">Sair</button></div></div>
-  <div id="pan-sk"><div style="color:#4CAF50;font-weight:700;text-align:center;margin-bottom:3px;font-size:10px">📊 SKILL</div><div class="psk"><span class="pskl">Nível</span><span class="pskv" id="sk-nv">1</span></div><div class="psk"><span class="pskl">Skill</span><span class="pskv" id="sk-sk">0</span></div><div class="psk"><span class="pskl">Visão</span><span class="pskv" id="sk-vis">5m</span></div><div class="psk"><span class="pskl">Próx.</span><span class="pskv" id="sk-px">500</span></div><div id="bsk"><div id="bskf" style="width:0%"></div></div><div id="bskt">0 / 500</div></div>
-  <div id="ctrl"><div class="drag-handle">⠿ 🕹️ WASD / Setas</div><div id="ctrl-g"><div></div><div class="cbtn" id="bc-c" onpointerdown="pd('c')" onpointerup="pu('c')">▲</div><div></div><div class="cbtn" id="bc-e" onpointerdown="pd('e')" onpointerup="pu('e')">◀</div><div class="cbtn" style="font-size:8px;color:#222;cursor:default">●</div><div class="cbtn" id="bc-d" onpointerdown="pd('d')" onpointerup="pu('d')">▶</div><div></div><div class="cbtn" id="bc-b" onpointerdown="pd('b')" onpointerup="pu('b')">▼</div><div></div></div><div id="ctrl-tam"><button class="tbtn" onclick="mudarTam(-1)">A−</button><span id="tam-lbl" style="font-size:9px;color:#555;align-self:center">46px</span><button class="tbtn" onclick="mudarTam(1)">A+</button></div></div>
-  <div id="rodape"><div id="ticker"></div></div>
-  <div id="gps-txt">📡 GPS: a iniciar...</div>
-  <div id="notif"><div id="ntf-ico" style="font-size:16px;margin-bottom:3px"></div><div id="ntf-txt" style="color:#0ff;font-weight:700;font-size:14px"></div><div id="ntf-sub" style="color:#888;font-size:11px;margin-top:2px"></div></div>
-  <div id="aba-band"><div class="aba-fechar" onclick="fecharAbaBanda()">✕</div><div id="aba-band-c"></div><button class="bv bb" onclick="fecharAbaBanda()" style="margin-top:9px">✅ FECHAR</button></div>
-  <div id="aba-qr"><div class="aba-fechar" onclick="fecharAbaQR()" style="background:#1a0800;border-color:#f90;color:#f90">✕</div><div id="aba-qr-c"></div><button class="bo bb" onclick="fecharAbaQR()" style="margin-top:9px">✅ FECHAR</button></div>
+<!-- LANDING -->
+<div id="landing">
+  <h1>🚩 ZAP FLAGS</h1>
+  <div class="sub">Encontra bandeiras. Ganha prémios.<br>Desafia empresas.</div>
+  <button class="bp" onclick="showAuth('JG')">▶ JOGAR</button>
+  <button class="be" onclick="showAuth('PR')">🏢 EMPRESA / PR</button>
+  <p style="font-size:10px;color:#0a0;margin-top:8px">v12 © 2025 ZAP FLAGS by Larforyou®</p>
 </div>
 
-<!-- PR PAINEL -->
-<div id="p-pr" class="pag" style="padding:0">
-  <div class="pr-header"><div><div style="font-weight:700;font-size:14px;color:#f90" id="pr-hud-n">🏪 —</div><div style="font-size:10px;color:#888" id="pr-hud-loc">—</div></div><div style="display:flex;gap:4px"><button class="bvol" style="padding:5px 8px;font-size:10px" onclick="ir('p-inicio')">← Início</button><button class="bsair" style="padding:5px 8px;font-size:10px" onclick="confirmarSair('pr')">Sair</button></div></div>
-  <div class="cx" style="padding-top:14px">
-    <div id="pr-card-emp"></div>
-    <div style="display:flex;gap:4px;margin:12px 0;flex-wrap:wrap" id="pr-tabs"><button class="bo" style="flex:1;padding:8px;font-size:11px;min-width:70px" onclick="prTab('dash')">📊 Resumo</button><button class="bc" style="flex:1;padding:8px;font-size:11px;min-width:70px" onclick="prTab('packs')">📦 Packs</button><button class="bc" style="flex:1;padding:8px;font-size:11px;min-width:70px" onclick="prTab('lotes')">🎫 Lotes</button><button class="bc" style="flex:1;padding:8px;font-size:11px;min-width:70px" onclick="prTab('qrs')">📱 QRs</button><button class="bc" style="flex:1;padding:8px;font-size:11px;min-width:70px" onclick="prTab('dados')">⚙️ Dados</button></div>
-    <div id="pr-tab-content" class="scroll" style="max-height:calc(100vh - 220px)"></div>
+<!-- AUTH -->
+<div id="auth-screen" class="hidden">
+<div class="auth-wrap"><div class="auth-box">
+  <h2 id="auth-title">🎮 JOGADOR</h2>
+  <div style="text-align:center;margin-bottom:16px">
+    <button class="btn-dark btn-small" onclick="goLanding()">← Voltar</button>
+  </div>
+  <div class="tab-bar">
+    <div class="tab active" id="tab-reg" onclick="showTab('reg')">Registar</div>
+    <div class="tab" id="tab-log" onclick="showTab('log')">Entrar</div>
+  </div>
+
+  <!-- REGISTO JOGADOR -->
+  <div id="jg-reg">
+    <label><span class="req">*</span> Nome completo</label><input id="r-name" placeholder="Obrigatório">
+    <label><span class="req">*</span> E-mail</label><input id="r-email" type="email" placeholder="Obrigatório">
+    <label><span class="req">*</span> Senha</label><input id="r-pass" type="password" placeholder="Mín. 4 caracteres">
+    <label><span class="req">*</span> Confirmar Senha</label><input id="r-pass2" type="password" placeholder="Repete a senha">
+    <label>Contacto</label><input id="r-contact" placeholder="Telefone (opcional)">
+    <label>Morada</label><input id="r-addr" placeholder="Rua, nº (opcional)">
+    <label>Localidade</label><input id="r-city" placeholder="Cidade (opcional)">
+    <label>Distrito</label>
+    <select id="r-district"><option value="">Selecionar (opcional)</option><option>Aveiro</option><option>Beja</option><option>Braga</option><option>Bragança</option><option>Castelo Branco</option><option>Coimbra</option><option>Évora</option><option>Faro</option><option>Guarda</option><option>Leiria</option><option>Lisboa</option><option>Portalegre</option><option>Porto</option><option>Santarém</option><option>Setúbal</option><option>Viana do Castelo</option><option>Vila Real</option><option>Viseu</option></select>
+    <div id="jg-reg-msg" class="auth-msg"></div>
+    <button onclick="regPlayer()" style="width:100%;padding:14px;font-size:15px">✅ REGISTAR E ENTRAR</button>
+  </div>
+
+  <!-- LOGIN JOGADOR -->
+  <div id="jg-log" class="hidden">
+    <label><span class="req">*</span> E-mail</label><input id="l-email" type="email" placeholder="O teu e-mail">
+    <label><span class="req">*</span> Senha</label><input id="l-pass" type="password" placeholder="A tua senha" onkeydown="if(event.key==='Enter')loginPlayer()">
+    <div id="jg-log-msg" class="auth-msg"></div>
+    <button onclick="loginPlayer()" style="width:100%;padding:14px;font-size:15px">▶ ENTRAR</button>
+  </div>
+
+  <!-- REGISTO EMPRESA -->
+  <div id="pr-reg" class="hidden">
+    <label><span class="req">*</span> Nome da Empresa</label><input id="pr-r-name" placeholder="Obrigatório">
+    <label><span class="req">*</span> NIF (9 dígitos)</label><input id="pr-r-nif" placeholder="Obrigatório" maxlength="9">
+    <label><span class="req">*</span> E-mail</label><input id="pr-r-email" type="email" placeholder="Obrigatório">
+    <label><span class="req">*</span> Senha</label><input id="pr-r-pass" type="password" placeholder="Mín. 4 caracteres">
+    <label><span class="req">*</span> Confirmar Senha</label><input id="pr-r-pass2" type="password" placeholder="Repete">
+    <label><span class="req">*</span> Contacto</label><input id="pr-r-contact" placeholder="Telefone">
+    <label><span class="req">*</span> Morada</label><input id="pr-r-addr" placeholder="Rua e nº">
+    <label><span class="req">*</span> Localidade</label><input id="pr-r-city" placeholder="Cidade">
+    <label><span class="req">*</span> Distrito</label>
+    <select id="pr-r-district"><option value="">Selecionar</option><option>Aveiro</option><option>Beja</option><option>Braga</option><option>Bragança</option><option>Castelo Branco</option><option>Coimbra</option><option>Évora</option><option>Faro</option><option>Guarda</option><option>Leiria</option><option>Lisboa</option><option>Portalegre</option><option>Porto</option><option>Santarém</option><option>Setúbal</option><option>Viana do Castelo</option><option>Vila Real</option><option>Viseu</option></select>
+    <label><span class="req">*</span> Código Postal</label><input id="pr-r-postal" placeholder="0000-000">
+    <div id="pr-reg-msg" class="auth-msg"></div>
+    <button onclick="regPR()" style="width:100%;padding:14px;font-size:15px">✅ REGISTAR EMPRESA</button>
+  </div>
+
+  <!-- LOGIN EMPRESA -->
+  <div id="pr-log" class="hidden">
+    <label><span class="req">*</span> E-mail ou NIF</label><input id="pr-l-id" placeholder="E-mail ou NIF">
+    <label><span class="req">*</span> Senha</label><input id="pr-l-pass" type="password" placeholder="Senha" onkeydown="if(event.key==='Enter')loginPR()">
+    <hr style="border-color:#0a0;margin:12px 0">
+    <div style="text-align:center;color:#a7fca7;font-size:13px;margin-bottom:8px">Entrar como Filial?</div>
+    <label>Código de Filial (gerado pela empresa mãe)</label><input id="pr-l-code" placeholder="Ex: ABC123 — deixar vazio para login normal">
+    <div id="pr-log-msg" class="auth-msg"></div>
+    <button onclick="loginPR()" style="width:100%;padding:14px;font-size:15px">▶ ENTRAR</button>
+  </div>
+</div></div>
+</div>
+
+<!-- GAME -->
+<div id="game-screen" class="hidden">
+  <div id="map-wrap"><div id="map"></div><div id="fog-overlay"></div></div>
+  <div id="top-strip">
+    <div class="ebar"><div id="efill"></div></div>
+    <div style="margin-top:6px;font-size:12px;color:#bfffbf;display:flex;justify-content:space-between;flex-wrap:wrap">
+      <span id="etext">Energia: 100%</span><span id="mtext">Modo: —</span>
+    </div>
+  </div>
+  <div id="fbtns">
+    <button class="fb btn-dark" onclick="openPanel('progress')" title="Progresso">📈</button>
+    <button class="fb btn-dark" onclick="openPanel('qrs')" title="QRs">🎫</button>
+    <button class="fb btn-dark" onclick="openPanel('account')" title="Conta">👤</button>
+    <button class="fb btn-dark" onclick="centerPlayer()" title="Centrar">📍</button>
+    <button class="fb btn-danger" onclick="goLanding()" title="Sair">⏎</button>
+  </div>
+  <div id="offctrl" class="hidden">
+    <div style="font-size:11px;color:#bfffbf;margin-bottom:4px;border-bottom:1px solid rgba(0,255,0,.25);padding-bottom:3px">⠿ mover</div>
+    <div style="display:flex;justify-content:center;gap:4px;margin:4px 0">
+      <button class="btn-dark btn-small" onclick="resizeOC(-10)">A−</button>
+      <button class="btn-dark btn-small" onclick="resizeOC(10)">A+</button>
+    </div>
+    <div class="dpad">
+      <div style="visibility:hidden">.</div>
+      <button onclick="moveHP(0,1)">▲</button>
+      <div style="visibility:hidden">.</div>
+      <button onclick="moveHP(-1,0)">◀</button>
+      <button onclick="manualRef()">⟳</button>
+      <button onclick="moveHP(1,0)">▶</button>
+      <div style="visibility:hidden">.</div>
+      <button onclick="moveHP(0,-1)">▼</button>
+      <div style="visibility:hidden">.</div>
+    </div>
+  </div>
+  <div id="sidep" class="hidden">
+    <div class="ph"><b id="sptitle">Painel</b><button class="btn-dark btn-small" onclick="closePanel()">✕</button></div>
+    <div id="spcontent"></div>
   </div>
 </div>
 
-<!-- CONFIRMAÇÃO -->
-<div id="conf-ovl"></div>
-<div id="conf-box"><div id="conf-ico" style="font-size:28px;margin-bottom:7px">❓</div><h2 id="conf-tit" style="color:#f44;margin-bottom:8px;font-size:14px"></h2><p id="conf-txt" style="color:#888;font-size:12px;margin-bottom:16px;line-height:1.5"></p><div style="display:flex;gap:8px"><button class="bvol" style="flex:1;padding:12px" onclick="fecharConf()">❌ CANCELAR</button><button class="bsair" style="flex:1;padding:12px" onclick="exConf()">✅ CONFIRMAR</button></div></div>
+<!-- MODAL MODO -->
+<div id="mode-modal" class="modal hidden">
+  <div class="ph"><h2 style="margin:0">Como queres jogar?</h2><button class="btn-dark btn-small" onclick="closeMM()">✕</button></div>
+  <div class="item"><b>📡 GPS / Rua</b><br>Localização real. Caminha para apanhar.</div>
+  <div class="item"><b>🏠 Offline / Casa</b><br>Movimento manual sem GPS.</div>
+  <div style="display:flex;gap:8px;margin-top:10px">
+    <button onclick="reqGPS()">📡 GPS</button>
+    <button class="btn-dark" onclick="actHome()">🏠 OFFLINE</button>
+  </div>
+</div>
+
+<!-- MODAL BANDEIRA -->
+<div id="flag-modal" class="modal hidden">
+  <div id="fm-content"></div>
+</div>
+
+<!-- PR SCREEN -->
+<div id="pr-screen" class="hidden">
+  <div id="pr-hdr">
+    <span id="pr-hdr-title" style="font-size:17px;font-weight:700">🏢 PAINEL</span>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn-dark btn-small" onclick="prTabSwitch('packs')">📦 Packs</button>
+      <button class="btn-dark btn-small" onclick="prTabSwitch('branches')">🏢 Filiais</button>
+      <button class="btn-dark btn-small" onclick="prTabSwitch('campaign')">📢 Campanha</button>
+      <button class="btn-danger btn-small" onclick="goLanding()">⏎ Sair</button>
+    </div>
+  </div>
+  <div id="pr-body"></div>
+</div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script>
 'use strict';
 
-var PASSE='321321';
-var CFG={VISAO_MIN:5,VISAO_MAX:100,SKILL_P:10,QR_N:20,APANHAR_RAIO:12,AVISO_RAIO:20,VEL_PX:2.5,N_BAND:12,SPAWN_RAIO:140};
-var PACKS={
-  MINIMO:{key:'MINIMO',label:'Mínimo',price:10,flags:1000,radiusKm:5,maxLots:50,bingos:0,durDias:30},
-  MEDIO:{key:'MEDIO',label:'Médio',price:15,flags:2500,radiusKm:15,maxLots:125,bingos:2,durDias:60},
-  GRANDE:{key:'GRANDE',label:'Grande',price:25,flags:10000,radiusKm:50,maxLots:500,bingos:3,durDias:90},
-  ENORME:{key:'ENORME',label:'Enorme',price:50,flags:25000,radiusKm:999999,maxLots:1250,bingos:5,durDias:180}
+const SK = 'zap_flags_v5';
+const PACKS = {
+  MINIMO: {key:'MINIMO',label:'Mínimo',price:10,flags:1000,radiusKm:5,maxLots:50,bingos:0},
+  MEDIO:  {key:'MEDIO', label:'Médio', price:15,flags:2500,radiusKm:15,maxLots:125,bingos:2},
+  GRANDE: {key:'GRANDE',label:'Grande',price:25,flags:10000,radiusKm:50,maxLots:500,bingos:3},
+  ENORME: {key:'ENORME',label:'Enorme',price:50,flags:25000,radiusKm:Infinity,maxLots:1250,bingos:5}
 };
 
-function flagsParaSk(s){return 500*Math.pow(2,s)}
-function calcVisao(s){return Math.min(CFG.VISAO_MAX,CFG.VISAO_MIN+Math.floor(s/CFG.SKILL_P))}
+// ===== ESTADO GLOBAL =====
+let map=null, pMark=null, vCirc=null, cPos=null, wId=null;
+let allF=[], offMode=false, curPanel=null;
+let lastPE=null, mBuf=0, lastFC=null, lastFT=0;
+let actType=null, curPRId=null, prTabAtual='overview';
+let state = loadState();
 
-var BD={
-  _g:function(k,d){try{return JSON.parse(localStorage.getItem(k))||d}catch(e){return d}},
-  _s:function(k,v){localStorage.setItem(k,JSON.stringify(v))},
-  jogs:function(){return this._g('zf_j',[])},
-  emps:function(){return this._g('zf_e',[])},
-  saveJ:function(l){this._s('zf_j',l)},
-  saveE:function(l){this._s('zf_e',l)},
-  getSJ:function(){return this._g('zf_sj',null)},
-  getSP:function(){return this._g('zf_sp',null)},
-  setSJ:function(u){this._s('zf_sj',u)},
-  setSP:function(p){this._s('zf_sp',p)},
-  delSJ:function(){localStorage.removeItem('zf_sj')},
-  delSP:function(){localStorage.removeItem('zf_sp')},
-  getPwJ:function(){return localStorage.getItem('zf_pwj')||''},
-  setPwJ:function(p){localStorage.setItem('zf_pwj',p)},
-  delPwJ:function(){localStorage.removeItem('zf_pwj')},
-  getPwP:function(){return localStorage.getItem('zf_pwp')||''},
-  setPwP:function(p){localStorage.setItem('zf_pwp',p)},
-  delPwP:function(){localStorage.removeItem('zf_pwp')}
-};
-
-function G(id){return document.getElementById(id)}
-function V(id){var e=G(id);return e?e.value.trim():''}
-function vE(e){return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(e).toLowerCase())}
-function vT(t){return /^[0-9]{9,15}$/.test(String(t).replace(/[\s\-+]/g,''))}
-function vN(n){return /^[0-9]{9}$/.test(String(n).replace(/\s/g,''))}
-function fN(n){return(n||0).toLocaleString('pt-PT')}
-function fD(t){return t?new Date(t).toLocaleDateString('pt-PT'):'---'}
-
-function msg(id,t,c){var e=G(id);if(!e)return;e.className='msg '+c;e.innerText=t;setTimeout(function(){if(e){e.className='msg';e.innerText=''}},5e3)}
-function tPW(id,b){var i=G(id);if(!i)return;i.type=i.type==='text'?'password':'text';b.innerText=i.type==='password'?'👁':'🙈'}
-function calcF(p,b,t){var e=G(b),f=G(t);if(!e)return;var s=0;if(p.length>=4)s++;if(p.length>=8)s++;if(/[0-9]/.test(p))s++;if(/[^a-zA-Z0-9]/.test(p))s++;e.style.background=['#333','#f44','#f90','#fc0','#4CAF50'][s];e.style.width=(s/4*100)+'%';if(f)f.innerText=['','— Fraca','— Razoável','— Boa','— Forte'][s]}
-function calcDist(a,b,c,d){var x=(d-b)*111e3*Math.cos(a*Math.PI/180),y=(c-a)*111e3;return Math.sqrt(x*x+y*y)}
-function distPx(m){if(!mapaJ)return m*5;var z=mapaJ.getZoom();return m/(156543.03392*Math.cos(AV.lat*Math.PI/180)/Math.pow(2,z))}
-
-// NAVEGAÇÃO
-function ir(id){
-  var p=document.querySelectorAll('.pag');
-  for(var i=0;i<p.length;i++)p[i].classList.remove('ativa');
-  var a=G(id);if(a)a.classList.add('ativa');
-  var m=document.querySelectorAll('.msg');
-  for(var j=0;j<m.length;j++){m[j].className='msg';m[j].innerText=''}
-  window.scrollTo(0,0);
-  if(id==='p-inicio')atualizarHome();
-  if(id==='p-login-j')prepLoginJ();
-  if(id==='p-login-pr')prepLoginPR();
-  if(id==='p-jogo')iniciarJogo();
-  if(id==='p-pr'){renderPRCard();prTab('dash')}
-}
-function voltarHome(){pararJogo();ir('p-inicio')}
-
-function atualizarHome(){
-  var j=BD.getSJ(),p=BD.getSP();
-  if(j){G('home-j-nm').innerText='👤 '+j.nm;G('home-j-info').innerText='🏴 '+fN(j.fl||0)+' · 👁 '+(j.visao||5)+'m · Nv '+(j.nivel||1);G('home-j').style.display='block'}
-  else G('home-j').style.display='none';
-  if(p){G('home-pr-nm').innerText='🏪 '+p.ne;G('home-pr-info').innerText='📍 '+(p.loc||'-')+(p.dist?', '+p.dist:'');G('home-pr').style.display='block'}
-  else G('home-pr').style.display='none'
-}
-function reentrarJogo(){var s=BD.getSJ();if(!s){ir('p-login-j');return}jogAtual=s;ir('p-jogo')}
-function reentrarPR(){var s=BD.getSP();if(!s){ir('p-login-pr');return}entrarNoPR(s)}
-
-var confAcao=null;
-function confirmarSair(q){mostrConf('🚪',q==='j'?'SAIR DO JOGO?':'SAIR DA CONTA?','Progresso guardado.','sair-'+q)}
-function mostrConf(i,t,x,a){confAcao=a;G('conf-ico').innerText=i;G('conf-tit').innerText=t;G('conf-txt').innerText=x;G('conf-ovl').style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:9500;display:block';G('conf-box').style.display='block'}
-function fecharConf(){confAcao=null;G('conf-ovl').style.display='none';G('conf-box').style.display='none'}
-function exConf(){var a=confAcao;fecharConf();if(a==='sair-j'){BD.delSJ();BD.delPwJ();pararJogo();ir('p-inicio')}else if(a==='sair-pr'){BD.delSP();BD.delPwP();ir('p-inicio')}}
-
-// LOGIN JOGADOR
-function prepLoginJ(){
-  var s=BD.getSJ();
-  if(s){
-    G('lj-com').style.display='block';G('lj-sem').style.display='none';
-    G('lj-nm').innerText=s.nm||'-';G('lj-btn-nm').innerText=s.nm||'-';
-    G('lj-sub').innerText='Nível '+(s.nivel||1);
-    G('lj-fl').innerText=fN(s.fl||0);G('lj-en').innerText=Math.round(s.en||100)+'%';
-    G('lj-sk').innerText=s.sk||0;G('lj-vis').innerText=(s.visao||5)+'m';
-    G('lj-emoji').innerText=['🌱','🥉','🥈','🥇','💎','👑'][Math.min(5,Math.floor((s.sk||0)/10))];
-    var p=BD.getPwJ();
-    if(p){G('lj-pw').value=p;G('lj-lbr-pw').checked=true}
-    else{G('lj-pw').value='';G('lj-lbr-pw').checked=false}
-    setTimeout(function(){var e=G('lj-pw');if(e)e.focus()},200)
-  }else{
-    G('lj-com').style.display='none';G('lj-sem').style.display='block';
-    G('lj-em').value='';G('lj-em-i').style.display='none';
-    setTimeout(function(){var e=G('lj-em');if(e)e.focus()},200)
-  }
-}
-function loginJCom(){
-  var s=BD.getSJ();if(!s){prepLoginJ();return}
-  var p=G('lj-pw').value;
-  if(!p){msg('m-lj','❌ Senha!','e');return}
-  if(p===PASSE){finLoginJ(s);return}
-  var l=BD.jogs(),j=null;
-  for(var i=0;i<l.length;i++){if(l[i].em===s.em&&l[i].pw===p){j=l[i];break}}
-  if(!j){msg('m-lj','❌ Incorreta!','e');G('lj-pw').value='';G('lj-pw').focus();return}
-  if(G('lj-lbr-pw').checked)BD.setPwJ(p);else BD.delPwJ();
-  finLoginJ(j)
-}
-function loginJSem(){
-  var e=V('lj-em').toLowerCase(),p=G('lj-pw-m').value;
-  if(!vE(e)){msg('m-lj','❌ Email!','e');return}
-  if(!p){msg('m-lj','❌ Senha!','e');return}
-  if(p===PASSE){finLoginJ({nm:'ADMIN',em:e,fl:0,en:100,sk:0,nivel:1,visao:5});return}
-  var l=BD.jogs(),j=null,ex=false;
-  for(var i=0;i<l.length;i++){if(l[i].em===e){ex=true;if(l[i].pw===p){j=l[i];break}}}
-  if(!j){msg('m-lj',ex?'❌ Senha incorreta!':'❌ Não encontrado!','e');return}
-  if(G('lj-lbr').checked)BD.setPwJ(p);
-  finLoginJ(j)
-}
-function finLoginJ(j){
-  j.ult=Date.now();
-  var l=BD.jogs(),idx=-1;
-  for(var i=0;i<l.length;i++){if(l[i].em===j.em){idx=i;break}}
-  if(idx>=0)l[idx]=j;else if(j.em)l.push(j);
-  BD.saveJ(l);BD.setSJ(j);jogAtual=j;ir('p-jogo')
-}
-function verEmJ(){
-  var e=V('lj-em').toLowerCase(),d=G('lj-em-i');
-  if(!vE(e)){d.style.display='none';return}
-  var l=BD.jogs(),j=null;
-  for(var i=0;i<l.length;i++){if(l[i].em===e){j=l[i];break}}
-  d.style.display='block';
-  if(j){d.style.color='#81c784';d.innerHTML='✅ <b style="color:#0ff">'+j.nm+'</b>'}
-  else{d.style.color='#f66';d.innerHTML='❌ <span class="lnk" onclick="ir(\'p-reg-j\')">Criar</span>'}
-}
-function trocarContaJ(){BD.delSJ();BD.delPwJ();prepLoginJ()}
-
-// REGISTO JOGADOR
-function fazerRegJ(){
-  var n=V('rj-nm'),e=V('rj-em').toLowerCase(),t=V('rj-tl'),p=G('rj-pw').value,p2=G('rj-pw2').value;
-  if(!n){msg('m-regj','❌ Nome!','e');return}
-  if(!vE(e)){msg('m-regj','❌ Email!','e');return}
-  if(!p||p.length<4){msg('m-regj','❌ Senha mín. 4!','e');return}
-  if(p!==p2){msg('m-regj','❌ Senhas!','e');return}
-  var l=BD.jogs();
-  for(var i=0;i<l.length;i++){if(l[i].em===e){msg('m-regj','❌ Existe!','e');return}}
-  var em=BD.emps();
-  for(var j=0;j<em.length;j++){if(em[j].em===e){msg('m-regj','❌ É empresa!','e');return}}
-  var nv={nm:n,em:e,tl:t.replace(/\s/g,''),pw:p,fl:0,en:100,sk:0,flEnerg:0,flLimite:500,nivel:1,visao:5,qrsGerados:[],reg:Date.now(),ult:Date.now()};
-  l.push(nv);BD.saveJ(l);BD.setSJ(nv);
-  if(G('rj-lbr').checked)BD.setPwJ(p);
-  jogAtual=nv;ir('p-jogo')
+function loadState() {
+  try {
+    const r = localStorage.getItem(SK);
+    if (!r) return defState();
+    const p = JSON.parse(r);
+    if (!p.players) p.players = [];
+    if (!p.prs) p.prs = [];
+    if (!p.player) p.player = defState().player;
+    return p;
+  } catch(e) { return defState(); }
 }
 
-// LOGIN PR
-function prepLoginPR(){
-  var s=BD.getSP();
-  if(s){
-    G('lpr-com').style.display='block';G('lpr-sem').style.display='none';
-    G('lpr-nm').innerText=s.ne||'-';G('lpr-btn-nm').innerText=s.ne||'-';
-    G('lpr-sub').innerText=(s.ativ||'-')+' · '+(s.loc||'-');
-    G('lpr-loc').innerText=s.loc||'-';G('lpr-packs').innerText=(s.packs||[]).length;
-    var p=BD.getPwP();
-    if(p){G('lpr-pw').value=p;G('lpr-lbr-pw').checked=true}
-    else{G('lpr-pw').value='';G('lpr-lbr-pw').checked=false}
-    setTimeout(function(){var e=G('lpr-pw');if(e)e.focus()},200)
-  }else{
-    G('lpr-com').style.display='none';G('lpr-sem').style.display='block';
-    G('lpr-em').value='';G('lpr-em-i').style.display='none'
-  }
-}
-function loginPRCom(){
-  var s=BD.getSP();if(!s){prepLoginPR();return}
-  var p=G('lpr-pw').value;
-  if(!p){msg('m-lpr','❌ Senha!','e');return}
-  if(p===PASSE){entrarNoPR(s);return}
-  var l=BD.emps(),e=null;
-  for(var i=0;i<l.length;i++){if(l[i].em===s.em&&l[i].pw===p){e=l[i];break}}
-  if(!e){msg('m-lpr','❌ Incorreta!','e');return}
-  if(G('lpr-lbr-pw').checked)BD.setPwP(p);
-  entrarNoPR(e)
-}
-function loginPRSem(){
-  var e=V('lpr-em').toLowerCase(),p=G('lpr-pw-m').value;
-  if(!vE(e)){msg('m-lpr','❌ Email!','e');return}
-  if(!p){msg('m-lpr','❌ Senha!','e');return}
-  if(p===PASSE){
-    var l2=BD.emps(),f=null;
-    for(var k=0;k<l2.length;k++){if(l2[k].em===e){f=l2[k];break}}
-    entrarNoPR(f||{ne:'Admin',em:e,loc:'-',ativ:'-'});return
-  }
-  var l=BD.emps(),r=null;
-  for(var i=0;i<l.length;i++){if(l[i].em===e&&l[i].pw===p){r=l[i];break}}
-  if(!r){msg('m-lpr','❌ Não encontrada!','e');return}
-  if(G('lpr-lbr').checked)BD.setPwP(p);
-  entrarNoPR(r)
-}
-function verEmPR(){
-  var e=V('lpr-em').toLowerCase(),d=G('lpr-em-i');
-  if(!vE(e)){d.style.display='none';return}
-  var l=BD.emps(),p=null;
-  for(var i=0;i<l.length;i++){if(l[i].em===e){p=l[i];break}}
-  d.style.display='block';
-  if(p){d.style.color='#f90';d.innerHTML='✅ <b style="color:#0ff">'+p.ne+'</b>'}
-  else{d.style.color='#f66';d.innerHTML='❌ <span class="lnk" onclick="ir(\'p-reg-pr\')">Registar</span>'}
-}
-function trocarContaPR(){BD.delSP();BD.delPwP();prepLoginPR()}
-function entrarNoPR(pr){BD.setSP(pr);G('pr-hud-n').innerText='🏪 '+pr.ne;G('pr-hud-loc').innerText=(pr.loc||'')+(pr.dist?', '+pr.dist:'');ir('p-pr')}
+function saveState() { localStorage.setItem(SK, JSON.stringify(state)); }
 
-// REGISTO PR
-function fazerRegPR(){
-  var ne=V('prr-ne'),nif=V('prr-nif'),rua=V('prr-rua'),cp=V('prr-cp'),loc=V('prr-loc'),dist=V('prr-dist');
-  var ativ=V('prr-ativ'),tel=V('prr-tel'),em=V('prr-email').toLowerCase(),telR=V('prr-tel-r');
-  var resp=V('prr-resp'),pw=G('prr-pw').value,pw2=G('prr-pw2').value;
-  if(!rua){msg('m-regpr','❌ Morada!','e');return}
-  if(!cp){msg('m-regpr','❌ Cód.Postal!','e');return}
-  if(!loc){msg('m-regpr','❌ Localidade!','e');return}
-  if(!dist){msg('m-regpr','❌ Distrito!','e');return}
-  if(!ne){msg('m-regpr','❌ Nome!','e');return}
-  if(!nif||!vN(nif)){msg('m-regpr','❌ NIF (9 dígitos)!','e');return}
-  if(!ativ){msg('m-regpr','❌ Setor!','e');return}
-  if(!tel||!vT(tel)){msg('m-regpr','❌ Telefone!','e');return}
-  if(!em||!vE(em)){msg('m-regpr','❌ Email!','e');return}
-  if(!telR||!vT(telR)){msg('m-regpr','❌ Telemóvel resp.!','e');return}
-  if(!resp){msg('m-regpr','❌ Responsável!','e');return}
-  if(!pw||pw.length<4){msg('m-regpr','❌ Senha mín. 4!','e');return}
-  if(pw!==pw2){msg('m-regpr','❌ Senhas!','e');return}
-  if(!G('prr-trm').checked){msg('m-regpr','❌ Termos!','e');return}
-  var l=BD.emps();
-  for(var i=0;i<l.length;i++){
-    if(l[i].nif===nif){msg('m-regpr','❌ NIF existe!','e');return}
-    if(l[i].em===em){msg('m-regpr','❌ Email existe!','e');return}
-  }
-  var jl=BD.jogs();
-  for(var j=0;j<jl.length;j++){if(jl[j].em===em){msg('m-regpr','❌ É jogador!','e');return}}
-  var n={ne:ne,nif:nif,ativ:ativ,rua:rua,cp:cp,loc:loc,dist:dist,tel:tel,em:em,telR:telR,resp:resp,pw:pw,packs:[],lotes:[],qrsGerados:0,qrsUsados:0,reg:Date.now()};
-  l.push(n);BD.saveE(l);BD.setSP(n);
-  if(G('prr-lbr').checked)BD.setPwP(pw);
-  entrarNoPR(n)
-}
-
-// RECUPERAR SENHA
-var recQuem='j',recMetodo='',recCod='',recVolta='p-login-j';
-function irRec(q){recQuem=q;recMetodo='';recVolta=q==='j'?'p-login-j':'p-login-pr';G('rec-area-j').style.display=q==='j'?'block':'none';G('rec-area-pr').style.display=q==='pr'?'block':'none';G('rec-p1').style.display='block';G('rec-p2').style.display='none';G('rec-p3').style.display='none';G('rec-fem').style.display=G('rec-fsms').style.display='none';G('rec-btn-env').style.display='none';G('rec-oem').style.borderColor=G('rec-osms').style.borderColor='#333';ir('p-rec')}
-function irVoltarRec(){ir(recVolta)}
-function selRec(m){recMetodo=m;G('rec-oem').style.borderColor=m==='email'?'#0ff':'#333';G('rec-osms').style.borderColor=m==='sms'?'#0ff':'#333';G('rec-fem').style.display=m==='email'?'block':'none';G('rec-fsms').style.display=m==='sms'?'block':'none';G('rec-btn-env').style.display='block'}
-function enviarCod(){if(!recMetodo){msg('m-rec','❌ Método!','e');return}var e=V('rec-em').toLowerCase(),t=V('rec-tl').replace(/\s/g,'');if(recMetodo==='email'&&!vE(e)){msg('m-rec','❌ Email!','e');return}if(recMetodo==='sms'&&!vT(t)){msg('m-rec','❌ Telemóvel!','e');return}var l=recQuem==='j'?BD.jogs():BD.emps(),ok=false;for(var i=0;i<l.length;i++){if(recMetodo==='email'&&l[i].em===e){ok=true;break}if(recMetodo==='sms'&&(l[i].tl===t||l[i].telR===t||l[i].tel===t)){ok=true;break}}if(!ok){msg('m-rec','❌ Não encontrado!','e');return}recCod=String(Math.floor(1e3+Math.random()*9e3));G('rec-p1').style.display='none';G('rec-p2').style.display='block';G('rec-cshow').innerText=recCod}
-function reenvCod(){recCod=String(Math.floor(1e3+Math.random()*9e3));G('rec-cshow').innerText=recCod;msg('m-rec','✅ Reenviado!','s')}
-function verCod(){var c=V('rec-cin');if(c!==recCod){msg('m-rec','❌ Errado!','e');return}G('rec-p2').style.display='none';G('rec-p3').style.display='block'}
-function guardarNovaSenha(){
-  var p=G('rec-np').value,p2=G('rec-np2').value;
-  if(!p||p.length<4){msg('m-rec','❌ Mín. 4!','e');return}
-  if(p!==p2){msg('m-rec','❌ Senhas!','e');return}
-  var e=V('rec-em').toLowerCase(),t=V('rec-tl').replace(/\s/g,'');
-  if(recQuem==='j'){var l=BD.jogs();for(var i=0;i<l.length;i++){var ok=recMetodo==='email'?l[i].em===e:l[i].tl===t;if(ok){l[i].pw=p;BD.saveJ(l);BD.setSJ(l[i]);BD.setPwJ(p);break}}}
-  else{var l2=BD.emps();for(var j=0;j<l2.length;j++){var ok2=recMetodo==='email'?l2[j].em===e:(l2[j].telR===t||l2[j].tel===t);if(ok2){l2[j].pw=p;BD.saveE(l2);BD.setSP(l2[j]);BD.setPwP(p);break}}}
-  msg('m-rec','✅ Alterada!','s');
-  setTimeout(function(){if(recQuem==='j'){jogAtual=BD.getSJ();if(jogAtual)ir('p-jogo');else ir('p-login-j')}else{var sp=BD.getSP();if(sp)entrarNoPR(sp);else ir('p-login-pr')}},1500)
-}
-function loginBO(){if(G('bo-pw').value!==PASSE){msg('m-bo','❌ Incorreto!','e');return}jogAtual={nm:'ADMIN',em:'admin@zf',fl:0,en:100,sk:0,nivel:1,visao:5,isBO:true};BD.setSJ(jogAtual);ir('p-jogo')}
-
-// ================================================================
-// SISTEMA PR COMPLETO
-// ================================================================
-var prTabAtual='dash';
-
-function renderPRCard(){
-  var pr=BD.getSP();if(!pr)return;
-  var tf=0,pa=0,la=0;
-  var pks=pr.packs||[];
-  for(var i=0;i<pks.length;i++){tf+=pks[i].flagsTotal||pks[i].flags||0;if(pks[i].fim>Date.now())pa++}
-  var lts=pr.lotes||[];
-  for(var j=0;j<lts.length;j++){if(lts[j].estado==='ativo')la++}
-  G('pr-card-emp').innerHTML='<div class="ucard ucard-pr"><div class="uavt uavt-pr"><span style="font-size:32px">🏪</span><div class="udot udot-pr"></div></div><div class="u-nome" style="color:#f90">'+pr.ne+'</div><div class="u-sub">'+(pr.ativ||'-')+' · '+(pr.loc||'-')+'</div><div class="u-stats"><div><div class="u-stat-n" style="color:#f90">'+pa+'</div><div class="u-stat-l">📦 Packs</div></div><div><div class="u-stat-n" style="color:#0ff">'+la+'</div><div class="u-stat-l">🎫 Lotes</div></div><div><div class="u-stat-n" style="color:#4CAF50">'+fN(tf)+'</div><div class="u-stat-l">🏴 Flags</div></div><div><div class="u-stat-n" style="color:#f44">'+(pr.qrsGerados||0)+'</div><div class="u-stat-l">📱 QRs</div></div></div></div>'
-}
-
-function prTab(tab){
-  prTabAtual=tab;
-  var tabs=G('pr-tabs');
-  if(tabs){
-    var btns=tabs.querySelectorAll('button');
-    for(var i=0;i<btns.length;i++){btns[i].className='bc';btns[i].style.cssText='flex:1;padding:8px;font-size:11px;min-width:70px'}
-    var idx={dash:0,packs:1,lotes:2,qrs:3,dados:4};
-    if(btns[idx[tab]]){btns[idx[tab]].className='bo';btns[idx[tab]].style.cssText='flex:1;padding:8px;font-size:11px;min-width:70px'}
-  }
-  var el=G('pr-tab-content');
-  if(tab==='dash')el.innerHTML=renderDash();
-  else if(tab==='packs')el.innerHTML=renderPacks();
-  else if(tab==='lotes')el.innerHTML=renderLotes();
-  else if(tab==='qrs')el.innerHTML=renderQrs();
-  else if(tab==='dados')el.innerHTML=renderDados()
-}
-
-function renderDash(){
-  var pr=BD.getSP();if(!pr)return'';
-  var pks=pr.packs||[],lts=pr.lotes||[],tf=0,fu=0,fr=0,pa=0,la=0;
-  for(var i=0;i<pks.length;i++){var t=pks[i].flagsTotal||pks[i].flags||0,l=pks[i].flagsLeft||0;tf+=t;fu+=t-l;fr+=l;if(pks[i].fim>Date.now())pa++}
-  for(var j=0;j<lts.length;j++){if(lts[j].estado==='ativo')la++}
-  var pc=tf>0?Math.round(fu/tf*100):0;
-  var h='<h3 style="color:#f90;margin-bottom:12px">📊 Dashboard</h3>';
-  h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">';
-  h+='<div class="card card-y" style="text-align:center;padding:14px"><div style="font-size:24px">🏴</div><div style="font-size:20px;font-weight:700;color:#f90">'+fN(tf)+'</div><div style="font-size:10px;color:#888">Flags Totais</div></div>';
-  h+='<div class="card card-v" style="text-align:center;padding:14px"><div style="font-size:24px">✅</div><div style="font-size:20px;font-weight:700;color:#4CAF50">'+fN(fu)+'</div><div style="font-size:10px;color:#888">Usadas</div></div>';
-  h+='<div class="card card-b" style="text-align:center;padding:14px"><div style="font-size:24px">📦</div><div style="font-size:20px;font-weight:700;color:#0ff">'+pa+'</div><div style="font-size:10px;color:#888">Packs Ativos</div></div>';
-  h+='<div class="card" style="text-align:center;padding:14px;border-color:#f44"><div style="font-size:24px">📱</div><div style="font-size:20px;font-weight:700;color:#f44">'+(pr.qrsGerados||0)+'</div><div style="font-size:10px;color:#888">QR Codes</div></div>';
-  h+='</div>';
-  h+='<div class="card card-y" style="padding:14px"><div style="display:flex;justify-content:space-between;font-size:12px;color:#888;margin-bottom:4px"><span>Flags utilizadas</span><span style="color:#f90;font-weight:700">'+pc+'%</span></div><div style="background:#222;border-radius:4px;height:10px;overflow:hidden"><div style="height:100%;background:linear-gradient(90deg,#f90,#f44);border-radius:4px;width:'+pc+'%"></div></div><div style="display:flex;justify-content:space-between;font-size:10px;color:#555;margin-top:4px"><span>'+fN(fu)+' usadas</span><span>'+fN(fr)+' restantes</span></div></div>';
-  h+='<div class="card" style="padding:12px"><div class="row"><div class="rl">🎫 Lotes Ativos</div><div class="rv" style="color:#0ff;font-weight:700">'+la+'</div></div><div class="row"><div class="rl">📱 QRs Validados</div><div class="rv" style="color:#4CAF50">'+(pr.qrsUsados||0)+'</div></div><div class="row"><div class="rl">📅 Registo</div><div class="rv">'+fD(pr.reg)+'</div></div></div>';
-  return h
-}
-
-function renderPacks(){
-  var pr=BD.getSP();if(!pr)return'';
-  var h='<h3 style="color:#f90;margin-bottom:12px">📦 Packs de Bandeiras</h3>';
-  var pks=pr.packs||[];
-  if(pks.length>0){
-    for(var i=0;i<pks.length;i++){
-      var pk=pks[i],t=pk.flagsTotal||pk.flags||0,l=pk.flagsLeft||0,pc=t>0?Math.round((t-l)/t*100):0,ex=pk.fim<Date.now();
-      h+='<div class="card card-y" style="padding:12px;'+(ex?'opacity:.5':'')+'"><div style="display:flex;justify-content:space-between;margin-bottom:8px"><div><span style="color:'+(ex?'#555':'#f90')+';font-weight:700;font-size:14px">'+(pk.label||pk.key||'Pack')+'</span> <span style="font-size:10px;color:#888">· '+(pk.radiusKm>=999999?'Nacional':pk.radiusKm+'km')+'</span></div><span style="font-size:11px;color:'+(ex?'#f44':'#4CAF50')+';font-weight:700">'+(ex?'❌ Expirado':'✅ Ativo')+'</span></div>';
-      h+='<div style="display:flex;justify-content:space-between;font-size:11px;color:#888;margin-bottom:3px"><span>Flags</span><span style="color:#0ff">'+fN(l)+' / '+fN(t)+'</span></div>';
-      h+='<div style="background:#222;border-radius:3px;height:6px;overflow:hidden"><div style="height:100%;background:linear-gradient(90deg,#4CAF50,#f90);width:'+pc+'%;border-radius:3px"></div></div>';
-      h+='<div style="display:flex;justify-content:space-between;font-size:10px;color:#555;margin-top:6px"><span>Início: '+fD(pk.inicio)+'</span><span>Expira: '+fD(pk.fim)+'</span></div></div>'
-    }
-  }else h+='<div class="item" style="text-align:center">Nenhum pack ativo. Compra abaixo!</div>';
-  h+='<h3 style="color:#0ff;margin-bottom:10px;margin-top:16px">🛒 Comprar Pack</h3>';
-  var keys=['MINIMO','MEDIO','GRANDE','ENORME'],emj=['🟢','🔵','🟡','🔴'];
-  for(var k=0;k<keys.length;k++){
-    var p=PACKS[keys[k]];
-    h+='<div class="card" style="padding:14px;border-color:'+(k<2?'#4CAF50':'#f90')+'"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div><span style="font-size:16px">'+emj[k]+'</span> <span style="font-weight:700;font-size:15px">'+p.label+'</span></div><span style="background:linear-gradient(135deg,#f90,#fc0);color:#000;padding:4px 10px;border-radius:6px;font-weight:800;font-size:14px">'+p.price+'€</span></div>';
-    h+='<div class="row"><div class="rl">🏴 Flags</div><div class="rv" style="color:#0ff;font-weight:700">'+fN(p.flags)+'</div></div>';
-    h+='<div class="row"><div class="rl">📍 Raio</div><div class="rv">'+(p.radiusKm>=999999?'🌍 Nacional':p.radiusKm+'km')+'</div></div>';
-    h+='<div class="row"><div class="rl">🎫 Lotes máx.</div><div class="rv">'+p.maxLots+'</div></div>';
-    h+='<div class="row"><div class="rl">📅 Duração</div><div class="rv">'+p.durDias+' dias</div></div>';
-    h+='<button class="bo bb" onclick="comprarPack(\''+keys[k]+'\')" style="margin-top:8px;padding:12px;font-size:14px">🛒 COMPRAR</button></div>'
-  }
-  return h
-}
-
-function comprarPack(key){
-  var pack=PACKS[key];if(!pack)return;
-  var pr=BD.getSP();if(!pr)return;
-  if(!pr.packs)pr.packs=[];
-  var agora=Date.now();
-  pr.packs.push({id:'PK_'+Math.random().toString(36).slice(2,8).toUpperCase(),key:pack.key,label:pack.label,price:pack.price,flags:pack.flags,flagsTotal:pack.flags,flagsLeft:pack.flags,radiusKm:pack.radiusKm,maxLots:pack.maxLots,inicio:agora,fim:agora+pack.durDias*864e5,criadoEm:agora});
-  salvarPR(pr);mostrarNotif('📦','Pack '+pack.label+' comprado!',fN(pack.flags)+' flags');renderPRCard();prTab('packs')
-}
-
-function renderLotes(){
-  var pr=BD.getSP();if(!pr)return'';
-  var h='<h3 style="color:#f90;margin-bottom:12px">🎫 Lotes de Prémios</h3>';
-  var lts=pr.lotes||[];
-  if(lts.length>0){
-    for(var i=0;i<lts.length;i++){
-      var l=lts[i],at=l.estado==='ativo',pc=l.n>0?Math.round((l.usados||0)/l.n*100):0;
-      h+='<div class="card'+(at?' card-y':'')+'" style="padding:12px;'+(at?'':'opacity:.6')+'"><div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="font-weight:700;color:'+(at?'#f90':'#555')+'">'+l.premio+'</span><span style="font-size:11px;color:'+(at?'#4CAF50':'#f44')+'">'+(at?'✅ Ativo':'⏸ Inativo')+'</span></div>';
-      if(l.descricao)h+='<div style="font-size:12px;color:#888;margin-bottom:6px">'+l.descricao+'</div>';
-      h+='<div class="row"><div class="rl">🎁 Prémios</div><div class="rv">'+(l.usados||0)+' / '+l.n+'</div></div>';
-      h+='<div style="background:#222;border-radius:3px;height:5px;overflow:hidden;margin:4px 0"><div style="height:100%;background:#f90;width:'+pc+'%;border-radius:3px"></div></div>';
-      h+='<div class="row"><div class="rl">📅 Expira</div><div class="rv">'+fD(l.expiracao)+'</div></div>';
-      h+='<div style="display:flex;gap:6px;margin-top:8px">';
-      if(at)h+='<button class="bsair" style="flex:1;padding:6px" onclick="toggleLote('+i+')">⏸ Pausar</button>';
-      else h+='<button class="bv" style="flex:1;padding:6px;font-size:12px" onclick="toggleLote('+i+')">▶ Ativar</button>';
-      h+='<button class="bsair" style="padding:6px 10px;font-size:11px" onclick="apagarLote('+i+')">🗑</button></div></div>'
-    }
-  }else h+='<div class="item" style="text-align:center">Nenhum lote criado.</div>';
-  h+='<div class="card card-b" style="padding:14px;margin-top:14px"><h3 style="color:#0ff;margin-bottom:10px">➕ Criar Lote</h3>';
-  h+='<div class="lbl">🎁 Nome do Prémio <em>*</em></div><input id="nl-premio" placeholder="Ex: 10% desconto, café grátis...">';
-  h+='<div class="lbl">📝 Descrição</div><input id="nl-desc" placeholder="Detalhes (opcional)">';
-  h+='<div class="g2"><div><div class="lbl">🔢 Quantidade <em>*</em></div><input type="number" id="nl-qtd" placeholder="50" min="1"></div><div><div class="lbl">📅 Duração (dias)</div><input type="number" id="nl-dias" placeholder="30" min="1"></div></div>';
-  h+='<button class="bo bb" onclick="criarLote()" style="margin-top:8px;padding:12px;font-size:14px">✅ CRIAR LOTE</button></div>';
-  return h
-}
-
-function criarLote(){
-  var premio=V('nl-premio'),desc=V('nl-desc'),qtd=parseInt(V('nl-qtd'))||0,dias=parseInt(V('nl-dias'))||30;
-  if(!premio){mostrarNotif('❌','Nome obrigatório!','');return}
-  if(qtd<1){mostrarNotif('❌','Quantidade mín. 1','');return}
-  var pr=BD.getSP();if(!pr)return;
-  if(!pr.lotes)pr.lotes=[];
-  var agora=Date.now();
-  pr.lotes.push({id:'LT_'+Math.random().toString(36).slice(2,8).toUpperCase(),premio:premio,descricao:desc,n:qtd,usados:0,estado:'ativo',criadoEm:agora,expiracao:agora+dias*864e5});
-  salvarPR(pr);mostrarNotif('🎫','Lote criado!',premio);renderPRCard();prTab('lotes')
-}
-function toggleLote(i){var pr=BD.getSP();if(!pr||!pr.lotes||!pr.lotes[i])return;pr.lotes[i].estado=pr.lotes[i].estado==='ativo'?'inativo':'ativo';salvarPR(pr);prTab('lotes')}
-function apagarLote(i){var pr=BD.getSP();if(!pr||!pr.lotes)return;if(!confirm('Apagar este lote?'))return;pr.lotes.splice(i,1);salvarPR(pr);renderPRCard();prTab('lotes')}
-
-function renderQrs(){
-  var pr=BD.getSP();if(!pr)return'';
-  var h='<h3 style="color:#f90;margin-bottom:12px">📱 QR Codes</h3>';
-  var jogs=BD.jogs(),qrs=[];
-  for(var i=0;i<jogs.length;i++){
-    var q=jogs[i].qrsGerados||[];
-    for(var j=0;j<q.length;j++){if(q[j].emp===pr.em||q[j].ne===pr.ne)qrs.push({jog:jogs[i].nm,qr:q[j]})}
-  }
-  h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">';
-  h+='<div class="card card-y" style="text-align:center;padding:12px"><div style="font-size:20px;font-weight:700;color:#f90">'+qrs.length+'</div><div style="font-size:10px;color:#888">Gerados</div></div>';
-  h+='<div class="card card-v" style="text-align:center;padding:12px"><div style="font-size:20px;font-weight:700;color:#4CAF50">'+(pr.qrsUsados||0)+'</div><div style="font-size:10px;color:#888">Validados</div></div></div>';
-  h+='<div class="card card-b" style="padding:14px;margin-bottom:14px"><h3 style="color:#0ff;margin-bottom:8px">🔍 Validar QR</h3>';
-  h+='<div class="lbl">Código do QR (o jogador mostra-te)</div>';
-  h+='<input id="pr-qr-val" placeholder="Ex: QR-CC-A1B2C3" style="text-align:center;font-size:16px;letter-spacing:2px">';
-  h+='<button class="bv bb" onclick="validarQR()" style="margin-top:6px;padding:12px;font-size:14px">✅ VALIDAR</button>';
-  h+='<div id="pr-qr-res" style="margin-top:8px"></div></div>';
-  if(qrs.length>0){
-    h+='<h3 style="color:#888;margin-bottom:8px;font-size:12px">Últimos QRs</h3>';
-    for(var k=qrs.length-1;k>=Math.max(0,qrs.length-15);k--){
-      var it=qrs[k];
-      h+='<div class="card" style="padding:10px"><div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:'+(it.qr.usado?'#555':'#0ff')+';font-weight:700;font-size:12px">'+(it.qr.id||'---')+'</span><span style="font-size:10px;color:#888">'+fD(it.qr.data)+'</span></div>';
-      h+='<div class="row"><div class="rl">👤</div><div class="rv">'+it.jog+'</div></div>';
-      h+='<div class="row"><div class="rl">🎁</div><div class="rv" style="color:#f90">'+(it.qr.premio||'-')+'</div></div>';
-      if(it.qr.usado)h+='<div style="font-size:10px;color:#555;margin-top:4px">✅ Validado em '+fD(it.qr.usadoEm)+'</div>';
-      h+='</div>'
-    }
-  }else h+='<div class="item" style="text-align:center">Nenhum QR gerado.<br><span style="color:#888;font-size:11px">Jogadores precisam '+CFG.QR_N+' bandeiras para ganhar QR.</span></div>';
-  return h
-}
-
-function validarQR(){
-  var cod=V('pr-qr-val').toUpperCase(),res=G('pr-qr-res');
-  if(!cod){res.innerHTML='<div class="msg e">❌ Insere o código!</div>';return}
-  var pr=BD.getSP();if(!pr)return;
-  var jogs=BD.jogs(),enc=null,ji=-1,qi=-1;
-  for(var i=0;i<jogs.length;i++){
-    var q=jogs[i].qrsGerados||[];
-    for(var j=0;j<q.length;j++){if(q[j].id&&q[j].id.toUpperCase()===cod){enc=q[j];ji=i;qi=j;break}}
-    if(enc)break
-  }
-  if(!enc){res.innerHTML='<div class="msg e">❌ QR não encontrado!</div>';return}
-  if(enc.usado){res.innerHTML='<div class="msg e">⚠️ Já utilizado em '+fD(enc.usadoEm)+'</div>';return}
-  enc.usado=true;enc.usadoEm=Date.now();
-  jogs[ji].qrsGerados[qi]=enc;BD.saveJ(jogs);
-  pr.qrsUsados=(pr.qrsUsados||0)+1;salvarPR(pr);
-  res.innerHTML='<div class="msg s">✅ Validado!<br>👤 '+jogs[ji].nm+'<br>🎁 '+(enc.premio||'-')+'</div>';
-  mostrarNotif('✅','QR Validado!',enc.premio||'');renderPRCard()
-}
-
-function renderDados(){
-  var pr=BD.getSP();if(!pr)return'';
-  var h='<h3 style="color:#f90;margin-bottom:12px">⚙️ Dados da Empresa</h3>';
-  h+='<div class="card card-y" style="padding:14px">';
-  h+='<div class="row"><div class="rl">🏢 Nome</div><div class="rv" style="color:#f90;font-weight:700">'+pr.ne+'</div></div>';
-  h+='<div class="row"><div class="rl">📋 NIF</div><div class="rv">'+(pr.nif||'-')+'</div></div>';
-  h+='<div class="row"><div class="rl">🏷 Setor</div><div class="rv">'+(pr.ativ||'-')+'</div></div>';
-  h+='<div class="row"><div class="rl">📍 Morada</div><div class="rv">'+(pr.rua||'-')+'</div></div>';
-  h+='<div class="row"><div class="rl">📮 Cód.Postal</div><div class="rv">'+(pr.cp||'-')+'</div></div>';
-  h+='<div class="row"><div class="rl">🏙 Local</div><div class="rv">'+(pr.loc||'-')+(pr.dist?', '+pr.dist:'')+'</div></div>';
-  h+='<div class="row"><div class="rl">📞 Tel.</div><div class="rv">'+(pr.tel||'-')+'</div></div>';
-  h+='<div class="row"><div class="rl">📧 Email</div><div class="rv" style="color:#0ff">'+(pr.em||'-')+'</div></div>';
-  h+='<div class="row"><div class="rl">👤 Resp.</div><div class="rv">'+(pr.resp||'-')+'</div></div>';
-  h+='<div class="row"><div class="rl">📅 Registo</div><div class="rv">'+fD(pr.reg)+'</div></div></div>';
-  h+='<div class="card card-b" style="padding:14px;margin-top:12px"><h3 style="color:#0ff;margin-bottom:8px">🔑 Alterar Senha</h3>';
-  h+='<div class="lbl">Senha Atual</div><div class="pw-wrap"><input type="password" id="pr-pw-a" placeholder="Senha atual"><button class="pw-toggle" onclick="tPW(\'pr-pw-a\',this)">👁</button></div>';
-  h+='<div class="lbl" style="margin-top:8px">Nova Senha</div><div class="pw-wrap"><input type="password" id="pr-pw-n" placeholder="Nova (mín. 4)"><button class="pw-toggle" onclick="tPW(\'pr-pw-n\',this)">👁</button></div>';
-  h+='<div class="lbl" style="margin-top:8px">Confirmar</div><div class="pw-wrap"><input type="password" id="pr-pw-c" placeholder="Repete"><button class="pw-toggle" onclick="tPW(\'pr-pw-c\',this)">👁</button></div>';
-  h+='<button class="bv bb" onclick="alterarSenhaPR()" style="margin-top:8px;padding:12px">💾 ALTERAR</button><div id="pr-pw-msg" style="margin-top:6px"></div></div>';
-  return h
-}
-
-function alterarSenhaPR(){
-  var a=G('pr-pw-a').value,n=G('pr-pw-n').value,c=G('pr-pw-c').value,r=G('pr-pw-msg');
-  var pr=BD.getSP();if(!pr)return;
-  if(!a){r.innerHTML='<div class="msg e">❌ Senha atual!</div>';return}
-  if(a!==pr.pw&&a!==PASSE){r.innerHTML='<div class="msg e">❌ Incorreta!</div>';return}
-  if(!n||n.length<4){r.innerHTML='<div class="msg e">❌ Mín. 4!</div>';return}
-  if(n!==c){r.innerHTML='<div class="msg e">❌ Senhas!</div>';return}
-  pr.pw=n;salvarPR(pr);BD.setPwP(n);
-  r.innerHTML='<div class="msg s">✅ Alterada!</div>';
-  G('pr-pw-a').value=G('pr-pw-n').value=G('pr-pw-c').value='';
-  mostrarNotif('✅','Senha alterada!','')
-}
-
-function salvarPR(pr){
-  var l=BD.emps(),found=false;
-  for(var i=0;i<l.length;i++){
-    if(l[i].em===pr.em||(l[i].nif&&l[i].nif===pr.nif)){l[i]=pr;found=true;break}
-  }
-  if(!found)l.push(pr);
-  BD.saveE(l);BD.setSP(pr)
-}
-
-// ================================================================
-// MOTOR DE JOGO COM LIGAÇÃO REAL AO SISTEMA PR
-// ================================================================
-var mapaJ=null,marcAvt=null,bandsNoMapa=[],bandMaisProx=null;
-var jogoOk=false,animF=null,animT=0,ultimoF=0,notifTmr=null;
-var dirs={c:false,b:false,e:false,d:false};
-var tamBtn=46;
-var AV={lat:39.5,lng:-8.0,dir:1,andando:false};
-var jogAtual=null;
-
-function iniciarJogo(){
-  jogAtual=BD.getSJ();
-  if(!jogAtual){ir('p-login-j');return}
-  atualizarHUDJogo();atualizarPainelSk();iniciarTicker();
-  if(jogoOk){setTimeout(function(){if(mapaJ){mapaJ.invalidateSize();atualizarCirculo()}},200);return}
-  jogoOk=true;
-  mapaJ=L.map('mapa',{center:[AV.lat,AV.lng],zoom:18,zoomControl:true,attributionControl:false,dragging:false,touchZoom:true,scrollWheelZoom:true,doubleClickZoom:false,keyboard:false});
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{maxZoom:20}).addTo(mapaJ);
-  mapaJ.on('zoom',function(){atualizarCirculo()});
-  var ic=L.divIcon({className:'',html:'<div style="width:14px;height:14px;background:#4CAF50;border-radius:50%;border:2px solid #fff;box-shadow:0 0 10px #4CAF50"></div>',iconSize:[14,14],iconAnchor:[7,7]});
-  marcAvt=L.marker([AV.lat,AV.lng],{icon:ic,zIndexOffset:1e3}).addTo(mapaJ);
-  iniciarGPS();setTimeout(spawnarBandeiras,700);arrastarCtrl();
-  animF=requestAnimationFrame(loopJogo)
-}
-
-function pararJogo(){
-  if(animF){cancelAnimationFrame(animF);animF=null}
-  jogoOk=false;
-  if(mapaJ)try{mapaJ.remove()}catch(e){}
-  mapaJ=null;bandsNoMapa=[];marcAvt=null;jogAtual=null
-}
-
-function iniciarGPS(){
-  if(!navigator.geolocation){G('gps-txt').innerText='❌ GPS indisponível';return}
-  navigator.geolocation.getCurrentPosition(
-    function(p){
-      AV.lat=p.coords.latitude;AV.lng=p.coords.longitude;
-      if(mapaJ)mapaJ.setView([AV.lat,AV.lng],18,{animate:false});
-      if(marcAvt)marcAvt.setLatLng([AV.lat,AV.lng]);
-      G('gps-txt').innerText='✅ GPS: '+AV.lat.toFixed(4)+', '+AV.lng.toFixed(4);
-      for(var i=0;i<bandsNoMapa.length;i++){if(bandsNoMapa[i].m&&mapaJ)try{mapaJ.removeLayer(bandsNoMapa[i].m)}catch(e){}}
-      bandsNoMapa=[];spawnarBandeiras()
+function defState() {
+  return {
+    player: {
+      name:'', email:'', password:'', contact:'', addr:'', city:'', district:'',
+      avatarMode:'male', avatarPhoto:'',
+      energy:100, zapFlags:0, prFlags:0, totalFlags:0, skill:1, vision:5,
+      ppPR:{}, tsPR:{}, qrs:[]
     },
-    function(){G('gps-txt').innerText='⚠️ GPS indisponível — usa joystick'},
-    {enableHighAccuracy:true,timeout:8e3}
-  )
+    players: [],
+    prs: []
+  };
 }
 
-function spawnarBandeiras(){
-  if(!mapaJ)return;
-  var n=CFG.N_BAND-bandsNoMapa.filter(function(b){return!b.apanhada}).length;
-  // Obter empresas com packs ativos
-  var empsComPacks=BD.emps().filter(function(e){return(e.packs||[]).some(function(p){return p.flagsLeft>0&&p.fim>Date.now()})});
+function genId(prefix) { return prefix+'_'+Math.random().toString(36).slice(2,10).toUpperCase(); }
+function genBranchCode() { return Math.random().toString(36).slice(2,8).toUpperCase(); }
+function makeShort(name) { return (name||'').split(' ').map(w=>w[0]||'').join('').slice(0,3).toUpperCase() || 'XX'; }
 
-  for(var i=0;i<n;i++){
-    var a=Math.random()*2*Math.PI,d=15+Math.random()*CFG.SPAWN_RAIO;
-    var la=(d/111e3)*Math.cos(a),ln=(d/(111e3*Math.cos(AV.lat*Math.PI/180)))*Math.sin(a);
-    var tp='vazia',empRef=null,loteRef=null;
-    var r=Math.random();
-    if(r<0.45)tp='energia';
-    else if(r<0.72&&empsComPacks.length>0){
-      tp='pr';
-      empRef=empsComPacks[Math.floor(Math.random()*empsComPacks.length)];
-      var lotesAtivos=(empRef.lotes||[]).filter(function(l){return l.estado==='ativo'&&l.expiracao>Date.now()});
-      loteRef=lotesAtivos.length>0?lotesAtivos[Math.floor(Math.random()*lotesAtivos.length)]:null
+// ===== UTILITÁRIOS =====
+function G(id) { return document.getElementById(id); }
+function setMsg(id, txt, isErr) {
+  const el = G(id);
+  if (!el) return;
+  el.textContent = txt;
+  el.className = 'auth-msg' + (isErr ? ' err' : '');
+}
+
+// ===== NAVEGAÇÃO =====
+function showAuth(type) {
+  actType = type;
+  G('landing').classList.add('hidden');
+  G('auth-screen').classList.remove('hidden');
+  G('pr-screen').classList.add('hidden');
+  G('game-screen').classList.add('hidden');
+  G('auth-title').textContent = type === 'JG' ? '🎮 JOGADOR' : '🏢 EMPRESA / PR';
+  showTab('reg');
+}
+
+function showTab(t) {
+  G('tab-reg').classList.toggle('active', t === 'reg');
+  G('tab-log').classList.toggle('active', t === 'log');
+  if (actType === 'JG') {
+    G('jg-reg').classList.toggle('hidden', t !== 'reg');
+    G('jg-log').classList.toggle('hidden', t !== 'log');
+    G('pr-reg').classList.add('hidden');
+    G('pr-log').classList.add('hidden');
+  } else {
+    G('pr-reg').classList.toggle('hidden', t !== 'reg');
+    G('pr-log').classList.toggle('hidden', t !== 'log');
+    G('jg-reg').classList.add('hidden');
+    G('jg-log').classList.add('hidden');
+  }
+}
+
+function goLanding() {
+  if (wId !== null) { navigator.geolocation.clearWatch(wId); wId = null; }
+  ['landing','auth-screen','game-screen','pr-screen','mode-modal','flag-modal','sidep','offctrl'].forEach(id => {
+    const el = G(id);
+    if (el) {
+      if (id === 'landing') el.classList.remove('hidden');
+      else el.classList.add('hidden');
     }
-    bandsNoMapa.push({lat:AV.lat+la,lng:AV.lng+ln,tipo:tp,empId:empRef?empRef.em:null,loteId:loteRef?loteRef.id:null,apanhada:false,m:null,visivel:false})
-  }
-  atualizarVisibilidade()
+  });
 }
 
-function corBanda(b){
-  if(b.tipo==='energia')return{cor:'#0ff',emj:'⚡'};
-  if(b.tipo==='pr'){
-    // Cor da empresa se existir
-    var emps=BD.emps();
-    for(var i=0;i<emps.length;i++){if(emps[i].em===b.empId&&emps[i].color)return{cor:emps[i].color,emj:'🏴'}}
-    return{cor:'#ff0',emj:'🏴'}
-  }
-  return{cor:'#555',emj:'🏴'}
+// ===== REGISTO JOGADOR =====
+function regPlayer() {
+  const name = G('r-name').value.trim();
+  const email = G('r-email').value.trim().toLowerCase();
+  const pass = G('r-pass').value;
+  const pass2 = G('r-pass2').value;
+  const contact = G('r-contact').value.trim();
+  const addr = G('r-addr').value.trim();
+  const city = G('r-city').value.trim();
+  const district = G('r-district').value;
+
+  if (!name) return setMsg('jg-reg-msg','❌ Nome obrigatório.',true);
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return setMsg('jg-reg-msg','❌ E-mail inválido.',true);
+  if (!pass || pass.length < 4) return setMsg('jg-reg-msg','❌ Senha mín. 4 caracteres.',true);
+  if (pass !== pass2) return setMsg('jg-reg-msg','❌ Senhas não coincidem.',true);
+  if (!state.players) state.players = [];
+  if (state.players.find(p => p.email === email)) return setMsg('jg-reg-msg','❌ E-mail já registado.',true);
+
+  const player = {
+    name, email, password:pass, contact, addr, city, district,
+    avatarMode:'male', avatarPhoto:'',
+    energy:100, zapFlags:0, prFlags:0, totalFlags:0, skill:1, vision:5,
+    ppPR:{}, tsPR:{}, qrs:[], reg:Date.now()
+  };
+  state.players.push(player);
+  state.player = {...player};
+  saveState();
+  actType = 'JG';
+  enterGame();
 }
 
-function atualizarVisibilidade(){
-  if(!mapaJ)return;
-  var v=jogAtual?(jogAtual.visao||5):5;
-  for(var i=0;i<bandsNoMapa.length;i++){
-    var b=bandsNoMapa[i];
-    if(b.apanhada)continue;
-    var d=calcDist(AV.lat,AV.lng,b.lat,b.lng);
-    if(d<=v&&!b.visivel){
-      b.visivel=true;
-      var info=corBanda(b);
-      var ic=L.divIcon({className:'',html:'<div style="background:'+info.cor+';color:#000;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;border:2px solid #fff;cursor:pointer;box-shadow:0 0 10px '+info.cor+'">'+info.emj+'</div>',iconSize:[26,26],iconAnchor:[13,13]});
-      b.m=L.marker([b.lat,b.lng],{icon:ic}).addTo(mapaJ);
-      (function(banda){banda.m.on('click',function(){tentarApanhar(banda)})})(b)
-    }else if(d>v&&b.visivel&&b.m){
-      b.visivel=false;try{mapaJ.removeLayer(b.m)}catch(e){}b.m=null
-    }
-  }
+// ===== LOGIN JOGADOR =====
+function loginPlayer() {
+  const email = G('l-email').value.trim().toLowerCase();
+  const pass = G('l-pass').value;
+  if (!email) return setMsg('jg-log-msg','❌ E-mail obrigatório.',true);
+  if (!pass) return setMsg('jg-log-msg','❌ Senha obrigatória.',true);
+  const pl = (state.players||[]).find(p => p.email === email && p.password === pass);
+  if (!pl) return setMsg('jg-log-msg','❌ Credenciais incorretas.',true);
+  state.player = {...pl};
+  saveState();
+  actType = 'JG';
+  enterGame();
 }
 
-function verificarBandeiras(){
-  var md=1/0;bandMaisProx=null;
-  for(var i=0;i<bandsNoMapa.length;i++){
-    var b=bandsNoMapa[i];
-    if(b.apanhada||!b.visivel)continue;
-    var d=calcDist(AV.lat,AV.lng,b.lat,b.lng);
-    if(d<md){md=d;bandMaisProx=b}
-    if(d<=4)apanharBanda(b)
-  }
-  var av=G('aviso-ap'),ca=G('circ-alc');
-  if(bandMaisProx&&md<=CFG.AVISO_RAIO&&!bandMaisProx.apanhada){
-    av.style.display='block';
-    av.style.background=md<=CFG.APANHAR_RAIO?'rgba(76,175,80,.95)':'rgba(255,200,0,.95)';
-    av.innerText=md<=CFG.APANHAR_RAIO?'👆 APANHAR!':'📍 '+Math.round(md)+'m';
-    var rPx=Math.max(20,distPx(md));
-    ca.style.display='block';ca.style.width=rPx*2+'px';ca.style.height=rPx*2+'px';
-    ca.style.borderColor=md<=CFG.APANHAR_RAIO?'#4CAF50':'#ff0'
-  }else{av.style.display='none';ca.style.display='none'}
+// ===== REGISTO EMPRESA =====
+function regPR() {
+  const name = G('pr-r-name').value.trim();
+  const nif = G('pr-r-nif').value.trim();
+  const email = G('pr-r-email').value.trim().toLowerCase();
+  const pass = G('pr-r-pass').value;
+  const pass2 = G('pr-r-pass2').value;
+  const contact = G('pr-r-contact').value.trim();
+  const addr = G('pr-r-addr').value.trim();
+  const city = G('pr-r-city').value.trim();
+  const district = G('pr-r-district').value;
+  const postal = G('pr-r-postal').value.trim();
+
+  if (!name) return setMsg('pr-reg-msg','❌ Nome obrigatório.',true);
+  if (!nif || nif.length !== 9 || !/^\d+$/.test(nif)) return setMsg('pr-reg-msg','❌ NIF inválido (9 dígitos).',true);
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return setMsg('pr-reg-msg','❌ E-mail inválido.',true);
+  if (!pass || pass.length < 4) return setMsg('pr-reg-msg','❌ Senha mín. 4 caracteres.',true);
+  if (pass !== pass2) return setMsg('pr-reg-msg','❌ Senhas não coincidem.',true);
+  if (!contact) return setMsg('pr-reg-msg','❌ Contacto obrigatório.',true);
+  if (!addr) return setMsg('pr-reg-msg','❌ Morada obrigatória.',true);
+  if (!city) return setMsg('pr-reg-msg','❌ Localidade obrigatória.',true);
+  if (!district) return setMsg('pr-reg-msg','❌ Distrito obrigatório.',true);
+  if (!postal) return setMsg('pr-reg-msg','❌ Código postal obrigatório.',true);
+  if (!state.prs) state.prs = [];
+  if (state.prs.find(p => p.nif === nif)) return setMsg('pr-reg-msg','❌ NIF já registado.',true);
+  if (state.prs.find(p => p.email === email)) return setMsg('pr-reg-msg','❌ E-mail já registado.',true);
+
+  const colors = ['#FF4D4F','#1677FF','#52C41A','#FADB14','#722ED1','#FA8C16'];
+  const pr = {
+    id: genId('PR'),
+    branchCode: genBranchCode(), // código para convidar filiais
+    name, nif, email, password:pass, contact, addr, city, district, postal,
+    short: makeShort(name),
+    color: colors[Math.floor(Math.random()*colors.length)],
+    lat: 41.1496, lng: -8.6109,
+    packages: [],
+    lotes: [],
+    campaign: {rewardsEnabled:true, rewardText:'Desconto especial', promoBudget:200, rewardsGiven:0},
+    isBranch: false, parentId: null,
+    branches: [], // IDs das filiais
+    billing: 'self',
+    active: true,
+    createdAt: Date.now()
+  };
+  state.prs.push(pr);
+  saveState();
+  actType = 'PR';
+  curPRId = pr.id;
+  enterPR(pr.id);
 }
 
-function tentarApanhar(b){var d=calcDist(AV.lat,AV.lng,b.lat,b.lng);if(d<=CFG.APANHAR_RAIO)apanharBanda(b);else mostrarNotif('📍',Math.round(d)+'m','Máx. '+CFG.APANHAR_RAIO+'m')}
-function apanharManual(){if(bandMaisProx&&!bandMaisProx.apanhada)tentarApanhar(bandMaisProx)}
+// ===== LOGIN EMPRESA =====
+function loginPR() {
+  const id = G('pr-l-id').value.trim().toLowerCase();
+  const pass = G('pr-l-pass').value;
+  const bCode = G('pr-l-code').value.trim().toUpperCase();
 
-function apanharBanda(b){
-  if(b.apanhada)return;
-  b.apanhada=true;b.visivel=false;
-  try{var el=b.m?b.m.getElement():null;if(el){el.style.transition='all .3s';el.style.transform='scale(0)';el.style.opacity='0'}}catch(e){}
-  setTimeout(function(){try{if(mapaJ&&b.m)mapaJ.removeLayer(b.m)}catch(e){}},300);
+  if (!id) return setMsg('pr-log-msg','❌ E-mail ou NIF obrigatório.',true);
+  if (!pass) return setMsg('pr-log-msg','❌ Senha obrigatória.',true);
 
-  jogAtual.fl=(jogAtual.fl||0)+1;
-  var h='';
+  let pr = null;
 
-  if(b.tipo==='energia'){
-    jogAtual.en=Math.min(100,(jogAtual.en||100)+5);
-    jogAtual.flEnerg=(jogAtual.flEnerg||0)+1;
-    verificarSkill();
-    h='<div style="text-align:center;padding:8px"><div style="font-size:32px;margin-bottom:8px">⚡</div><h3 style="color:#0ff;margin-bottom:6px">Energia!</h3><p style="color:#4CAF50;font-size:16px;font-weight:700">+5%</p></div>';
-    mostrarNotif('⚡','+5% Energia','Skill '+(jogAtual.sk||0))
+  if (bCode) {
+    // Login como filial: encontrar empresa mãe com este branchCode
+    const mae = state.prs.find(p => p.branchCode === bCode && !p.isBranch);
+    if (!mae) return setMsg('pr-log-msg','❌ Código de filial inválido.',true);
+    pr = state.prs.find(p => (p.email === id || p.nif === id) && p.password === pass && p.parentId === mae.id);
+    if (!pr) return setMsg('pr-log-msg','❌ Credenciais de filial incorretas.',true);
+  } else {
+    pr = state.prs.find(p => (p.email === id || p.nif === id) && p.password === pass);
+    if (!pr) return setMsg('pr-log-msg','❌ Credenciais incorretas.',true);
+  }
 
-  }else if(b.tipo==='pr'&&b.empId){
-    // Bandeira PR real ligada a empresa
-    var emps=BD.emps();
-    var empIdx=-1;
-    for(var i=0;i<emps.length;i++){if(emps[i].em===b.empId){empIdx=i;break}}
+  saveState();
+  actType = 'PR';
+  curPRId = pr.id;
+  enterPR(pr.id);
+}
 
-    if(empIdx>=0){
-      var empresa=emps[empIdx];
-      // Decrementar flags do pack
-      for(var pi=0;pi<(empresa.packs||[]).length;pi++){
-        if(empresa.packs[pi].flagsLeft>0&&empresa.packs[pi].fim>Date.now()){
-          empresa.packs[pi].flagsLeft--;break
+// ===== ENTRAR JOGO =====
+function enterGame() {
+  G('auth-screen').classList.add('hidden');
+  G('game-screen').classList.remove('hidden');
+  G('pr-screen').classList.add('hidden');
+  initMap();
+  G('mode-modal').classList.remove('hidden');
+}
+
+// ===== ENTRAR PR =====
+function enterPR(prId) {
+  G('auth-screen').classList.add('hidden');
+  G('game-screen').classList.add('hidden');
+  G('pr-screen').classList.remove('hidden');
+  curPRId = prId;
+  prTabAtual = 'overview';
+  renderPR(prId);
+}
+
+// ===== MAPA =====
+function initMap() {
+  if (map) return;
+  map = L.map('map', {zoomControl:true,dragging:true,scrollWheelZoom:true,doubleClickZoom:false,touchZoom:true,boxZoom:false,keyboard:false})
+    .setView([41.1496,-8.6109],18);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{maxZoom:20,attribution:'© OSM'}).addTo(map);
+  map.on('move zoom',updFog);
+}
+
+function pIcon() {
+  let i = state.player.avatarMode==='male'?'♂':state.player.avatarMode==='female'?'♀':'JG';
+  if (state.player.avatarMode==='photo'&&state.player.avatarPhoto)
+    i='<img src="'+state.player.avatarPhoto+'" alt="av"/>';
+  return L.divIcon({className:'',html:'<div class="pm">'+i+'</div>',iconSize:[28,28],iconAnchor:[14,14]});
+}
+
+function fIcon(f) {
+  const c = f.type==='ZAP'?'fc-z':f.promo?'fc-r':'fc-p';
+  return L.divIcon({className:'',html:'<div class="fm"><div class="fs"></div><div class="fbn '+c+'"></div></div>',iconSize:[34,34],iconAnchor:[17,28]});
+}
+
+function updPos(lat,lng,fromMv,ctr) {
+  cPos = {lat,lng};
+  if (lastPE && fromMv) {
+    const d = distM(lastPE.lat,lastPE.lng,lat,lng);
+    if (d > 0.5) { mBuf+=d; while(mBuf>=20){mBuf-=20;state.player.energy=Math.max(0,state.player.energy-1);} }
+  }
+  lastPE = {lat,lng};
+  if (!pMark) pMark=L.marker([lat,lng],{icon:pIcon()}).addTo(map);
+  else { pMark.setLatLng([lat,lng]); pMark.setIcon(pIcon()); }
+  if (!vCirc) vCirc=L.circle([lat,lng],{radius:state.player.vision,color:'#0f0',fillOpacity:.05,weight:1}).addTo(map);
+  else { vCirc.setLatLng([lat,lng]); vCirc.setRadius(state.player.vision); }
+  if (ctr) map.setView([lat,lng],18);
+  updFog(); refF(false); updVF(); renTop(); renPanelIf(); saveState();
+}
+
+function updFog() {
+  if (!map||!cPos) return;
+  const p = map.latLngToContainerPoint([cPos.lat,cPos.lng]);
+  const f = G('fog-overlay');
+  f.style.setProperty('--fog-x',p.x+'px');
+  f.style.setProperty('--fog-y',p.y+'px');
+  f.style.setProperty('--fog-r',Math.max(55,state.player.vision*18)+'px');
+}
+
+function distM(a1,l1,a2,l2) {
+  const R=6371e3,p1=a1*Math.PI/180,p2=a2*Math.PI/180,dP=(a2-a1)*Math.PI/180,dL=(l2-l1)*Math.PI/180;
+  const a=Math.sin(dP/2)**2+Math.cos(p1)*Math.cos(p2)*Math.sin(dL/2)**2;
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+
+function cVis(z) {
+  if (z<=0) return 5;
+  if (z<=100000) return +(5+45*Math.pow(z/100000,.72)).toFixed(2);
+  return +(50+50*Math.pow(Math.min(1,(z-100000)/900000),.82)).toFixed(2);
+}
+
+function cSkl(z) {
+  if(z<10)return 1;if(z<50)return 2;if(z<100)return 3;if(z<250)return 4;
+  if(z<500)return 5;if(z<1000)return 6;if(z<2500)return 7;if(z<5000)return 8;
+  if(z<10000)return 9;return 10+Math.floor(Math.log10(z));
+}
+
+function uSV() { state.player.skill=cSkl(state.player.zapFlags); state.player.vision=cVis(state.player.zapFlags); }
+function syncPlayer() { const i=state.players.findIndex(p=>p.email===state.player.email);if(i>=0)state.players[i]={...state.player}; }
+
+// ===== BANDEIRAS =====
+function rOff(lat,lng,r) {
+  const rad=r/111320,u=Math.random(),v=Math.random(),w=rad*Math.sqrt(u),t=2*Math.PI*v;
+  return {lat:lat+w*Math.sin(t),lng:lng+(w*Math.cos(t))/Math.cos(lat*Math.PI/180)};
+}
+
+function refF(force) {
+  if (!cPos) return;
+  const n=Date.now(); let s=force;
+  if (!lastFC) s=true;
+  if (!s&&n-lastFT>15000) s=true;
+  if (!s&&lastFC&&distM(lastFC.lat,lastFC.lng,cPos.lat,cPos.lng)>10) s=true;
+  if (!s) return;
+  clearF();
+  // Bandeira ZAP
+  const p=rOff(cPos.lat,cPos.lng,10);
+  allF.push({id:genId('F'),type:'ZAP',lat:p.lat,lng:p.lng,marker:null});
+  // Bandeiras PR
+  (state.prs||[]).forEach(pr=>{
+    (pr.packages||[]).forEach(pk=>{
+      if (pk.flagsLeft>0) {
+        const d=distM(pr.lat,pr.lng,cPos.lat,cPos.lng);
+        const mr=pk.radiusKm===Infinity?999999:pk.radiusKm*1000;
+        if (d<=mr) {
+          const p2=rOff(cPos.lat,cPos.lng,15);
+          allF.push({id:genId('F'),type:'PR',prId:pr.id,packageId:pk.id,lat:p2.lat,lng:p2.lng,marker:null,promo:Math.random()<.1});
         }
       }
+    });
+  });
+  lastFC={...cPos}; lastFT=n;
+}
 
-      // Progresso no lote
-      var loteIdx=-1;
-      if(b.loteId){
-        for(var li=0;li<(empresa.lotes||[]).length;li++){
-          if(empresa.lotes[li].id===b.loteId){loteIdx=li;break}
-        }
-      }
-
-      var premio=null;
-      if(loteIdx>=0){
-        var lote=empresa.lotes[loteIdx];
-        lote.usados=(lote.usados||0)+1;
-
-        // Verificar se atingiu QR_N para QR
-        var chave=empresa.em+'_'+lote.id;
-        var prog=BD._g('zf_pg',{});
-        prog[chave]=(prog[chave]||0)+1;
-        BD._s('zf_pg',prog);
-
-        if(prog[chave]>=CFG.QR_N&&lote.usados<lote.n){
-          prog[chave]=0;BD._s('zf_pg',prog);
-          var qrId='QR-'+empresa.ne.substring(0,2).toUpperCase()+'-'+Math.random().toString(36).slice(2,8).toUpperCase();
-          var qrObj={id:qrId,emp:empresa.em,ne:empresa.ne,premio:lote.premio,lotId:lote.id,data:Date.now(),usado:false};
-          if(!jogAtual.qrsGerados)jogAtual.qrsGerados=[];
-          jogAtual.qrsGerados.push(qrObj);
-          empresa.qrsGerados=(empresa.qrsGerados||0)+1;
-          premio=qrObj
-        }
-      }
-
-      emps[empIdx]=empresa;BD.saveE(emps);
-
-      var progAtual=BD._g('zf_pg',{})[empresa.em+'_'+(b.loteId||'')];
-      h='<div style="padding:8px">';
-      h+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid #222">';
-      h+='<div style="font-size:28px">🏪</div><div><div style="font-weight:700;font-size:15px;color:#f90">'+empresa.ne+'</div><div style="font-size:11px;color:#888">'+(empresa.ativ||'-')+' · '+(empresa.loc||'-')+'</div></div></div>';
-
-      if(loteIdx>=0){
-        var lt=empresa.lotes[loteIdx];
-        var pc2=Math.round(((progAtual||0)/CFG.QR_N)*100);
-        h+='<div style="background:rgba(30,20,0,.4);border:2px solid #f90;border-radius:8px;padding:11px;margin-bottom:10px">';
-        h+='<p style="color:#f90;font-weight:700;margin-bottom:6px">🎁 '+lt.premio+'</p>';
-        h+='<div style="display:flex;justify-content:space-between;font-size:12px;color:#888;margin-bottom:3px"><span>Progresso para QR</span><span style="color:#f90;font-weight:700">'+(progAtual||0)+' / '+CFG.QR_N+'</span></div>';
-        h+='<div style="background:#222;border-radius:3px;height:8px;overflow:hidden"><div style="height:100%;background:linear-gradient(90deg,#f90,#f44);border-radius:3px;width:'+pc2+'%"></div></div>';
-        h+='<p style="font-size:10px;color:#555;margin-top:4px">Faltam '+Math.max(0,CFG.QR_N-(progAtual||0))+' bandeiras</p></div>'
-      }
-
-      if(premio){
-        h+='<div style="background:rgba(0,30,0,.4);border:2px solid #4CAF50;border-radius:8px;padding:12px;margin-bottom:10px;text-align:center">';
-        h+='<p style="color:#4CAF50;font-weight:700;font-size:16px;margin-bottom:6px">🎉 QR CODE GERADO!</p>';
-        h+='<p style="color:#fff;font-size:14px;margin-bottom:6px">'+premio.premio+'</p>';
-        h+='<div style="background:#111;border:1px solid #4CAF50;border-radius:6px;padding:8px;font-family:monospace;font-size:13px;letter-spacing:2px;color:#0ff">'+premio.id+'</div>';
-        h+='<p style="font-size:11px;color:#888;margin-top:6px">Vai a QRs no menu para ver o código QR</p></div>';
-        mostrarNotif('🎉','QR Code Gerado!',premio.premio)
-      }else{
-        mostrarNotif('🏴','Bandeira PR!',empresa.ne)
-      }
-      h+='</div>'
-    }else{
-      h='<div style="text-align:center;padding:8px"><div style="font-size:32px;margin-bottom:8px">🏴</div><h3 style="color:#f90;margin-bottom:6px">Bandeira PR!</h3></div>';
-      mostrarNotif('🏴','Bandeira PR!','+1 Flag')
+function updVF() {
+  if (!cPos||!map) return;
+  let vc=0;
+  allF.forEach(f=>{
+    const d=distM(cPos.lat,cPos.lng,f.lat,f.lng);
+    const vis=d<=state.player.vision&&vc<3;
+    if (vis&&!f.marker){
+      f.marker=L.marker([f.lat,f.lng],{icon:fIcon(f)}).addTo(map);
+      f.marker.on('click',()=>openFM(f.id));
+      vc++;
     }
-  }else{
-    h='<div style="text-align:center;padding:8px"><div style="font-size:32px;margin-bottom:8px">🏴</div><h3 style="color:#555">Vazia</h3></div>';
-    mostrarNotif('🏴','Vazia','Continua!')
+    if (!vis&&f.marker){map.removeLayer(f.marker);f.marker=null;}
+  });
+}
+
+function clearF() { allF.forEach(f=>{if(f.marker)map.removeLayer(f.marker);}); allF=[]; }
+
+// ===== MODOS =====
+function reqGPS() {
+  G('mode-modal').classList.add('hidden');
+  G('offctrl').classList.add('hidden');
+  offMode=false; renTop();
+  if (!navigator.geolocation){alert('GPS não disponível.');actHome();return;}
+  if (wId!==null) navigator.geolocation.clearWatch(wId);
+  navigator.geolocation.getCurrentPosition(
+    p=>{updPos(p.coords.latitude,p.coords.longitude,true,true);
+      wId=navigator.geolocation.watchPosition(pp=>updPos(pp.coords.latitude,pp.coords.longitude,true,false),()=>actHome(),{enableHighAccuracy:true,maximumAge:5000,timeout:20000});},
+    ()=>actHome(),{enableHighAccuracy:true,maximumAge:5000,timeout:20000}
+  );
+}
+
+function actHome() {
+  G('mode-modal').classList.add('hidden');
+  offMode=true; G('offctrl').classList.remove('hidden');
+  if (!cPos) cPos={lat:41.1496,lng:-8.6109};
+  updPos(cPos.lat,cPos.lng,false,true); manualRef(); renTop();
+}
+
+function moveHP(dx,dy) {
+  if (!offMode||!cPos) return;
+  updPos(cPos.lat+(dy/111320),cPos.lng+(dx/(111320*Math.cos(cPos.lat*Math.PI/180))),true,true);
+  manualRef();
+}
+
+function centerPlayer(){if(map&&cPos)map.setView([cPos.lat,cPos.lng],18);}
+function manualRef(){lastFT=0;lastFC=null;refF(true);updVF();}
+function resizeOC(d){const b=G('offctrl');b.style.width=Math.max(95,Math.min(180,parseInt(b.style.width||b.offsetWidth)+d))+'px';}
+function closeMM(){G('mode-modal').classList.add('hidden');}
+
+// ===== UI JOGADOR =====
+function renTop() {
+  G('efill').style.width=state.player.energy+'%';
+  G('etext').textContent='Energia: '+state.player.energy+'%';
+  G('mtext').textContent=offMode?'🏠 Offline':'📡 GPS';
+}
+
+function openPanel(t) {
+  curPanel=t;
+  G('sidep').classList.remove('hidden');
+  G('sptitle').textContent=t==='progress'?'📈 Progresso':t==='qrs'?'🎫 QR Codes':'👤 Conta';
+  G('spcontent').innerHTML=t==='progress'?rProg():t==='qrs'?rQR():rAcc();
+}
+
+function closePanel(){curPanel=null;G('sidep').classList.add('hidden');}
+function renPanelIf(){if(curPanel)openPanel(curPanel);}
+
+function rProg() {
+  const p=state.player;
+  let h='<div class="item">Total: <b>'+p.totalFlags+'</b> | ZAP: <b>'+p.zapFlags+'</b> | PR: <b>'+p.prFlags+'</b><br>Skill: <b>'+p.skill+'</b> | Visão: <b>'+p.vision.toFixed(1)+'m</b></div>';
+  (state.prs||[]).forEach(pr=>{
+    const t=(p.tsPR||{})[pr.id]||0;
+    const pp=(p.ppPR||{})[pr.id]||{current:0};
+    h+='<div class="item"><span style="background:'+pr.color+';color:#fff;padding:3px 8px;border-radius:99px;font-size:11px">'+pr.short+'</span> <b>'+pr.name+'</b><br>Visto: '+t+' | Promo: '+(pp.current||0)+'/20</div>';
+  });
+  return h;
+}
+
+function rQR() {
+  if (!(state.player.qrs||[]).length) return '<div class="item">Nenhum QR ativo.</div>';
+  return state.player.qrs.map(q=>{
+    const dl=Math.max(0,Math.ceil((q.expiresAt-Date.now())/864e5));
+    return '<div class="item"><b>'+q.prName+'</b><br>'+q.rewardText+'<br>Validade: '+dl+' dia(s)<div class="qrc">'+q.code+'</div><br><img src="https://quickchart.io/qr?text='+encodeURIComponent(q.code)+'&size=130" style="margin-top:8px;background:#fff;padding:6px;border-radius:8px"/></div>';
+  }).join('');
+}
+
+function rAcc() {
+  const p=state.player;
+  return '<div class="item"><b>'+p.name+'</b><br>'+p.email+'<br>'+(p.contact||'—')+'<br>'+(p.addr||'—')+'<br>'+(p.city?p.city+', ':'')+p.district+'<br>Energia: '+p.energy+'%</div>'+
+  '<div class="item"><label>Avatar</label><select id="av-m" onchange="uAv()"><option value="male"'+(p.avatarMode==='male'?' selected':'')+'>♂ Masculino</option><option value="female"'+(p.avatarMode==='female'?' selected':'')+'>♀ Feminino</option><option value="photo"'+(p.avatarMode==='photo'?' selected':'')+'>📷 Foto URL</option></select><input id="av-p" value="'+(p.avatarPhoto||'')+'" placeholder="URL da foto" style="margin-top:6px"><button style="margin-top:6px;width:100%" onclick="sAv()">GUARDAR</button></div>'+
+  '<div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">'+
+  '<button class="btn-dark" onclick="G(\'mode-modal\').classList.remove(\'hidden\')">🔄 MODO</button>'+
+  '<button class="btn-dark" onclick="manualRef()">⟳ REFRESH</button>'+
+  '<button class="btn-danger" onclick="goLanding()">⏎ SAIR</button></div>';
+}
+
+function uAv(){
+  state.player.avatarMode=G('av-m').value;
+  state.player.avatarPhoto=(G('av-p').value||'').trim();
+  if(pMark)pMark.setIcon(pIcon());
+  syncPlayer();saveState();renPanelIf();
+}
+function sAv(){uAv();alert('✅ Avatar guardado!');}
+
+// ===== BANDEIRAS: RECOLHA =====
+function openFM(fid) {
+  const f=allF.find(x=>x.id===fid);
+  if (!f||!cPos) return;
+  const d=distM(cPos.lat,cPos.lng,f.lat,f.lng);
+  const can=d<=5;
+
+  if (f.type==='ZAP') {
+    G('fm-content').innerHTML=
+      '<div class="ph"><h2 style="margin:0">🔵 BANDEIRA ZAP</h2><button class="btn-dark btn-small" onclick="closeFM()">✕</button></div>'+
+      '<div class="item">Dá <b>+10% energia</b> e aumenta o skill.</div>'+
+      '<div class="item">Distância: <b>'+Math.round(d)+'m</b> | Precisas de estar a ≤5m.</div>'+
+      '<button '+(can?'':'disabled')+' onclick="colZ(\''+fid+'\')">'+(can?'✅ RECOLHER':'🔒 APROXIMA-TE')+'</button>';
+  } else {
+    const pr=state.prs.find(p=>p.id===f.prId);
+    if (!pr) return;
+    const prog=((state.player.ppPR||{})[pr.id]||{current:0}).current||0;
+    G('fm-content').innerHTML=
+      '<div class="ph"><h2 style="margin:0">'+(f.promo?'🎁 ':'')+' <span style="background:'+pr.color+';padding:2px 8px;border-radius:99px;color:#fff;font-size:14px">'+pr.short+'</span></h2><button class="btn-dark btn-small" onclick="closeFM()">✕</button></div>'+
+      '<div class="item"><b>'+pr.name+'</b></div>'+
+      '<div class="item">Distância: <b>'+Math.round(d)+'m</b> | Precisas ≤5m<br>Progresso prémio: <b>'+prog+'/20</b></div>'+
+      '<button '+(can?'':'disabled')+' onclick="colP(\''+fid+'\')">'+(can?'✅ RECOLHER':'🔒 APROXIMA-TE')+'</button>';
+  }
+  G('flag-modal').classList.remove('hidden');
+}
+
+function closeFM(){G('flag-modal').classList.add('hidden');}
+
+function colZ(fid) {
+  const i=allF.findIndex(f=>f.id===fid);
+  if (i<0) return;
+  const f=allF[i];
+  if (distM(cPos.lat,cPos.lng,f.lat,f.lng)>5){alert('Aproxima-te mais!');return;}
+  state.player.energy=Math.min(100,state.player.energy+10);
+  state.player.zapFlags++; state.player.totalFlags++;
+  uSV(); if(vCirc)vCirc.setRadius(state.player.vision);
+  if(f.marker)map.removeLayer(f.marker);
+  allF.splice(i,1);
+  syncPlayer(); saveState(); closeFM(); renTop(); renPanelIf();
+  alert('🔵 ZAP! +10% energia | Skill: '+state.player.skill+' | Visão: '+state.player.vision+'m');
+}
+
+function colP(fid) {
+  const i=allF.findIndex(f=>f.id===fid);
+  if (i<0) return;
+  const f=allF[i];
+  if (distM(cPos.lat,cPos.lng,f.lat,f.lng)>5){alert('Aproxima-te mais!');return;}
+  const pr=state.prs.find(p=>p.id===f.prId);
+  if (!pr) return;
+  state.player.prFlags++; state.player.totalFlags++;
+  if (!state.player.ppPR) state.player.ppPR={};
+  if (!state.player.ppPR[pr.id]) state.player.ppPR[pr.id]={current:0};
+  state.player.ppPR[pr.id].current=Math.min(20,(state.player.ppPR[pr.id].current||0)+1);
+  if (!state.player.tsPR) state.player.tsPR={};
+  state.player.tsPR[pr.id]=(state.player.tsPR[pr.id]||0)+1;
+  const pk=pr.packages.find(p=>p.id===f.packageId);
+  if (pk&&pk.flagsLeft>0) pk.flagsLeft--;
+
+  // QR ao atingir 20
+  if (state.player.ppPR[pr.id].current>=20) {
+    state.player.ppPR[pr.id].current=0;
+    if (!state.player.qrs) state.player.qrs=[];
+    state.player.qrs.push({
+      prId:pr.id, prName:pr.name,
+      code:'QR-'+pr.short+'-'+Math.random().toString(36).slice(2,8).toUpperCase(),
+      rewardText:pr.campaign.rewardText,
+      expiresAt:Date.now()+7*864e5
+    });
+    alert('🎉 PRÉMIO DESBLOQUEADO!\n'+pr.campaign.rewardText+'\nVai ao painel QRs para ver o código!');
   }
 
-  G('aba-band-c').innerHTML=h;
-  G('aba-band').classList.add('aberta');
-  atualizarHUDJogo();atualizarPainelSk();gravarJogador();
-
-  // Respawnar
-  setTimeout(function(){
-    var a=Math.random()*2*Math.PI,d=30+Math.random()*CFG.SPAWN_RAIO;
-    b.lat=AV.lat+(d/111e3)*Math.cos(a);
-    b.lng=AV.lng+(d/(111e3*Math.cos(AV.lat*Math.PI/180)))*Math.sin(a);
-    b.apanhada=false;b.visivel=false;b.m=null;
-    var r=Math.random();
-    var empsOk=BD.emps().filter(function(e){return(e.packs||[]).some(function(p){return p.flagsLeft>0&&p.fim>Date.now()})});
-    if(r<0.45){b.tipo='energia';b.empId=null;b.loteId=null}
-    else if(r<0.72&&empsOk.length>0){
-      b.tipo='pr';
-      var empR=empsOk[Math.floor(Math.random()*empsOk.length)];
-      b.empId=empR.em;
-      var la2=(empR.lotes||[]).filter(function(l){return l.estado==='ativo'&&l.expiracao>Date.now()});
-      b.loteId=la2.length>0?la2[Math.floor(Math.random()*la2.length)].id:null
-    }else{b.tipo='vazia';b.empId=null;b.loteId=null}
-  },5e3+Math.random()*5e3)
+  uSV(); if(vCirc)vCirc.setRadius(state.player.vision);
+  if(f.marker)map.removeLayer(f.marker);
+  allF.splice(i,1);
+  syncPlayer(); saveState(); closeFM(); renTop(); renPanelIf();
+  alert('🚩 +1 '+pr.short+'! Promo: '+state.player.ppPR[pr.id].current+'/20');
 }
 
-function fecharAbaBanda(){G('aba-band').classList.remove('aberta')}
-function fecharAbaQR(){G('aba-qr').classList.remove('aberta');G('aba-qr').style.display='none'}
+// ===== PAINEL EMPRESA =====
+function prTabSwitch(tab) { prTabAtual=tab; renderPR(curPRId); }
 
-function verificarSkill(){
-  while((jogAtual.flEnerg||0)>=(jogAtual.flLimite||500)){
-    jogAtual.flEnerg-=(jogAtual.flLimite||500);
-    jogAtual.sk=(jogAtual.sk||0)+1;
-    jogAtual.flLimite=flagsParaSk(jogAtual.sk);
-    var nv=calcVisao(jogAtual.sk),ant=jogAtual.visao||5;
-    jogAtual.visao=nv;jogAtual.nivel=Math.floor(jogAtual.sk/10)+1;
-    if(nv>ant){mostrarNotif('👁️','Visão: '+nv+'m!','Skill '+jogAtual.sk);atualizarCirculo()}
-    else mostrarNotif('🎯','Skill '+jogAtual.sk+'!','')
+function renderPR(prId) {
+  const pr = state.prs.find(p=>p.id===prId);
+  if (!pr) return;
+  G('pr-hdr-title').textContent = '🏢 '+pr.name+(pr.isBranch?' (FILIAL)':'');
+
+  let html = '';
+
+  // === OVERVIEW ===
+  html += '<div class="item">';
+  html += '<b style="font-size:17px">'+pr.name+'</b>';
+  html += ' <span style="background:'+pr.color+';color:#fff;padding:2px 8px;border-radius:99px;font-size:12px">'+pr.short+'</span><br>';
+  html += 'NIF: <b>'+pr.nif+'</b><br>';
+  html += pr.email+' | '+pr.contact+'<br>';
+  html += pr.addr+', '+pr.city+', '+pr.district+' '+pr.postal+'<br>';
+  html += 'Código para filiais: <b style="color:#ff0;font-size:16px;letter-spacing:2px">'+pr.branchCode+'</b><br>';
+  html += '<span style="color:#888;font-size:11px">Partilha este código com as tuas filiais para elas entrarem no painel.</span>';
+  html += '</div>';
+
+  // === PACKS ===
+  html += '<div class="item"><b>📦 Packs Ativos</b><br>';
+  if (!(pr.packages||[]).length) {
+    html += '<span style="color:#f66">Nenhum pack ativo. Compra abaixo.</span>';
+  } else {
+    pr.packages.forEach(pk=>{
+      const pct=pk.flagsInitial>0?Math.round((pk.flagsLeft/pk.flagsInitial)*100):0;
+      html+='<div style="margin:6px 0;padding:8px;background:rgba(0,255,0,.04);border-radius:8px;border:1px solid #0a0">';
+      html+='<b>'+pk.label+'</b> | '+pk.flagsLeft+'/'+pk.flagsInitial+' flags | Raio: '+(pk.radiusKm===Infinity?'Nacional':pk.radiusKm+'km');
+      html+='<div style="background:#222;height:6px;border-radius:3px;margin-top:5px"><div style="background:#0f0;height:100%;width:'+pct+'%;border-radius:3px"></div></div></div>';
+    });
   }
-  atualizarPainelSk();atualizarHUDJogo()
-}
+  html += '<div style="font-size:13px;color:#a7fca7;margin:8px 0">🛒 Comprar Pack:</div>';
+  html += '<div style="display:flex;flex-wrap:wrap;gap:8px">';
+  Object.values(PACKS).forEach(pk=>{
+    html+='<button onclick="buyPkg(\''+pr.id+'\',\''+pk.key+'\')" class="btn-dark" style="font-size:12px;padding:10px;flex:1;min-width:100px">';
+    html+=pk.label+'<br><span style="color:#ff0">'+pk.price+'€</span> | '+pk.flags+' flags</button>';
+  });
+  html += '</div></div>';
 
-function atualizarHUDJogo(){
-  if(!jogAtual)return;
-  G('j-nm').innerText='👤 '+(jogAtual.nm||'—');
-  G('j-nv').innerText='Nível '+(jogAtual.nivel||1)+' · Skill '+(jogAtual.sk||0);
-  G('h-fl').innerText=fN(jogAtual.fl||0);
-  G('h-en').innerText=Math.round(jogAtual.en||100)+'%';
-  G('h-sk').innerText=jogAtual.sk||0;
-  G('h-vis').innerText=(jogAtual.visao||5)+'m'
-}
+  // === LOTES/CAMPANHA ===
+  html += '<div class="item"><b>📢 Campanha</b><br>';
+  html += 'Recompensa: <input id="pr-rew" value="'+pr.campaign.rewardText+'" style="margin:4px 0">';
+  html += '<button onclick="saveCampaign(\''+pr.id+'\')" style="width:100%;margin-top:4px;font-size:13px;padding:8px">💾 GUARDAR</button>';
+  html += '<br><span style="color:#888;font-size:11px">Prémios dados: '+pr.campaign.rewardsGiven+'</span></div>';
 
-function atualizarPainelSk(){
-  if(!jogAtual)return;
-  G('sk-nv').innerText=jogAtual.nivel||1;
-  G('sk-sk').innerText=jogAtual.sk||0;
-  G('sk-vis').innerText=(jogAtual.visao||5)+'m';
-  G('sk-px').innerText=fN(jogAtual.flLimite||500);
-  var pc=Math.min(100,((jogAtual.flEnerg||0)/(jogAtual.flLimite||500))*100);
-  G('bskf').style.width=pc+'%';
-  G('bskt').innerText=fN(jogAtual.flEnerg||0)+' / '+fN(jogAtual.flLimite||500)
-}
+  // === FILIAIS ===
+  const filiais = (state.prs||[]).filter(p=>p.parentId===pr.id);
+  html += '<div class="item"><b>🏢 Filiais ('+filiais.length+')</b><br>';
+  html += '<div style="background:rgba(255,255,0,.08);border:1px solid #ff0;border-radius:8px;padding:8px;margin:8px 0">';
+  html += '<span style="color:#ff0;font-weight:700">Código mãe: '+pr.branchCode+'</span><br>';
+  html += '<span style="font-size:11px;color:#a7fca7">As filiais usam este código no login.</span></div>';
 
-function gravarJogador(){
-  if(!jogAtual||!jogAtual.em)return;
-  jogAtual.ult=Date.now();
-  var l=BD.jogs(),idx=-1;
-  for(var i=0;i<l.length;i++){if(l[i].em===jogAtual.em){idx=i;break}}
-  if(idx>=0)l[idx]=jogAtual;else l.push(jogAtual);
-  BD.saveJ(l);BD.setSJ(jogAtual)
-}
-
-function atualizarCirculo(){
-  if(!mapaJ||!jogAtual)return;
-  var v=jogAtual.visao||5,r=Math.max(60,distPx(v)),d=r*2;
-  var c=G('circ-vis'),p=(v-CFG.VISAO_MIN)/(CFG.VISAO_MAX-CFG.VISAO_MIN),b=Math.round(p*255);
-  c.style.width=d+'px';c.style.height=d+'px';
-  c.style.borderColor='rgb(0,255,'+b+')';
-  c.style.boxShadow='0 0 0 3000px rgba(0,0,0,.76),0 0 '+(20+p*35)+'px rgba(0,255,'+b+',.4)'
-}
-
-function loopJogo(ts){
-  animF=requestAnimationFrame(loopJogo);
-  var dt=Math.min(ts-ultimoF,50);ultimoF=ts;animT+=dt*.001;
-  var vel=CFG.VEL_PX*(dt/16),mx=0,my=0;
-  if(dirs.c)my-=vel;if(dirs.b)my+=vel;if(dirs.e)mx-=vel;if(dirs.d)mx+=vel;
-  if(mx&&my){mx*=.707;my*=.707}
-  AV.andando=!!(mx||my);
-  if(mx>0)AV.dir=1;else if(mx<0)AV.dir=-1;
-  if(AV.andando&&mapaJ){
-    var z=mapaJ.getZoom(),e=156543.03392*Math.cos(AV.lat*Math.PI/180)/Math.pow(2,z);
-    AV.lat+=(-my*e)/111319.9;AV.lng+=(mx*e)/111319.9;
-    mapaJ.panTo([AV.lat,AV.lng],{animate:false,duration:0});
-    if(marcAvt)marcAvt.setLatLng([AV.lat,AV.lng]);
-    atualizarCirculo();atualizarVisibilidade();verificarBandeiras()
+  if (filiais.length) {
+    filiais.forEach(b=>{
+      html+='<div class="branch-card">';
+      html+='<div><b>'+b.name+'</b> ('+b.short+')<br>';
+      html+=b.city+', '+b.district+'<br>';
+      html+='Faturação: '+(b.billing==='parent'?'Empresa Mãe':'Própria')+'</div>';
+      html+='<div><button class="btn-dark btn-small" onclick="toggleBranch(\''+b.id+'\')">'+( b.active?'❌ Desativar':'✅ Ativar')+'</button></div>';
+      html+='</div>';
+    });
+  } else {
+    html += '<div style="color:#888;font-size:12px;margin:8px 0">Nenhuma filial registada.</div>';
   }
-  animarAvatar(animT,AV.andando)
+  html += '<button onclick="regBranch(\''+pr.id+'\')" style="width:100%;margin-top:8px;font-size:13px;padding:10px">➕ REGISTAR NOVA FILIAL</button>';
+  html += '</div>';
+
+  G('pr-body').innerHTML = html;
 }
 
-function animarAvatar(t,a){
-  var s=G('avt-svg');if(!s)return;
-  if(a){
-    var r=Math.sin(t*8)*22;
-    var ape=G('ape'),apd=G('apd'),abe=G('abe'),abd=G('abd'),acab=G('acab');
-    if(ape)ape.style.transform='rotate('+(-r)+'deg)';
-    if(apd)apd.style.transform='rotate('+r+'deg)';
-    if(abe)abe.style.transform='rotate('+r+'deg)';
-    if(abd)abd.style.transform='rotate('+(-r)+'deg)';
-    if(acab)acab.style.transform='translateY('+Math.abs(Math.sin(t*8))*-1.5+'px)';
-    s.style.transform='translate(-50%,-50%) scaleX('+AV.dir+')';
-    s.style.filter='drop-shadow(0 0 12px #4CAF50)'
-  }else{
-    var r2=Math.sin(t*1.5)*1.5;
-    var ape2=G('ape'),apd2=G('apd'),abe2=G('abe'),abd2=G('abd'),acab2=G('acab');
-    if(ape2)ape2.style.transform='rotate(0)';if(apd2)apd2.style.transform='rotate(0)';
-    if(abe2)abe2.style.transform='rotate('+r2+'deg)';if(abd2)abd2.style.transform='rotate('+(-r2)+'deg)';
-    if(acab2)acab2.style.transform='translateY('+r2*.4+'px)';
-    var sc=1+Math.sin(t*1.2)*.02;
-    s.style.transform='translate(-50%,-50%) scale('+sc+')';
-    s.style.filter='drop-shadow(0 0 '+(8+Math.sin(t*1.2)*4)+'px #4CAF50)'
-  }
+function buyPkg(prId, pkKey) {
+  const pr=state.prs.find(p=>p.id===prId);
+  const pack=PACKS[pkKey];
+  if (!pr||!pack) return;
+  if (!pr.packages) pr.packages=[];
+  pr.packages.push({
+    id:genId('PKG'),key:pack.key,label:pack.label,
+    flagsInitial:pack.flags,flagsLeft:pack.flags,
+    radiusKm:pack.radiusKm,maxLots:pack.maxLots,bingos:pack.bingos,
+    createdAt:Date.now()
+  });
+  saveState(); renderPR(prId); alert('✅ Pack '+pack.label+' ativado!');
 }
 
-document.addEventListener('keydown',function(e){
-  var m={ArrowUp:'c',ArrowDown:'b',ArrowLeft:'e',ArrowRight:'d',w:'c',s:'b',a:'e',d:'d',W:'c',S:'b',A:'e',D:'d'};
-  if(m[e.key]){dirs[m[e.key]]=true;var b=G('bc-'+m[e.key]);if(b)b.classList.add('on');e.preventDefault()}
-  if(e.key===' '||e.key==='Enter')apanharManual();
-  if(e.key==='Escape'){fecharAbaBanda();fecharAbaQR()}
-});
-document.addEventListener('keyup',function(e){
-  var m={ArrowUp:'c',ArrowDown:'b',ArrowLeft:'e',ArrowRight:'d',w:'c',s:'b',a:'e',d:'d',W:'c',S:'b',A:'e',D:'d'};
-  if(m[e.key]){dirs[m[e.key]]=false;var b=G('bc-'+m[e.key]);if(b)b.classList.remove('on')}
-});
-function pd(d){dirs[d]=true;var b=G('bc-'+d);if(b)b.classList.add('on')}
-function pu(d){dirs[d]=false;var b=G('bc-'+d);if(b)b.classList.remove('on')}
-function mudarTam(d){tamBtn=Math.max(32,Math.min(80,tamBtn+d*6));G('tam-lbl').innerText=tamBtn+'px';var b=document.querySelectorAll('.cbtn');for(var i=0;i<b.length;i++){b[i].style.width=tamBtn+'px';b[i].style.height=tamBtn+'px'}}
-function arrastarCtrl(){
-  var c=G('ctrl');if(!c)return;
-  var ar=false,ox=0,oy=0;
-  c.addEventListener('pointerdown',function(e){if(e.target.classList.contains('cbtn')||e.target.classList.contains('tbtn'))return;ar=true;ox=e.clientX-c.getBoundingClientRect().left;oy=e.clientY-c.getBoundingClientRect().top;c.setPointerCapture(e.pointerId);e.preventDefault()});
-  c.addEventListener('pointermove',function(e){if(!ar)return;c.style.left=(e.clientX-ox)+'px';c.style.top=(e.clientY-oy)+'px';c.style.right='auto';c.style.bottom='auto'});
-  c.addEventListener('pointerup',function(){ar=false})
+function saveCampaign(prId) {
+  const pr=state.prs.find(p=>p.id===prId);
+  if (!pr) return;
+  const newRew=G('pr-rew')?.value.trim();
+  if (newRew) pr.campaign.rewardText=newRew;
+  saveState(); renderPR(prId); alert('✅ Campanha guardada!');
 }
 
-function addTick(h){var t=G('ticker');for(var i=0;i<2;i++){var s=document.createElement('span');s.className='tick';s.innerHTML=h+'   ';t.appendChild(s)}}
-function iniciarTicker(){G('ticker').innerHTML='';addTick('🏴 ZAP FLAGS — Caça ao Tesouro!');addTick('👁️ Bandeiras visíveis no teu raio!');addTick('🎫 '+CFG.QR_N+' bandeiras PR = QR prémio!');addTick('🕹️ WASD · ESPAÇO apanhar · ESC fechar')}
-function mostrarNotif(i,t,s){G('ntf-ico').innerText=i;G('ntf-txt').innerText=t;G('ntf-sub').innerText=s||'';G('notif').style.display='block';if(notifTmr)clearTimeout(notifTmr);notifTmr=setTimeout(function(){G('notif').style.display='none'},2700)}
+function toggleBranch(branchId) {
+  const b=state.prs.find(p=>p.id===branchId);
+  if (!b) return;
+  b.active=!b.active;
+  saveState(); renderPR(curPRId);
+}
 
-setInterval(function(){if(jogAtual&&(jogAtual.en||100)<100){jogAtual.en=Math.min(100,(jogAtual.en||100)+1);atualizarHUDJogo();gravarJogador()}},3e4);
+function regBranch(parentId) {
+  const parent=state.prs.find(p=>p.id===parentId);
+  if (!parent) return;
 
-ir('p-inicio');
+  const name=prompt('Nome da Filial:')?.trim();
+  if (!name) return;
+  const nif=prompt('NIF da Filial (9 dígitos):')?.trim();
+  if (!nif||nif.length!==9||!/^\d+$/.test(nif)){alert('NIF inválido.');return;}
+  if (state.prs.find(p=>p.nif===nif)){alert('NIF já existe.');return;}
+  const email=prompt('E-mail da Filial:')?.trim().toLowerCase();
+  if (!email||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){alert('E-mail inválido.');return;}
+  const pass=prompt('Senha da Filial (mín. 4):');
+  if (!pass||pass.length<4){alert('Senha inválida.');return;}
+  const city=prompt('Localidade da Filial:')?.trim()||parent.city;
+  const district=prompt('Distrito:')?.trim()||parent.district;
+  const postal=prompt('Código Postal:')?.trim()||parent.postal;
+  const billing=prompt('Faturação?\n1 - Própria\n2 - Empresa Mãe')?.trim()==='2'?'parent':'self';
+
+  const branch={
+    id:genId('BR'),
+    branchCode:genBranchCode(),
+    name, nif, email, password:pass,
+    contact:parent.contact, addr:parent.addr,
+    city, district, postal,
+    short:makeShort(name),
+    color:parent.color,
+    lat:parent.lat, lng:parent.lng,
+    packages:[], lotes:[],
+    campaign:{...parent.campaign},
+    isBranch:true, parentId,
+    billing, active:true,
+    createdAt:Date.now()
+  };
+
+  if (!state.prs) state.prs=[];
+  state.prs.push(branch);
+  saveState(); renderPR(parentId);
+  alert('✅ Filial "'+name+'" registada!\nCódigo mãe para login: '+parent.branchCode+'\nFaturação: '+(billing==='parent'?'Empresa Mãe':'Própria'));
+}
+
+// Arranque
+(function init(){
+  renTop();
+})();
 </script>
 </body>
 </html>
