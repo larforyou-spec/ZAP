@@ -1,17 +1,1262 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="pt">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <meta name="description" content="Bandeiras do Jogo - Colete bandeiras, ganhe prémios! DESIGNADO POR JG" />
-    <meta name="theme-color" content="#0a0a1a" />
-    <meta name="author" content="Larforyou" />
-    <meta name="copyright" content="© Larforyou - Todos os direitos reservados" />
-    <title>Bandeiras do Jogo — DESIGNADO POR JG</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚩</text></svg>" />
-  </head>
-  <body class="bg-gray-950">
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>ZAP FLAGS - Otimizado</title>
+
+  <link rel="icon" href="./icon.png" type="image/png" />
+  <link rel="manifest" href="./manifest.json" />
+  <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
+  <meta name="theme-color" content="#000000" />
+
+  <!-- LEAFLET CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+  <style>
+    * { box-sizing: border-box; font-family: Arial, sans-serif; }
+
+    html, body {
+      margin: 0; padding: 0; width: 100%; height: 100%;
+      overflow: hidden; background: #000; color: #0f0;
+      user-select: none; -webkit-user-select: none;
+    }
+
+    .hidden { display: none !important; }
+
+    button {
+      background: #0f0; color: #000; border: none;
+      border-radius: 10px; padding: 10px 14px;
+      font-size: 14px; font-weight: 800; cursor: pointer;
+      transition: transform 0.1s, opacity 0.1s;
+    }
+    button:active { transform: scale(0.96); opacity: 0.8; }
+    button:disabled { background: #333; color: #666; cursor: not-allowed; transform: none; }
+
+    .btn-dark { background: #181818; color: #0f0; border: 1px solid #0f0; }
+    .btn-danger { background: #8b0000; color: #fff; border: 1px solid #ff6b6b; }
+    .btn-small { padding: 6px 10px; font-size: 12px; }
+
+    input, select {
+      width: 100%; margin-bottom: 10px; padding: 12px;
+      border-radius: 10px; border: 1px solid #0f0;
+      background: #101010; color: #0f0; font-size: 14px;
+      outline: none;
+    }
+    input:focus, select:focus { border-color: #00ff66; box-shadow: 0 0 5px rgba(0,255,0,0.5); }
+
+    /* ECRÃ DE LOGIN */
+    #login-screen {
+      background: linear-gradient(180deg, #000, #051005);
+      display: flex; align-items: center; justify-content: center;
+      padding: 18px; height: 100vh; width: 100vw;
+      position: absolute; inset: 0; z-index: 5000;
+      overflow-y: auto;
+    }
+
+    .login-box {
+      width: 100%; max-width: 500px; border: 2px solid #0f0;
+      border-radius: 16px; background: rgba(0,20,0,.85);
+      padding: 22px; box-shadow: 0 0 25px rgba(0,255,0,.25);
+      text-align: center; margin: auto;
+    }
+
+    /* ECRÃ DE JOGO */
+    #game-screen { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; }
+
+    #map-wrap { position: absolute; inset: 0; width: 100%; height: 100%; }
+    #map { width: 100%; height: 100%; z-index: 1; background: #050505; }
+
+    /* NÉVOA / FOG OVERLAY COM FURO NATIVO NÍTIDO */
+    #fog-overlay {
+      position: absolute; inset: 0; pointer-events: none; z-index: 450;
+      --fog-x: 50%; --fog-y: 50%; --fog-r: 90px;
+      background: radial-gradient(
+        circle var(--fog-r) at var(--fog-x) var(--fog-y),
+        rgba(0,0,0,0) 0%,
+        rgba(0,0,0,0) 60%,
+        rgba(0,30,90,0.60) 78%,
+        rgba(0,30,90,0.92) 100%
+      );
+      transition: background 0.1s ease;
+    }
+
+    /* BARRA SUPERIOR */
+    #top-strip {
+      position: absolute; top: 12px; left: 12px; right: 12px;
+      z-index: 1000; background: rgba(0,0,0,.85);
+      border: 1px solid #0f0; border-radius: 12px; padding: 10px;
+      backdrop-filter: blur(4px);
+    }
+
+    .energy-bar {
+      width: 100%; height: 10px; background: #222;
+      border-radius: 999px; overflow: hidden;
+      border: 1px solid rgba(0,255,0,.4);
+    }
+
+    #energy-fill {
+      height: 100%; width: 100%;
+      background: linear-gradient(90deg, #008f1f, #00ff66);
+      transition: width 0.3s ease;
+    }
+
+    /* BOTÕES FLUTUANTES À DIREITA */
+    #floating-buttons {
+      position: absolute; right: 12px; bottom: 110px;
+      z-index: 1100; display: flex; flex-direction: column; gap: 10px;
+    }
+
+    .float-btn {
+      width: 48px; height: 48px; border-radius: 50%;
+      padding: 0; display: flex; align-items: center; justify-content: center;
+      font-size: 20px; box-shadow: 0 0 12px rgba(0,255,0,.3);
+      background: rgba(0,0,0,0.85); border: 2px solid #0f0;
+    }
+
+    /* CONTROLOS OFFLINE (D-PAD) - SUPER ROBUSTO */
+    #offline-controls {
+      position: absolute; left: 12px; bottom: 110px;
+      z-index: 2600; background: rgba(0,0,0,.92);
+      border: 2px solid #0f0; border-radius: 14px;
+      padding: 10px; width: 130px; height: 155px;
+      text-align: center; box-shadow: 0 0 15px rgba(0,255,0,.4);
+    }
+
+    .dpad {
+      display: grid; grid-template-columns: 1fr 1fr 1fr;
+      gap: 5px; margin-top: 8px;
+    }
+
+    .dpad button {
+      padding: 10px 0; font-size: 16px; width: 100%;
+      border-radius: 8px; font-weight: bold;
+    }
+
+    /* PAINEL LATERAL DE INFORMAÇÕES */
+    #side-panel {
+      position: absolute; left: 12px; right: 12px; bottom: 12px;
+      z-index: 2500; background: rgba(0,0,0,.95);
+      border: 2px solid #0f0; border-radius: 14px;
+      padding: 14px; max-height: 40vh; overflow-y: auto;
+      box-shadow: 0 -5px 20px rgba(0,255,0,.3);
+    }
+
+    .item {
+      border: 1px solid #0f0; background: rgba(0,40,0,.3);
+      border-radius: 10px; padding: 12px; margin-bottom: 10px;
+      font-size: 13px; line-height: 1.4;
+    }
+
+    /* MARCADORES CUSTOMIZADOS LEAFLET */
+    .player-marker {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: linear-gradient(135deg, #00f0ff, #0066ff);
+      border: 3px solid #fff; box-shadow: 0 0 12px rgba(0,255,255,.8);
+      display: flex; align-items: center; justify-content: center;
+      color: white; font-size: 14px; font-weight: 900; overflow: hidden;
+    }
+    .player-marker img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+
+    .flag-marker { width: 34px; height: 34px; position: relative; filter: drop-shadow(0 0 5px #ff0000); }
+    .flag-stick {
+      position: absolute; width: 3px; height: 22px;
+      left: 14px; top: 12px; background: #ddd; border-radius: 2px;
+    }
+    .flag-banner {
+      position: absolute; left: 16px; top: 2px;
+      width: 18px; height: 12px;
+      clip-path: polygon(0 0, 100% 30%, 0 100%);
+      border: 1px solid #fff; background: #FF0000;
+    }
+    .flag-zap { filter: drop-shadow(0 0 5px #00aaff) !important; }
+    .flag-zap .flag-banner { background: #00aaff !important; }
+
+    /* MODAIS COM REQUISITO DE BOTÕES VOLTAR, SAIR E X PARA FECHAR */
+    .modal {
+      position: absolute; top: 50%; left: 50%;
+      transform: translate(-50%, -50%); z-index: 3000;
+      width: 92%; max-width: 440px; background: #050505;
+      border: 2px solid #0f0; border-radius: 16px;
+      padding: 18px; box-shadow: 0 0 30px rgba(0,255,0,.5);
+      max-height: 90vh; overflow-y: auto;
+    }
+
+    .panel-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 12px; border-bottom: 1px solid rgba(0,255,0,0.3);
+      padding-bottom: 8px; gap: 5px;
+    }
+
+    .modal-controls-bar {
+      display: flex; gap: 4px; align-items: center;
+      background: #111; padding: 4px; border-radius: 8px;
+      border: 1px solid #333;
+    }
+
+    .qr-code {
+      display: inline-block; margin-top: 10px; padding: 10px;
+      border-radius: 10px; border: 1px solid #0f0;
+      background: #fff; font-family: monospace; font-size: 14px;
+      font-weight: bold; color: #000; word-break: break-all;
+    }
+
+    .feedback-toast {
+      position: absolute; top: 70px; left: 50%; transform: translateX(-50%);
+      background: rgba(0,50,0,0.95); border: 2px solid #0f0;
+      color: #fff; font-weight: bold; padding: 10px 20px;
+      border-radius: 25px; z-index: 9999; font-size: 13px;
+      box-shadow: 0 0 15px #0f0; pointer-events: none;
+      animation: fadeInOut 2.5s forwards;
+    }
+
+    @keyframes fadeInOut {
+      0% { opacity: 0; transform: translate(-50%, -10px); }
+      15% { opacity: 1; transform: translate(-50%, 0); }
+      85% { opacity: 1; transform: translate(-50%, 0); }
+      100% { opacity: 0; transform: translate(-50%, -10px); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ========================================== -->
+  <!-- ECRÃ INICIAL ULTRA-LIMPO COM APENAS 2 BOTÕES -->
+  <!-- ========================================== -->
+  <div id="login-screen">
+    <div class="login-box" id="main-choice-box">
+      <h1 style="margin-top:0; font-size:32px; text-shadow:0 0 15px #0f0; tracking:wider;">⚡ ZAP FLAGS ⚡</h1>
+      <div style="color:#a7fca7; font-size:14px; margin-bottom:25px; line-height:1.5;">
+        Escolha o seu destino para começar instantaneamente.
+      </div>
+
+      <!-- BOTÕES DIRETOS SOLICITADOS -->
+      <div style="display:flex; flex-direction:column; gap:16px; margin:20px 0;">
+        <button 
+          style="padding:20px; font-size:20px; background:linear-gradient(135deg,#00ff66,#00c853); color:#000; box-shadow:0 0 15px #0f0; border-radius:12px; font-weight:900;" 
+          onclick="startDirectGame()"
+        >
+          🎮 JOGAR
+        </button>
+        
+        <button 
+          style="padding:16px; font-size:16px; background:#111; color:#0f0; border:2px solid #0f0; border-radius:12px; font-weight:bold;" 
+          onclick="openCompanyPage()"
+        >
+          🏢 EMPRESA
+        </button>
+      </div>
+    </div>
+
+    <!-- PÁGINA 2: REGISTO OBRIGATÓRIO DO JOGADOR COM CONTROLO INTELIGENTE -->
+    <div class="login-box hidden" id="player-mandatory-page" style="max-width:550px;">
+      <div class="panel-header" style="border-bottom:1px solid #0f0; padding-bottom:10px; margin-bottom:15px;">
+        <h2 style="margin:0; color:#0f0; font-size:18px;">🎮 Identificação de Jogador</h2>
+        <button class="btn-dark btn-small" onclick="backToMainChoices()">⬅ Voltar</button>
+      </div>
+
+      <!-- SE JÁ ESTIVER REGISTADO -->
+      <div id="player-registered-block" class="hidden" style="background:rgba(0,50,0,0.3); border:1px solid #0f0; padding:15px; border-radius:10px; margin-bottom:15px; text-align:left;">
+        <div style="font-size:12px; color:#aaa; tracking:wider;">SESSÃO DETETADA:</div>
+        <div style="font-size:16px; font-weight:bold; color:#fff; margin:5px 0;">*Nome: <span id="reg-saved-name" style="color:#00ff66;"></span></div>
+        <p style="font-size:11px; color:#ddd; margin-top:2px;">Como já se encontra registado, insira apenas a sua senha de segurança.</p>
+        
+        <label style="display:block; font-size:12px; color:#0f0; margin-top:10px; font-weight:bold;">*Senha (Obrigatório):</label>
+        <input id="reg-saved-pass" type="password" placeholder="Insira a senha obrigatória*" style="margin-top:4px;" />
+        
+        <button style="width:100%; padding:14px; font-size:16px; margin-top:10px;" onclick="validateQuickLogin()">ENTRAR NO JOGO</button>
+        <div style="text-align:center; margin-top:10px;"><a href="#" onclick="forceNewPlayerReg(); return false;" style="color:#aaa; font-size:11px;">Não sou este jogador (Criar Novo Registo)</a></div>
+      </div>
+
+      <!-- FORMULÁRIO COMPLETO OBRIGATÓRIO PARA NOVO JOGADOR -->
+      <div id="player-new-reg-block">
+        <div style="color:#ffcc00; font-size:11px; margin-bottom:10px; text-align:left;">
+          ⚠️ Todos os campos marcados com asterisco (*) são obrigatórios para jogar.
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; text-align:left;">
+          <div>
+            <label style="font-size:11px; color:#0f0; font-weight:bold;">*Nome:</label>
+            <input id="pl-reg-name" type="text" placeholder="Nome completo*" />
+          </div>
+          <div>
+            <label style="font-size:11px; color:#0f0; font-weight:bold;">*E-mail:</label>
+            <input id="pl-reg-email" type="text" placeholder="Email válido*" />
+          </div>
+          <div>
+            <label style="font-size:11px; color:#0f0; font-weight:bold;">*Senha:</label>
+            <input id="pl-reg-pass" type="password" placeholder="Senha secreta*" />
+          </div>
+          <div>
+            <label style="font-size:11px; color:#0f0; font-weight:bold;">*Confirmar Senha:</label>
+            <input id="pl-reg-pass-conf" type="password" placeholder="Contra senha*" />
+          </div>
+          <div>
+            <label style="font-size:11px; color:#0f0; font-weight:bold;">*Contacto:</label>
+            <input id="pl-reg-phone" type="text" placeholder="Nº de telefone*" />
+          </div>
+          <div>
+            <label style="font-size:11px; color:#0f0; font-weight:bold;">*Morada:</label>
+            <input id="pl-reg-addr" type="text" placeholder="Endereço físico*" />
+          </div>
+          <div>
+            <label style="font-size:11px; color:#0f0; font-weight:bold;">*Localidade:</label>
+            <input id="pl-reg-city" type="text" placeholder="Cidade ou vila*" />
+          </div>
+          <div>
+            <label style="font-size:11px; color:#0f0; font-weight:bold;">*Distrito:</label>
+            <input id="pl-reg-dist" type="text" placeholder="Distrito principal*" />
+          </div>
+        </div>
+
+        <div style="display:flex; gap:10px; margin-top:15px;">
+          <button style="flex:1; padding:14px; font-size:15px;" onclick="processNewPlayerRegistration()">CONCLUIR REGISTO E JOGAR</button>
+        </div>
+      </div>
+      <div id="pl-auth-error-msg" style="min-height:20px; margin-top:10px; font-size:12px; color:#ff0000;"></div>
+    </div>
+
+    <!-- PÁGINA DEDICADA DA EMPRESA (PR) COM NIF E FILIAIS -->
+    <div class="login-box hidden" id="company-dedicated-page" style="max-width:600px;">
+      <div class="panel-header" style="border-bottom:1px solid #0f0; padding-bottom:10px; margin-bottom:10px;">
+        <h2 style="margin:0; color:#0f0; font-size:18px;">🏢 Central da Empresa / Filiais</h2>
+        <button class="btn-dark btn-small" onclick="backToMainChoices()">⬅ Voltar</button>
+      </div>
+
+      <div style="display:flex; gap:5px; margin-bottom:15px; background:#111; p-1; border-radius:8px;">
+        <button id="tab-btn-mae" style="flex:1; background:#0f0; color:#000; font-size:12px;" onclick="switchPrTab('MAE')">REGISTAR EMPRESA-MÃE</button>
+        <button id="tab-btn-filial" style="flex:1; background:#222; color:#0f0; font-size:12px;" onclick="switchPrTab('FILIAL')">REGISTAR FILIAL (CÓDIGO)</button>
+      </div>
+
+      <!-- ABA DA EMPRESA-MÃE -->
+      <div id="pr-tab-mae" style="text-align:left;">
+        <div style="color:#ffcc00; font-size:11px; margin-bottom:8px;">
+          ⚠️ Todos os dados da empresa são estritamente obrigatórios.
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
+          <div>
+            <label style="font-size:11px; color:#0f0; font-weight:bold;">*Nome da Empresa:</label>
+            <input id="pr-company-name" type="text" placeholder="Nome legal obrigatório*" />
+          </div>
+          <div>
+            <label style="font-size:11px; color:#ff0000; font-weight:bold; tracking:wider;">*NIF PARA FATURAMENTO:</label>
+            <input id="pr-company-nif" type="text" placeholder="Nº de Contribuinte obrigatório*" style="border-color:#ff0000;" />
+          </div>
+          <div>
+            <label style="font-size:11px; color:#0f0; font-weight:bold;">*Email de Contacto:</label>
+            <input id="pr-contact" type="text" placeholder="Email corporativo*" />
+          </div>
+          <div>
+            <label style="font-size:11px; color:#0f0; font-weight:bold;">*Senha da Empresa:</label>
+            <input id="pr-password" type="password" placeholder="Senha segura*" />
+          </div>
+          <div style="grid-column:span 2;">
+            <label style="font-size:11px; color:#0f0; font-weight:bold;">*Morada Sede e Código Postal:</label>
+            <input id="pr-postal-code" type="text" placeholder="Endereço completo e Código Postal*" />
+          </div>
+        </div>
+
+        <div style="background:rgba(0,255,0,0.05); padding:10px; border-radius:8px; border:1px dashed #0f0; margin-top:5px;">
+          <div style="font-size:12px; color:#fff; font-weight:bold;">🔗 Código de Ativação para Filiais:</div>
+          <div id="pr-generated-branch-code" style="font-family:monospace; font-size:14px; color:#00ff66; margin:4px 0; font-weight:bold;">GERADO_AO_REGISTAR</div>
+          <p style="font-size:10px; color:#aaa; margin:0;">Envie este código para que a sua filial se vincule instantaneamente a esta conta herdando os seus pacotes promocionais.</p>
+        </div>
+
+        <div style="display:flex; gap:10px; margin-top:15px;">
+          <button style="flex:1; background:#ff0000; color:#fff; font-size:14px; font-weight:bold;" onclick="processNewPrRegistration()">ATIVAR EMPRESA-MÃE</button>
+          <button style="flex:1;" class="btn-dark" onclick="loginAccount('PR')">JÁ TENHO CONTA</button>
+        </div>
+      </div>
+
+      <!-- ABA DE VINCULAÇÃO DE FILIAIS -->
+      <div id="pr-tab-filial" class="hidden" style="text-align:left;">
+        <div style="color:#00ff66; font-size:11px; margin-bottom:10px;">
+          A filial herda os pacotes da mãe e mantém-se ativa pelo tempo de vigência desses mesmos pacotes promocionais.
+        </div>
+
+        <label style="font-size:11px; color:#0f0; font-weight:bold;">*Código de Emparelhamento da Mãe:</label>
+        <input id="filial-parent-code" type="text" placeholder="Insira o código enviado pela empresa-mãe*" />
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
+          <div>
+            <label style="font-size:11px; color:#0f0; font-weight:bold;">*Nome desta Filial:</label>
+            <input id="filial-name" type="text" placeholder="Ex: Filial Norte*" />
+          </div>
+          <div>
+            <label style="font-size:11px; color:#0f0; font-weight:bold;">*NIF (Própria ou da Mãe):</label>
+            <input id="filial-nif" type="text" placeholder="NIF aplicável à fatura*" />
+          </div>
+        </div>
+
+        <label style="display:block; font-size:11px; color:#ffcc00; margin-top:10px; font-weight:bold;">*Opção de Faturamento:</label>
+        <select id="filial-billing-mode" style="margin-top:4px;">
+          <option value="parent">Faturar na Empresa-Mãe (Consolidado)</option>
+          <option value="self">Faturar na Própria Filial (Independente)</option>
+        </select>
+
+        <div style="display:flex; gap:10px; margin-top:15px;">
+          <button style="flex:1; background:#00ff66; color:#000; font-size:14px; font-weight:bold;" onclick="processFilialRegistration()">REGISTAR E VINCULAR FILIAL</button>
+        </div>
+      </div>
+
+      <div id="pr-auth-msg" style="min-height:20px; margin-top:10px; font-size:12px; color:#00ff66;"></div>
+    </div>
+  </div>
+
+
+  <!-- ========================================== -->
+  <!-- ECRÃ PRINCIPAL DO JOGO (LEAFLET)           -->
+  <!-- ========================================== -->
+  <div id="game-screen" class="hidden">
+    
+    <!-- MAPA E OVERLAY -->
+    <div id="map-wrap">
+      <div id="map"></div>
+      <div id="fog-overlay"></div>
+    </div>
+
+    <!-- BARRA SUPERIOR DE ENERGIA E ESTADO -->
+    <div id="top-strip">
+      <div class="energy-bar"><div id="energy-fill"></div></div>
+      <div style="margin-top:8px; font-size:13px; font-weight:bold; color:#fff; display:flex; justify-content:space-between;">
+        <span id="energy-text" style="color:#0f0;">Energia: 100%</span>
+        <span id="flag-counts-text" style="color:#00aaff;">Bandeiras: 0</span>
+        <span id="mode-text" style="color:#ffcc00;">Modo: -</span>
+      </div>
+    </div>
+
+    <!-- BOTÕES FLUTUANTES À DIREITA -->
+    <div id="floating-buttons">
+      <button class="float-btn" onclick="openPanel('progress')" title="Ver Medidores e Progresso">📊</button>
+      <button class="float-btn" onclick="openPanel('qrs')" title="Meus Vouchers e QR Codes">🎫</button>
+      <button class="float-btn" onclick="openPanel('account')" title="Minha Conta e Configurações">👤</button>
+      <button class="float-btn" onclick="centerOnPlayer()" title="Centrar Mapa no Avatar">📍</button>
+    </div>
+
+    <!-- CONTROLOS OFFLINE COM OTIMIZAÇÃO (MOSTRAR GARANTIDO) -->
+    <div id="offline-controls" class="hidden">
+      <div style="font-size:11px; font-weight:bold; color:#0f0; margin-bottom:2px; tracking:wider;">CONTROLO DIREÇIONAL</div>
+      <div style="display:flex; justify-content:center; gap:5px; margin-bottom:5px;">
+        <button class="btn-dark btn-small" onclick="resizeOfflineControls(-15)" title="Reduzir D-Pad font">A-</button>
+        <button class="btn-dark btn-small" onclick="resizeOfflineControls(15)" title="Aumentar D-Pad font">A+</button>
+      </div>
+      <div class="dpad">
+        <div style="visibility:hidden;">.</div>
+        <button onclick="moveHomePlayer(0, 1)" title="Cima">⬆</button>
+        <div style="visibility:hidden;">.</div>
+        <button onclick="moveHomePlayer(-1, 0)" title="Esquerda">⬅</button>
+        <button onclick="manualRefreshFlags()" style="background:#00aaff; color:#fff;" title="Gerar novas bandeiras">⟳</button>
+        <button onclick="moveHomePlayer(1, 0)" title="Direita">➡</button>
+        <div style="visibility:hidden;">.</div>
+        <button onclick="moveHomePlayer(0, -1)" title="Baixo">⬇</button>
+        <div style="visibility:hidden;">.</div>
+      </div>
+    </div>
+
+    <!-- PAINEL LATERAL INFERIOR DE INFORMAÇÕES -->
+    <div id="side-panel" class="hidden">
+      <div class="panel-header">
+        <b id="side-panel-title" style="font-size:16px; color:#0f0;">Painel</b>
+        <div class="modal-controls-bar">
+          <button class="btn-dark btn-small" onclick="closePanel()" title="Minimizar">⬅ Voltar</button>
+          <button class="btn-danger btn-small" onclick="closePanel()" title="Fechar">X FECHAR</button>
+        </div>
+      </div>
+      <div id="side-panel-content"></div>
+    </div>
+
+  </div>
+
+
+  <!-- ========================================== -->
+  <!-- MODAIS DO JOGO                             -->
+  <!-- ========================================== -->
+  
+  <!-- MODAL DE SELEÇÃO DE MODO DE JOGO -->
+  <div id="mode-modal" class="modal hidden">
+    <div class="panel-header">
+      <h3 style="margin:0; color:#0f0; font-size:18px;">Como pretendes jogar?</h3>
+      <button class="btn-dark btn-small" onclick="closeModeModal()">X</button>
+    </div>
+    <div class="item" style="border-color:#00aaff;">
+      <b style="color:#00aaff; font-size:15px;">🛰️ Modo GPS / Rua</b><br>
+      Caminha fisicamente no exterior para mover o avatar através do sinal de satélite real.
+    </div>
+    <div class="item" style="border-color:#ffcc00;">
+      <b style="color:#ffcc00; font-size:15px;">🏠 Modo Offline / Casa</b><br>
+      Joga confortavelmente no teu PC ou sofá usando o D-Pad na tela para simular os passos.
+    </div>
+    <div style="display:flex; gap:10px; margin-top:15px;">
+      <button style="flex:1; background:#00aaff; color:#fff;" onclick="requestGPSMode()">ATIVAR GPS</button>
+      <button style="flex:1; background:#ffcc00; color:#000;" onclick="activateHomeMode()">ENTRAR OFFLINE</button>
+    </div>
+  </div>
+
+  <!-- MODAL DE BANDEIRAS (COMPLETO E SEM CORTES) -->
+  <div id="flag-modal" class="modal hidden">
+    <div id="flag-modal-content"></div>
+  </div>
+
+  <!-- CONTAINER PARA MENSAGENS FLUTUANTES (TOAST) -->
+  <div id="toast-container"></div>
+
+  <!-- EFEITO SONORO PARA QR CODE / BANDEIRA -->
+  <audio id="qr-sound" src="https://assets.mixkit.co/sfx/preview/mixkit-retro-game-emergency-alarm-1005.mp3" preload="auto"></audio>
+
+
+  <!-- ========================================== -->
+  <!-- JAVASCRIPT NATIVO OTIMIZADO E CORRIGIDO    -->
+  <!-- ========================================== -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    const STORAGE_KEY = "zap_flags_v2_opt";
+
+    // PACOTES PR
+    const PACKS = {
+      MINIMO:  { key:"MINIMO", label:"Mínimo", price:10, flags:1000, radiusKm:5, paid:true, maxLots:50, bingos:0 },
+      MEDIO:   { key:"MEDIO",  label:"Médio",   price:15, flags:2500, radiusKm:15, paid:true, maxLots:125, bingos:2 },
+      GRANDE:  { key:"GRANDE", label:"Grande",  price:25, flags:10000, radiusKm:50, paid:true, maxLots:500, bingos:3 },
+      ENORME:  { key:"ENORME", label:"Enorme", price:50, flags:25000, radiusKm:Infinity, paid:true, maxLots:1250, bingos:5 }
+    };
+
+    let map = null;
+    let playerMarker = null;
+    let visionCircle = null;
+    let currentPosition = null;
+    let watchId = null;
+    let allFlags = [];
+    let offlineMode = false;
+    let currentOpenPanel = null;
+    let lastPosForEnergy = null;
+    let movedMetersBuffer = 0;
+    let lastMovementTime = Date.now();
+    let lastFlagRefreshCenter = null;
+    let lastFlagRefreshTime = 0;
+    let gpsCenteredOnce = false;
+
+    // CARREGAR OU INICIALIZAR ESTADO
+    function defaultState() {
+      return {
+        player: {
+          name: "Avatar Pro", contact: "pro@zapflags.pt", password: "123",
+          avatarMode: "male", avatarPhoto: "",
+          energy: 100, zapFlags: 0, prFlags: 0, totalFlags: 0, skill: 1, vision: 15,
+          promoProgressByPR: {}, totalSeenByPR: {}, qrs: [], usedQrs: []
+        },
+        prs: [
+          {
+            id: "seed1", ownerContact: "loja@zapflags.pt", ownerPassword: "123",
+            name: "Loja Central PR", short: "LCP", color: "#FF0000",
+            website: "https://zapflags.pt", contact: "910000000",
+            address: "Avenida Principal, Centro", postalCode: "4000-100",
+            lat: 41.1496, lng: -8.6109,
+            packages: [
+              { id: "pkg1", key: "MEDIO", label: "Médio", price: 15, flagsInitial: 2500, flagsLeft: 2500,
+                radiusKm: 15, maxLots: 125, bingos: 2, paid: true, createdAt: Date.now() }
+            ],
+            campaign: { rewardsEnabled: true, rewardType: "discount", rewardText: "20% Desconto Direto",
+              promoLotsActive: 10, promoBudgetLeft: 100, bingoCountActive: 1, bingoText: "Brinde Surpresa", rewardsGiven: 0 }
+          }
+        ],
+        currentPRId: null
+      };
+    }
+
+    let state = defaultState();
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed && parsed.player) state = parsed;
+      }
+    } catch(e) { console.warn("Usando estado default."); }
+
+    function saveState() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }
+
+    function showToast(text) {
+      const c = document.getElementById("toast-container");
+      if (!c) return;
+      const t = document.createElement("div");
+      t.className = "feedback-toast";
+      t.innerText = text;
+      c.appendChild(t);
+      setTimeout(() => t.remove(), 2600);
+    }
+
+    // ALTERNAR MODOS DE ENTRADA NO LOGIN
+    function switchEntryMode(mode) {
+      if (mode === 'JG') {
+        document.getElementById("jg-form").classList.remove("hidden");
+        document.getElementById("pr-form").classList.add("hidden");
+      } else {
+        document.getElementById("jg-form").classList.add("hidden");
+        document.getElementById("pr-form").classList.remove("hidden");
+      }
+    }
+
+    function registerAccount(type) {
+      if (type === 'JG') {
+        state.player.name = document.getElementById("player-name").value || "Jogador";
+        state.player.contact = document.getElementById("player-contact").value || "jg@zap.pt";
+        state.player.password = document.getElementById("player-password").value || "123";
+        state.player.avatarMode = document.getElementById("player-avatar-mode").value;
+        state.player.avatarPhoto = document.getElementById("player-photo-url").value.trim();
+        saveState();
+        document.getElementById("jg-auth-msg").innerText = "✔ Conta registada com sucesso!";
+        setTimeout(() => loginAccount('JG'), 800);
+      } else {
+        const name = document.getElementById("pr-company-name").value || "Nova Marca";
+        const newPr = {
+          id: "PR_" + Date.now(),
+          ownerContact: document.getElementById("pr-contact").value || "pr@zap.pt",
+          ownerPassword: document.getElementById("pr-password").value || "123",
+          name: name, short: name.substring(0,3).toUpperCase(), color: "#FF0000",
+          lat: 41.1496 + (Math.random()-0.5)*0.01, lng: -8.6109 + (Math.random()-0.5)*0.01,
+          packages: [{ id:"p1", key:"MINIMO", label:"Mínimo", price:10, flagsInitial:1000, flagsLeft:1000, radiusKm:5, maxLots:50, bingos:0, paid:true }],
+          campaign: { rewardsEnabled:true, rewardText:"Voucher Oferta", promoLotsActive:5, promoBudgetLeft:50, bingoCountActive:1, bingoText:"Bingo Surpresa", rewardsGiven:0 }
+        };
+        state.prs.push(newPr);
+        state.currentPRId = newPr.id;
+        saveState();
+        document.getElementById("pr-auth-msg").innerText = "✔ Loja PR criada com sucesso!";
+        setTimeout(() => loginAccount('PR'), 800);
+      }
+    }
+
+    function loginAccount(type) {
+      document.getElementById("login-screen").classList.add("hidden");
+      document.getElementById("game-screen").classList.remove("hidden");
+      initMap();
+      document.getElementById("mode-modal").classList.remove("hidden");
+      showToast("BEM-VINDO " + (type === 'JG' ? state.player.name : "GESTOR PR"));
+    }
+
+    // MAPA LEAFLET INIT
+    function initMap() {
+      if (map) return;
+      map = L.map("map", { zoomControl: false }).setView([41.1496, -8.6109], 18);
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution: "© OSM" }).addTo(map);
+      map.on("move zoom", updateFogOverlay);
+    }
+
+    function createPlayerIcon() {
+      let inner = "JG";
+      if (state.player.avatarMode === "male") inner = "♂";
+      if (state.player.avatarMode === "female") inner = "♀";
+      if (state.player.avatarMode === "photo" && state.player.avatarPhoto) {
+        inner = '<img src="' + state.player.avatarPhoto + '" onerror="this.src='https://api.dicebear.com/7.x/bottts/svg?seed=zap'" alt="avatar" />';
+      }
+      return L.divIcon({
+        className: "", html: '<div class="player-marker">' + inner + '</div>',
+        iconSize: [32, 32], iconAnchor: [16, 16]
+      });
+    }
+
+    function createFlagIcon(isZap) {
+      const cls = isZap ? "flag-marker flag-zap" : "flag-marker";
+      const bg = isZap ? "#00aaff" : "#FF0000";
+      return L.divIcon({
+        className: "", html: '<div class="' + cls + '"><div class="flag-stick"></div><div class="flag-banner" style="background:' + bg + ';"></div></div>',
+        iconSize: [34, 34], iconAnchor: [17, 28]
+      });
+    }
+
+    // =========================================================================
+    // CORREÇÕES PEDIDAS APLICADAS COM MÁXIMO RIGOR
+    // =========================================================================
+
+    // 1. ATIVAR MODO CASA: GARANTIR VISIBILIDADE DO D-PAD
+    function activateHomeMode() {
+      document.getElementById("mode-modal").classList.add("hidden");
+      offlineMode = true;
+      document.getElementById("offline-controls").classList.remove("hidden"); // ✅ MOSTRAR CORRETAMENTE!
+      
+      if (!currentPosition) currentPosition = { lat: 41.1496, lng: -8.6109 };
+      updatePlayerLocation(currentPosition.lat, currentPosition.lng, false, true);
+      manualRefreshFlags();
+      renderTopBar();
+      showToast("🏠 Modo Casa Ativado: Use as setas!");
+    }
+
+    function requestGPSMode() {
+      document.getElementById("mode-modal").classList.add("hidden");
+      document.getElementById("offline-controls").classList.add("hidden");
+      offlineMode = false; gpsCenteredOnce = false; renderTopBar();
+      
+      if (!navigator.geolocation) { 
+        alert("O teu navegador não suporta GPS."); 
+        activateHomeMode(); 
+        return; 
+      }
+      
+      showToast("🛰️ Procurando satélites GPS...");
+      if (watchId !== null) navigator.geolocation.clearWatch(watchId);
+      
+      navigator.geolocation.getCurrentPosition(
+        pos => { 
+          updatePlayerLocation(pos.coords.latitude, pos.coords.longitude, true, true); 
+          watchId = navigator.geolocation.watchPosition(
+            p => updatePlayerLocation(p.coords.latitude, p.coords.longitude, true, false), 
+            err => { showToast("Sinal GPS perdido."); activateHomeMode(); }, 
+            { enableHighAccuracy: true, maximumAge: 3000, timeout: 15000 }
+          ); 
+        },
+        err => { alert("Falha ao ligar GPS. Entrando offline."); activateHomeMode(); },
+        { enableHighAccuracy: true, maximumAge: 3000, timeout: 15000 }
+      );
+    }
+
+    // 2. ATUALIZAÇÃO OTIMIZADA DE JOGADOR SEM RECRIAR ICONES + VISION CIRCLE CORETO
+    function updatePlayerLocation(lat, lng, fromMovement, centerMap) {
+      currentPosition = { lat, lng };
+
+      // Lógica de Consumo de Energia Racionalizada
+      if (lastPosForEnergy && fromMovement) {
+        const moved = getDistanceMeters(lastPosForEnergy.lat, lastPosForEnergy.lng, lat, lng);
+        if (moved > 0.5) {
+          movedMetersBuffer += moved;
+          lastMovementTime = Date.now();
+          while (movedMetersBuffer >= 20) {
+            movedMetersBuffer -= 20;
+            state.player.energy = Math.max(0, state.player.energy - 1);
+            if (state.player.energy === 0) showToast("⚠️ Exaustão! Recupera energia com bandeiras azuis.");
+          }
+        }
+      }
+      lastPosForEnergy = { lat, lng };
+
+      // ✅ Atualizar MARKER apenas por coordenadas (SEM RECRIAR O ÍCONE!)
+      if (!playerMarker) {
+        playerMarker = L.marker([lat, lng], { icon: createPlayerIcon() }).addTo(map);
+      } else {
+        playerMarker.setLatLng([lat, lng]);
+        // NÃO recriamos setIcon() para não causar flickering visual e lentidão no mapa!
+      }
+
+      // ✅ Atualizar VISION CIRCLE com precisão e TRAZÊ-LO PARA A FRENTE
+      if (!visionCircle) {
+        visionCircle = L.circle([lat, lng], {
+          radius: state.player.vision,
+          color: "#00ff00",
+          fillOpacity: 0.05,
+          weight: 1.5
+        }).addTo(map);
+      } else {
+        visionCircle.setLatLng([lat, lng]);          // ✅ Atualiza posição
+        visionCircle.setRadius(state.player.vision); // ✅ Atualiza raio
+        visionCircle.bringToFront();                 // ✅ Traz para a frente de todas as camadas!
+      }
+
+      if (centerMap && map) map.setView([lat, lng], 19);
+
+      updateFogOverlay();
+      refreshFlags(false);
+      updateVisibleFlags();
+      renderTopBar();
+      renderPanelIfOpen();
+      saveState();
+    }
+
+    function updateFogOverlay() {
+      if (!map || !currentPosition) return;
+      const point = map.latLngToContainerPoint([currentPosition.lat, currentPosition.lng]);
+      const fog = document.getElementById("fog-overlay");
+      if (!fog) return;
+      fog.style.setProperty("--fog-x", point.x + "px");
+      fog.style.setProperty("--fog-y", point.y + "px");
+      fog.style.setProperty("--fog-r", Math.max(65, state.player.vision * 4) + "px");
+    }
+
+    function getDistanceMeters(lat1, lng1, lat2, lng2) {
+      const R = 6371e3;
+      const p1 = lat1 * Math.PI/180, p2 = lat2 * Math.PI/180;
+      const dp = (lat2-lat1)*Math.PI/180, dl = (lng2-lng1)*Math.PI/180;
+      const a = Math.sin(dp/2)*Math.sin(dp/2) + Math.cos(p1)*Math.cos(p2)*Math.sin(dl/2)*Math.sin(dl/2);
+      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    }
+
+    // GERAR E ATUALIZAR BANDEIRAS
+    function randomOffset(lat, lng, radiusMeters) {
+      const r = radiusMeters / 111320;
+      const u = Math.random(), v = Math.random();
+      const w = r * Math.sqrt(u), t = 2 * Math.PI * v;
+      return { lat: lat + w * Math.sin(t), lng: lng + (w * Math.cos(t)) / Math.cos(lat * Math.PI / 180) };
+    }
+
+    function manualRefreshFlags() {
+      if (!currentPosition) return;
+      refreshFlags(true);
+      showToast("🚩 Novas bandeiras geradas em redor!");
+    }
+
+    function refreshFlags(force) {
+      if (!currentPosition) return;
+      const now = Date.now();
+      let should = force;
+      if (!lastFlagRefreshCenter) should = true;
+      if (!should && now - lastFlagRefreshTime > 12000) should = true;
+      if (!should && lastFlagRefreshCenter) {
+        const d = getDistanceMeters(lastFlagRefreshCenter.lat, lastFlagRefreshCenter.lng, currentPosition.lat, currentPosition.lng);
+        if (d > 15) should = true;
+      }
+      if (!should) return;
+
+      // Limpar marcadores anteriores do mapa
+      allFlags.forEach(f => { if (f.marker) map.removeLayer(f.marker); });
+      allFlags = [];
+
+      // Adiciona 1 ou 2 bandeiras ZAP de energia azul
+      const pZap = randomOffset(currentPosition.lat, currentPosition.lng, 12);
+      allFlags.push({ id: "ZAP_" + Math.random().toString(36).slice(2,8), type: "ZAP", lat: pZap.lat, lng: pZap.lng, marker: null });
+
+      // Adiciona bandeiras PR das lojas ativas
+      state.prs.forEach(pr => {
+        pr.packages.forEach(pkg => {
+          if (pkg.flagsLeft > 0) {
+            const pPr = randomOffset(currentPosition.lat, currentPosition.lng, 18);
+            allFlags.push({ 
+              id: "PR_" + Math.random().toString(36).slice(2,8), 
+              type: "PR", prId: pr.id, packageId: pkg.id, 
+              lat: pPr.lat, lng: pPr.lng, marker: null, 
+              reward: pr.campaign.rewardText 
+            });
+          }
+        });
+      });
+
+      lastFlagRefreshCenter = { ...currentPosition };
+      lastFlagRefreshTime = now;
+      updateVisibleFlags();
+    }
+
+    function updateVisibleFlags() {
+      if (!currentPosition || !map) return;
+      let count = 0;
+      allFlags.forEach(flag => {
+        const dist = getDistanceMeters(currentPosition.lat, currentPosition.lng, flag.lat, flag.lng);
+        const isVisible = dist <= state.player.vision + 5;
+        
+        if (isVisible && !flag.marker) {
+          flag.marker = L.marker([flag.lat, flag.lng], { icon: createFlagIcon(flag.type === "ZAP") }).addTo(map);
+          flag.marker.on("click", () => openFlagModal(flag.id));
+        }
+        if (!isVisible && flag.marker) {
+          map.removeLayer(flag.marker);
+          flag.marker = null;
+        }
+        if (isVisible) count++;
+      });
+      document.getElementById("flag-counts-text").innerText = "Bandeiras: " + count;
+    }
+
+    // MOVIMENTAÇÃO DO D-PAD OFFLINE
+    function moveHomePlayer(dx, dy) {
+      if (!offlineMode || !currentPosition) return;
+      // Ajuste de passos responsivos
+      const step = 2.5; 
+      const lat = currentPosition.lat + (dy * step / 111320);
+      const lng = currentPosition.lng + (dx * step / (111320 * Math.cos(currentPosition.lat * Math.PI / 180)));
+      updatePlayerLocation(lat, lng, true, true);
+    }
+
+    function centerOnPlayer() {
+      if (!map || !currentPosition) return;
+      map.setView([currentPosition.lat, currentPosition.lng], 19);
+      showToast("📍 Mapa centrado.");
+    }
+
+    function resizeOfflineControls(delta) {
+      const box = document.getElementById("offline-controls");
+      if (!box) return;
+      const currW = box.offsetWidth;
+      const currH = box.offsetHeight;
+      box.style.width = Math.max(110, Math.min(180, currW + delta)) + "px";
+      box.style.height = Math.max(130, Math.min(200, currH + delta)) + "px";
+    }
+
+    // =========================================================================
+    // INTERFACE DE PAINÉIS E RECOLHA (FECHO COMPLETO DO CÓDIGO)
+    // =========================================================================
+    function renderTopBar() {
+      const fill = document.getElementById("energy-fill");
+      const txt = document.getElementById("energy-text");
+      const mod = document.getElementById("mode-text");
+      if (fill) fill.style.width = state.player.energy + "%";
+      if (txt) txt.innerText = "Energia: " + state.player.energy + "%";
+      if (mod) mod.innerText = offlineMode ? "Modo: Casa" : "Modo: Rua";
+    }
+
+    function openPanel(type) {
+      currentOpenPanel = type;
+      document.getElementById("side-panel").classList.remove("hidden");
+      document.getElementById("side-panel-title").innerText = 
+        type === "progress" ? "📊 Medidores e Habilidades" : 
+        type === "qrs" ? "🎫 Vouchers e QR Codes" : "👤 Dados da Conta";
+      
+      const content = document.getElementById("side-panel-content");
+      if (!content) return;
+
+      if (type === "progress") {
+        content.innerHTML = 
+          '<div class="item" style="border-color:#0f0;"><b>⚡ Estado Geral do Avatar:</b><br>' +
+          '• Energia Atual: <b>' + state.player.energy + '%</b><br>' +
+          '• Visão do Satélite: <b>' + state.player.vision.toFixed(1) + ' metros</b><br>' +
+          '• Nível de Perícia (Skill): <b>' + state.player.skill + '</b><br>' +
+          '• Total Recolhidas: <b>' + state.player.totalFlags + ' bandeiras</b></div>';
+      } else if (type === "qrs") {
+        if (!state.player.qrs.length) {
+          content.innerHTML = '<div class="item">Nenhum QR Code gerado. Apanha bandeiras vermelhas de marcas para desbloquear prémios!</div>';
+        } else {
+          content.innerHTML = state.player.qrs.map(qr => 
+            '<div class="item" style="background:#111; border-color:#ff0000;">' +
+            '<b style="color:#ff0000; font-size:15px;">🎁 ' + qr.prName + '</b><br>' +
+            'Oferta: <b style="color:#fff;">' + qr.rewardText + '</b><br>' +
+            '<div class="qr-code">' + qr.code + '</div><br>' +
+            '<span style="font-size:11px; color:#aaa;">Mostre este código na loja para validação.</span></div>'
+          ).join("");
+        }
+      } else {
+        content.innerHTML = 
+          '<div class="item"><b>Nome:</b> ' + state.player.name + '<br><b>Contacto:</b> ' + state.player.contact + '</div>' +
+          '<div style="display:flex; gap:10px; margin-top:10px;">' +
+          '<button style="flex:1; background:#00aaff; color:#fff;" onclick="document.getElementById('mode-modal').classList.remove('hidden')">ALTERAR MODO</button>' +
+          '<button style="flex:1;" class="btn-danger" onclick="location.reload()">SAIR</button></div>';
+      }
+    }
+
+    function closePanel() { 
+      currentOpenPanel = null; 
+      document.getElementById("side-panel").classList.add("hidden"); 
+    }
+    
+    function renderPanelIfOpen() { 
+      if (currentOpenPanel) openPanel(currentOpenPanel); 
+    }
+
+    function closeModeModal() {
+      document.getElementById("mode-modal").classList.add("hidden");
+    }
+
+    function closeFlagModal() {
+      document.getElementById("flag-modal").classList.add("hidden");
+    }
+
+    // =========================================================================
+    // FECHO COMPLETO DA FUNÇÃO openFlagModal QUE ESTAVA CORTADA NA MENSAGEM
+    // =========================================================================
+    function openFlagModal(flagId) {
+      const flag = allFlags.find(f => f.id === flagId);
+      if (!flag || !currentPosition) return;
+      
+      const dist = getDistanceMeters(currentPosition.lat, currentPosition.lng, flag.lat, flag.lng);
+      // Critério de recolha (apenas permite se estiver dentro de 5 metros ou o circulo abranger)
+      const isWithinReach = dist <= state.player.vision;
+
+      const modal = document.getElementById("flag-modal");
+      const content = document.getElementById("flag-modal-content");
+      if (!modal || !content) return;
+
+      modal.classList.remove("hidden");
+
+      // CABEÇALHO COM OS BOTÕES PEDIDOS EXPLICITAMENTE: VOLTAR, SAIR E X PARA FECHAR
+      const headerHTML = 
+        '<div class="panel-header">' +
+          '<h3 style="margin:0; font-size:16px; color:' + (flag.type === "ZAP" ? "#00aaff" : "#ff0000") + ';">' + 
+            (flag.type === "ZAP" ? "🔵 BANDEIRA DE ENERGIA" : "🚩 BANDEIRA EMPRESA / PR") + 
+          '</h3>' +
+          '<div class="modal-controls-bar">' +
+            '<button class="btn-dark btn-small" onclick="closeFlagModal()" title="Recuar">⬅ Voltar</button>' +
+            '<button class="btn-danger btn-small" onclick="closeFlagModal()" title="Fechar">X FECHAR</button>' +
+          '</div>' +
+        '</div>';
+
+      if (flag.type === "ZAP") {
+        content.innerHTML = headerHTML +
+          '<div class="item" style="border-color:#00aaff;">Apanha esta bandeira azul para carregar as baterias do avatar em <b>+10% de Energia</b> e aumentar o raio de alcance.</div>' +
+          '<div class="item">Distância Atual: <b>' + dist.toFixed(1) + ' metros</b><br>O teu raio de visão cobre: <b>' + state.player.vision.toFixed(1) + 'm</b></div>' +
+          '<button style="width:100%; background:#00aaff; color:#fff; padding:14px; font-size:16px;" ' + (isWithinReach ? '' : 'disabled') + ' onclick="collectFlagAction('' + flag.id + '')">' + 
+            (isWithinReach ? '⚡ RECOLHER ENERGIA' : '❌ DEMASIADO LONGE (Aproxime-se)') + 
+          '</button>';
+      } else {
+        const pr = state.prs.find(p => p.id === flag.prId) || state.prs[0];
+        content.innerHTML = headerHTML +
+          '<div class="item" style="border-color:#ff0000; background:rgba(100,0,0,0.2);">' +
+            '<b style="color:#ff0000; font-size:16px;">🏢 Loja: ' + pr.name + '</b><br>' +
+            'Oferta Disponível: <b style="color:#fff;">' + (flag.reward || "Brinde Exclusivo") + '</b>' +
+          '</div>' +
+          '<div class="item">Distância Atual: <b>' + dist.toFixed(1) + ' metros</b><br>Estás dentro do limite do satélite!</div>' +
+          '<button style="width:100%; background:#ff0000; color:#fff; padding:14px; font-size:16px; font-weight:bold;" ' + (isWithinReach ? '' : 'disabled') + ' onclick="collectFlagAction('' + flag.id + '')">' +
+            (isWithinReach ? '🎁 DESBLOQUEAR VOUCHER' : '❌ DEMASIADO LONGE') +
+          '</button>';
+      }
+    }
+
+    // AÇÃO EXATA DE RECOLHA
+    function collectFlagAction(flagId) {
+      const flagIndex = allFlags.findIndex(f => f.id === flagId);
+      if (flagIndex === -1) return;
+      const flag = allFlags[flagIndex];
+
+      // Tocar áudio retro conforme o pedido
+      const sound = document.getElementById("qr-sound");
+      if (sound) {
+        sound.currentTime = 0;
+        sound.play().catch(() => {});
+      }
+
+      if (flag.type === "ZAP") {
+        state.player.energy = Math.min(100, state.player.energy + 10);
+        state.player.zapFlags += 1;
+        state.player.totalFlags += 1;
+        // Expande levemente a visão ao apanhar bandeiras nativas
+        state.player.vision = Math.min(40, state.player.vision + 0.5);
+        showToast("⚡ Energia recuperada! Alcance visual expandido.");
+      } else {
+        state.player.prFlags += 1;
+        state.player.totalFlags += 1;
+        const pr = state.prs.find(p => p.id === flag.prId) || state.prs[0];
+        
+        // Deduz lote da empresa
+        if (pr && pr.packages[0] && pr.packages[0].flagsLeft > 0) {
+          pr.packages[0].flagsLeft -= 1;
+        }
+
+        // Gera o respetivo QR code para a carteira
+        const code = "VOUCHER-" + pr.short + "-" + Math.random().toString(36).slice(2,8).toUpperCase();
+        state.player.qrs.push({
+          prName: pr.name,
+          rewardText: flag.reward || "Oferta Especial",
+          code: code,
+          expiresAt: Date.now() + (7 * 24 * 60 * 60 * 1000)
+        });
+        showToast("🎁 Voucher adicionado à tua carteira de QRs!");
+      }
+
+      // Remove a bandeira colhida do mapa
+      if (flag.marker) map.removeLayer(flag.marker);
+      allFlags.splice(flagIndex, 1);
+
+      closeFlagModal();
+      renderTopBar();
+      renderPanelIfOpen();
+      saveState();
+    }
+
+    // FUNÇÕES AVANÇADAS DO FLUXO INICIAL E REGRAS DE REGISTO
+    function startDirectGame() {
+      // Oculta a caixa inicial
+      document.getElementById("main-choice-box").classList.add("hidden");
+      document.getElementById("company-dedicated-page").classList.add("hidden");
+      document.getElementById("player-mandatory-page").classList.remove("hidden");
+
+      // Verifica se o jogador já se encontra registado
+      const savedName = state.player.name;
+      const isActuallyRegistered = savedName && state.player.contact && state.player.contact !== "pro@zapflags.pt";
+
+      if (isActuallyRegistered) {
+        // "se já está registado aparece o *nome só mete *senha"
+        document.getElementById("player-registered-block").classList.remove("hidden");
+        document.getElementById("player-new-reg-block").classList.add("hidden");
+        document.getElementById("reg-saved-name").innerText = savedName;
+      } else {
+        // Força o novo registo com todos os campos asterisco obrigatórios
+        document.getElementById("player-registered-block").classList.add("hidden");
+        document.getElementById("player-new-reg-block").classList.remove("hidden");
+      }
+    }
+
+    function validateQuickLogin() {
+      const pass = document.getElementById("reg-saved-pass").value;
+      if (!pass) {
+        document.getElementById("pl-auth-error-msg").innerText = "❌ O campo *Senha é estritamente obrigatório.";
+        return;
+      }
+      if (pass !== state.player.password && state.player.password !== "123") {
+        document.getElementById("pl-auth-error-msg").innerText = "❌ *Senha incorreta. Tente novamente.";
+        return;
+      }
+      // Sucesso
+      enterGameMapScreen();
+    }
+
+    function processNewPlayerRegistration() {
+      const name = document.getElementById("pl-reg-name").value.trim();
+      const email = document.getElementById("pl-reg-email").value.trim();
+      const pass = document.getElementById("pl-reg-pass").value;
+      const conf = document.getElementById("pl-reg-pass-conf").value;
+      const phone = document.getElementById("pl-reg-phone").value.trim();
+      const addr = document.getElementById("pl-reg-addr").value.trim();
+      const city = document.getElementById("pl-reg-city").value.trim();
+      const dist = document.getElementById("pl-reg-dist").value.trim();
+
+      const err = document.getElementById("pl-auth-error-msg");
+      err.innerText = "";
+
+      // Validação obrigatória com *
+      if (!name || !email || !pass || !conf || !phone || !addr || !city || !dist) {
+        err.innerText = "❌ Todos os campos com asterisco (*) são de preenchimento obrigatório.";
+        return;
+      }
+      if (pass !== conf) {
+        err.innerText = "❌ A *Senha e a *Confirmar Senha não coincidem.";
+        return;
+      }
+
+      state.player.name = name;
+      state.player.contact = email;
+      state.player.password = pass;
+      saveState();
+
+      showToast("✔ Registo concluído com sucesso!");
+      setTimeout(() => enterGameMapScreen(), 600);
+    }
+
+    function forceNewPlayerReg() {
+      document.getElementById("player-registered-block").classList.add("hidden");
+      document.getElementById("player-new-reg-block").classList.remove("hidden");
+      document.getElementById("pl-auth-error-msg").innerText = "";
+    }
+
+    function enterGameMapScreen() {
+      document.getElementById("login-screen").classList.add("hidden");
+      document.getElementById("game-screen").classList.remove("hidden");
+      initMap();
+      document.getElementById("mode-modal").classList.remove("hidden");
+      showToast("🎮 BEM-VINDO AO MAPA " + state.player.name.toUpperCase() + "!");
+    }
+
+    // GESTÃO DA EMPRESA E FILIAIS
+    function openCompanyPage() {
+      document.getElementById("main-choice-box").classList.add("hidden");
+      document.getElementById("player-mandatory-page").classList.add("hidden");
+      document.getElementById("company-dedicated-page").classList.remove("hidden");
+      switchPrTab('MAE');
+    }
+
+    function switchPrTab(tab) {
+      const err = document.getElementById("pr-auth-msg");
+      if (err) err.innerText = "";
+
+      if (tab === 'MAE') {
+        document.getElementById("pr-tab-mae").classList.remove("hidden");
+        document.getElementById("pr-tab-filial").classList.add("hidden");
+        document.getElementById("tab-btn-mae").style.background = "#0f0";
+        document.getElementById("tab-btn-mae").style.color = "#000";
+        document.getElementById("tab-btn-filial").style.background = "#222";
+        document.getElementById("tab-btn-filial").style.color = "#0f0";
+
+        // Gera código de ativação para a mãe se não houver
+        const codeBox = document.getElementById("pr-generated-branch-code");
+        if (codeBox) {
+          if (!state.prs[0].branchCode) {
+            state.prs[0].branchCode = "ZAP-FILIAL-" + Math.random().toString(36).slice(2,7).toUpperCase();
+            saveState();
+          }
+          codeBox.innerText = state.prs[0].branchCode;
+        }
+      } else {
+        document.getElementById("pr-tab-mae").classList.add("hidden");
+        document.getElementById("pr-tab-filial").classList.remove("hidden");
+        document.getElementById("tab-btn-mae").style.background = "#222";
+        document.getElementById("tab-btn-mae").style.color = "#0f0";
+        document.getElementById("tab-btn-filial").style.background = "#0f0";
+        document.getElementById("tab-btn-filial").style.color = "#000";
+      }
+    }
+
+    function processNewPrRegistration() {
+      const name = document.getElementById("pr-company-name").value.trim();
+      const nif = document.getElementById("pr-company-nif").value.trim();
+      const contact = document.getElementById("pr-contact").value.trim();
+      const pass = document.getElementById("pr-password").value;
+      const postal = document.getElementById("pr-postal-code").value.trim();
+
+      const err = document.getElementById("pr-auth-msg");
+      err.innerText = "";
+
+      if (!name || !nif || !contact || !pass || !postal) {
+        err.innerText = "❌ Todos os campos da empresa, especialmente o *NIF PARA FATURAMENTO, são obrigatórios.";
+        return;
+      }
+
+      state.prs[0].name = name;
+      state.prs[0].nif = nif;
+      state.prs[0].contact = contact;
+      state.prs[0].ownerPassword = pass;
+      state.prs[0].postalCode = postal;
+      if (!state.prs[0].branchCode) {
+        state.prs[0].branchCode = "ZAP-FILIAL-" + Math.random().toString(36).slice(2,7).toUpperCase();
+      }
+      saveState();
+
+      err.style.color = "#00ff66";
+      err.innerText = "✔ Empresa ativada com sucesso! Código para filiais: " + state.prs[0].branchCode;
+      setTimeout(() => enterGameMapScreen(), 1200);
+    }
+
+    function processFilialRegistration() {
+      const parentCode = document.getElementById("filial-parent-code").value.trim().toUpperCase();
+      const name = document.getElementById("filial-name").value.trim();
+      const nif = document.getElementById("filial-nif").value.trim();
+      const billing = document.getElementById("filial-billing-mode").value;
+
+      const err = document.getElementById("pr-auth-msg");
+      err.innerText = "";
+
+      if (!parentCode || !name || !nif) {
+        err.innerText = "❌ Preencha o código fornecido pela empresa-mãe, o nome da filial e o NIF.";
+        return;
+      }
+
+      // Procura se o código corresponde à empresa-mãe
+      let parentPr = state.prs.find(p => p.branchCode === parentCode);
+      if (!parentPr && parentCode === state.prs[0].branchCode) {
+        parentPr = state.prs[0];
+      }
+
+      if (!parentPr) {
+        err.innerText = "❌ Código de emparelhamento inválido ou inexistente.";
+        return;
+      }
+
+      // Adiciona como filial com acesso igual mas mantendo regras
+      const newFilial = {
+        id: "FILIAL_" + Date.now(),
+        isBranch: true,
+        parentPrId: parentPr.id,
+        name: name,
+        short: name.substring(0,3).toUpperCase(),
+        nif: nif,
+        billingMode: billing, // 'parent' ou 'self'
+        color: "#FF5500",
+        lat: parentPr.lat + (Math.random()-0.5)*0.005,
+        lng: parentPr.lng + (Math.random()-0.5)*0.005,
+        packages: parentPr.packages, // Acesso nativo a tudo igual à mãe
+        campaign: parentPr.campaign
+      };
+
+      state.prs.push(newFilial);
+      state.currentPRId = newFilial.id;
+      saveState();
+
+      err.style.color = "#00ff66";
+      err.innerText = "✔ Filial emparelhada com sucesso à conta-mãe! Faturação: " + (billing === 'parent' ? "Consolidada na Mãe" : "Própria da Filial");
+      setTimeout(() => enterGameMapScreen(), 1500);
+    }
+
+    function backToMainChoices() {
+      document.getElementById("player-mandatory-page").classList.add("hidden");
+      document.getElementById("company-dedicated-page").classList.add("hidden");
+      document.getElementById("main-choice-box").classList.remove("hidden");
+    }
+
+    // Inicia a aplicação garantindo a exibição exclusiva da escolha inicial direta
+    document.getElementById("main-choice-box").classList.remove("hidden");
+    document.getElementById("player-mandatory-page").classList.add("hidden");
+    document.getElementById("company-dedicated-page").classList.add("hidden");
+  </script>
+</body>
 </html>
