@@ -1,1083 +1,731 @@
-<!DOCTYPE html>
-<html lang="pt">
-<head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
-<title>ZAP FLAGS | Larforyou®</title>
-<meta name="theme-color" content="#000"/>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-<style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-html,body{width:100%;height:100%;overflow:hidden;font-family:'Segoe UI',Roboto,Arial,sans-serif;background:#000;color:#fff;user-select:none;-webkit-user-select:none}
-.pag{display:none;min-height:100vh;overflow-y:auto}.pag.ativa{display:block}
-.cx{max-width:480px;margin:0 auto;padding:20px}
-button{cursor:pointer;transition:.15s;border:none;border-radius:8px;font-weight:700;font-size:14px;padding:10px 14px}
-button:active{transform:scale(.94)}
-.bb{display:block;width:100%;margin:5px 0;text-align:center}
-.bv{background:#4CAF50;color:#fff}.bv:hover{background:#66BB6A}
-.bc{background:#1a1a1a;color:#4CAF50;border:1px solid #4CAF50}
-.bo{background:linear-gradient(135deg,#f90,#fc0);color:#000;font-weight:800}
-.bvol{background:#111;color:#999;border:1px solid #333}
-.bsair{background:#200;color:#f66;border:1px solid #a00;font-size:12px;padding:6px 10px}
-.bbo{background:linear-gradient(135deg,#004,#008);color:#0ff;border:1px solid #0ff}
-input,select{width:100%;padding:12px 14px;margin-bottom:10px;border-radius:8px;border:1px solid rgba(76,175,80,.4);background:rgba(0,0,0,.5);color:#fff;font-size:14px;outline:none}
-input::placeholder{color:rgba(255,255,255,.3)}input:focus{border-color:#81c784;box-shadow:0 0 8px rgba(76,175,80,.3)}
-select option{background:#111}
-.lbl{font-size:12px;color:#81c784;display:block;margin:8px 0 3px}.lbl em{color:#f44;font-style:normal}
-.g2{display:grid;grid-template-columns:1fr 1fr;gap:0 10px}
-.pw-wrap{position:relative}.pw-wrap input{padding-right:44px;margin:0}
-.pw-toggle{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:14px;color:#555;padding:3px}
-.msg{padding:10px;margin:6px 0;border-radius:6px;display:none;font-size:12px}
-.msg.e{background:#200;border:1px solid #f44;color:#f66;display:block}
-.msg.s{background:#020;border:1px solid #4CAF50;color:#81c784;display:block}
-.aj{background:rgba(0,30,0,.4);border:1px solid #4CAF50;border-radius:12px;padding:16px;margin:8px 0}.aj h3{color:#4CAF50;margin-bottom:10px;font-size:14px}
-.apr{background:rgba(30,20,0,.4);border:1px solid #f90;border-radius:12px;padding:16px;margin:8px 0}.apr h3{color:#f90;margin-bottom:10px;font-size:14px}
-.abo{background:linear-gradient(135deg,rgba(0,5,20,.6),rgba(0,15,40,.4));border:1px solid #0ff;border-radius:12px;padding:16px;margin:8px 0;position:relative;overflow:hidden}
-.abo::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#0ff,transparent);animation:scan 3s linear infinite}
-@keyframes scan{from{transform:translateX(-100%)}to{transform:translateX(100%)}}
-.abo h3{color:#0ff;margin-bottom:10px;font-size:14px}
-.badge-bo{background:#0ff;color:#000;padding:2px 7px;border-radius:9px;font-size:10px;font-weight:700;margin-left:5px}
-.sess-bar{border-radius:10px;padding:12px;margin:8px 0;display:flex;justify-content:space-between;align-items:center;gap:8px}
-.sess-j{background:rgba(0,30,0,.5);border:1px solid #4CAF50}.sess-pr{background:rgba(30,20,0,.5);border:1px solid #f90}
-.ucard{border-radius:12px;padding:18px;margin-bottom:14px;text-align:center}
-.ucard-j{border:1px solid #4CAF50;background:linear-gradient(135deg,rgba(0,40,0,.4),rgba(0,15,0,.3));box-shadow:0 0 18px rgba(76,175,80,.1)}
-.ucard-pr{border:1px solid #f90;background:linear-gradient(135deg,rgba(40,25,0,.4),rgba(15,10,0,.3))}
-.uavt{width:78px;height:78px;border-radius:50%;margin:0 auto 11px;display:flex;align-items:center;justify-content:center;font-size:28px;position:relative}
-.uavt-j{background:rgba(0,40,0,.5);border:3px solid #4CAF50;box-shadow:0 0 14px rgba(76,175,80,.3)}
-.uavt-pr{background:rgba(40,25,0,.5);border:3px solid #f90}
-.udot{position:absolute;bottom:3px;right:3px;width:15px;height:15px;border-radius:50%;border:2px solid #000;animation:pulse 2s ease-in-out infinite}
-.udot-j{background:#4CAF50}.udot-pr{background:#f90}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
-.u-nome{font-size:18px;font-weight:700;margin-bottom:3px}.u-sub{font-size:11px;color:#888;margin-bottom:12px}
-.u-stats{display:flex;justify-content:center;gap:16px}.u-stat-n{font-size:14px;font-weight:700}.u-stat-l{font-size:10px;color:#666;margin-top:1px}
-.ckl{display:flex;align-items:center;gap:8px;font-size:12px;color:#aaa;cursor:pointer;margin:6px 0}
-.ckl input[type=checkbox]{width:16px;height:16px;accent-color:#4CAF50;cursor:pointer;flex-shrink:0}
-.sep{display:flex;align-items:center;gap:8px;margin:12px 0}.sep-l{flex:1;border-top:1px solid #222}.sep-t{color:#444;font-size:11px;white-space:nowrap}
-.lnk{color:#0ff;cursor:pointer;text-decoration:underline;font-size:13px}
-.fbar{height:4px;border-radius:2px;margin-top:4px;transition:.3s;background:#333;width:0%}.ftxt{font-size:10px;color:#666}
-.card{background:rgba(255,255,255,.03);border:1px solid #222;border-radius:8px;padding:12px;margin:7px 0}
-.card-b{border-color:#0ff}.card-y{border-color:#f90}.card-v{border-color:#4CAF50}
-.item{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:12px;margin-bottom:8px;font-size:13px;line-height:1.5;color:#ccc}
-.row{padding:5px 0;border-bottom:1px solid #111;font-size:13px;display:flex;justify-content:space-between;gap:8px}.row:last-child{border-bottom:none}
-.rl{color:#888;font-size:11px;white-space:nowrap;flex-shrink:0}.rv{text-align:right;word-break:break-word}
-.scroll{max-height:65vh;overflow-y:auto}
-#mapa{position:fixed;inset:0;z-index:1}.leaflet-container{background:#0a0a0a}
-#avt-cx{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:500;pointer-events:none}
-#circ-vis{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);border-radius:50%;border:3px solid rgba(76,175,80,.6);pointer-events:none;box-shadow:0 0 0 3000px rgba(0,0,0,.76),0 0 20px rgba(76,175,80,.3);transition:width .6s,height .6s;width:120px;height:120px}
-#circ-alc{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);border-radius:50%;border:2px dashed #ff0;pointer-events:none;display:none;animation:gir 3s linear infinite}
-@keyframes gir{from{transform:translate(-50%,-50%) rotate(0)}to{transform:translate(-50%,-50%) rotate(360deg)}}
-#aviso-ap{position:absolute;left:50%;top:calc(50% - 78px);transform:translateX(-50%);background:rgba(76,175,80,.95);color:#000;font-weight:700;font-size:13px;padding:5px 14px;border-radius:20px;display:none;z-index:502;cursor:pointer;white-space:nowrap;pointer-events:all;animation:bounce .3s ease-in-out infinite alternate}
-@keyframes bounce{from{transform:translateX(-50%) translateY(0)}to{transform:translateX(-50%) translateY(-4px)}}
-#avt-svg{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:52px;height:66px;z-index:501;filter:drop-shadow(0 0 10px rgba(76,175,80,.5))}
-#hud-j{position:fixed;top:0;left:0;right:0;z-index:2000;background:rgba(0,0,0,.88);backdrop-filter:blur(6px);border-bottom:1px solid rgba(76,175,80,.3);padding:8px 12px;display:flex;justify-content:space-between;align-items:center}
-.hn{font-size:10px;color:#aaa;text-align:center}.hv{font-size:13px;color:#0ff;font-weight:700;display:block}
-#pan-sk{position:fixed;left:8px;top:54px;z-index:2000;background:rgba(0,0,0,.92);border:1px solid rgba(76,175,80,.3);border-radius:8px;padding:8px;font-size:11px;min-width:110px}
-.psk{display:flex;justify-content:space-between;padding:2px 0;border-bottom:1px solid #111}.psk:last-child{border-bottom:none}
-.pskl{color:#888}.pskv{color:#0ff;font-weight:700}
-#bsk{height:5px;background:#222;border-radius:3px;overflow:hidden;margin-top:3px;border:1px solid rgba(76,175,80,.2)}
-#bskf{height:100%;background:linear-gradient(90deg,#4CAF50,#0ff);border-radius:3px;transition:width .4s}
-#bskt{font-size:9px;color:#555;text-align:center;margin-top:2px}
-#ctrl{position:fixed;z-index:2000;background:rgba(0,0,0,.9);border:2px solid rgba(76,175,80,.4);border-radius:12px;padding:9px;bottom:50px;right:10px;touch-action:none;cursor:move;box-shadow:0 0 12px rgba(76,175,80,.15)}
-#ctrl-g{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-bottom:5px}
-.cbtn{background:rgba(76,175,80,.08);border:1px solid rgba(76,175,80,.35);color:#fff;border-radius:50%;font-size:16px;font-weight:700;cursor:pointer;width:46px;height:46px;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent;touch-action:none;transition:.1s}
-.cbtn:active,.cbtn.on{background:#4CAF50;border-color:#81c784;color:#fff;box-shadow:0 0 8px #4CAF50}
-#ctrl-tam{display:flex;gap:4px;justify-content:center}
-.tbtn{background:#0a0a0a;border:1px solid #333;color:#888;border-radius:4px;font-size:10px;font-weight:700;cursor:pointer;padding:3px 8px}
-.tbtn:hover{background:#1a1a1a;border-color:#4CAF50;color:#4CAF50}
-.drag-handle{font-size:10px;color:rgba(76,175,80,.4);text-align:center;margin-bottom:4px;cursor:move;padding:2px}
-#aba-band{position:fixed;bottom:0;left:0;right:0;z-index:4000;background:rgba(5,10,5,.97);border-top:2px solid #4CAF50;border-radius:16px 16px 0 0;padding:16px 18px;transform:translateY(100%);transition:transform .33s ease;max-height:60vh;overflow-y:auto}
-#aba-band.aberta{transform:translateY(0)}
-.aba-fechar{position:absolute;top:11px;right:13px;background:#111;border:1px solid #555;color:#888;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px}
-.aba-fechar:hover{background:#300;border-color:#f00;color:#f00}
-#aba-qr{position:fixed;top:58px;left:50%;transform:translateX(-50%);z-index:4500;background:rgba(5,5,0,.97);border:2px solid #f90;border-radius:14px;padding:16px 18px;width:93%;max-width:380px;display:none;max-height:80vh;overflow-y:auto;box-shadow:0 0 28px rgba(255,150,0,.3)}
-#aba-qr.aberta{display:block;animation:popUp .33s ease}
-@keyframes popUp{from{transform:translateX(-50%) scale(.85);opacity:0}to{transform:translateX(-50%) scale(1);opacity:1}}
-#rodape{position:fixed;bottom:0;left:0;right:0;z-index:2000;background:rgba(0,0,0,.92);border-top:1px solid #f90;height:36px;overflow:hidden;display:flex;align-items:center}
-#ticker{display:inline-flex;gap:80px;white-space:nowrap;animation:rolar 28s linear infinite;padding-left:100vw}
-@keyframes rolar{from{transform:translateX(0)}to{transform:translateX(-50%)}}
-.tick{color:#f90;font-size:11px;font-weight:700}.tick b{color:#0ff}
-#gps-txt{position:fixed;bottom:40px;left:50%;transform:translateX(-50%);z-index:2000;font-size:9px;color:#555;background:rgba(0,0,0,.8);border-radius:10px;padding:2px 10px;white-space:nowrap}
-#notif{position:fixed;top:62px;left:50%;transform:translateX(-50%);z-index:3000;background:rgba(0,0,0,.95);border:2px solid #0ff;border-radius:10px;padding:10px 18px;text-align:center;display:none;min-width:220px;pointer-events:none}
-.pr-header{background:rgba(15,10,0,.97);border-bottom:1px solid #f90;padding:8px 12px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:100}
-#conf-ovl{position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:9500;display:none}
-#conf-box{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#060606;border:2px solid #f44;border-radius:12px;padding:22px;z-index:9501;width:90%;max-width:360px;text-align:center;display:none}
-.watermark{position:fixed;bottom:38px;left:14px;font-size:17px;font-weight:900;color:rgba(255,255,255,.12);z-index:9999;pointer-events:none;letter-spacing:1px}
-.copyright{position:fixed;bottom:4px;width:100%;text-align:center;font-size:9px;color:rgba(255,255,255,.08);z-index:9999;pointer-events:none}
-</style>
-</head>
-<body>
-<div class="watermark">Larforyou®</div>
-<div class="copyright">© 2025 Larforyou® — Marca Registada</div>
+import { FormEvent, PointerEvent, ReactNode, useEffect, useMemo, useState } from "react";
 
-<!-- INÍCIO -->
-<div id="p-inicio" class="pag ativa">
-<div class="cx" style="padding-top:22px;text-align:center">
-  <h1 style="font-size:30px;text-shadow:0 0 18px rgba(76,175,80,.5);letter-spacing:2px">🏴 ZAP FLAGS</h1>
-  <p style="color:#81c784;font-size:13px;margin-bottom:16px">Caça ao Tesouro Digital</p>
-  <div id="home-j" style="display:none"><div class="sess-bar sess-j"><div style="text-align:left"><div style="font-weight:700;font-size:14px;color:#4CAF50" id="home-j-nm">👤 —</div><div style="font-size:11px;color:#aaa;margin-top:2px" id="home-j-info">—</div></div><div style="display:flex;gap:5px"><button class="bv" style="padding:6px 12px;font-size:12px" onclick="reentrarJogo()">🎮 Jogar</button><button class="bsair" onclick="confirmarSair('j')">🚪</button></div></div></div>
-  <div id="home-pr" style="display:none"><div class="sess-bar sess-pr"><div style="text-align:left"><div style="font-weight:700;font-size:14px;color:#f90" id="home-pr-nm">🏪 —</div><div style="font-size:11px;color:#aaa;margin-top:2px" id="home-pr-info">—</div></div><div style="display:flex;gap:5px"><button class="bo" style="padding:6px 12px;font-size:12px" onclick="reentrarPR()">🏪 Painel</button><button class="bsair" onclick="confirmarSair('pr')">🚪</button></div></div></div>
-  <div class="aj"><h3>🎮 ÁREA DO JOGADOR</h3><button class="bv bb" onclick="ir('p-login-j')">▶ ENTRAR NO JOGO</button><button class="bc bb" onclick="ir('p-reg-j')">📝 CRIAR CONTA</button></div>
-  <div class="apr"><h3>🏪 ÁREA DO LOJISTA</h3><button class="bv bb" onclick="ir('p-login-pr')">▶ ENTRAR NA CONTA</button><button class="bo bb" onclick="ir('p-reg-pr')">📝 REGISTAR EMPRESA</button></div>
-  <div class="abo"><h3>🖥️ BACKOFFICE <span class="badge-bo">ADMIN</span></h3><button class="bbo bb" onclick="ir('p-bo-login')">🖥️ ACEDER</button></div>
-  <p style="color:#333;font-size:10px;margin-top:16px">v12.0 © 2025 ZAP FLAGS by Larforyou®</p>
-</div></div>
+type Area = "jogo" | "jg" | "pr" | "fil";
+type WindowKey = "premios" | "bandeiras" | "skill" | "avisos" | "empresa" | "qrs";
+type CompanyKey = "cafe-luz" | "hotel-mar" | "bike-zona";
 
-<!-- LOGIN JOGADOR -->
-<div id="p-login-j" class="pag"><div class="cx">
-  <button class="bvol bb" onclick="ir('p-inicio')" style="margin-bottom:14px">← VOLTAR</button>
-  <div class="aj"><h3>🎮 ENTRAR NO JOGO</h3><div id="m-lj" class="msg"></div>
-    <div id="lj-com"><div class="ucard ucard-j"><div class="uavt uavt-j"><span id="lj-emoji">🎮</span><div class="udot udot-j"></div></div><div class="u-nome" style="color:#4CAF50" id="lj-nm">—</div><div class="u-sub" id="lj-sub">Jogador · Nível 1</div><div class="u-stats"><div><div class="u-stat-n" style="color:#0ff" id="lj-fl">0</div><div class="u-stat-l">🏴 Flags</div></div><div><div class="u-stat-n" style="color:#4CAF50" id="lj-en">100%</div><div class="u-stat-l">⚡ Energia</div></div><div><div class="u-stat-n" style="color:#f90" id="lj-sk">0</div><div class="u-stat-l">🎯 Skill</div></div><div><div class="u-stat-n" style="color:#0ff" id="lj-vis">5m</div><div class="u-stat-l">👁 Visão</div></div></div></div>
-      <div class="lbl">🔑 Senha</div><div class="pw-wrap"><input type="password" id="lj-pw" placeholder="A tua senha" onkeydown="if(event.key==='Enter')loginJCom()"><button class="pw-toggle" onclick="tPW('lj-pw',this)">👁</button></div>
-      <label class="ckl"><input type="checkbox" id="lj-lbr-pw"> Lembrar senha</label>
-      <button class="bv bb" onclick="loginJCom()" style="padding:14px;font-size:15px">▶ ENTRAR COMO <span id="lj-btn-nm">—</span></button>
-      <div class="sep"><div class="sep-l"></div><span class="sep-t">não és tu?</span><div class="sep-l"></div></div>
-      <button class="bc bb" onclick="trocarContaJ()" style="font-size:12px">🔄 Outra conta</button></div>
-    <div id="lj-sem" style="display:none"><div class="lbl">📧 Email</div><input type="email" id="lj-em" placeholder="email@exemplo.com" oninput="verEmJ()" onkeydown="if(event.key==='Enter')document.getElementById('lj-pw-m').focus()"><div id="lj-em-i" style="display:none;background:rgba(0,0,0,.5);border:1px solid #4CAF50;border-radius:6px;padding:7px 11px;margin:4px 0;font-size:12px"></div><div class="lbl">🔑 Senha</div><div class="pw-wrap"><input type="password" id="lj-pw-m" placeholder="A tua senha" onkeydown="if(event.key==='Enter')loginJSem()"><button class="pw-toggle" onclick="tPW('lj-pw-m',this)">👁</button></div><label class="ckl"><input type="checkbox" id="lj-lbr" checked> Lembrar conta</label><button class="bv bb" onclick="loginJSem()" style="padding:14px;font-size:15px">▶ ENTRAR</button></div>
-    <div style="display:flex;gap:14px;justify-content:center;margin-top:14px;padding-top:12px;border-top:1px solid #222"><span class="lnk" onclick="ir('p-reg-j')">📝 Criar conta</span><span class="lnk" onclick="irRec('j')">🔑 Recuperar</span></div>
-  </div>
-</div></div>
-
-<!-- REGISTO JOGADOR -->
-<div id="p-reg-j" class="pag"><div class="cx">
-  <button class="bvol bb" onclick="ir('p-inicio')" style="margin-bottom:14px">← VOLTAR</button>
-  <div class="aj"><h3>📝 CRIAR CONTA</h3><div class="card card-b" style="text-align:center;margin-bottom:12px"><p style="color:#0ff;font-weight:700">🎁 1.000 bandeiras GRÁTIS!</p></div><div id="m-regj" class="msg"></div>
-    <div class="lbl">👤 Nome <em>*</em></div><input id="rj-nm" placeholder="O teu nome" maxlength="30">
-    <div class="lbl">📧 Email <em>*</em></div><input type="email" id="rj-em" placeholder="email@exemplo.com">
-    <div class="lbl">📱 Telemóvel</div><input type="tel" id="rj-tl" placeholder="912 345 678">
-    <div class="lbl">🔑 Senha <em>*</em> <span id="rj-ft" class="ftxt"></span></div><div class="pw-wrap"><input type="password" id="rj-pw" placeholder="Mín. 4" oninput="calcF(this.value,'rj-fb','rj-ft')"><button class="pw-toggle" onclick="tPW('rj-pw',this)">👁</button></div><div id="rj-fb" class="fbar"></div>
-    <div class="lbl">🔑 Confirmar <em>*</em></div><div class="pw-wrap"><input type="password" id="rj-pw2" placeholder="Repete" onkeydown="if(event.key==='Enter')fazerRegJ()"><button class="pw-toggle" onclick="tPW('rj-pw2',this)">👁</button></div>
-    <label class="ckl"><input type="checkbox" id="rj-lbr" checked> Lembrar</label>
-    <button class="bv bb" onclick="fazerRegJ()" style="padding:14px;font-size:15px">✅ CRIAR CONTA</button></div>
-</div></div>
-
-<!-- LOGIN PR -->
-<div id="p-login-pr" class="pag"><div class="cx">
-  <button class="bvol bb" onclick="ir('p-inicio')" style="margin-bottom:14px">← VOLTAR</button>
-  <div class="apr"><h3>🏪 ENTRAR</h3><div id="m-lpr" class="msg"></div>
-    <div id="lpr-com"><div class="ucard ucard-pr"><div class="uavt uavt-pr"><span>🏪</span><div class="udot udot-pr"></div></div><div class="u-nome" style="color:#f90" id="lpr-nm">—</div><div class="u-sub" id="lpr-sub">Lojista</div><div class="u-stats"><div><div class="u-stat-n" style="color:#f90" id="lpr-loc">—</div><div class="u-stat-l">📍 Local</div></div><div><div class="u-stat-n" style="color:#0ff" id="lpr-packs">0</div><div class="u-stat-l">📦 Packs</div></div></div></div>
-      <div class="lbl">🔑 Senha</div><div class="pw-wrap"><input type="password" id="lpr-pw" placeholder="Senha" onkeydown="if(event.key==='Enter')loginPRCom()"><button class="pw-toggle" onclick="tPW('lpr-pw',this)">👁</button></div><label class="ckl"><input type="checkbox" id="lpr-lbr-pw"> Lembrar</label>
-      <button class="bo bb" onclick="loginPRCom()" style="padding:14px;font-size:15px">▶ ENTRAR COMO <span id="lpr-btn-nm">—</span></button><div class="sep"><div class="sep-l"></div><span class="sep-t">não é a tua?</span><div class="sep-l"></div></div><button class="bc bb" onclick="trocarContaPR()" style="font-size:12px">🔄 Outra</button></div>
-    <div id="lpr-sem" style="display:none"><div class="lbl">📧 Email</div><input type="email" id="lpr-em" placeholder="loja@email.com" oninput="verEmPR()"><div id="lpr-em-i" style="display:none;background:rgba(0,0,0,.5);border:1px solid #f90;border-radius:6px;padding:7px 11px;margin:4px 0;font-size:12px;color:#f90"></div><div class="lbl">🔑 Senha</div><div class="pw-wrap"><input type="password" id="lpr-pw-m" placeholder="Senha" onkeydown="if(event.key==='Enter')loginPRSem()"><button class="pw-toggle" onclick="tPW('lpr-pw-m',this)">👁</button></div><label class="ckl"><input type="checkbox" id="lpr-lbr" checked> Lembrar</label><button class="bo bb" onclick="loginPRSem()" style="padding:14px;font-size:15px">▶ ENTRAR</button></div>
-    <div style="display:flex;gap:14px;justify-content:center;margin-top:14px;padding-top:12px;border-top:1px solid #222"><span class="lnk" onclick="ir('p-reg-pr')">📝 Registar</span><span class="lnk" onclick="irRec('pr')">🔑 Recuperar</span></div>
-  </div>
-</div></div>
-
-<!-- REGISTO PR -->
-<div id="p-reg-pr" class="pag"><div class="cx">
-  <button class="bvol bb" onclick="ir('p-inicio')" style="margin-bottom:14px">← VOLTAR</button>
-  <div class="apr"><h3>📝 REGISTAR EMPRESA</h3></div><div id="m-regpr" class="msg"></div>
-  <div class="scroll">
-    <div class="card card-y"><h3 style="color:#f90;margin-bottom:8px">📍 MORADA</h3><input id="prr-rua" placeholder="* Rua"><div class="g2"><input id="prr-cp" placeholder="* Cód.Postal"><input id="prr-loc" placeholder="* Localidade"></div><select id="prr-dist"><option value="">* Distrito</option><option>Aveiro</option><option>Beja</option><option>Braga</option><option>Bragança</option><option>Castelo Branco</option><option>Coimbra</option><option>Évora</option><option>Faro</option><option>Guarda</option><option>Leiria</option><option>Lisboa</option><option>Portalegre</option><option>Porto</option><option>Santarém</option><option>Setúbal</option><option>Viana do Castelo</option><option>Vila Real</option><option>Viseu</option><option>Madeira</option><option>Açores</option></select></div>
-    <div class="card card-y"><h3 style="color:#f90;margin-bottom:8px">🏢 EMPRESA</h3><input id="prr-ne" placeholder="* Nome"><input id="prr-nif" placeholder="* NIF" maxlength="9"><select id="prr-ativ"><option value="">* Setor</option><option>Restaurante</option><option>Café</option><option>Bar</option><option>Supermercado</option><option>Roupa</option><option>Eletrónica</option><option>Farmácia</option><option>Cabeleireiro</option><option>Ginásio</option><option>Clínica</option><option>Outro</option></select></div>
-    <div class="card card-y"><h3 style="color:#f90;margin-bottom:8px">📞 CONTACTOS</h3><input type="tel" id="prr-tel" placeholder="* Telefone"><input type="email" id="prr-email" placeholder="* Email"><input type="tel" id="prr-tel-r" placeholder="* Telemóvel Resp."></div>
-    <div class="card card-y"><h3 style="color:#f90;margin-bottom:8px">👤 RESPONSÁVEL</h3><input id="prr-resp" placeholder="* Nome"><div class="lbl">🔑 Senha <em>*</em> <span id="prr-ft" class="ftxt"></span></div><div class="pw-wrap"><input type="password" id="prr-pw" placeholder="Mín. 4" oninput="calcF(this.value,'prr-fb','prr-ft')"><button class="pw-toggle" onclick="tPW('prr-pw',this)">👁</button></div><div id="prr-fb" class="fbar"></div><div class="lbl">🔑 Confirmar <em>*</em></div><div class="pw-wrap"><input type="password" id="prr-pw2" placeholder="Repete"><button class="pw-toggle" onclick="tPW('prr-pw2',this)">👁</button></div></div>
-    <label class="ckl"><input type="checkbox" id="prr-trm"> Aceito os Termos</label><label class="ckl"><input type="checkbox" id="prr-lbr" checked> Lembrar</label>
-    <button class="bo bb" onclick="fazerRegPR()" style="padding:14px;font-size:15px">✅ REGISTAR</button></div>
-</div></div>
-
-<!-- RECUPERAR -->
-<div id="p-rec" class="pag"><div class="cx">
-  <button class="bvol bb" onclick="irVoltarRec()" style="margin-bottom:14px">← VOLTAR</button>
-  <div id="rec-area-j" class="aj" style="display:none"><h3>🔑 RECUPERAR — JOGADOR</h3></div>
-  <div id="rec-area-pr" class="apr" style="display:none"><h3>🔑 RECUPERAR — LOJISTA</h3></div>
-  <div id="m-rec" class="msg"></div>
-  <div id="rec-p1"><div class="card card-b" style="text-align:center"><p style="color:#0ff;font-weight:700">Como receber o código?</p></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0"><div id="rec-oem" onclick="selRec('email')" style="background:rgba(0,0,0,.4);border:2px solid #333;border-radius:10px;padding:14px;text-align:center;cursor:pointer"><div style="font-size:24px">📧</div><div style="font-weight:700">Email</div></div><div id="rec-osms" onclick="selRec('sms')" style="background:rgba(0,0,0,.4);border:2px solid #333;border-radius:10px;padding:14px;text-align:center;cursor:pointer"><div style="font-size:24px">📱</div><div style="font-weight:700">SMS</div></div></div><div id="rec-fem" style="display:none"><div class="lbl">📧 Email</div><input type="email" id="rec-em"></div><div id="rec-fsms" style="display:none"><div class="lbl">📱 Telemóvel</div><input type="tel" id="rec-tl"></div><button class="bv bb" id="rec-btn-env" onclick="enviarCod()" style="display:none;padding:14px">📨 ENVIAR</button></div>
-  <div id="rec-p2" style="display:none"><div class="card card-v" style="text-align:center"><p style="color:#666;font-size:11px">⚠ SIMULAÇÃO</p><p id="rec-cshow" style="font-size:28px;color:#0ff;font-weight:700;letter-spacing:10px">----</p></div><div class="lbl">🔢 Código</div><input type="number" id="rec-cin" style="text-align:center;font-size:20px;letter-spacing:8px" maxlength="4" oninput="this.value=this.value.slice(0,4)" onkeydown="if(event.key==='Enter')verCod()"><button class="bv bb" onclick="verCod()" style="padding:14px">✅ VERIFICAR</button><button class="bc bb" onclick="reenvCod()" style="font-size:12px">🔄 Reenviar</button></div>
-  <div id="rec-p3" style="display:none"><div class="card card-v" style="text-align:center"><p style="color:#4CAF50;font-weight:700">✅ Confirmado!</p></div><div class="lbl">🔑 Nova Senha <span id="rec-ft" class="ftxt"></span></div><div class="pw-wrap"><input type="password" id="rec-np" oninput="calcF(this.value,'rec-fb','rec-ft')"><button class="pw-toggle" onclick="tPW('rec-np',this)">👁</button></div><div id="rec-fb" class="fbar"></div><div class="lbl">🔑 Confirmar</div><div class="pw-wrap"><input type="password" id="rec-np2" onkeydown="if(event.key==='Enter')guardarNovaSenha()"><button class="pw-toggle" onclick="tPW('rec-np2',this)">👁</button></div><button class="bv bb" onclick="guardarNovaSenha()" style="padding:14px">💾 GUARDAR</button></div>
-</div></div>
-
-<!-- BACKOFFICE -->
-<div id="p-bo-login" class="pag"><div class="cx">
-  <button class="bvol bb" onclick="ir('p-inicio')" style="margin-bottom:14px">← VOLTAR</button>
-  <div class="abo"><h3>🖥️ BACKOFFICE <span class="badge-bo">SISTEMA</span></h3><div id="m-bo" class="msg"></div><div class="lbl">🔑 Código</div><div class="pw-wrap"><input type="password" id="bo-pw" style="text-align:center;letter-spacing:6px;border-color:#0ff;color:#0ff;font-size:18px" onkeydown="if(event.key==='Enter')loginBO()"><button class="pw-toggle" onclick="tPW('bo-pw',this)">👁</button></div><button class="bbo bb" onclick="loginBO()" style="padding:14px;font-size:15px">🖥️ ENTRAR</button></div>
-</div></div>
-
-<!-- JOGO -->
-<div id="p-jogo" class="pag" style="padding:0;overflow:hidden;height:100vh">
-  <div id="mapa"></div>
-  <div id="avt-cx"><div id="circ-vis"></div><div id="circ-alc"></div><div id="aviso-ap" onclick="apanharManual()">👆 APANHAR!</div>
-    <svg id="avt-svg" viewBox="0 0 52 66" xmlns="http://www.w3.org/2000/svg"><ellipse cx="26" cy="63" rx="11" ry="3" fill="rgba(0,0,0,.5)"/><g><g id="ape" style="transform-origin:22px 43px"><rect x="17" y="41" width="8" height="17" rx="4" fill="#0a4a0a"/><ellipse cx="21" cy="57" rx="7" ry="3.5" fill="#083808"/></g><g id="apd" style="transform-origin:30px 43px"><rect x="26" y="41" width="8" height="17" rx="4" fill="#0a4a0a"/><ellipse cx="30" cy="57" rx="7" ry="3.5" fill="#083808"/></g><rect x="17" y="26" width="18" height="17" rx="5" fill="#0d6a0d"/><rect x="21" y="29" width="10" height="2.5" rx="1.2" fill="#0ff" opacity=".5"/><rect x="21" y="34" width="10" height="1.5" rx=".75" fill="#0ff" opacity=".3"/><g id="abe" style="transform-origin:17px 28px"><rect x="8" y="26" width="9" height="13" rx="4.5" fill="#0b5a0b"/><circle cx="12.5" cy="40" r="4" fill="#094a09"/></g><g id="abd" style="transform-origin:35px 28px"><rect x="35" y="26" width="9" height="13" rx="4.5" fill="#0b5a0b"/><circle cx="39.5" cy="40" r="4" fill="#094a09"/></g><rect x="23" y="22" width="6" height="6" rx="3" fill="#0b5a0b"/><g id="acab" style="transform-origin:26px 13px"><circle cx="26" cy="13" r="12" fill="#0d6a0d"/><ellipse cx="26" cy="3.5" rx="11" ry="5" fill="#050"/><rect x="15" y="3" width="22" height="6" rx="2.5" fill="#050"/><rect x="17" y="9" width="18" height="4" rx="2" fill="#0ff" opacity=".55"/><circle cx="21" cy="15" r="3.2" fill="#000"/><circle cx="31" cy="15" r="3.2" fill="#000"/><circle cx="21" cy="15" r="2" fill="#0ff"/><circle cx="31" cy="15" r="2" fill="#0ff"/><circle cx="21.9" cy="14.1" r=".8" fill="#fff"/><circle cx="31.9" cy="14.1" r=".8" fill="#fff"/><path d="M22 19Q26 21.5 30 19" stroke="#0ff" stroke-width="1.3" fill="none" opacity=".6"/><line x1="26" y1="3" x2="26" y2="0" stroke="#4CAF50" stroke-width="2"/><circle cx="26" cy="0" r="3" fill="#0ff"><animate attributeName="opacity" values="1;.2;1" dur="1.4s" repeatCount="indefinite"/><animate attributeName="r" values="3;4;3" dur="1.4s" repeatCount="indefinite"/></circle></g></g></svg>
-  </div>
-  <div id="hud-j"><div><div style="font-weight:700;font-size:13px" id="j-nm">👤 —</div><div style="font-size:10px;color:#888" id="j-nv">Nível 1</div></div><div style="display:flex;gap:10px;font-size:10px;text-align:center"><div class="hn">🏴<span class="hv" id="h-fl">0</span></div><div class="hn">⚡<span class="hv" id="h-en">100%</span></div><div class="hn">🎯<span class="hv" id="h-sk">0</span></div><div class="hn">👁<span class="hv" id="h-vis">5m</span></div></div><div style="display:flex;gap:4px"><button class="bvol" style="padding:5px 8px;font-size:10px" onclick="voltarHome()">← Início</button><button class="bsair" style="padding:5px 8px;font-size:10px" onclick="confirmarSair('j')">Sair</button></div></div>
-  <div id="pan-sk"><div style="color:#4CAF50;font-weight:700;text-align:center;margin-bottom:3px;font-size:10px">📊 SKILL</div><div class="psk"><span class="pskl">Nível</span><span class="pskv" id="sk-nv">1</span></div><div class="psk"><span class="pskl">Skill</span><span class="pskv" id="sk-sk">0</span></div><div class="psk"><span class="pskl">Visão</span><span class="pskv" id="sk-vis">5m</span></div><div class="psk"><span class="pskl">Próx.</span><span class="pskv" id="sk-px">500</span></div><div id="bsk"><div id="bskf" style="width:0%"></div></div><div id="bskt">0 / 500</div></div>
-  <div id="ctrl"><div class="drag-handle">⠿ 🕹️ WASD / Setas</div><div id="ctrl-g"><div></div><div class="cbtn" id="bc-c" onpointerdown="pd('c')" onpointerup="pu('c')">▲</div><div></div><div class="cbtn" id="bc-e" onpointerdown="pd('e')" onpointerup="pu('e')">◀</div><div class="cbtn" style="font-size:8px;color:#222;cursor:default">●</div><div class="cbtn" id="bc-d" onpointerdown="pd('d')" onpointerup="pu('d')">▶</div><div></div><div class="cbtn" id="bc-b" onpointerdown="pd('b')" onpointerup="pu('b')">▼</div><div></div></div><div id="ctrl-tam"><button class="tbtn" onclick="mudarTam(-1)">A−</button><span id="tam-lbl" style="font-size:9px;color:#555;align-self:center">46px</span><button class="tbtn" onclick="mudarTam(1)">A+</button></div></div>
-  <div id="rodape"><div id="ticker"></div></div>
-  <div id="gps-txt">📡 GPS: a iniciar...</div>
-  <div id="notif"><div id="ntf-ico" style="font-size:16px;margin-bottom:3px"></div><div id="ntf-txt" style="color:#0ff;font-weight:700;font-size:14px"></div><div id="ntf-sub" style="color:#888;font-size:11px;margin-top:2px"></div></div>
-  <div id="aba-band"><div class="aba-fechar" onclick="fecharAbaBanda()">✕</div><div id="aba-band-c"></div><button class="bv bb" onclick="fecharAbaBanda()" style="margin-top:9px">✅ FECHAR</button></div>
-  <div id="aba-qr"><div class="aba-fechar" onclick="fecharAbaQR()" style="background:#1a0800;border-color:#f90;color:#f90">✕</div><div id="aba-qr-c"></div><button class="bo bb" onclick="fecharAbaQR()" style="margin-top:9px">✅ FECHAR</button></div>
-</div>
-
-<!-- PR PAINEL -->
-<div id="p-pr" class="pag" style="padding:0">
-  <div class="pr-header"><div><div style="font-weight:700;font-size:14px;color:#f90" id="pr-hud-n">🏪 —</div><div style="font-size:10px;color:#888" id="pr-hud-loc">—</div></div><div style="display:flex;gap:4px"><button class="bvol" style="padding:5px 8px;font-size:10px" onclick="ir('p-inicio')">← Início</button><button class="bsair" style="padding:5px 8px;font-size:10px" onclick="confirmarSair('pr')">Sair</button></div></div>
-  <div class="cx" style="padding-top:14px">
-    <div id="pr-card-emp"></div>
-    <div style="display:flex;gap:4px;margin:12px 0;flex-wrap:wrap" id="pr-tabs"><button class="bo" style="flex:1;padding:8px;font-size:11px;min-width:70px" onclick="prTab('dash')">📊 Resumo</button><button class="bc" style="flex:1;padding:8px;font-size:11px;min-width:70px" onclick="prTab('packs')">📦 Packs</button><button class="bc" style="flex:1;padding:8px;font-size:11px;min-width:70px" onclick="prTab('lotes')">🎫 Lotes</button><button class="bc" style="flex:1;padding:8px;font-size:11px;min-width:70px" onclick="prTab('qrs')">📱 QRs</button><button class="bc" style="flex:1;padding:8px;font-size:11px;min-width:70px" onclick="prTab('dados')">⚙️ Dados</button></div>
-    <div id="pr-tab-content" class="scroll" style="max-height:calc(100vh - 220px)"></div>
-  </div>
-</div>
-
-<!-- CONFIRMAÇÃO -->
-<div id="conf-ovl"></div>
-<div id="conf-box"><div id="conf-ico" style="font-size:28px;margin-bottom:7px">❓</div><h2 id="conf-tit" style="color:#f44;margin-bottom:8px;font-size:14px"></h2><p id="conf-txt" style="color:#888;font-size:12px;margin-bottom:16px;line-height:1.5"></p><div style="display:flex;gap:8px"><button class="bvol" style="flex:1;padding:12px" onclick="fecharConf()">❌ CANCELAR</button><button class="bsair" style="flex:1;padding:12px" onclick="exConf()">✅ CONFIRMAR</button></div></div>
-
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-<script>
-'use strict';
-
-var PASSE='321321';
-var CFG={VISAO_MIN:5,VISAO_MAX:100,SKILL_P:10,QR_N:20,APANHAR_RAIO:12,AVISO_RAIO:20,VEL_PX:2.5,N_BAND:12,SPAWN_RAIO:140};
-var PACKS={
-  MINIMO:{key:'MINIMO',label:'Mínimo',price:10,flags:1000,radiusKm:5,maxLots:50,bingos:0,durDias:30},
-  MEDIO:{key:'MEDIO',label:'Médio',price:15,flags:2500,radiusKm:15,maxLots:125,bingos:2,durDias:60},
-  GRANDE:{key:'GRANDE',label:'Grande',price:25,flags:10000,radiusKm:50,maxLots:500,bingos:3,durDias:90},
-  ENORME:{key:'ENORME',label:'Enorme',price:50,flags:25000,radiusKm:999999,maxLots:1250,bingos:5,durDias:180}
+type Company = {
+  key: CompanyKey;
+  name: string;
+  activity: string;
+  contact: string;
+  address: string;
+  prize: string;
+  premiumCollected: number;
+  totalCollected: number;
+  rating: number;
 };
 
-function flagsParaSk(s){return 500*Math.pow(2,s)}
-function calcVisao(s){return Math.min(CFG.VISAO_MAX,CFG.VISAO_MIN+Math.floor(s/CFG.SKILL_P))}
-
-var BD={
-  _g:function(k,d){try{return JSON.parse(localStorage.getItem(k))||d}catch(e){return d}},
-  _s:function(k,v){localStorage.setItem(k,JSON.stringify(v))},
-  jogs:function(){return this._g('zf_j',[])},
-  emps:function(){return this._g('zf_e',[])},
-  saveJ:function(l){this._s('zf_j',l)},
-  saveE:function(l){this._s('zf_e',l)},
-  getSJ:function(){return this._g('zf_sj',null)},
-  getSP:function(){return this._g('zf_sp',null)},
-  setSJ:function(u){this._s('zf_sj',u)},
-  setSP:function(p){this._s('zf_sp',p)},
-  delSJ:function(){localStorage.removeItem('zf_sj')},
-  delSP:function(){localStorage.removeItem('zf_sp')},
-  getPwJ:function(){return localStorage.getItem('zf_pwj')||''},
-  setPwJ:function(p){localStorage.setItem('zf_pwj',p)},
-  delPwJ:function(){localStorage.removeItem('zf_pwj')},
-  getPwP:function(){return localStorage.getItem('zf_pwp')||''},
-  setPwP:function(p){localStorage.setItem('zf_pwp',p)},
-  delPwP:function(){localStorage.removeItem('zf_pwp')}
+type Flag = {
+  id: number;
+  company: CompanyKey;
+  x: number;
+  y: number;
+  premium: boolean;
+  bingo?: boolean;
 };
 
-function G(id){return document.getElementById(id)}
-function V(id){var e=G(id);return e?e.value.trim():''}
-function vE(e){return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(e).toLowerCase())}
-function vT(t){return /^[0-9]{9,15}$/.test(String(t).replace(/[\s\-+]/g,''))}
-function vN(n){return /^[0-9]{9}$/.test(String(n).replace(/\s/g,''))}
-function fN(n){return(n||0).toLocaleString('pt-PT')}
-function fD(t){return t?new Date(t).toLocaleDateString('pt-PT'):'---'}
+type PrizeQr = {
+  code: string;
+  company: string;
+  prize: string;
+  expires: string;
+  rating: number;
+};
 
-function msg(id,t,c){var e=G(id);if(!e)return;e.className='msg '+c;e.innerText=t;setTimeout(function(){if(e){e.className='msg';e.innerText=''}},5e3)}
-function tPW(id,b){var i=G(id);if(!i)return;i.type=i.type==='text'?'password':'text';b.innerText=i.type==='password'?'👁':'🙈'}
-function calcF(p,b,t){var e=G(b),f=G(t);if(!e)return;var s=0;if(p.length>=4)s++;if(p.length>=8)s++;if(/[0-9]/.test(p))s++;if(/[^a-zA-Z0-9]/.test(p))s++;e.style.background=['#333','#f44','#f90','#fc0','#4CAF50'][s];e.style.width=(s/4*100)+'%';if(f)f.innerText=['','— Fraca','— Razoável','— Boa','— Forte'][s]}
-function calcDist(a,b,c,d){var x=(d-b)*111e3*Math.cos(a*Math.PI/180),y=(c-a)*111e3;return Math.sqrt(x*x+y*y)}
-function distPx(m){if(!mapaJ)return m*5;var z=mapaJ.getZoom();return m/(156543.03392*Math.cos(AV.lat*Math.PI/180)/Math.pow(2,z))}
+const companies: Company[] = [
+  {
+    key: "cafe-luz",
+    name: "Cafe Luz",
+    activity: "Cafe, pastelaria e pequenos almocos",
+    contact: "geral@cafeluz.pt | 210 000 111",
+    address: "Rua Central 12, Lisboa",
+    prize: "1 cafe ou 10% de desconto",
+    premiumCollected: 18,
+    totalCollected: 46,
+    rating: 5,
+  },
+  {
+    key: "hotel-mar",
+    name: "Hotel Mar",
+    activity: "Hotelaria e fins de semana promocionais",
+    contact: "reservas@hotelmar.pt | 210 000 222",
+    address: "Avenida Atlantico 4, Cascais",
+    prize: "Bingo surpresa ou desconto de estadia",
+    premiumCollected: 9,
+    totalCollected: 30,
+    rating: 5,
+  },
+  {
+    key: "bike-zona",
+    name: "Bike Zona",
+    activity: "Loja e reparacao de bicicletas",
+    contact: "apoio@bikezona.pt | 210 000 333",
+    address: "Rua Norte 77, Porto",
+    prize: "25% em manutencao",
+    premiumCollected: 14,
+    totalCollected: 38,
+    rating: 5,
+  },
+];
 
-// NAVEGAÇÃO
-function ir(id){
-  var p=document.querySelectorAll('.pag');
-  for(var i=0;i<p.length;i++)p[i].classList.remove('ativa');
-  var a=G(id);if(a)a.classList.add('ativa');
-  var m=document.querySelectorAll('.msg');
-  for(var j=0;j<m.length;j++){m[j].className='msg';m[j].innerText=''}
-  window.scrollTo(0,0);
-  if(id==='p-inicio')atualizarHome();
-  if(id==='p-login-j')prepLoginJ();
-  if(id==='p-login-pr')prepLoginPR();
-  if(id==='p-jogo')iniciarJogo();
-  if(id==='p-pr'){renderPRCard();prTab('dash')}
-}
-function voltarHome(){pararJogo();ir('p-inicio')}
+const initialFlags: Flag[] = [
+  { id: 1, company: "cafe-luz", x: 48, y: 44, premium: true },
+  { id: 2, company: "cafe-luz", x: 53, y: 51, premium: true },
+  { id: 3, company: "hotel-mar", x: 60, y: 42, premium: false, bingo: true },
+  { id: 4, company: "bike-zona", x: 42, y: 56, premium: true },
+  { id: 5, company: "hotel-mar", x: 37, y: 47, premium: false },
+  { id: 6, company: "bike-zona", x: 56, y: 61, premium: false },
+  { id: 7, company: "cafe-luz", x: 62, y: 55, premium: true },
+  { id: 8, company: "hotel-mar", x: 44, y: 39, premium: true },
+];
 
-function atualizarHome(){
-  var j=BD.getSJ(),p=BD.getSP();
-  if(j){G('home-j-nm').innerText='👤 '+j.nm;G('home-j-info').innerText='🏴 '+fN(j.fl||0)+' · 👁 '+(j.visao||5)+'m · Nv '+(j.nivel||1);G('home-j').style.display='block'}
-  else G('home-j').style.display='none';
-  if(p){G('home-pr-nm').innerText='🏪 '+p.ne;G('home-pr-info').innerText='📍 '+(p.loc||'-')+(p.dist?', '+p.dist:'');G('home-pr').style.display='block'}
-  else G('home-pr').style.display='none'
-}
-function reentrarJogo(){var s=BD.getSJ();if(!s){ir('p-login-j');return}jogAtual=s;ir('p-jogo')}
-function reentrarPR(){var s=BD.getSP();if(!s){ir('p-login-pr');return}entrarNoPR(s)}
+const packageRows = [
+  { flags: 2500, bingo: 2, radius: "500 m" },
+  { flags: 5000, bingo: 5, radius: "5 km" },
+  { flags: 10000, bingo: 10, radius: "20 km" },
+  { flags: 20000, bingo: 20, radius: "50 km" },
+  { flags: 50000, bingo: 50, radius: "pais" },
+];
 
-var confAcao=null;
-function confirmarSair(q){mostrConf('🚪',q==='j'?'SAIR DO JOGO?':'SAIR DA CONTA?','Progresso guardado.','sair-'+q)}
-function mostrConf(i,t,x,a){confAcao=a;G('conf-ico').innerText=i;G('conf-tit').innerText=t;G('conf-txt').innerText=x;G('conf-ovl').style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:9500;display:block';G('conf-box').style.display='block'}
-function fecharConf(){confAcao=null;G('conf-ovl').style.display='none';G('conf-box').style.display='none'}
-function exConf(){var a=confAcao;fecharConf();if(a==='sair-j'){BD.delSJ();BD.delPwJ();pararJogo();ir('p-inicio')}else if(a==='sair-pr'){BD.delSP();BD.delPwP();ir('p-inicio')}}
-
-// LOGIN JOGADOR
-function prepLoginJ(){
-  var s=BD.getSJ();
-  if(s){
-    G('lj-com').style.display='block';G('lj-sem').style.display='none';
-    G('lj-nm').innerText=s.nm||'-';G('lj-btn-nm').innerText=s.nm||'-';
-    G('lj-sub').innerText='Nível '+(s.nivel||1);
-    G('lj-fl').innerText=fN(s.fl||0);G('lj-en').innerText=Math.round(s.en||100)+'%';
-    G('lj-sk').innerText=s.sk||0;G('lj-vis').innerText=(s.visao||5)+'m';
-    G('lj-emoji').innerText=['🌱','🥉','🥈','🥇','💎','👑'][Math.min(5,Math.floor((s.sk||0)/10))];
-    var p=BD.getPwJ();
-    if(p){G('lj-pw').value=p;G('lj-lbr-pw').checked=true}
-    else{G('lj-pw').value='';G('lj-lbr-pw').checked=false}
-    setTimeout(function(){var e=G('lj-pw');if(e)e.focus()},200)
-  }else{
-    G('lj-com').style.display='none';G('lj-sem').style.display='block';
-    G('lj-em').value='';G('lj-em-i').style.display='none';
-    setTimeout(function(){var e=G('lj-em');if(e)e.focus()},200)
+function skillForFlags(flags: number) {
+  let skill = 0;
+  let next = 100;
+  let remaining = flags;
+  while (remaining >= next) {
+    skill += 1;
+    remaining -= next;
+    next *= 2;
   }
-}
-function loginJCom(){
-  var s=BD.getSJ();if(!s){prepLoginJ();return}
-  var p=G('lj-pw').value;
-  if(!p){msg('m-lj','❌ Senha!','e');return}
-  if(p===PASSE){finLoginJ(s);return}
-  var l=BD.jogs(),j=null;
-  for(var i=0;i<l.length;i++){if(l[i].em===s.em&&l[i].pw===p){j=l[i];break}}
-  if(!j){msg('m-lj','❌ Incorreta!','e');G('lj-pw').value='';G('lj-pw').focus();return}
-  if(G('lj-lbr-pw').checked)BD.setPwJ(p);else BD.delPwJ();
-  finLoginJ(j)
-}
-function loginJSem(){
-  var e=V('lj-em').toLowerCase(),p=G('lj-pw-m').value;
-  if(!vE(e)){msg('m-lj','❌ Email!','e');return}
-  if(!p){msg('m-lj','❌ Senha!','e');return}
-  if(p===PASSE){finLoginJ({nm:'ADMIN',em:e,fl:0,en:100,sk:0,nivel:1,visao:5});return}
-  var l=BD.jogs(),j=null,ex=false;
-  for(var i=0;i<l.length;i++){if(l[i].em===e){ex=true;if(l[i].pw===p){j=l[i];break}}}
-  if(!j){msg('m-lj',ex?'❌ Senha incorreta!':'❌ Não encontrado!','e');return}
-  if(G('lj-lbr').checked)BD.setPwJ(p);
-  finLoginJ(j)
-}
-function finLoginJ(j){
-  j.ult=Date.now();
-  var l=BD.jogs(),idx=-1;
-  for(var i=0;i<l.length;i++){if(l[i].em===j.em){idx=i;break}}
-  if(idx>=0)l[idx]=j;else if(j.em)l.push(j);
-  BD.saveJ(l);BD.setSJ(j);jogAtual=j;ir('p-jogo')
-}
-function verEmJ(){
-  var e=V('lj-em').toLowerCase(),d=G('lj-em-i');
-  if(!vE(e)){d.style.display='none';return}
-  var l=BD.jogs(),j=null;
-  for(var i=0;i<l.length;i++){if(l[i].em===e){j=l[i];break}}
-  d.style.display='block';
-  if(j){d.style.color='#81c784';d.innerHTML='✅ <b style="color:#0ff">'+j.nm+'</b>'}
-  else{d.style.color='#f66';d.innerHTML='❌ <span class="lnk" onclick="ir(\'p-reg-j\')">Criar</span>'}
-}
-function trocarContaJ(){BD.delSJ();BD.delPwJ();prepLoginJ()}
-
-// REGISTO JOGADOR
-function fazerRegJ(){
-  var n=V('rj-nm'),e=V('rj-em').toLowerCase(),t=V('rj-tl'),p=G('rj-pw').value,p2=G('rj-pw2').value;
-  if(!n){msg('m-regj','❌ Nome!','e');return}
-  if(!vE(e)){msg('m-regj','❌ Email!','e');return}
-  if(!p||p.length<4){msg('m-regj','❌ Senha mín. 4!','e');return}
-  if(p!==p2){msg('m-regj','❌ Senhas!','e');return}
-  var l=BD.jogs();
-  for(var i=0;i<l.length;i++){if(l[i].em===e){msg('m-regj','❌ Existe!','e');return}}
-  var em=BD.emps();
-  for(var j=0;j<em.length;j++){if(em[j].em===e){msg('m-regj','❌ É empresa!','e');return}}
-  var nv={nm:n,em:e,tl:t.replace(/\s/g,''),pw:p,fl:0,en:100,sk:0,flEnerg:0,flLimite:500,nivel:1,visao:5,qrsGerados:[],reg:Date.now(),ult:Date.now()};
-  l.push(nv);BD.saveJ(l);BD.setSJ(nv);
-  if(G('rj-lbr').checked)BD.setPwJ(p);
-  jogAtual=nv;ir('p-jogo')
+  return skill;
 }
 
-// LOGIN PR
-function prepLoginPR(){
-  var s=BD.getSP();
-  if(s){
-    G('lpr-com').style.display='block';G('lpr-sem').style.display='none';
-    G('lpr-nm').innerText=s.ne||'-';G('lpr-btn-nm').innerText=s.ne||'-';
-    G('lpr-sub').innerText=(s.ativ||'-')+' · '+(s.loc||'-');
-    G('lpr-loc').innerText=s.loc||'-';G('lpr-packs').innerText=(s.packs||[]).length;
-    var p=BD.getPwP();
-    if(p){G('lpr-pw').value=p;G('lpr-lbr-pw').checked=true}
-    else{G('lpr-pw').value='';G('lpr-lbr-pw').checked=false}
-    setTimeout(function(){var e=G('lpr-pw');if(e)e.focus()},200)
-  }else{
-    G('lpr-com').style.display='none';G('lpr-sem').style.display='block';
-    G('lpr-em').value='';G('lpr-em-i').style.display='none'
+function nextSkillTarget(flags: number) {
+  let total = 0;
+  let next = 100;
+  while (flags >= total + next) {
+    total += next;
+    next *= 2;
   }
+  return total + next;
 }
-function loginPRCom(){
-  var s=BD.getSP();if(!s){prepLoginPR();return}
-  var p=G('lpr-pw').value;
-  if(!p){msg('m-lpr','❌ Senha!','e');return}
-  if(p===PASSE){entrarNoPR(s);return}
-  var l=BD.emps(),e=null;
-  for(var i=0;i<l.length;i++){if(l[i].em===s.em&&l[i].pw===p){e=l[i];break}}
-  if(!e){msg('m-lpr','❌ Incorreta!','e');return}
-  if(G('lpr-lbr-pw').checked)BD.setPwP(p);
-  entrarNoPR(e)
+
+function Field({ label, type = "text", required = false, name }: { label: string; type?: string; required?: boolean; name?: string }) {
+  return (
+    <label className="block text-sm font-medium text-slate-700">
+      {label}
+      {required ? <span className="text-red-600">*</span> : null}
+      <input
+        name={name}
+        required={required}
+        type={type}
+        className="mt-2 w-full border-b border-slate-300 bg-transparent px-1 py-2 text-slate-950 outline-none transition focus:border-red-600"
+      />
+    </label>
+  );
 }
-function loginPRSem(){
-  var e=V('lpr-em').toLowerCase(),p=G('lpr-pw-m').value;
-  if(!vE(e)){msg('m-lpr','❌ Email!','e');return}
-  if(!p){msg('m-lpr','❌ Senha!','e');return}
-  if(p===PASSE){
-    var l2=BD.emps(),f=null;
-    for(var k=0;k<l2.length;k++){if(l2[k].em===e){f=l2[k];break}}
-    entrarNoPR(f||{ne:'Admin',em:e,loc:'-',ativ:'-'});return
+
+function PrimaryButton({ children, onClick, type = "button" }: { children: ReactNode; onClick?: () => void; type?: "button" | "submit" }) {
+  return (
+    <button
+      type={type}
+      onClick={onClick}
+      className="inline-flex items-center justify-center bg-red-600 px-5 py-3 text-sm font-bold uppercase tracking-[0.18em] text-white transition hover:bg-red-700"
+    >
+      {children}
+    </button>
+  );
+}
+
+function GhostButton({ children, onClick }: { children: ReactNode; onClick?: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="inline-flex items-center justify-center border border-slate-300 px-5 py-3 text-sm font-bold uppercase tracking-[0.18em] text-slate-900 transition hover:border-slate-900"
+    >
+      {children}
+    </button>
+  );
+}
+
+function IconButton({ label, onClick }: { label: string; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="h-12 w-12 border border-white/30 bg-slate-950/70 text-xs font-black uppercase text-white backdrop-blur transition hover:bg-red-600"
+      title={label}
+    >
+      {label.slice(0, 2)}
+    </button>
+  );
+}
+
+function DraggableWindow({ title, children, start, onClose }: { title: string; children: ReactNode; start: { x: number; y: number }; onClose: () => void }) {
+  const [pos, setPos] = useState(start);
+  const [drag, setDrag] = useState<{ x: number; y: number } | null>(null);
+
+  function onPointerMove(event: PointerEvent<HTMLDivElement>) {
+    if (!drag) return;
+    setPos({ x: event.clientX - drag.x, y: event.clientY - drag.y });
   }
-  var l=BD.emps(),r=null;
-  for(var i=0;i<l.length;i++){if(l[i].em===e&&l[i].pw===p){r=l[i];break}}
-  if(!r){msg('m-lpr','❌ Não encontrada!','e');return}
-  if(G('lpr-lbr').checked)BD.setPwP(p);
-  entrarNoPR(r)
-}
-function verEmPR(){
-  var e=V('lpr-em').toLowerCase(),d=G('lpr-em-i');
-  if(!vE(e)){d.style.display='none';return}
-  var l=BD.emps(),p=null;
-  for(var i=0;i<l.length;i++){if(l[i].em===e){p=l[i];break}}
-  d.style.display='block';
-  if(p){d.style.color='#f90';d.innerHTML='✅ <b style="color:#0ff">'+p.ne+'</b>'}
-  else{d.style.color='#f66';d.innerHTML='❌ <span class="lnk" onclick="ir(\'p-reg-pr\')">Registar</span>'}
-}
-function trocarContaPR(){BD.delSP();BD.delPwP();prepLoginPR()}
-function entrarNoPR(pr){BD.setSP(pr);G('pr-hud-n').innerText='🏪 '+pr.ne;G('pr-hud-loc').innerText=(pr.loc||'')+(pr.dist?', '+pr.dist:'');ir('p-pr')}
 
-// REGISTO PR
-function fazerRegPR(){
-  var ne=V('prr-ne'),nif=V('prr-nif'),rua=V('prr-rua'),cp=V('prr-cp'),loc=V('prr-loc'),dist=V('prr-dist');
-  var ativ=V('prr-ativ'),tel=V('prr-tel'),em=V('prr-email').toLowerCase(),telR=V('prr-tel-r');
-  var resp=V('prr-resp'),pw=G('prr-pw').value,pw2=G('prr-pw2').value;
-  if(!rua){msg('m-regpr','❌ Morada!','e');return}
-  if(!cp){msg('m-regpr','❌ Cód.Postal!','e');return}
-  if(!loc){msg('m-regpr','❌ Localidade!','e');return}
-  if(!dist){msg('m-regpr','❌ Distrito!','e');return}
-  if(!ne){msg('m-regpr','❌ Nome!','e');return}
-  if(!nif||!vN(nif)){msg('m-regpr','❌ NIF (9 dígitos)!','e');return}
-  if(!ativ){msg('m-regpr','❌ Setor!','e');return}
-  if(!tel||!vT(tel)){msg('m-regpr','❌ Telefone!','e');return}
-  if(!em||!vE(em)){msg('m-regpr','❌ Email!','e');return}
-  if(!telR||!vT(telR)){msg('m-regpr','❌ Telemóvel resp.!','e');return}
-  if(!resp){msg('m-regpr','❌ Responsável!','e');return}
-  if(!pw||pw.length<4){msg('m-regpr','❌ Senha mín. 4!','e');return}
-  if(pw!==pw2){msg('m-regpr','❌ Senhas!','e');return}
-  if(!G('prr-trm').checked){msg('m-regpr','❌ Termos!','e');return}
-  var l=BD.emps();
-  for(var i=0;i<l.length;i++){
-    if(l[i].nif===nif){msg('m-regpr','❌ NIF existe!','e');return}
-    if(l[i].em===em){msg('m-regpr','❌ Email existe!','e');return}
+  return (
+    <div
+      className="fixed z-40 w-[min(92vw,390px)] border border-slate-200 bg-white shadow-2xl shadow-slate-950/20"
+      style={{ left: pos.x, top: pos.y }}
+      onPointerMove={onPointerMove}
+      onPointerUp={() => setDrag(null)}
+    >
+      <div
+        className="flex cursor-move items-center justify-between bg-slate-950 px-4 py-3 text-white"
+        onPointerDown={(event) => setDrag({ x: event.clientX - pos.x, y: event.clientY - pos.y })}
+      >
+        <strong className="text-sm uppercase tracking-[0.2em]">{title}</strong>
+        <button type="button" onClick={onClose} className="text-lg leading-none text-white/80 hover:text-white">
+          x
+        </button>
+      </div>
+      <div className="max-h-[55vh] overflow-auto p-5 text-sm text-slate-700">{children}</div>
+    </div>
+  );
+}
+
+function Header({ area, setArea }: { area: Area; setArea: (area: Area) => void }) {
+  const items: { key: Area; label: string }[] = [
+    { key: "jogo", label: "Jogo" },
+    { key: "jg", label: "JG" },
+    { key: "pr", label: "PR" },
+    { key: "fil", label: "FIL" },
+  ];
+
+  return (
+    <header className="fixed left-0 right-0 top-0 z-50 border-b border-white/10 bg-slate-950/85 text-white backdrop-blur">
+      <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3">
+        <button type="button" onClick={() => setArea("jogo")} className="text-left">
+          <span className="block text-2xl font-black tracking-[0.25em] text-red-500">JG</span>
+          <span className="text-[10px] uppercase tracking-[0.28em] text-white/60">jogo de bandeiras</span>
+        </button>
+        <nav className="flex gap-1">
+          {items.map((item) => (
+            <button
+              type="button"
+              key={item.key}
+              onClick={() => setArea(item.key)}
+              className={`px-3 py-2 text-xs font-bold uppercase tracking-[0.18em] transition ${
+                area === item.key ? "bg-red-600 text-white" : "text-white/70 hover:text-white"
+              }`}
+            >
+              {item.label}
+            </button>
+          ))}
+        </nav>
+      </div>
+    </header>
+  );
+}
+
+function Landing({ setArea }: { setArea: (area: Area) => void }) {
+  return (
+    <section className="relative min-h-screen overflow-hidden bg-slate-950 pt-24 text-white">
+      <div className="absolute inset-0 game-grid opacity-60" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_45%,rgba(220,38,38,0.32),transparent_32%),linear-gradient(180deg,rgba(2,6,23,0.1),#020617_88%)]" />
+      <div className="relative mx-auto grid min-h-[calc(100vh-6rem)] max-w-7xl items-center px-4 py-16 lg:grid-cols-[0.9fr_1.1fr] lg:gap-10">
+        <div className="max-w-xl animate-rise">
+          <p className="mb-5 text-sm font-bold uppercase tracking-[0.35em] text-red-400">Designado por JG</p>
+          <h1 className="text-6xl font-black uppercase leading-none tracking-[-0.08em] sm:text-8xl">JG</h1>
+          <p className="mt-6 text-2xl font-semibold text-white sm:text-4xl">Apanha bandeiras reais, junta premios e aumenta o teu raio de visao.</p>
+          <p className="mt-5 max-w-lg text-base leading-7 text-white/70">
+            Prototipo completo para GitHub com area de jogador, empresas PR, filiais FIL, mapa simulado, skill, QR, bingos e gestao de premios.
+          </p>
+          <div className="mt-8 flex flex-wrap gap-3">
+            <PrimaryButton onClick={() => setArea("jg")}>Entrar como JG</PrimaryButton>
+            <GhostButton onClick={() => setArea("pr")}>Area PR</GhostButton>
+          </div>
+        </div>
+        <div className="relative mt-14 h-[58vh] min-h-[430px] overflow-hidden border border-white/15 lg:mt-0">
+          <div className="absolute inset-0 game-map" />
+          <div className="vision-ring absolute left-1/2 top-1/2 h-72 w-72 -translate-x-1/2 -translate-y-1/2 rounded-full border border-red-500/80" />
+          <div className="absolute left-1/2 top-1/2 h-36 w-36 -translate-x-1/2 -translate-y-1/2 rounded-full border border-dashed border-white/80" />
+          {initialFlags.slice(0, 6).map((flag) => (
+            <span
+              key={flag.id}
+              className={`flag-pop absolute h-5 w-4 bg-red-600 shadow-lg shadow-red-950/40 ${flag.bingo ? "ring-4 ring-yellow-300" : ""}`}
+              style={{ left: `${flag.x}%`, top: `${flag.y}%`, animationDelay: `${flag.id * 0.18}s` }}
+            />
+          ))}
+          <div className="absolute bottom-6 left-6 right-6 flex items-end justify-between">
+            <div>
+              <p className="text-xs uppercase tracking-[0.3em] text-white/60">raio inicial</p>
+              <p className="text-5xl font-black">5 m</p>
+            </div>
+            <div className="text-right">
+              <p className="text-xs uppercase tracking-[0.3em] text-white/60">maximo</p>
+              <p className="text-5xl font-black">50 m</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function PlayerAccess({ onEnter }: { onEnter: () => void }) {
+  const [savedName, setSavedName] = useState("");
+
+  useEffect(() => {
+    setSavedName(localStorage.getItem("jg_nome") || "");
+  }, []);
+
+  function register(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    const name = String(form.get("nome") || "Jogador JG");
+    localStorage.setItem("jg_nome", name);
+    setSavedName(name);
   }
-  var jl=BD.jogs();
-  for(var j=0;j<jl.length;j++){if(jl[j].em===em){msg('m-regpr','❌ É jogador!','e');return}}
-  var n={ne:ne,nif:nif,ativ:ativ,rua:rua,cp:cp,loc:loc,dist:dist,tel:tel,em:em,telR:telR,resp:resp,pw:pw,packs:[],lotes:[],qrsGerados:0,qrsUsados:0,reg:Date.now()};
-  l.push(n);BD.saveE(l);BD.setSP(n);
-  if(G('prr-lbr').checked)BD.setPwP(pw);
-  entrarNoPR(n)
-}
 
-// RECUPERAR SENHA
-var recQuem='j',recMetodo='',recCod='',recVolta='p-login-j';
-function irRec(q){recQuem=q;recMetodo='';recVolta=q==='j'?'p-login-j':'p-login-pr';G('rec-area-j').style.display=q==='j'?'block':'none';G('rec-area-pr').style.display=q==='pr'?'block':'none';G('rec-p1').style.display='block';G('rec-p2').style.display='none';G('rec-p3').style.display='none';G('rec-fem').style.display=G('rec-fsms').style.display='none';G('rec-btn-env').style.display='none';G('rec-oem').style.borderColor=G('rec-osms').style.borderColor='#333';ir('p-rec')}
-function irVoltarRec(){ir(recVolta)}
-function selRec(m){recMetodo=m;G('rec-oem').style.borderColor=m==='email'?'#0ff':'#333';G('rec-osms').style.borderColor=m==='sms'?'#0ff':'#333';G('rec-fem').style.display=m==='email'?'block':'none';G('rec-fsms').style.display=m==='sms'?'block':'none';G('rec-btn-env').style.display='block'}
-function enviarCod(){if(!recMetodo){msg('m-rec','❌ Método!','e');return}var e=V('rec-em').toLowerCase(),t=V('rec-tl').replace(/\s/g,'');if(recMetodo==='email'&&!vE(e)){msg('m-rec','❌ Email!','e');return}if(recMetodo==='sms'&&!vT(t)){msg('m-rec','❌ Telemóvel!','e');return}var l=recQuem==='j'?BD.jogs():BD.emps(),ok=false;for(var i=0;i<l.length;i++){if(recMetodo==='email'&&l[i].em===e){ok=true;break}if(recMetodo==='sms'&&(l[i].tl===t||l[i].telR===t||l[i].tel===t)){ok=true;break}}if(!ok){msg('m-rec','❌ Não encontrado!','e');return}recCod=String(Math.floor(1e3+Math.random()*9e3));G('rec-p1').style.display='none';G('rec-p2').style.display='block';G('rec-cshow').innerText=recCod}
-function reenvCod(){recCod=String(Math.floor(1e3+Math.random()*9e3));G('rec-cshow').innerText=recCod;msg('m-rec','✅ Reenviado!','s')}
-function verCod(){var c=V('rec-cin');if(c!==recCod){msg('m-rec','❌ Errado!','e');return}G('rec-p2').style.display='none';G('rec-p3').style.display='block'}
-function guardarNovaSenha(){
-  var p=G('rec-np').value,p2=G('rec-np2').value;
-  if(!p||p.length<4){msg('m-rec','❌ Mín. 4!','e');return}
-  if(p!==p2){msg('m-rec','❌ Senhas!','e');return}
-  var e=V('rec-em').toLowerCase(),t=V('rec-tl').replace(/\s/g,'');
-  if(recQuem==='j'){var l=BD.jogs();for(var i=0;i<l.length;i++){var ok=recMetodo==='email'?l[i].em===e:l[i].tl===t;if(ok){l[i].pw=p;BD.saveJ(l);BD.setSJ(l[i]);BD.setPwJ(p);break}}}
-  else{var l2=BD.emps();for(var j=0;j<l2.length;j++){var ok2=recMetodo==='email'?l2[j].em===e:(l2[j].telR===t||l2[j].tel===t);if(ok2){l2[j].pw=p;BD.saveE(l2);BD.setSP(l2[j]);BD.setPwP(p);break}}}
-  msg('m-rec','✅ Alterada!','s');
-  setTimeout(function(){if(recQuem==='j'){jogAtual=BD.getSJ();if(jogAtual)ir('p-jogo');else ir('p-login-j')}else{var sp=BD.getSP();if(sp)entrarNoPR(sp);else ir('p-login-pr')}},1500)
-}
-function loginBO(){if(G('bo-pw').value!==PASSE){msg('m-bo','❌ Incorreto!','e');return}jogAtual={nm:'ADMIN',em:'admin@zf',fl:0,en:100,sk:0,nivel:1,visao:5,isBO:true};BD.setSJ(jogAtual);ir('p-jogo')}
-
-// ================================================================
-// SISTEMA PR COMPLETO
-// ================================================================
-var prTabAtual='dash';
-
-function renderPRCard(){
-  var pr=BD.getSP();if(!pr)return;
-  var tf=0,pa=0,la=0;
-  var pks=pr.packs||[];
-  for(var i=0;i<pks.length;i++){tf+=pks[i].flagsTotal||pks[i].flags||0;if(pks[i].fim>Date.now())pa++}
-  var lts=pr.lotes||[];
-  for(var j=0;j<lts.length;j++){if(lts[j].estado==='ativo')la++}
-  G('pr-card-emp').innerHTML='<div class="ucard ucard-pr"><div class="uavt uavt-pr"><span style="font-size:32px">🏪</span><div class="udot udot-pr"></div></div><div class="u-nome" style="color:#f90">'+pr.ne+'</div><div class="u-sub">'+(pr.ativ||'-')+' · '+(pr.loc||'-')+'</div><div class="u-stats"><div><div class="u-stat-n" style="color:#f90">'+pa+'</div><div class="u-stat-l">📦 Packs</div></div><div><div class="u-stat-n" style="color:#0ff">'+la+'</div><div class="u-stat-l">🎫 Lotes</div></div><div><div class="u-stat-n" style="color:#4CAF50">'+fN(tf)+'</div><div class="u-stat-l">🏴 Flags</div></div><div><div class="u-stat-n" style="color:#f44">'+(pr.qrsGerados||0)+'</div><div class="u-stat-l">📱 QRs</div></div></div></div>'
-}
-
-function prTab(tab){
-  prTabAtual=tab;
-  var tabs=G('pr-tabs');
-  if(tabs){
-    var btns=tabs.querySelectorAll('button');
-    for(var i=0;i<btns.length;i++){btns[i].className='bc';btns[i].style.cssText='flex:1;padding:8px;font-size:11px;min-width:70px'}
-    var idx={dash:0,packs:1,lotes:2,qrs:3,dados:4};
-    if(btns[idx[tab]]){btns[idx[tab]].className='bo';btns[idx[tab]].style.cssText='flex:1;padding:8px;font-size:11px;min-width:70px'}
+  function login(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    onEnter();
   }
-  var el=G('pr-tab-content');
-  if(tab==='dash')el.innerHTML=renderDash();
-  else if(tab==='packs')el.innerHTML=renderPacks();
-  else if(tab==='lotes')el.innerHTML=renderLotes();
-  else if(tab==='qrs')el.innerHTML=renderQrs();
-  else if(tab==='dados')el.innerHTML=renderDados()
+
+  return (
+    <main className="min-h-screen bg-stone-50 pt-28 text-slate-950">
+      <section className="mx-auto grid max-w-6xl gap-10 px-4 py-12 lg:grid-cols-[0.9fr_1.1fr]">
+        <div>
+          <p className="text-sm font-bold uppercase tracking-[0.3em] text-red-600">1o jogador</p>
+          <h1 className="mt-4 text-5xl font-black tracking-[-0.06em] sm:text-7xl">Registo e entrada JG</h1>
+          <p className="mt-5 text-lg leading-8 text-slate-600">
+            O nome fica memorizado. Para voltar ao jogo, o jogador usa apenas a senha obrigatoria.
+          </p>
+          <div className="mt-8 space-y-3 text-sm text-slate-700">
+            <p>100 bandeiras recolhidas dao 1 skill.</p>
+            <p>O patamar dobra: 200, 400, 800 e continua.</p>
+            <p>Cada skill aumenta o raio de visao em 25 centimetros ate 50 metros.</p>
+          </div>
+        </div>
+        <div className="grid gap-8 md:grid-cols-2">
+          <form onSubmit={register} className="space-y-5 bg-white p-6 shadow-xl shadow-slate-200/70">
+            <h2 className="text-2xl font-black">Registo</h2>
+            <Field label="Nome" name="nome" required />
+            <Field label="E-mail" type="email" required />
+            <Field label="Senha" type="password" required />
+            <Field label="Confirmar senha" type="password" required />
+            <Field label="Localidade" />
+            <Field label="Contacto" />
+            <PrimaryButton type="submit">Memorizar nome</PrimaryButton>
+          </form>
+          <form onSubmit={login} className="space-y-5 bg-slate-950 p-6 text-white shadow-xl shadow-slate-300/70">
+            <h2 className="text-2xl font-black">Entrar no jogo</h2>
+            <label className="block text-sm font-medium text-white/70">
+              Nome memorizado
+              <input value={savedName || "Jogador JG"} readOnly className="mt-2 w-full border-b border-white/25 bg-transparent px-1 py-2 text-white outline-none" />
+            </label>
+            <label className="block text-sm font-medium text-white/70">
+              Senha<span className="text-red-400">*</span>
+              <input required type="password" className="mt-2 w-full border-b border-white/25 bg-transparent px-1 py-2 text-white outline-none focus:border-red-400" />
+            </label>
+            <PrimaryButton type="submit">Abrir mapa</PrimaryButton>
+          </form>
+        </div>
+      </section>
+    </main>
+  );
 }
 
-function renderDash(){
-  var pr=BD.getSP();if(!pr)return'';
-  var pks=pr.packs||[],lts=pr.lotes||[],tf=0,fu=0,fr=0,pa=0,la=0;
-  for(var i=0;i<pks.length;i++){var t=pks[i].flagsTotal||pks[i].flags||0,l=pks[i].flagsLeft||0;tf+=t;fu+=t-l;fr+=l;if(pks[i].fim>Date.now())pa++}
-  for(var j=0;j<lts.length;j++){if(lts[j].estado==='ativo')la++}
-  var pc=tf>0?Math.round(fu/tf*100):0;
-  var h='<h3 style="color:#f90;margin-bottom:12px">📊 Dashboard</h3>';
-  h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">';
-  h+='<div class="card card-y" style="text-align:center;padding:14px"><div style="font-size:24px">🏴</div><div style="font-size:20px;font-weight:700;color:#f90">'+fN(tf)+'</div><div style="font-size:10px;color:#888">Flags Totais</div></div>';
-  h+='<div class="card card-v" style="text-align:center;padding:14px"><div style="font-size:24px">✅</div><div style="font-size:20px;font-weight:700;color:#4CAF50">'+fN(fu)+'</div><div style="font-size:10px;color:#888">Usadas</div></div>';
-  h+='<div class="card card-b" style="text-align:center;padding:14px"><div style="font-size:24px">📦</div><div style="font-size:20px;font-weight:700;color:#0ff">'+pa+'</div><div style="font-size:10px;color:#888">Packs Ativos</div></div>';
-  h+='<div class="card" style="text-align:center;padding:14px;border-color:#f44"><div style="font-size:24px">📱</div><div style="font-size:20px;font-weight:700;color:#f44">'+(pr.qrsGerados||0)+'</div><div style="font-size:10px;color:#888">QR Codes</div></div>';
-  h+='</div>';
-  h+='<div class="card card-y" style="padding:14px"><div style="display:flex;justify-content:space-between;font-size:12px;color:#888;margin-bottom:4px"><span>Flags utilizadas</span><span style="color:#f90;font-weight:700">'+pc+'%</span></div><div style="background:#222;border-radius:4px;height:10px;overflow:hidden"><div style="height:100%;background:linear-gradient(90deg,#f90,#f44);border-radius:4px;width:'+pc+'%"></div></div><div style="display:flex;justify-content:space-between;font-size:10px;color:#555;margin-top:4px"><span>'+fN(fu)+' usadas</span><span>'+fN(fr)+' restantes</span></div></div>';
-  h+='<div class="card" style="padding:12px"><div class="row"><div class="rl">🎫 Lotes Ativos</div><div class="rv" style="color:#0ff;font-weight:700">'+la+'</div></div><div class="row"><div class="rl">📱 QRs Validados</div><div class="rv" style="color:#4CAF50">'+(pr.qrsUsados||0)+'</div></div><div class="row"><div class="rl">📅 Registo</div><div class="rv">'+fD(pr.reg)+'</div></div></div>';
-  return h
-}
+function GamePage({ setArea }: { setArea: (area: Area) => void }) {
+  const [flags, setFlags] = useState(initialFlags);
+  const [collected, setCollected] = useState(316);
+  const [energy, setEnergy] = useState(92);
+  const [player, setPlayer] = useState({ x: 50, y: 50 });
+  const [open, setOpen] = useState<WindowKey[]>(["avisos"]);
+  const [selectedCompany, setSelectedCompany] = useState<Company>(companies[0]);
+  const [qrs, setQrs] = useState<PrizeQr[]>([
+    { code: "JG-QR-8041", company: "Cafe Luz", prize: "1 cafe", expires: "5 dias", rating: 5 },
+  ]);
+  const [flash, setFlash] = useState<string | null>(null);
 
-function renderPacks(){
-  var pr=BD.getSP();if(!pr)return'';
-  var h='<h3 style="color:#f90;margin-bottom:12px">📦 Packs de Bandeiras</h3>';
-  var pks=pr.packs||[];
-  if(pks.length>0){
-    for(var i=0;i<pks.length;i++){
-      var pk=pks[i],t=pk.flagsTotal||pk.flags||0,l=pk.flagsLeft||0,pc=t>0?Math.round((t-l)/t*100):0,ex=pk.fim<Date.now();
-      h+='<div class="card card-y" style="padding:12px;'+(ex?'opacity:.5':'')+'"><div style="display:flex;justify-content:space-between;margin-bottom:8px"><div><span style="color:'+(ex?'#555':'#f90')+';font-weight:700;font-size:14px">'+(pk.label||pk.key||'Pack')+'</span> <span style="font-size:10px;color:#888">· '+(pk.radiusKm>=999999?'Nacional':pk.radiusKm+'km')+'</span></div><span style="font-size:11px;color:'+(ex?'#f44':'#4CAF50')+';font-weight:700">'+(ex?'❌ Expirado':'✅ Ativo')+'</span></div>';
-      h+='<div style="display:flex;justify-content:space-between;font-size:11px;color:#888;margin-bottom:3px"><span>Flags</span><span style="color:#0ff">'+fN(l)+' / '+fN(t)+'</span></div>';
-      h+='<div style="background:#222;border-radius:3px;height:6px;overflow:hidden"><div style="height:100%;background:linear-gradient(90deg,#4CAF50,#f90);width:'+pc+'%;border-radius:3px"></div></div>';
-      h+='<div style="display:flex;justify-content:space-between;font-size:10px;color:#555;margin-top:6px"><span>Início: '+fD(pk.inicio)+'</span><span>Expira: '+fD(pk.fim)+'</span></div></div>'
+  const skill = skillForFlags(collected);
+  const nextTarget = nextSkillTarget(collected);
+  const vision = Math.min(50, 5 + skill * 0.25);
+  const captureRadius = vision / 2;
+
+  function toggleWindow(key: WindowKey) {
+    setOpen((current) => (current.includes(key) ? current.filter((item) => item !== key) : [...current, key]));
+  }
+
+  function move(dx: number, dy: number) {
+    setPlayer((current) => ({ x: Math.max(6, Math.min(94, current.x + dx)), y: Math.max(12, Math.min(88, current.y + dy)) }));
+    setEnergy((current) => Math.max(0, current - 1));
+  }
+
+  function collectFlag(flag: Flag) {
+    const distance = Math.hypot(flag.x - player.x, flag.y - player.y);
+
+    if (distance > 9) {
+      setFlash("Aproxima-te do raio tracejado para apanhar esta bandeira.");
+      return;
     }
-  }else h+='<div class="item" style="text-align:center">Nenhum pack ativo. Compra abaixo!</div>';
-  h+='<h3 style="color:#0ff;margin-bottom:10px;margin-top:16px">🛒 Comprar Pack</h3>';
-  var keys=['MINIMO','MEDIO','GRANDE','ENORME'],emj=['🟢','🔵','🟡','🔴'];
-  for(var k=0;k<keys.length;k++){
-    var p=PACKS[keys[k]];
-    h+='<div class="card" style="padding:14px;border-color:'+(k<2?'#4CAF50':'#f90')+'"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div><span style="font-size:16px">'+emj[k]+'</span> <span style="font-weight:700;font-size:15px">'+p.label+'</span></div><span style="background:linear-gradient(135deg,#f90,#fc0);color:#000;padding:4px 10px;border-radius:6px;font-weight:800;font-size:14px">'+p.price+'€</span></div>';
-    h+='<div class="row"><div class="rl">🏴 Flags</div><div class="rv" style="color:#0ff;font-weight:700">'+fN(p.flags)+'</div></div>';
-    h+='<div class="row"><div class="rl">📍 Raio</div><div class="rv">'+(p.radiusKm>=999999?'🌍 Nacional':p.radiusKm+'km')+'</div></div>';
-    h+='<div class="row"><div class="rl">🎫 Lotes máx.</div><div class="rv">'+p.maxLots+'</div></div>';
-    h+='<div class="row"><div class="rl">📅 Duração</div><div class="rv">'+p.durDias+' dias</div></div>';
-    h+='<button class="bo bb" onclick="comprarPack(\''+keys[k]+'\')" style="margin-top:8px;padding:12px;font-size:14px">🛒 COMPRAR</button></div>'
-  }
-  return h
-}
 
-function comprarPack(key){
-  var pack=PACKS[key];if(!pack)return;
-  var pr=BD.getSP();if(!pr)return;
-  if(!pr.packs)pr.packs=[];
-  var agora=Date.now();
-  pr.packs.push({id:'PK_'+Math.random().toString(36).slice(2,8).toUpperCase(),key:pack.key,label:pack.label,price:pack.price,flags:pack.flags,flagsTotal:pack.flags,flagsLeft:pack.flags,radiusKm:pack.radiusKm,maxLots:pack.maxLots,inicio:agora,fim:agora+pack.durDias*864e5,criadoEm:agora});
-  salvarPR(pr);mostrarNotif('📦','Pack '+pack.label+' comprado!',fN(pack.flags)+' flags');renderPRCard();prTab('packs')
-}
+    const company = companies.find((item) => item.key === flag.company) || companies[0];
+    setFlags((current) => current.filter((item) => item.id !== flag.id));
+    setCollected((current) => current + 1);
+    setSelectedCompany(company);
 
-function renderLotes(){
-  var pr=BD.getSP();if(!pr)return'';
-  var h='<h3 style="color:#f90;margin-bottom:12px">🎫 Lotes de Prémios</h3>';
-  var lts=pr.lotes||[];
-  if(lts.length>0){
-    for(var i=0;i<lts.length;i++){
-      var l=lts[i],at=l.estado==='ativo',pc=l.n>0?Math.round((l.usados||0)/l.n*100):0;
-      h+='<div class="card'+(at?' card-y':'')+'" style="padding:12px;'+(at?'':'opacity:.6')+'"><div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="font-weight:700;color:'+(at?'#f90':'#555')+'">'+l.premio+'</span><span style="font-size:11px;color:'+(at?'#4CAF50':'#f44')+'">'+(at?'✅ Ativo':'⏸ Inativo')+'</span></div>';
-      if(l.descricao)h+='<div style="font-size:12px;color:#888;margin-bottom:6px">'+l.descricao+'</div>';
-      h+='<div class="row"><div class="rl">🎁 Prémios</div><div class="rv">'+(l.usados||0)+' / '+l.n+'</div></div>';
-      h+='<div style="background:#222;border-radius:3px;height:5px;overflow:hidden;margin:4px 0"><div style="height:100%;background:#f90;width:'+pc+'%;border-radius:3px"></div></div>';
-      h+='<div class="row"><div class="rl">📅 Expira</div><div class="rv">'+fD(l.expiracao)+'</div></div>';
-      h+='<div style="display:flex;gap:6px;margin-top:8px">';
-      if(at)h+='<button class="bsair" style="flex:1;padding:6px" onclick="toggleLote('+i+')">⏸ Pausar</button>';
-      else h+='<button class="bv" style="flex:1;padding:6px;font-size:12px" onclick="toggleLote('+i+')">▶ Ativar</button>';
-      h+='<button class="bsair" style="padding:6px 10px;font-size:11px" onclick="apagarLote('+i+')">🗑</button></div></div>'
+    if (flag.premium && company.premiumCollected + 2 >= 20) {
+      setQrs((current) => [
+        {
+          code: `JG-QR-${Math.floor(1000 + Math.random() * 8999)}`,
+          company: company.name,
+          prize: company.prize,
+          expires: "30 dias",
+          rating: 5,
+        },
+        ...current,
+      ]);
+      setOpen((current) => Array.from(new Set([...current, "qrs"])) as WindowKey[]);
+      setFlash(`20 bandeiras premiadas de ${company.name}: QR gerado automaticamente.`);
+    } else if (flag.bingo) {
+      setFlash(`Bingo encontrado no jogo da empresa ${company.name}.`);
+    } else {
+      setFlash(`Bandeira de ${company.name} recolhida. A janela da empresa fecha apos 5 segundos.`);
     }
-  }else h+='<div class="item" style="text-align:center">Nenhum lote criado.</div>';
-  h+='<div class="card card-b" style="padding:14px;margin-top:14px"><h3 style="color:#0ff;margin-bottom:10px">➕ Criar Lote</h3>';
-  h+='<div class="lbl">🎁 Nome do Prémio <em>*</em></div><input id="nl-premio" placeholder="Ex: 10% desconto, café grátis...">';
-  h+='<div class="lbl">📝 Descrição</div><input id="nl-desc" placeholder="Detalhes (opcional)">';
-  h+='<div class="g2"><div><div class="lbl">🔢 Quantidade <em>*</em></div><input type="number" id="nl-qtd" placeholder="50" min="1"></div><div><div class="lbl">📅 Duração (dias)</div><input type="number" id="nl-dias" placeholder="30" min="1"></div></div>';
-  h+='<button class="bo bb" onclick="criarLote()" style="margin-top:8px;padding:12px;font-size:14px">✅ CRIAR LOTE</button></div>';
-  return h
-}
 
-function criarLote(){
-  var premio=V('nl-premio'),desc=V('nl-desc'),qtd=parseInt(V('nl-qtd'))||0,dias=parseInt(V('nl-dias'))||30;
-  if(!premio){mostrarNotif('❌','Nome obrigatório!','');return}
-  if(qtd<1){mostrarNotif('❌','Quantidade mín. 1','');return}
-  var pr=BD.getSP();if(!pr)return;
-  if(!pr.lotes)pr.lotes=[];
-  var agora=Date.now();
-  pr.lotes.push({id:'LT_'+Math.random().toString(36).slice(2,8).toUpperCase(),premio:premio,descricao:desc,n:qtd,usados:0,estado:'ativo',criadoEm:agora,expiracao:agora+dias*864e5});
-  salvarPR(pr);mostrarNotif('🎫','Lote criado!',premio);renderPRCard();prTab('lotes')
-}
-function toggleLote(i){var pr=BD.getSP();if(!pr||!pr.lotes||!pr.lotes[i])return;pr.lotes[i].estado=pr.lotes[i].estado==='ativo'?'inativo':'ativo';salvarPR(pr);prTab('lotes')}
-function apagarLote(i){var pr=BD.getSP();if(!pr||!pr.lotes)return;if(!confirm('Apagar este lote?'))return;pr.lotes.splice(i,1);salvarPR(pr);renderPRCard();prTab('lotes')}
-
-function renderQrs(){
-  var pr=BD.getSP();if(!pr)return'';
-  var h='<h3 style="color:#f90;margin-bottom:12px">📱 QR Codes</h3>';
-  var jogs=BD.jogs(),qrs=[];
-  for(var i=0;i<jogs.length;i++){
-    var q=jogs[i].qrsGerados||[];
-    for(var j=0;j<q.length;j++){if(q[j].emp===pr.em||q[j].ne===pr.ne)qrs.push({jog:jogs[i].nm,qr:q[j]})}
-  }
-  h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">';
-  h+='<div class="card card-y" style="text-align:center;padding:12px"><div style="font-size:20px;font-weight:700;color:#f90">'+qrs.length+'</div><div style="font-size:10px;color:#888">Gerados</div></div>';
-  h+='<div class="card card-v" style="text-align:center;padding:12px"><div style="font-size:20px;font-weight:700;color:#4CAF50">'+(pr.qrsUsados||0)+'</div><div style="font-size:10px;color:#888">Validados</div></div></div>';
-  h+='<div class="card card-b" style="padding:14px;margin-bottom:14px"><h3 style="color:#0ff;margin-bottom:8px">🔍 Validar QR</h3>';
-  h+='<div class="lbl">Código do QR (o jogador mostra-te)</div>';
-  h+='<input id="pr-qr-val" placeholder="Ex: QR-CC-A1B2C3" style="text-align:center;font-size:16px;letter-spacing:2px">';
-  h+='<button class="bv bb" onclick="validarQR()" style="margin-top:6px;padding:12px;font-size:14px">✅ VALIDAR</button>';
-  h+='<div id="pr-qr-res" style="margin-top:8px"></div></div>';
-  if(qrs.length>0){
-    h+='<h3 style="color:#888;margin-bottom:8px;font-size:12px">Últimos QRs</h3>';
-    for(var k=qrs.length-1;k>=Math.max(0,qrs.length-15);k--){
-      var it=qrs[k];
-      h+='<div class="card" style="padding:10px"><div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:'+(it.qr.usado?'#555':'#0ff')+';font-weight:700;font-size:12px">'+(it.qr.id||'---')+'</span><span style="font-size:10px;color:#888">'+fD(it.qr.data)+'</span></div>';
-      h+='<div class="row"><div class="rl">👤</div><div class="rv">'+it.jog+'</div></div>';
-      h+='<div class="row"><div class="rl">🎁</div><div class="rv" style="color:#f90">'+(it.qr.premio||'-')+'</div></div>';
-      if(it.qr.usado)h+='<div style="font-size:10px;color:#555;margin-top:4px">✅ Validado em '+fD(it.qr.usadoEm)+'</div>';
-      h+='</div>'
-    }
-  }else h+='<div class="item" style="text-align:center">Nenhum QR gerado.<br><span style="color:#888;font-size:11px">Jogadores precisam '+CFG.QR_N+' bandeiras para ganhar QR.</span></div>';
-  return h
-}
-
-function validarQR(){
-  var cod=V('pr-qr-val').toUpperCase(),res=G('pr-qr-res');
-  if(!cod){res.innerHTML='<div class="msg e">❌ Insere o código!</div>';return}
-  var pr=BD.getSP();if(!pr)return;
-  var jogs=BD.jogs(),enc=null,ji=-1,qi=-1;
-  for(var i=0;i<jogs.length;i++){
-    var q=jogs[i].qrsGerados||[];
-    for(var j=0;j<q.length;j++){if(q[j].id&&q[j].id.toUpperCase()===cod){enc=q[j];ji=i;qi=j;break}}
-    if(enc)break
-  }
-  if(!enc){res.innerHTML='<div class="msg e">❌ QR não encontrado!</div>';return}
-  if(enc.usado){res.innerHTML='<div class="msg e">⚠️ Já utilizado em '+fD(enc.usadoEm)+'</div>';return}
-  enc.usado=true;enc.usadoEm=Date.now();
-  jogs[ji].qrsGerados[qi]=enc;BD.saveJ(jogs);
-  pr.qrsUsados=(pr.qrsUsados||0)+1;salvarPR(pr);
-  res.innerHTML='<div class="msg s">✅ Validado!<br>👤 '+jogs[ji].nm+'<br>🎁 '+(enc.premio||'-')+'</div>';
-  mostrarNotif('✅','QR Validado!',enc.premio||'');renderPRCard()
-}
-
-function renderDados(){
-  var pr=BD.getSP();if(!pr)return'';
-  var h='<h3 style="color:#f90;margin-bottom:12px">⚙️ Dados da Empresa</h3>';
-  h+='<div class="card card-y" style="padding:14px">';
-  h+='<div class="row"><div class="rl">🏢 Nome</div><div class="rv" style="color:#f90;font-weight:700">'+pr.ne+'</div></div>';
-  h+='<div class="row"><div class="rl">📋 NIF</div><div class="rv">'+(pr.nif||'-')+'</div></div>';
-  h+='<div class="row"><div class="rl">🏷 Setor</div><div class="rv">'+(pr.ativ||'-')+'</div></div>';
-  h+='<div class="row"><div class="rl">📍 Morada</div><div class="rv">'+(pr.rua||'-')+'</div></div>';
-  h+='<div class="row"><div class="rl">📮 Cód.Postal</div><div class="rv">'+(pr.cp||'-')+'</div></div>';
-  h+='<div class="row"><div class="rl">🏙 Local</div><div class="rv">'+(pr.loc||'-')+(pr.dist?', '+pr.dist:'')+'</div></div>';
-  h+='<div class="row"><div class="rl">📞 Tel.</div><div class="rv">'+(pr.tel||'-')+'</div></div>';
-  h+='<div class="row"><div class="rl">📧 Email</div><div class="rv" style="color:#0ff">'+(pr.em||'-')+'</div></div>';
-  h+='<div class="row"><div class="rl">👤 Resp.</div><div class="rv">'+(pr.resp||'-')+'</div></div>';
-  h+='<div class="row"><div class="rl">📅 Registo</div><div class="rv">'+fD(pr.reg)+'</div></div></div>';
-  h+='<div class="card card-b" style="padding:14px;margin-top:12px"><h3 style="color:#0ff;margin-bottom:8px">🔑 Alterar Senha</h3>';
-  h+='<div class="lbl">Senha Atual</div><div class="pw-wrap"><input type="password" id="pr-pw-a" placeholder="Senha atual"><button class="pw-toggle" onclick="tPW(\'pr-pw-a\',this)">👁</button></div>';
-  h+='<div class="lbl" style="margin-top:8px">Nova Senha</div><div class="pw-wrap"><input type="password" id="pr-pw-n" placeholder="Nova (mín. 4)"><button class="pw-toggle" onclick="tPW(\'pr-pw-n\',this)">👁</button></div>';
-  h+='<div class="lbl" style="margin-top:8px">Confirmar</div><div class="pw-wrap"><input type="password" id="pr-pw-c" placeholder="Repete"><button class="pw-toggle" onclick="tPW(\'pr-pw-c\',this)">👁</button></div>';
-  h+='<button class="bv bb" onclick="alterarSenhaPR()" style="margin-top:8px;padding:12px">💾 ALTERAR</button><div id="pr-pw-msg" style="margin-top:6px"></div></div>';
-  return h
-}
-
-function alterarSenhaPR(){
-  var a=G('pr-pw-a').value,n=G('pr-pw-n').value,c=G('pr-pw-c').value,r=G('pr-pw-msg');
-  var pr=BD.getSP();if(!pr)return;
-  if(!a){r.innerHTML='<div class="msg e">❌ Senha atual!</div>';return}
-  if(a!==pr.pw&&a!==PASSE){r.innerHTML='<div class="msg e">❌ Incorreta!</div>';return}
-  if(!n||n.length<4){r.innerHTML='<div class="msg e">❌ Mín. 4!</div>';return}
-  if(n!==c){r.innerHTML='<div class="msg e">❌ Senhas!</div>';return}
-  pr.pw=n;salvarPR(pr);BD.setPwP(n);
-  r.innerHTML='<div class="msg s">✅ Alterada!</div>';
-  G('pr-pw-a').value=G('pr-pw-n').value=G('pr-pw-c').value='';
-  mostrarNotif('✅','Senha alterada!','')
-}
-
-function salvarPR(pr){
-  var l=BD.emps(),found=false;
-  for(var i=0;i<l.length;i++){
-    if(l[i].em===pr.em||(l[i].nif&&l[i].nif===pr.nif)){l[i]=pr;found=true;break}
-  }
-  if(!found)l.push(pr);
-  BD.saveE(l);BD.setSP(pr)
-}
-
-// ================================================================
-// MOTOR DE JOGO COM LIGAÇÃO REAL AO SISTEMA PR
-// ================================================================
-var mapaJ=null,marcAvt=null,bandsNoMapa=[],bandMaisProx=null;
-var jogoOk=false,animF=null,animT=0,ultimoF=0,notifTmr=null;
-var dirs={c:false,b:false,e:false,d:false};
-var tamBtn=46;
-var AV={lat:39.5,lng:-8.0,dir:1,andando:false};
-var jogAtual=null;
-
-function iniciarJogo(){
-  jogAtual=BD.getSJ();
-  if(!jogAtual){ir('p-login-j');return}
-  atualizarHUDJogo();atualizarPainelSk();iniciarTicker();
-  if(jogoOk){setTimeout(function(){if(mapaJ){mapaJ.invalidateSize();atualizarCirculo()}},200);return}
-  jogoOk=true;
-  mapaJ=L.map('mapa',{center:[AV.lat,AV.lng],zoom:18,zoomControl:true,attributionControl:false,dragging:false,touchZoom:true,scrollWheelZoom:true,doubleClickZoom:false,keyboard:false});
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{maxZoom:20}).addTo(mapaJ);
-  mapaJ.on('zoom',function(){atualizarCirculo()});
-  var ic=L.divIcon({className:'',html:'<div style="width:14px;height:14px;background:#4CAF50;border-radius:50%;border:2px solid #fff;box-shadow:0 0 10px #4CAF50"></div>',iconSize:[14,14],iconAnchor:[7,7]});
-  marcAvt=L.marker([AV.lat,AV.lng],{icon:ic,zIndexOffset:1e3}).addTo(mapaJ);
-  iniciarGPS();setTimeout(spawnarBandeiras,700);arrastarCtrl();
-  animF=requestAnimationFrame(loopJogo)
-}
-
-function pararJogo(){
-  if(animF){cancelAnimationFrame(animF);animF=null}
-  jogoOk=false;
-  if(mapaJ)try{mapaJ.remove()}catch(e){}
-  mapaJ=null;bandsNoMapa=[];marcAvt=null;jogAtual=null
-}
-
-function iniciarGPS(){
-  if(!navigator.geolocation){G('gps-txt').innerText='❌ GPS indisponível';return}
-  navigator.geolocation.getCurrentPosition(
-    function(p){
-      AV.lat=p.coords.latitude;AV.lng=p.coords.longitude;
-      if(mapaJ)mapaJ.setView([AV.lat,AV.lng],18,{animate:false});
-      if(marcAvt)marcAvt.setLatLng([AV.lat,AV.lng]);
-      G('gps-txt').innerText='✅ GPS: '+AV.lat.toFixed(4)+', '+AV.lng.toFixed(4);
-      for(var i=0;i<bandsNoMapa.length;i++){if(bandsNoMapa[i].m&&mapaJ)try{mapaJ.removeLayer(bandsNoMapa[i].m)}catch(e){}}
-      bandsNoMapa=[];spawnarBandeiras()
-    },
-    function(){G('gps-txt').innerText='⚠️ GPS indisponível — usa joystick'},
-    {enableHighAccuracy:true,timeout:8e3}
-  )
-}
-
-function spawnarBandeiras(){
-  if(!mapaJ)return;
-  var n=CFG.N_BAND-bandsNoMapa.filter(function(b){return!b.apanhada}).length;
-  // Obter empresas com packs ativos
-  var empsComPacks=BD.emps().filter(function(e){return(e.packs||[]).some(function(p){return p.flagsLeft>0&&p.fim>Date.now()})});
-
-  for(var i=0;i<n;i++){
-    var a=Math.random()*2*Math.PI,d=15+Math.random()*CFG.SPAWN_RAIO;
-    var la=(d/111e3)*Math.cos(a),ln=(d/(111e3*Math.cos(AV.lat*Math.PI/180)))*Math.sin(a);
-    var tp='vazia',empRef=null,loteRef=null;
-    var r=Math.random();
-    if(r<0.45)tp='energia';
-    else if(r<0.72&&empsComPacks.length>0){
-      tp='pr';
-      empRef=empsComPacks[Math.floor(Math.random()*empsComPacks.length)];
-      var lotesAtivos=(empRef.lotes||[]).filter(function(l){return l.estado==='ativo'&&l.expiracao>Date.now()});
-      loteRef=lotesAtivos.length>0?lotesAtivos[Math.floor(Math.random()*lotesAtivos.length)]:null
-    }
-    bandsNoMapa.push({lat:AV.lat+la,lng:AV.lng+ln,tipo:tp,empId:empRef?empRef.em:null,loteId:loteRef?loteRef.id:null,apanhada:false,m:null,visivel:false})
-  }
-  atualizarVisibilidade()
-}
-
-function corBanda(b){
-  if(b.tipo==='energia')return{cor:'#0ff',emj:'⚡'};
-  if(b.tipo==='pr'){
-    // Cor da empresa se existir
-    var emps=BD.emps();
-    for(var i=0;i<emps.length;i++){if(emps[i].em===b.empId&&emps[i].color)return{cor:emps[i].color,emj:'🏴'}}
-    return{cor:'#ff0',emj:'🏴'}
-  }
-  return{cor:'#555',emj:'🏴'}
-}
-
-function atualizarVisibilidade(){
-  if(!mapaJ)return;
-  var v=jogAtual?(jogAtual.visao||5):5;
-  for(var i=0;i<bandsNoMapa.length;i++){
-    var b=bandsNoMapa[i];
-    if(b.apanhada)continue;
-    var d=calcDist(AV.lat,AV.lng,b.lat,b.lng);
-    if(d<=v&&!b.visivel){
-      b.visivel=true;
-      var info=corBanda(b);
-      var ic=L.divIcon({className:'',html:'<div style="background:'+info.cor+';color:#000;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;border:2px solid #fff;cursor:pointer;box-shadow:0 0 10px '+info.cor+'">'+info.emj+'</div>',iconSize:[26,26],iconAnchor:[13,13]});
-      b.m=L.marker([b.lat,b.lng],{icon:ic}).addTo(mapaJ);
-      (function(banda){banda.m.on('click',function(){tentarApanhar(banda)})})(b)
-    }else if(d>v&&b.visivel&&b.m){
-      b.visivel=false;try{mapaJ.removeLayer(b.m)}catch(e){}b.m=null
-    }
-  }
-}
-
-function verificarBandeiras(){
-  var md=1/0;bandMaisProx=null;
-  for(var i=0;i<bandsNoMapa.length;i++){
-    var b=bandsNoMapa[i];
-    if(b.apanhada||!b.visivel)continue;
-    var d=calcDist(AV.lat,AV.lng,b.lat,b.lng);
-    if(d<md){md=d;bandMaisProx=b}
-    if(d<=4)apanharBanda(b)
-  }
-  var av=G('aviso-ap'),ca=G('circ-alc');
-  if(bandMaisProx&&md<=CFG.AVISO_RAIO&&!bandMaisProx.apanhada){
-    av.style.display='block';
-    av.style.background=md<=CFG.APANHAR_RAIO?'rgba(76,175,80,.95)':'rgba(255,200,0,.95)';
-    av.innerText=md<=CFG.APANHAR_RAIO?'👆 APANHAR!':'📍 '+Math.round(md)+'m';
-    var rPx=Math.max(20,distPx(md));
-    ca.style.display='block';ca.style.width=rPx*2+'px';ca.style.height=rPx*2+'px';
-    ca.style.borderColor=md<=CFG.APANHAR_RAIO?'#4CAF50':'#ff0'
-  }else{av.style.display='none';ca.style.display='none'}
-}
-
-function tentarApanhar(b){var d=calcDist(AV.lat,AV.lng,b.lat,b.lng);if(d<=CFG.APANHAR_RAIO)apanharBanda(b);else mostrarNotif('📍',Math.round(d)+'m','Máx. '+CFG.APANHAR_RAIO+'m')}
-function apanharManual(){if(bandMaisProx&&!bandMaisProx.apanhada)tentarApanhar(bandMaisProx)}
-
-function apanharBanda(b){
-  if(b.apanhada)return;
-  b.apanhada=true;b.visivel=false;
-  try{var el=b.m?b.m.getElement():null;if(el){el.style.transition='all .3s';el.style.transform='scale(0)';el.style.opacity='0'}}catch(e){}
-  setTimeout(function(){try{if(mapaJ&&b.m)mapaJ.removeLayer(b.m)}catch(e){}},300);
-
-  jogAtual.fl=(jogAtual.fl||0)+1;
-  var h='';
-
-  if(b.tipo==='energia'){
-    jogAtual.en=Math.min(100,(jogAtual.en||100)+5);
-    jogAtual.flEnerg=(jogAtual.flEnerg||0)+1;
-    verificarSkill();
-    h='<div style="text-align:center;padding:8px"><div style="font-size:32px;margin-bottom:8px">⚡</div><h3 style="color:#0ff;margin-bottom:6px">Energia!</h3><p style="color:#4CAF50;font-size:16px;font-weight:700">+5%</p></div>';
-    mostrarNotif('⚡','+5% Energia','Skill '+(jogAtual.sk||0))
-
-  }else if(b.tipo==='pr'&&b.empId){
-    // Bandeira PR real ligada a empresa
-    var emps=BD.emps();
-    var empIdx=-1;
-    for(var i=0;i<emps.length;i++){if(emps[i].em===b.empId){empIdx=i;break}}
-
-    if(empIdx>=0){
-      var empresa=emps[empIdx];
-      // Decrementar flags do pack
-      for(var pi=0;pi<(empresa.packs||[]).length;pi++){
-        if(empresa.packs[pi].flagsLeft>0&&empresa.packs[pi].fim>Date.now()){
-          empresa.packs[pi].flagsLeft--;break
-        }
-      }
-
-      // Progresso no lote
-      var loteIdx=-1;
-      if(b.loteId){
-        for(var li=0;li<(empresa.lotes||[]).length;li++){
-          if(empresa.lotes[li].id===b.loteId){loteIdx=li;break}
-        }
-      }
-
-      var premio=null;
-      if(loteIdx>=0){
-        var lote=empresa.lotes[loteIdx];
-        lote.usados=(lote.usados||0)+1;
-
-        // Verificar se atingiu QR_N para QR
-        var chave=empresa.em+'_'+lote.id;
-        var prog=BD._g('zf_pg',{});
-        prog[chave]=(prog[chave]||0)+1;
-        BD._s('zf_pg',prog);
-
-        if(prog[chave]>=CFG.QR_N&&lote.usados<lote.n){
-          prog[chave]=0;BD._s('zf_pg',prog);
-          var qrId='QR-'+empresa.ne.substring(0,2).toUpperCase()+'-'+Math.random().toString(36).slice(2,8).toUpperCase();
-          var qrObj={id:qrId,emp:empresa.em,ne:empresa.ne,premio:lote.premio,lotId:lote.id,data:Date.now(),usado:false};
-          if(!jogAtual.qrsGerados)jogAtual.qrsGerados=[];
-          jogAtual.qrsGerados.push(qrObj);
-          empresa.qrsGerados=(empresa.qrsGerados||0)+1;
-          premio=qrObj
-        }
-      }
-
-      emps[empIdx]=empresa;BD.saveE(emps);
-
-      var progAtual=BD._g('zf_pg',{})[empresa.em+'_'+(b.loteId||'')];
-      h='<div style="padding:8px">';
-      h+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid #222">';
-      h+='<div style="font-size:28px">🏪</div><div><div style="font-weight:700;font-size:15px;color:#f90">'+empresa.ne+'</div><div style="font-size:11px;color:#888">'+(empresa.ativ||'-')+' · '+(empresa.loc||'-')+'</div></div></div>';
-
-      if(loteIdx>=0){
-        var lt=empresa.lotes[loteIdx];
-        var pc2=Math.round(((progAtual||0)/CFG.QR_N)*100);
-        h+='<div style="background:rgba(30,20,0,.4);border:2px solid #f90;border-radius:8px;padding:11px;margin-bottom:10px">';
-        h+='<p style="color:#f90;font-weight:700;margin-bottom:6px">🎁 '+lt.premio+'</p>';
-        h+='<div style="display:flex;justify-content:space-between;font-size:12px;color:#888;margin-bottom:3px"><span>Progresso para QR</span><span style="color:#f90;font-weight:700">'+(progAtual||0)+' / '+CFG.QR_N+'</span></div>';
-        h+='<div style="background:#222;border-radius:3px;height:8px;overflow:hidden"><div style="height:100%;background:linear-gradient(90deg,#f90,#f44);border-radius:3px;width:'+pc2+'%"></div></div>';
-        h+='<p style="font-size:10px;color:#555;margin-top:4px">Faltam '+Math.max(0,CFG.QR_N-(progAtual||0))+' bandeiras</p></div>'
-      }
-
-      if(premio){
-        h+='<div style="background:rgba(0,30,0,.4);border:2px solid #4CAF50;border-radius:8px;padding:12px;margin-bottom:10px;text-align:center">';
-        h+='<p style="color:#4CAF50;font-weight:700;font-size:16px;margin-bottom:6px">🎉 QR CODE GERADO!</p>';
-        h+='<p style="color:#fff;font-size:14px;margin-bottom:6px">'+premio.premio+'</p>';
-        h+='<div style="background:#111;border:1px solid #4CAF50;border-radius:6px;padding:8px;font-family:monospace;font-size:13px;letter-spacing:2px;color:#0ff">'+premio.id+'</div>';
-        h+='<p style="font-size:11px;color:#888;margin-top:6px">Vai a QRs no menu para ver o código QR</p></div>';
-        mostrarNotif('🎉','QR Code Gerado!',premio.premio)
-      }else{
-        mostrarNotif('🏴','Bandeira PR!',empresa.ne)
-      }
-      h+='</div>'
-    }else{
-      h='<div style="text-align:center;padding:8px"><div style="font-size:32px;margin-bottom:8px">🏴</div><h3 style="color:#f90;margin-bottom:6px">Bandeira PR!</h3></div>';
-      mostrarNotif('🏴','Bandeira PR!','+1 Flag')
-    }
-  }else{
-    h='<div style="text-align:center;padding:8px"><div style="font-size:32px;margin-bottom:8px">🏴</div><h3 style="color:#555">Vazia</h3></div>';
-    mostrarNotif('🏴','Vazia','Continua!')
+    window.setTimeout(() => setFlash(null), 5000);
   }
 
-  G('aba-band-c').innerHTML=h;
-  G('aba-band').classList.add('aberta');
-  atualizarHUDJogo();atualizarPainelSk();gravarJogador();
+  const windowContent: Record<WindowKey, ReactNode> = {
+    premios: <PrizeList qrs={qrs} setQrs={setQrs} />,
+    bandeiras: <FlagInventory onSelect={(company) => { setSelectedCompany(company); toggleWindow("empresa"); }} />,
+    skill: <SkillGraph collected={collected} skill={skill} nextTarget={nextTarget} />,
+    avisos: <GameNotices />,
+    empresa: <CompanyInfo company={selectedCompany} />,
+    qrs: <PrizeList qrs={qrs} setQrs={setQrs} />,
+  };
 
-  // Respawnar
-  setTimeout(function(){
-    var a=Math.random()*2*Math.PI,d=30+Math.random()*CFG.SPAWN_RAIO;
-    b.lat=AV.lat+(d/111e3)*Math.cos(a);
-    b.lng=AV.lng+(d/(111e3*Math.cos(AV.lat*Math.PI/180)))*Math.sin(a);
-    b.apanhada=false;b.visivel=false;b.m=null;
-    var r=Math.random();
-    var empsOk=BD.emps().filter(function(e){return(e.packs||[]).some(function(p){return p.flagsLeft>0&&p.fim>Date.now()})});
-    if(r<0.45){b.tipo='energia';b.empId=null;b.loteId=null}
-    else if(r<0.72&&empsOk.length>0){
-      b.tipo='pr';
-      var empR=empsOk[Math.floor(Math.random()*empsOk.length)];
-      b.empId=empR.em;
-      var la2=(empR.lotes||[]).filter(function(l){return l.estado==='ativo'&&l.expiracao>Date.now()});
-      b.loteId=la2.length>0?la2[Math.floor(Math.random()*la2.length)].id:null
-    }else{b.tipo='vazia';b.empId=null;b.loteId=null}
-  },5e3+Math.random()*5e3)
+  return (
+    <main className="relative min-h-screen overflow-hidden bg-slate-950 pt-20 text-white">
+      <div className="absolute inset-0 game-map" />
+      <div className="absolute inset-0 bg-slate-950/20" />
+
+      <section className="relative h-[calc(100vh-5rem)] min-h-[720px]">
+        <div className="absolute left-4 top-4 z-20 grid gap-2 sm:grid-cols-4">
+          <Metric label="Bandeiras" value={collected} />
+          <Metric label="Para premio" value={`${20 - (companies[0].premiumCollected % 20)}`} />
+          <Metric label="Energia" value={`${energy}%`} />
+          <Metric label="Raio" value={`${vision.toFixed(2)} m`} />
+        </div>
+
+        <div className="absolute right-4 top-4 z-20 flex gap-2">
+          <IconButton label="Premios" onClick={() => toggleWindow("premios")} />
+          <IconButton label="Bandeiras" onClick={() => toggleWindow("bandeiras")} />
+          <IconButton label="Skill" onClick={() => toggleWindow("skill")} />
+          <IconButton label="Avisos" onClick={() => toggleWindow("avisos")} />
+          <button type="button" onClick={() => setArea("jg")} className="h-12 border border-white/30 bg-white px-4 text-xs font-black uppercase tracking-[0.18em] text-slate-950">
+            Sair
+          </button>
+        </div>
+
+        <div
+          className="vision-ring absolute rounded-full border-2 border-red-500/80"
+          style={{ left: `${player.x}%`, top: `${player.y}%`, width: `${vision * 9}px`, height: `${vision * 9}px`, transform: "translate(-50%, -50%)" }}
+        />
+        <div
+          className="absolute rounded-full border border-dashed border-white/80"
+          style={{ left: `${player.x}%`, top: `${player.y}%`, width: `${captureRadius * 9}px`, height: `${captureRadius * 9}px`, transform: "translate(-50%, -50%)" }}
+        />
+        <div className="absolute z-10 h-5 w-5 -translate-x-1/2 -translate-y-1/2 rounded-full border-4 border-white bg-red-600 shadow-xl" style={{ left: `${player.x}%`, top: `${player.y}%` }} />
+
+        {flags.map((flag) => (
+          <button
+            type="button"
+            key={flag.id}
+            onClick={() => collectFlag(flag)}
+            className={`flag-pop absolute z-10 h-6 w-5 bg-red-600 shadow-lg shadow-red-950/40 ${flag.bingo ? "ring-4 ring-yellow-300" : ""}`}
+            style={{ left: `${flag.x}%`, top: `${flag.y}%` }}
+            title="Bandeira vermelha"
+          />
+        ))}
+
+        <div className="absolute bottom-24 left-1/2 z-20 grid -translate-x-1/2 grid-cols-3 gap-2">
+          <span />
+          <button className="move-key" onClick={() => move(0, -4)} type="button">Cima</button>
+          <span />
+          <button className="move-key" onClick={() => move(-4, 0)} type="button">Esq</button>
+          <button className="move-key" onClick={() => move(0, 4)} type="button">Baixo</button>
+          <button className="move-key" onClick={() => move(4, 0)} type="button">Dir</button>
+        </div>
+
+        <div className="absolute bottom-0 left-0 right-0 z-20 overflow-hidden bg-slate-950/90 py-3 text-sm uppercase tracking-[0.18em] text-white/80">
+          <div className="ticker whitespace-nowrap">
+            Existe um bingo no jogo da empresa Hotel Mar. Cafe Luz tem novo premio a terminar em 5 dias. Bike Zona tem desconto ativo de 25%.
+          </div>
+        </div>
+
+        {flash ? <div className="absolute left-1/2 top-24 z-30 -translate-x-1/2 bg-white px-5 py-3 text-sm font-bold text-slate-950 shadow-xl">{flash}</div> : null}
+      </section>
+
+      {open.map((key, index) => (
+        <DraggableWindow key={key} title={key} start={{ x: 30 + index * 30, y: 150 + index * 25 }} onClose={() => toggleWindow(key)}>
+          {windowContent[key]}
+        </DraggableWindow>
+      ))}
+    </main>
+  );
 }
 
-function fecharAbaBanda(){G('aba-band').classList.remove('aberta')}
-function fecharAbaQR(){G('aba-qr').classList.remove('aberta');G('aba-qr').style.display='none'}
+function Metric({ label, value }: { label: string; value: string | number }) {
+  return (
+    <div className="border border-white/20 bg-slate-950/70 px-4 py-3 backdrop-blur">
+      <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-white/50">{label}</p>
+      <p className="mt-1 text-2xl font-black">{value}</p>
+    </div>
+  );
+}
 
-function verificarSkill(){
-  while((jogAtual.flEnerg||0)>=(jogAtual.flLimite||500)){
-    jogAtual.flEnerg-=(jogAtual.flLimite||500);
-    jogAtual.sk=(jogAtual.sk||0)+1;
-    jogAtual.flLimite=flagsParaSk(jogAtual.sk);
-    var nv=calcVisao(jogAtual.sk),ant=jogAtual.visao||5;
-    jogAtual.visao=nv;jogAtual.nivel=Math.floor(jogAtual.sk/10)+1;
-    if(nv>ant){mostrarNotif('👁️','Visão: '+nv+'m!','Skill '+jogAtual.sk);atualizarCirculo()}
-    else mostrarNotif('🎯','Skill '+jogAtual.sk+'!','')
+function PrizeList({ qrs, setQrs }: { qrs: PrizeQr[]; setQrs: (qrs: PrizeQr[]) => void }) {
+  function rate(index: number, rating: number) {
+    setQrs(qrs.map((item, itemIndex) => (itemIndex === index ? { ...item, rating } : item)));
   }
-  atualizarPainelSk();atualizarHUDJogo()
+
+  return (
+    <div className="space-y-4">
+      <p>Premios ganhos, trofeus e QR para levantamento. Na entrega o jogador confirma 1 a 5 estrelas.</p>
+      {qrs.map((qr, index) => (
+        <div key={qr.code} className="border border-slate-200 p-4">
+          <p className="text-xs uppercase tracking-[0.2em] text-slate-500">{qr.company}</p>
+          <p className="mt-1 text-lg font-black text-slate-950">{qr.prize}</p>
+          <div className="my-3 grid h-28 w-28 place-items-center bg-[repeating-linear-gradient(45deg,#0f172a_0_5px,#fff_5px_10px)] text-xs font-black text-red-600">{qr.code}</div>
+          <p>Prazo: {qr.expires}</p>
+          <div className="mt-3 flex gap-1">
+            {[1, 2, 3, 4, 5].map((star) => (
+              <button key={star} type="button" onClick={() => rate(index, star)} className={`text-2xl ${star <= qr.rating ? "text-yellow-500" : "text-slate-300"}`}>*</button>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
 }
 
-function atualizarHUDJogo(){
-  if(!jogAtual)return;
-  G('j-nm').innerText='👤 '+(jogAtual.nm||'—');
-  G('j-nv').innerText='Nível '+(jogAtual.nivel||1)+' · Skill '+(jogAtual.sk||0);
-  G('h-fl').innerText=fN(jogAtual.fl||0);
-  G('h-en').innerText=Math.round(jogAtual.en||100)+'%';
-  G('h-sk').innerText=jogAtual.sk||0;
-  G('h-vis').innerText=(jogAtual.visao||5)+'m'
+function FlagInventory({ onSelect }: { onSelect: (company: Company) => void }) {
+  return (
+    <div className="space-y-3">
+      <p>Quantidade de bandeiras encontradas por empresa. Clica para abrir informacao completa.</p>
+      {companies.map((company) => (
+        <button key={company.key} type="button" onClick={() => onSelect(company)} className="flex w-full items-center justify-between border-b border-slate-200 py-3 text-left">
+          <span>
+            <strong className="block text-slate-950">{company.name}</strong>
+            <span>{company.premiumCollected}/20 premiadas para QR</span>
+          </span>
+          <span className="text-xl font-black text-red-600">{company.totalCollected}</span>
+        </button>
+      ))}
+    </div>
+  );
 }
 
-function atualizarPainelSk(){
-  if(!jogAtual)return;
-  G('sk-nv').innerText=jogAtual.nivel||1;
-  G('sk-sk').innerText=jogAtual.sk||0;
-  G('sk-vis').innerText=(jogAtual.visao||5)+'m';
-  G('sk-px').innerText=fN(jogAtual.flLimite||500);
-  var pc=Math.min(100,((jogAtual.flEnerg||0)/(jogAtual.flLimite||500))*100);
-  G('bskf').style.width=pc+'%';
-  G('bskt').innerText=fN(jogAtual.flEnerg||0)+' / '+fN(jogAtual.flLimite||500)
+function CompanyInfo({ company }: { company: Company }) {
+  return (
+    <div className="space-y-3">
+      <h3 className="text-2xl font-black text-slate-950">{company.name}</h3>
+      <p><strong>Atividade:</strong> {company.activity}</p>
+      <p><strong>Contactos:</strong> {company.contact}</p>
+      <p><strong>Local:</strong> {company.address}</p>
+      <p><strong>Premios:</strong> {company.prize}</p>
+      <p><strong>Estrelas:</strong> {"*".repeat(company.rating)}</p>
+      <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Esta janela pode ser fechada pelo jogador apos 5 segundos.</p>
+    </div>
+  );
 }
 
-function gravarJogador(){
-  if(!jogAtual||!jogAtual.em)return;
-  jogAtual.ult=Date.now();
-  var l=BD.jogs(),idx=-1;
-  for(var i=0;i<l.length;i++){if(l[i].em===jogAtual.em){idx=i;break}}
-  if(idx>=0)l[idx]=jogAtual;else l.push(jogAtual);
-  BD.saveJ(l);BD.setSJ(jogAtual)
+function SkillGraph({ collected, skill, nextTarget }: { collected: number; skill: number; nextTarget: number }) {
+  const bars = [42, 66, 54, 78, 91, 63, 86];
+  return (
+    <div>
+      <p className="mb-4">Skill atual: <strong>{skill}</strong>. Proximo patamar: <strong>{nextTarget}</strong> bandeiras.</p>
+      <div className="flex h-36 items-end gap-2 border-b border-slate-300">
+        {bars.map((bar, index) => (
+          <div key={bar + index} className="flex flex-1 flex-col items-center gap-2">
+            <span className="w-full bg-red-600" style={{ height: `${bar}%` }} />
+            <small>{["D", "S", "M", "Mes", "Ano", "JG", "QR"][index]}</small>
+          </div>
+        ))}
+      </div>
+      <p className="mt-4">Total de bandeiras recolhidas: {collected}. Grafico diario, semanal, mensal, mes e ano.</p>
+    </div>
+  );
 }
 
-function atualizarCirculo(){
-  if(!mapaJ||!jogAtual)return;
-  var v=jogAtual.visao||5,r=Math.max(60,distPx(v)),d=r*2;
-  var c=G('circ-vis'),p=(v-CFG.VISAO_MIN)/(CFG.VISAO_MAX-CFG.VISAO_MIN),b=Math.round(p*255);
-  c.style.width=d+'px';c.style.height=d+'px';
-  c.style.borderColor='rgb(0,255,'+b+')';
-  c.style.boxShadow='0 0 0 3000px rgba(0,0,0,.76),0 0 '+(20+p*35)+'px rgba(0,255,'+b+',.4)'
+function GameNotices() {
+  return (
+    <div className="space-y-3">
+      <p><strong>Outros concorrentes:</strong> 3 QR gerados hoje na tua zona.</p>
+      <p><strong>Publicidade:</strong> Hotel Mar colocou um bingo surpresa no jogo.</p>
+      <p><strong>Prazo:</strong> Cafe Luz tem premio a terminar. Aviso visivel apenas nos ultimos 5 dias.</p>
+      <p><strong>Troca:</strong> O jogador pode trocar codigo QR por bandeiras sem premio para ganhar skill, ficando ao seu criterio.</p>
+    </div>
+  );
 }
 
-function loopJogo(ts){
-  animF=requestAnimationFrame(loopJogo);
-  var dt=Math.min(ts-ultimoF,50);ultimoF=ts;animT+=dt*.001;
-  var vel=CFG.VEL_PX*(dt/16),mx=0,my=0;
-  if(dirs.c)my-=vel;if(dirs.b)my+=vel;if(dirs.e)mx-=vel;if(dirs.d)mx+=vel;
-  if(mx&&my){mx*=.707;my*=.707}
-  AV.andando=!!(mx||my);
-  if(mx>0)AV.dir=1;else if(mx<0)AV.dir=-1;
-  if(AV.andando&&mapaJ){
-    var z=mapaJ.getZoom(),e=156543.03392*Math.cos(AV.lat*Math.PI/180)/Math.pow(2,z);
-    AV.lat+=(-my*e)/111319.9;AV.lng+=(mx*e)/111319.9;
-    mapaJ.panTo([AV.lat,AV.lng],{animate:false,duration:0});
-    if(marcAvt)marcAvt.setLatLng([AV.lat,AV.lng]);
-    atualizarCirculo();atualizarVisibilidade();verificarBandeiras()
-  }
-  animarAvatar(animT,AV.andando)
+function CompanyPortal({ mode }: { mode: "PR" | "FIL" }) {
+  const [pack, setPack] = useState(packageRows[2]);
+  const [skillPoints, setSkillPoints] = useState(740);
+  const [code, setCode] = useState("COD-PR-48291");
+
+  const lots = Math.floor(pack.flags / 1000);
+  const premiumFlags = lots * 20;
+
+  return (
+    <main className="min-h-screen bg-stone-50 pt-28 text-slate-950">
+      <section className="mx-auto max-w-7xl px-4 py-10">
+        <div className="grid gap-10 lg:grid-cols-[0.8fr_1.2fr]">
+          <div>
+            <p className="text-sm font-bold uppercase tracking-[0.3em] text-red-600">Designado por {mode}</p>
+            <h1 className="mt-4 text-5xl font-black tracking-[-0.06em] sm:text-7xl">
+              {mode === "PR" ? "Portal empresas" : "Portal filiais"}
+            </h1>
+            <p className="mt-5 text-lg leading-8 text-slate-600">
+              Registo, entrada, pacotes, lotes de premios, bingos, QR, filiais, autorizacoes e relatorios de publicidade recolhida pelo JG.
+            </p>
+          </div>
+          <div className="grid gap-6 md:grid-cols-2">
+            <form className="space-y-4 bg-white p-6 shadow-xl shadow-slate-200/70">
+              <h2 className="text-2xl font-black">Registo {mode}</h2>
+              <Field label="E-mail" type="email" required />
+              <Field label="Morada" required />
+              <Field label="NIF" required />
+              <Field label="Contacto" required />
+              <Field label="Morada fiscal" required />
+              <Field label="Dados fiscais necessarios" required />
+              <PrimaryButton>Guardar registo</PrimaryButton>
+            </form>
+            <form className="space-y-4 bg-slate-950 p-6 text-white shadow-xl shadow-slate-300/70">
+              <h2 className="text-2xl font-black">Entrada</h2>
+              <label className="block text-sm font-medium text-white/70">NIF<span className="text-red-400">*</span><input required className="mt-2 w-full border-b border-white/25 bg-transparent px-1 py-2 text-white outline-none" /></label>
+              <label className="block text-sm font-medium text-white/70">Senha<span className="text-red-400">*</span><input required type="password" className="mt-2 w-full border-b border-white/25 bg-transparent px-1 py-2 text-white outline-none" /></label>
+              <PrimaryButton>Aceder</PrimaryButton>
+            </form>
+          </div>
+        </div>
+      </section>
+
+      <section className="mx-auto grid max-w-7xl gap-6 px-4 pb-16 lg:grid-cols-3">
+        <div className="space-y-5 bg-white p-6 shadow-xl shadow-slate-200/70 lg:col-span-2">
+          <h2 className="text-3xl font-black">Comprar pacotes e criar lotes</h2>
+          <div className="grid gap-3 md:grid-cols-5">
+            {packageRows.map((row) => (
+              <button key={row.flags} type="button" onClick={() => setPack(row)} className={`border p-4 text-left transition ${pack.flags === row.flags ? "border-red-600 bg-red-50" : "border-slate-200 hover:border-slate-500"}`}>
+                <strong className="block text-xl">{row.flags.toLocaleString("pt-PT")}</strong>
+                <span className="text-sm text-slate-600">{row.bingo} bingos extra</span>
+              </button>
+            ))}
+          </div>
+          <div className="grid gap-4 md:grid-cols-4">
+            <MetricLight label="Bandeiras" value={pack.flags.toLocaleString("pt-PT")} />
+            <MetricLight label="Lotes ativos" value={lots} />
+            <MetricLight label="Premiadas" value={premiumFlags} />
+            <MetricLight label="Raio GPS" value={pack.radius} />
+          </div>
+          <div className="grid gap-6 md:grid-cols-2">
+            <div>
+              <h3 className="text-xl font-black">Premio do lote</h3>
+              <textarea className="mt-3 h-28 w-full border border-slate-300 p-3 outline-none focus:border-red-600" defaultValue="Premio surpresa, cafe, desconto X%, almoco ate 50 euros ou bingo." />
+              <p className="mt-2 text-sm text-red-700">Confirmar se valores, prazo e condicoes estao corretos antes de publicar.</p>
+            </div>
+            <div>
+              <h3 className="text-xl font-black">Prazo</h3>
+              <select className="mt-3 w-full border border-slate-300 p-3 outline-none focus:border-red-600" defaultValue="30">
+                <option value="1">1 dia</option>
+                <option value="30">30 dias por defeito</option>
+                <option value="60">60 dias</option>
+              </select>
+              <label className="mt-4 flex gap-3 text-sm"><input type="checkbox" defaultChecked /> Receber relatorio por email ou msn</label>
+              <label className="mt-2 flex gap-3 text-sm"><input type="checkbox" /> Relatorio diario, semanal ou mensal</label>
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-5 bg-slate-950 p-6 text-white shadow-xl shadow-slate-300/70">
+          <h2 className="text-3xl font-black">Quadro {mode}</h2>
+          <MetricDark label="Recolhidas por JG" value="1.284" />
+          <MetricDark label="QR gerados" value="36" />
+          <MetricDark label="QR pagos" value="21" />
+          <MetricDark label="Data registo" value="12/04/2026" />
+          <MetricDark label="Estrelas" value="*****" />
+          <div>
+            <p className="text-sm uppercase tracking-[0.22em] text-white/50">Skill compras</p>
+            <p className="text-2xl font-black">{skillPoints}/1000 pontos</p>
+            <button type="button" onClick={() => setSkillPoints((value) => Math.min(1000, value + 10))} className="mt-3 border border-white/30 px-4 py-2 text-xs font-bold uppercase tracking-[0.18em]">Somar 10</button>
+            <p className="mt-2 text-sm text-white/60">Cada 1000 pontos pode trocar por 1000 bandeiras.</p>
+          </div>
+        </div>
+
+        <div className="bg-white p-6 shadow-xl shadow-slate-200/70 lg:col-span-2">
+          <h2 className="text-3xl font-black">GPS de bandeiras amarelas</h2>
+          <div className="relative mt-5 h-80 overflow-hidden border border-slate-200 game-map-light">
+            <div className="absolute left-[48%] top-[43%] h-48 w-48 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-yellow-500/80" />
+            <div className="absolute left-[63%] top-[58%] h-32 w-32 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-yellow-500/80" />
+            {[31, 46, 52, 68, 74, 39].map((x, index) => <span key={x} className="absolute h-4 w-3 bg-yellow-400" style={{ left: `${x}%`, top: `${35 + index * 7}%` }} />)}
+            <div className="absolute bottom-4 left-4 bg-white px-4 py-3 text-sm shadow-lg">Apenas pacotes da empresa e raio de distribuicao.</div>
+          </div>
+        </div>
+
+        <div className="space-y-5 bg-white p-6 shadow-xl shadow-slate-200/70">
+          <h2 className="text-3xl font-black">Codigos e QR</h2>
+          <p className="text-slate-600">Gerar codigo unico para filiais ou mae aceitar, guardar ou anular.</p>
+          <div className="border border-slate-200 p-4 text-2xl font-black text-red-600">{code}</div>
+          <div className="flex flex-wrap gap-2">
+            <PrimaryButton onClick={() => setCode(`COD-${mode}-${Math.floor(10000 + Math.random() * 89999)}`)}>Gerar codigo</PrimaryButton>
+            <GhostButton>Guardar</GhostButton>
+            <GhostButton>Anular</GhostButton>
+          </div>
+          <div className="space-y-2 text-sm text-slate-700">
+            <p>Janela de QRs para entrega de premios.</p>
+            <p>Responsavel: dono, gerente, empregado ou controlador de publicidade.</p>
+            <p>{mode === "FIL" ? "Se a fatura for para a mae, a filial gera codigo e a mae aceita." : "A empresa mae pode autorizar, cancelar ou gerir pacotes das filiais."}</p>
+          </div>
+        </div>
+      </section>
+    </main>
+  );
 }
 
-function animarAvatar(t,a){
-  var s=G('avt-svg');if(!s)return;
-  if(a){
-    var r=Math.sin(t*8)*22;
-    var ape=G('ape'),apd=G('apd'),abe=G('abe'),abd=G('abd'),acab=G('acab');
-    if(ape)ape.style.transform='rotate('+(-r)+'deg)';
-    if(apd)apd.style.transform='rotate('+r+'deg)';
-    if(abe)abe.style.transform='rotate('+r+'deg)';
-    if(abd)abd.style.transform='rotate('+(-r)+'deg)';
-    if(acab)acab.style.transform='translateY('+Math.abs(Math.sin(t*8))*-1.5+'px)';
-    s.style.transform='translate(-50%,-50%) scaleX('+AV.dir+')';
-    s.style.filter='drop-shadow(0 0 12px #4CAF50)'
-  }else{
-    var r2=Math.sin(t*1.5)*1.5;
-    var ape2=G('ape'),apd2=G('apd'),abe2=G('abe'),abd2=G('abd'),acab2=G('acab');
-    if(ape2)ape2.style.transform='rotate(0)';if(apd2)apd2.style.transform='rotate(0)';
-    if(abe2)abe2.style.transform='rotate('+r2+'deg)';if(abd2)abd2.style.transform='rotate('+(-r2)+'deg)';
-    if(acab2)acab2.style.transform='translateY('+r2*.4+'px)';
-    var sc=1+Math.sin(t*1.2)*.02;
-    s.style.transform='translate(-50%,-50%) scale('+sc+')';
-    s.style.filter='drop-shadow(0 0 '+(8+Math.sin(t*1.2)*4)+'px #4CAF50)'
-  }
+function MetricLight({ label, value }: { label: string; value: string | number }) {
+  return (
+    <div className="border border-slate-200 p-4">
+      <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-500">{label}</p>
+      <p className="mt-2 text-2xl font-black">{value}</p>
+    </div>
+  );
 }
 
-document.addEventListener('keydown',function(e){
-  var m={ArrowUp:'c',ArrowDown:'b',ArrowLeft:'e',ArrowRight:'d',w:'c',s:'b',a:'e',d:'d',W:'c',S:'b',A:'e',D:'d'};
-  if(m[e.key]){dirs[m[e.key]]=true;var b=G('bc-'+m[e.key]);if(b)b.classList.add('on');e.preventDefault()}
-  if(e.key===' '||e.key==='Enter')apanharManual();
-  if(e.key==='Escape'){fecharAbaBanda();fecharAbaQR()}
-});
-document.addEventListener('keyup',function(e){
-  var m={ArrowUp:'c',ArrowDown:'b',ArrowLeft:'e',ArrowRight:'d',w:'c',s:'b',a:'e',d:'d',W:'c',S:'b',A:'e',D:'d'};
-  if(m[e.key]){dirs[m[e.key]]=false;var b=G('bc-'+m[e.key]);if(b)b.classList.remove('on')}
-});
-function pd(d){dirs[d]=true;var b=G('bc-'+d);if(b)b.classList.add('on')}
-function pu(d){dirs[d]=false;var b=G('bc-'+d);if(b)b.classList.remove('on')}
-function mudarTam(d){tamBtn=Math.max(32,Math.min(80,tamBtn+d*6));G('tam-lbl').innerText=tamBtn+'px';var b=document.querySelectorAll('.cbtn');for(var i=0;i<b.length;i++){b[i].style.width=tamBtn+'px';b[i].style.height=tamBtn+'px'}}
-function arrastarCtrl(){
-  var c=G('ctrl');if(!c)return;
-  var ar=false,ox=0,oy=0;
-  c.addEventListener('pointerdown',function(e){if(e.target.classList.contains('cbtn')||e.target.classList.contains('tbtn'))return;ar=true;ox=e.clientX-c.getBoundingClientRect().left;oy=e.clientY-c.getBoundingClientRect().top;c.setPointerCapture(e.pointerId);e.preventDefault()});
-  c.addEventListener('pointermove',function(e){if(!ar)return;c.style.left=(e.clientX-ox)+'px';c.style.top=(e.clientY-oy)+'px';c.style.right='auto';c.style.bottom='auto'});
-  c.addEventListener('pointerup',function(){ar=false})
+function MetricDark({ label, value }: { label: string; value: string | number }) {
+  return (
+    <div className="border border-white/15 p-4">
+      <p className="text-xs font-bold uppercase tracking-[0.2em] text-white/45">{label}</p>
+      <p className="mt-2 text-2xl font-black">{value}</p>
+    </div>
+  );
 }
 
-function addTick(h){var t=G('ticker');for(var i=0;i<2;i++){var s=document.createElement('span');s.className='tick';s.innerHTML=h+'   ';t.appendChild(s)}}
-function iniciarTicker(){G('ticker').innerHTML='';addTick('🏴 ZAP FLAGS — Caça ao Tesouro!');addTick('👁️ Bandeiras visíveis no teu raio!');addTick('🎫 '+CFG.QR_N+' bandeiras PR = QR prémio!');addTick('🕹️ WASD · ESPAÇO apanhar · ESC fechar')}
-function mostrarNotif(i,t,s){G('ntf-ico').innerText=i;G('ntf-txt').innerText=t;G('ntf-sub').innerText=s||'';G('notif').style.display='block';if(notifTmr)clearTimeout(notifTmr);notifTmr=setTimeout(function(){G('notif').style.display='none'},2700)}
+export default function App() {
+  const [area, setArea] = useState<Area>("jogo");
+  const [gameStarted, setGameStarted] = useState(false);
 
-setInterval(function(){if(jogAtual&&(jogAtual.en||100)<100){jogAtual.en=Math.min(100,(jogAtual.en||100)+1);atualizarHUDJogo();gravarJogador()}},3e4);
+  const page = useMemo(() => {
+    if (area === "jogo") return <Landing setArea={setArea} />;
+    if (area === "jg") return gameStarted ? <GamePage setArea={(next) => { setGameStarted(false); setArea(next); }} /> : <PlayerAccess onEnter={() => setGameStarted(true)} />;
+    if (area === "pr") return <CompanyPortal mode="PR" />;
+    return <CompanyPortal mode="FIL" />;
+  }, [area, gameStarted]);
 
-ir('p-inicio');
-</script>
-</body>
-</html>
+  return (
+    <>
+      <Header area={area} setArea={(next) => { setGameStarted(false); setArea(next); }} />
+      {page}
+    </>
+  );
+}
