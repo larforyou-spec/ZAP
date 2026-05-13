@@ -195,3 +195,121 @@ html,body{height:100%;font-family:'Segoe UI',system-ui,sans-serif;background:var
     </div>
   </div>
 </div>
+<!-- GAME -->
+<div class="screen" id="gameScreen">
+  <div id="topBar">
+    <div class="tbtn" onclick="openModal('mTrophies')">🏆 <span class="tv" id="tbTrophies">0</span></div>
+    <div class="tbtn" onclick="openModal('mFlags')">🚩 <span class="tv" id="tbFlags">0</span></div>
+    <div class="tbtn" onclick="openModal('mSkill')">📈 <span class="tv" id="tbSkill">0</span></div>
+    <div class="tbtn" onclick="openModal('mInfo')">ℹ️</div>
+    <div style="flex:1"></div>
+    <div class="tbtn" style="color:var(--danger);" onclick="logoutJG()">⏻ Sair</div>
+  </div>
+  <div id="mapArea">
+    <div id="map"></div>
+    <div id="playerAvatar">🧍‍♂️</div>
+    <div class="hud-stats">
+      <div class="hud-pill">🚩 <span id="hFlags">0</span></div>
+      <div class="hud-pill">🎯 <span id="hForPrize">20</span></div>
+      <div class="hud-pill">⚡ <span id="hEnergy">100</span>%</div>
+      <div class="hud-pill">👁 <span id="hVision">5.00</span>m</div>
+      <div class="hud-pill">⭐ <span id="hSkill">0</span></div>
+    </div>
+    <div id="gpsBtn" onclick="useGPS()">📍</div>
+    <div id="dpad">
+      <div class="dk empty"></div><div class="dk" data-d="up">↑</div><div class="dk empty"></div>
+      <div class="dk" data-d="left">←</div><div class="dk" data-d="pick" style="font-size:14px;">⬤</div><div class="dk" data-d="right">→</div>
+      <div class="dk empty"></div><div class="dk" data-d="down">↓</div><div class="dk empty"></div>
+    </div>
+  </div>
+  <div id="ticker"><span id="tickerText">Bem-vindo! Todas as bandeiras são vermelhas — surpresa total.</span></div>
+</div>
+
+<!-- REVEAL OVERLAY -->
+<div id="revealOverlay">
+  <div id="revealBox">
+    <div id="revealSuspense">
+      <div class="reveal-flag"><div class="flag-q">?</div></div>
+      <div class="reveal-suspense-text">A abrir bandeira...</div>
+      <div class="timer-ring">
+        <svg width="50" height="50"><circle class="ring-bg" cx="25" cy="25" r="21"/><circle class="ring-fg" id="revealRing" cx="25" cy="25" r="21" stroke="var(--accent)" stroke-dasharray="132" stroke-dashoffset="0"/></svg>
+      </div>
+    </div>
+    <div class="reveal-result" id="revealResult">
+      <div class="reveal-icon" id="rvIcon"></div>
+      <div class="reveal-title" id="rvTitle"></div>
+      <div class="reveal-desc" id="rvDesc"></div>
+      <div class="reveal-company" id="rvCompany"></div>
+      <button class="btn btn-secondary" onclick="closeReveal()" style="margin-top:16px;">OK</button>
+    </div>
+  </div>
+</div>
+<div class="bingo-fireworks" id="fireworks"></div>
+
+<!-- PR DASHBOARD -->
+<div class="screen" id="prDashScreen">
+  <div class="pr-topbar">
+    <div class="tbtn active" onclick="prTab('prTabStats',this)">📊 Resumo</div>
+    <div class="tbtn" onclick="prTab('prTabPacks',this)">📦 Comprar Pacotes</div>
+    <div class="tbtn" onclick="prTab('prTabActive',this)">📋 Meus Pacotes</div>
+    <div class="tbtn" onclick="prTab('prTabBingo',this)">🎰 Bingos</div>
+    <div class="tbtn" onclick="prTab('prTabFil',this)">🏬 Filiais</div>
+    <div style="flex:1"></div>
+    <div class="tbtn" style="color:var(--danger);" onclick="showScreen('welcomeScreen')">⏻ Sair</div>
+  </div>
+  <div class="pr-content" id="prContent">
+
+    <div class="tab-content active" id="prTabStats">
+      <h3>📊 Resumo</h3>
+      <div class="pr-grid" id="prStatsGrid"></div>
+    </div>
+
+    <!-- PACOTES SIMPLIFICADOS -->
+    <div class="tab-content" id="prTabPacks">
+      <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:16px;">
+        <h3>📦 Comprar Pacotes</h3>
+        <button class="btn btn-secondary btn-sm" onclick="prTab('prTabStats',null)">← Voltar</button>
+      </div>
+      <div class="pack-grid" id="packGrid"></div>
+
+      <div id="packConfigArea" style="display:none;margin-top:20px;">
+        <h4>Pacote: <span id="cfgPackName" style="color:var(--accent);"></span></h4>
+        <div class="lote-config">
+          <label>Quantos prémios (lotes) quer criar?</label>
+          <input id="cfgLots" type="number" min="0" value="0" style="width:160px;font-size:18px;text-align:center;">
+          <div id="lotesPreview" style="margin-top:12px;padding:14px;background:rgba(255,255,255,.06);border-radius:12px;"></div>
+        </div>
+        <button class="btn btn-primary" style="margin-top:20px;" onclick="previewPurchase()">Continuar → Definir Prémios</button>
+        <button class="btn btn-secondary" onclick="cancelPackConfig()">Cancelar</button>
+        <div class="msg" id="prBuyMsg"></div>
+      </div>
+    </div>
+
+    <div class="tab-content" id="prTabActive">
+      <h3>📋 Pacotes Comprados</h3>
+      <div id="prActiveList"></div>
+    </div>
+
+    <div class="tab-content" id="prTabBingo">
+      <h3>🎰 Gerir Bingos</h3>
+      <p class="sm">As bandeiras de bingo são vermelhas como as outras — o jogador nunca sabe até apanhar.</p>
+      <div id="bingoManageList"></div>
+    </div>
+
+    <div class="tab-content" id="prTabFil">
+      <h3>🏬 Filiais</h3>
+      <div id="prFilList"></div>
+    </div>
+
+    <div class="tab-content" id="prTabInfo">
+      <h3>ℹ️ Dados da Empresa</h3>
+      <div id="prInfoData"></div>
+    </div>
+  </div>
+</div>
+
+<!-- MODALS -->
+<div class="modal-overlay" id="mTrophies"><div class="modal-box"><div class="modal-head"><h3>🏆 Prémios</h3><div class="modal-close" onclick="closeModal('mTrophies')">✕</div></div><div class="modal-body" id="mTrophiesBody">Sem prémios.</div></div></div>
+<div class="modal-overlay" id="mFlags"><div class="modal-box"><div class="modal-head"><h3>🚩 Bandeiras</h3><div class="modal-close" onclick="closeModal('mFlags')">✕</div></div><div class="modal-body" id="mFlagsBody">—</div></div></div>
+<div class="modal-overlay" id="mSkill"><div class="modal-box"><div class="modal-head"><h3>📈 Skill</h3><div class="modal-close" onclick="closeModal('mSkill')">✕</div></div><div class="modal-body" id="mSkillBody"></div></div></div>
+<div class="modal-overlay" id="mInfo"><div class="modal-box"><div class="modal-head"><h3>ℹ️ Informações</h3><div class="modal-close" onclick="closeModal('mInfo')">✕</div></div><div class="modal-body"><div class="stat-card"><b>Regras</b><div class="sm">• Todas as bandeiras são vermelhas — surpresa sempre!<br>• 100 = +1 skill (dobra)<br>• 20 premiadas = QR<br>• Bingo = prémio especial com QR e GPS da loja</div></div></div></div></div>
