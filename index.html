@@ -313,3 +313,189 @@ html,body{height:100%;font-family:'Segoe UI',system-ui,sans-serif;background:var
 <div class="modal-overlay" id="mFlags"><div class="modal-box"><div class="modal-head"><h3>🚩 Bandeiras</h3><div class="modal-close" onclick="closeModal('mFlags')">✕</div></div><div class="modal-body" id="mFlagsBody">—</div></div></div>
 <div class="modal-overlay" id="mSkill"><div class="modal-box"><div class="modal-head"><h3>📈 Skill</h3><div class="modal-close" onclick="closeModal('mSkill')">✕</div></div><div class="modal-body" id="mSkillBody"></div></div></div>
 <div class="modal-overlay" id="mInfo"><div class="modal-box"><div class="modal-head"><h3>ℹ️ Informações</h3><div class="modal-close" onclick="closeModal('mInfo')">✕</div></div><div class="modal-body"><div class="stat-card"><b>Regras</b><div class="sm">• Todas as bandeiras são vermelhas — surpresa sempre!<br>• 100 = +1 skill (dobra)<br>• 20 premiadas = QR<br>• Bingo = prémio especial com QR e GPS da loja</div></div></div></div></div>
+<script>
+// ==================== STATE ====================
+const S = {
+  jg: {name:'', contact:'', passHash:''},
+  loggedIn: false,
+  pos: {lat:38.7223, lng:-9.1393},
+  flagsTotal: 0,
+  skill: 0,
+  nextTarget: 100,
+  visionM: 5,
+  energy: 100,
+  companies: {},
+  trophies: [],
+  pr: {name:'', nif:'', passHash:''},
+  prLoggedIn: false,
+  prPacks: [],
+  filials: []
+};
+
+function save(){localStorage.setItem('JG9',JSON.stringify(S));}
+function load(){try{const d=JSON.parse(localStorage.getItem('JG9'));if(d)Object.assign(S,d);}catch(e){}}
+
+// ==================== UTILS ====================
+const $ = id => document.getElementById(id);
+function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));$(id).classList.add('active');}
+function openModal(id){$(id).classList.add('open');}
+function closeModal(id){$(id).classList.remove('open');}
+function setMsg(id,txt,type='ok'){$(id).textContent = txt; $(id).className = `msg ${type}`;}
+function ticker(txt){$('tickerText').textContent = txt;}
+function hash(str){let h=0;for(let i=0;i<str.length;i++)h=Math.imul(31,h)+str.charCodeAt(i)|0;return h.toString(36);}
+function uid(){return crypto.randomUUID?crypto.randomUUID():Math.random().toString(36).substr(2,9)+Date.now().toString(36);}
+
+// ==================== ESQUECI SENHA ====================
+function forgotPassword(){
+  const contact = prompt("Digite o seu telemóvel ou e-mail para recuperar a senha:");
+  if(contact){
+    alert(`✅ Link de recuperação enviado para:\n${contact}\n\n(Em produção enviaria email ou SMS)`);
+  }
+}
+
+// ==================== AUTH ====================
+$('jgLoginBtn').onclick = () => {
+  const pass = $('l_pass').value;
+  if(!S.jg.name) return setMsg('jgLoginMsg','Faça primeiro o registo','warn');
+  if(!pass) return setMsg('jgLoginMsg','Senha obrigatória','warn');
+  if(hash(pass) !== S.jg.passHash) return setMsg('jgLoginMsg','Senha incorreta','err');
+  S.loggedIn = true;
+  showScreen('gameScreen');
+  initGame();
+  ticker(`Bem-vindo, ${S.jg.name}!`);
+};
+
+$('jgRegBtn').onclick = () => {
+  const nome = $('r_name').value.trim();
+  const contact = $('r_contact').value.trim();
+  const p1 = $('r_pass').value;
+  const p2 = $('r_pass2').value;
+  if(!nome || !contact || !p1 || !p2) return setMsg('jgRegMsg','Preencha todos os campos *','warn');
+  if(p1 !== p2) return setMsg('jgRegMsg','Senhas não coincidem','err');
+  S.jg = {name:nome, contact:contact, passHash:hash(p1)};
+  save();
+  setMsg('jgRegMsg','Registado com sucesso!','ok');
+  setTimeout(()=>showScreen('jgLoginScreen'),900);
+};
+
+// PR e FIL (simplificado)
+$('prLoginBtn').onclick = () => { S.prLoggedIn = true; showScreen('prDashScreen'); refreshPR(); };
+$('filLoginBtn').onclick = () => { S.prLoggedIn = true; showScreen('prDashScreen'); refreshPR(); };
+
+// ==================== PACOTES ====================
+const PACKAGES = [
+  {id:'p1000',qty:1000,price:0,label:'1.000',free:true},
+  {id:'p5000',qty:5000,price:15,label:'5.000',free:false},
+  {id:'p10000',qty:10000,price:20,label:'10.000',free:false},
+  {id:'p20000',qty:20000,price:30,label:'20.000',free:false},
+  {id:'p50000',qty:50000,price:50,label:'50.000',free:false}
+];
+
+function renderPackCards(){
+  $('packGrid').innerHTML = PACKAGES.map(p => `
+    <div class="pack-card" id="pc_${p.id}" onclick="selectPack('${p.id}')">
+      <h4>📦 ${p.label} bandeiras</h4>
+      ${p.free ? `<div class="price" style="color:var(--ok);">GRÁTIS</div><div class="sm" style="color:var(--ok);">Incluído na inscrição</div>` : `<div class="price">${p.price}€</div>`}
+    </div>
+  `).join('');
+}
+
+function selectPack(id){
+  selectedPack = PACKAGES.find(p => p.id === id);
+  document.querySelectorAll('.pack-card').forEach(el => el.style.border = '2px solid transparent');
+  $(`pc_${id}`).style.border = '2px solid var(--accent)';
+  $('packConfigArea').style.display = 'block';
+  $('cfgPackName').innerHTML = `${selectedPack.label} ${selectedPack.free ? '(GRÁTIS)' : '('+selectedPack.price+'€)'}`;
+}
+
+function previewPurchase(){
+  if(!selectedPack) return;
+  if(selectedPack.free){finalizePurchase(); return;}
+  const lotes = parseInt($('cfgLots').value) || 0;
+  if(lotes < 1) return setMsg('prBuyMsg','Defina o número de prémios (lotes)','warn');
+  $('confirmBox').style.display = 'block';
+}
+
+function finalizePurchase(){
+  if(!selectedPack) return;
+  const pack = {
+    id: uid(),
+    name: selectedPack.label,
+    qty: selectedPack.qty,
+    price: selectedPack.price,
+    free: selectedPack.free,
+    boughtAt: new Date().toISOString(),
+    expiresIn: 30
+  };
+  S.prPacks.push(pack);
+  savePR();
+  cancelPackConfig();
+  setMsg('prBuyMsg', selectedPack.free ? '✅ Pacote gratuito ativado!' : '✅ Pacote comprado com sucesso!', 'ok');
+  refreshPR();
+}
+
+function cancelPackConfig(){
+  selectedPack = null;
+  $('packConfigArea').style.display = 'none';
+  document.querySelectorAll('.pack-card').forEach(el => el.style.border = '2px solid transparent');
+}
+
+// ==================== PR REFRESH ====================
+function refreshPR(){
+  let html = '';
+  S.prPacks.forEach((p,i) => {
+    html += `<div class="stat-card"><b>${p.name}</b><div class="sm">Quantidade: ${p.qty} | Preço: ${p.price}€ | Data: ${new Date(p.boughtAt).toLocaleDateString()}</div></div>`;
+  });
+  $('prActiveList').innerHTML = html || '<p class="sm">Ainda não tem pacotes comprados.</p>';
+}
+
+// ==================== GAME ====================
+let map, gameInited = false;
+function initGame(){
+  if(gameInited) return;
+  gameInited = true;
+  map = L.map('map',{zoomControl:true,attributionControl:false}).setView([S.pos.lat,S.pos.lng],19);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:22}).addTo(map);
+  playerMarker = L.circleMarker([S.pos.lat,S.pos.lng],{radius:10,color:'#38bdf8',fillOpacity:1}).addTo(map);
+  visionCircle = L.circle([S.pos.lat,S.pos.lng],{radius:S.visionM,color:'#38bdf8',fillOpacity:0.1}).addTo(map);
+  pickupCircle = L.circle([S.pos.lat,S.pos.lng],{radius:S.pickupM,color:'#ffffff',dashArray:'5,5'}).addTo(map);
+  flagLayer = L.layerGroup().addTo(map);
+  spawnFlags('Café Lisboa','☕',80);
+  spawnFlags('Restaurante Sol','🍽️',60);
+  spawnFlags('Loja Tech','💻',50);
+  refreshHUD();
+}
+function spawnFlags(name,icon,count){
+  for(let i=0;i<count;i++){
+    const lat = S.pos.lat + (Math.random()-0.5)*0.001;
+    const lng = S.pos.lng + (Math.random()-0.5)*0.001;
+    const type = Math.random()<0.12?'bingo':Math.random()<0.35?'premium':'normal';
+    const marker = L.circleMarker([lat,lng],{radius:7,color:'#dc2626',fillColor:'#dc2626',fillOpacity:0.95});
+    marker._data = {name,type};
+    marker.on('click',()=>pickFlag(marker));
+    flagLayer.addLayer(marker);
+  }
+}
+function pickFlag(marker){
+  const data = marker._data;
+  marker.remove();
+  S.flagsTotal++;
+  if(data.type==='bingo') ticker('🎰 BINGO ENCONTRADO!');
+  else if(data.type==='premium') ticker('🎁 Bandeira premiada!');
+  else ticker('🚩 Bandeira recolhida');
+  refreshHUD();
+}
+function refreshHUD(){
+  $('hFlags').textContent = S.flagsTotal;
+  $('hSkill').textContent = S.skill;
+  $('hVision').textContent = S.visionM.toFixed(1);
+  $('hEnergy').textContent = S.energy.toFixed(0);
+}
+
+// Init
+load(); loadPR();
+if(S.jg.name) $('l_name').value = S.jg.name;
+renderPackCards();
+</script>
+</body>
+</html>
