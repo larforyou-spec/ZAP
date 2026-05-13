@@ -1,1 +1,1612 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
+<title>JG / PR / FIL — Jogo de Bandeiras v5</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+:root{
+  --bg:#0a0e1a;--panel:#111827;--card:#1a2236;--text:#e4e8f7;--muted:#8b96b9;
+  --accent:#38bdf8;--ok:#34d399;--warn:#fbbf24;--danger:#f87171;
+  --radius:12px;--shadow:0 8px 32px rgba(0,0,0,.5);--flagRed:#dc2626;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);overflow:hidden;}
 
+/* ═══ SCREENS ═══ */
+.screen{display:none;position:fixed;inset:0;z-index:10;flex-direction:column;overflow:auto;background:var(--bg);}
+.screen.active{display:flex;}
+.screen-center{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100%;padding:20px;}
+
+/* ═══ FORMS ═══ */
+.form-box{width:100%;max-width:440px;background:var(--card);border:1px solid rgba(255,255,255,.08);border-radius:var(--radius);padding:24px;box-shadow:var(--shadow);}
+.form-box h2{text-align:center;margin-bottom:6px;font-size:20px;}
+.form-box .sub{text-align:center;color:var(--muted);font-size:13px;margin-bottom:16px;}
+.form-box label{display:block;font-size:12px;color:var(--muted);margin:10px 0 4px;}
+.req{color:var(--danger);font-weight:700;}
+.form-box input,.form-box select,.form-box textarea{
+  width:100%;padding:10px 12px;border-radius:8px;
+  border:1px solid rgba(255,255,255,.12);background:rgba(0,0,0,.3);
+  color:var(--text);font-size:14px;outline:none;font-family:inherit;
+}
+.form-box input:focus,.form-box textarea:focus,.form-box select:focus{border-color:var(--accent);}
+.form-box textarea{resize:vertical;min-height:60px;}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+
+/* ═══ BUTTONS ═══ */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  width:100%;padding:12px;border:none;border-radius:8px;
+  font-size:14px;font-weight:700;cursor:pointer;transition:.15s;
+}
+.btn-primary{background:linear-gradient(135deg,#2563eb,#38bdf8);color:#fff;}
+.btn-primary:active{filter:brightness(.85);}
+.btn-secondary{background:rgba(255,255,255,.08);color:var(--text);border:1px solid rgba(255,255,255,.12);}
+.btn-danger{background:rgba(248,113,113,.15);color:var(--danger);border:1px solid rgba(248,113,113,.25);}
+.btn-ok{background:rgba(52,211,153,.15);color:var(--ok);border:1px solid rgba(52,211,153,.3);}
+.btn-bingo{background:linear-gradient(135deg,#059669,#34d399);color:#fff;}
+.btn-sm{padding:8px 14px;font-size:12px;width:auto;}
+.msg{margin-top:10px;font-size:13px;min-height:18px;}
+.msg.ok{color:var(--ok);}.msg.err{color:var(--danger);}.msg.warn{color:var(--warn);}
+.link-btn{background:none;border:none;color:var(--accent);cursor:pointer;font-size:13px;text-decoration:underline;margin-top:12px;}
+.sm{font-size:12px;color:var(--muted);}
+
+/* ═══ CARDS / TAGS ═══ */
+.stat-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:12px;margin-bottom:10px;}
+.stat-card b{font-size:16px;display:block;}
+.info-tag{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;margin:2px;}
+.tag-same{background:rgba(56,189,248,.12);color:var(--accent);border:1px solid rgba(56,189,248,.25);}
+.tag-diff{background:rgba(251,191,36,.12);color:var(--warn);border:1px solid rgba(251,191,36,.25);}
+.tag-active{background:rgba(52,211,153,.12);color:var(--ok);border:1px solid rgba(52,211,153,.25);}
+.tag-pending{background:rgba(255,255,255,.08);color:var(--muted);}
+.info-box{background:rgba(56,189,248,.06);border:1px solid rgba(56,189,248,.2);border-radius:10px;padding:12px;margin:10px 0;font-size:13px;}
+
+/* ═══ GAME HUD ═══ */
+#gameScreen{flex-direction:column;}
+#topBar,.pr-topbar{
+  display:flex;align-items:center;gap:6px;padding:8px 10px;
+  background:rgba(17,24,39,.95);border-bottom:1px solid rgba(255,255,255,.08);
+  z-index:500;flex-shrink:0;overflow-x:auto;
+}
+.tbtn{
+  flex-shrink:0;display:flex;align-items:center;gap:4px;
+  padding:6px 10px;border-radius:8px;border:1px solid rgba(255,255,255,.1);
+  background:rgba(255,255,255,.05);color:var(--text);font-size:12px;
+  cursor:pointer;white-space:nowrap;
+}
+.tbtn:active,.tbtn.active{background:rgba(56,189,248,.15);border-color:rgba(56,189,248,.3);color:var(--accent);}
+.tv{font-weight:700;color:var(--accent);}
+#mapArea{flex:1;position:relative;}
+#map{position:absolute;inset:0;z-index:1;}
+.hud-stats{
+  position:absolute;top:8px;left:8px;right:8px;z-index:600;
+  display:flex;gap:6px;flex-wrap:wrap;pointer-events:none;
+}
+.hud-pill{
+  pointer-events:auto;padding:5px 10px;border-radius:20px;font-size:11px;font-weight:700;
+  background:rgba(0,0,0,.65);border:1px solid rgba(255,255,255,.15);
+  backdrop-filter:blur(6px);display:flex;align-items:center;gap:4px;
+}
+
+/* ═══ D-PAD ═══ */
+#dpad{
+  position:absolute;bottom:60px;right:12px;z-index:600;
+  display:grid;grid-template-columns:48px 48px 48px;grid-template-rows:48px 48px 48px;
+  gap:4px;touch-action:none;
+}
+.dk{
+  width:48px;height:48px;border-radius:12px;display:grid;place-items:center;
+  font-size:20px;font-weight:900;
+  background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.18);
+  color:#fff;cursor:pointer;touch-action:none;user-select:none;
+  backdrop-filter:blur(4px);
+}
+.dk:active{background:rgba(56,189,248,.3);}
+.dk.empty{background:none;border:none;}
+#gpsBtn{
+  position:absolute;bottom:60px;left:12px;z-index:600;
+  width:44px;height:44px;border-radius:50%;display:grid;place-items:center;
+  background:rgba(0,0,0,.6);border:1px solid rgba(255,255,255,.18);
+  color:#fff;font-size:20px;cursor:pointer;
+}
+
+/* ═══ TICKER ═══ */
+#ticker{
+  flex-shrink:0;padding:8px 12px;
+  background:rgba(17,24,39,.95);border-top:1px solid rgba(255,255,255,.08);
+  font-size:12px;color:var(--warn);z-index:500;
+  white-space:nowrap;overflow:hidden;
+}
+#ticker span{display:inline-block;animation:scroll-ticker 18s linear infinite;}
+@keyframes scroll-ticker{0%{transform:translateX(100%)}100%{transform:translateX(-100%)}}
+
+/* ═══ MODALS ═══ */
+.modal-overlay{
+  display:none;position:fixed;inset:0;z-index:2000;
+  background:rgba(0,0,0,.6);backdrop-filter:blur(4px);
+  align-items:flex-end;justify-content:center;
+}
+.modal-overlay.open{display:flex;}
+.modal-box{
+  width:100%;max-width:560px;max-height:85vh;
+  background:var(--panel);border:1px solid rgba(255,255,255,.1);
+  border-radius:16px 16px 0 0;overflow:hidden;
+  display:flex;flex-direction:column;box-shadow:var(--shadow);
+}
+.modal-head{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.08);flex-shrink:0;
+}
+.modal-head h3{font-size:16px;}
+.modal-close{
+  width:32px;height:32px;border-radius:8px;display:grid;place-items:center;
+  background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);
+  color:var(--text);cursor:pointer;font-size:16px;
+}
+.modal-body{padding:16px;overflow-y:auto;flex:1;}
+
+/* ═══ STARS ═══ */
+.stars{display:flex;gap:4px;margin:8px 0;justify-content:center;}
+.stars .star{font-size:32px;cursor:pointer;color:rgba(255,255,255,.2);transition:.15s;}
+.stars .star.active{color:var(--warn);}
+
+/* ═══ REVEAL OVERLAY (suspense) ═══ */
+#revealOverlay{
+  display:none;position:fixed;inset:0;z-index:4000;
+  background:rgba(0,0,0,.85);backdrop-filter:blur(8px);
+  align-items:center;justify-content:center;flex-direction:column;
+}
+#revealOverlay.open{display:flex;}
+#revealBox{
+  width:90%;max-width:380px;text-align:center;padding:30px 24px;
+  background:var(--card);border-radius:20px;
+  border:2px solid rgba(255,255,255,.1);box-shadow:var(--shadow);
+  transform:scale(.8);opacity:0;transition:all .4s cubic-bezier(.34,1.56,.64,1);
+}
+#revealOverlay.open #revealBox{transform:scale(1);opacity:1;}
+
+.reveal-flag{
+  width:80px;height:100px;margin:0 auto 16px;
+  background:var(--flagRed);border-radius:4px 12px 12px 4px;
+  position:relative;
+  animation:flagWave 1.5s ease-in-out infinite;
+  box-shadow:0 8px 30px rgba(220,38,38,.4);
+}
+.reveal-flag::before{
+  content:'';position:absolute;left:-6px;top:0;bottom:-20px;width:6px;
+  background:linear-gradient(180deg,#888,#555);border-radius:3px;
+}
+.reveal-flag .flag-q{
+  position:absolute;inset:0;display:grid;place-items:center;
+  font-size:36px;font-weight:900;color:rgba(255,255,255,.9);
+}
+@keyframes flagWave{0%,100%{transform:rotate(-2deg)}50%{transform:rotate(2deg)}}
+
+.reveal-suspense-text{font-size:16px;color:var(--muted);margin-bottom:16px;animation:blink 1s infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+
+.reveal-result{display:none;text-align:center;}
+.reveal-result.show{display:block;animation:popIn .5s ease;}
+@keyframes popIn{0%{transform:scale(.5);opacity:0}100%{transform:scale(1);opacity:1}}
+
+.reveal-normal{color:var(--muted);}
+.reveal-premium{color:var(--warn);}
+.reveal-bingo{color:var(--ok);}
+.reveal-icon{font-size:60px;margin:10px 0;}
+.reveal-title{font-size:22px;font-weight:900;margin:8px 0;}
+.reveal-desc{font-size:14px;color:var(--muted);margin-bottom:16px;}
+.reveal-company{font-size:12px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:10px;margin:10px 0;}
+.timer-ring{width:50px;height:50px;margin:0 auto;position:relative;}
+.timer-ring svg{transform:rotate(-90deg);}
+.timer-ring .ring-bg{stroke:rgba(255,255,255,.1);fill:none;stroke-width:4;}
+.timer-ring .ring-fg{fill:none;stroke-width:4;stroke-linecap:round;transition:stroke-dashoffset .1s linear;}
+
+/* ═══ FIREWORKS ═══ */
+.bingo-fireworks{position:fixed;inset:0;pointer-events:none;z-index:4001;overflow:hidden;}
+.bingo-fireworks .spark{
+  position:absolute;width:8px;height:8px;border-radius:50%;
+  animation:sparkle 1.5s ease-out forwards;
+}
+@keyframes sparkle{0%{transform:scale(1);opacity:1}100%{transform:scale(0) translateY(-200px);opacity:0}}
+
+/* ═══ BINGO FOUND MODAL ═══ */
+.bingo-found-modal{text-align:center;}
+.bingo-found-modal .big-icon{font-size:60px;margin:10px 0;animation:bounce .6s ease;}
+@keyframes bounce{0%,100%{transform:scale(1)}50%{transform:scale(1.2)}}
+.bingo-found-modal .prize-box{
+  background:linear-gradient(135deg,rgba(52,211,153,.1),rgba(56,189,248,.1));
+  border:2px solid rgba(52,211,153,.3);border-radius:14px;padding:16px;margin:14px 0;
+}
+.bingo-found-modal .prize-text{font-size:20px;font-weight:900;color:var(--ok);}
+.bingo-found-modal .company-info-box{
+  background:rgba(0,0,0,.2);border:1px solid rgba(255,255,255,.1);
+  border-radius:12px;padding:14px;margin:12px 0;text-align:left;
+}
+.bingo-found-modal .info-row{display:flex;gap:8px;padding:5px 0;font-size:13px;border-bottom:1px solid rgba(255,255,255,.05);}
+.bingo-found-modal .info-row:last-child{border:none;}
+.gps-btn{
+  display:flex;align-items:center;justify-content:center;gap:8px;width:100%;
+  padding:14px;border-radius:12px;border:2px solid rgba(56,189,248,.3);
+  background:rgba(56,189,248,.1);color:var(--accent);font-size:15px;
+  font-weight:700;cursor:pointer;text-decoration:none;margin:10px 0;
+}
+.qr-claim-box{background:#fff;border-radius:14px;padding:16px;display:inline-block;margin:12px 0;}
+.claim-countdown{background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.25);border-radius:10px;padding:12px;margin:10px 0;}
+
+/* ═══ PR DASHBOARD ═══ */
+.pr-content{flex:1;overflow:auto;padding:16px;}
+.tab-content{display:none;}.tab-content.active{display:block;}
+.pr-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-bottom:14px;}
+.pr-stat{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:12px;}
+.pr-stat b{font-size:18px;display:block;color:var(--accent);}
+.pack-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin:14px 0;}
+.pack-card{
+  background:rgba(255,255,255,.03);border:2px solid rgba(255,255,255,.08);
+  border-radius:14px;padding:16px;cursor:pointer;transition:.2s;position:relative;
+}
+.pack-card:hover,.pack-card.selected{border-color:var(--accent);background:rgba(56,189,248,.05);}
+.pack-card .price{font-size:24px;font-weight:900;color:var(--accent);margin:6px 0;}
+.pack-card .price small{font-size:12px;color:var(--muted);}
+.pack-badge{display:inline-block;padding:2px 8px;border-radius:6px;font-size:10px;font-weight:700;margin:2px;}
+.badge-bingo{background:rgba(52,211,153,.15);color:var(--ok);}
+.badge-radius{background:rgba(56,189,248,.15);color:var(--accent);}
+.confirm-box{
+  background:rgba(251,191,36,.06);border:2px solid rgba(251,191,36,.25);
+  border-radius:14px;padding:20px;margin-top:16px;display:none;
+}
+.confirm-summary .cs-row{display:flex;justify-content:space-between;padding:4px 0;font-size:13px;border-bottom:1px solid rgba(255,255,255,.05);}
+.confirm-summary .cs-row span:first-child{color:var(--muted);}
+.lote-config{background:var(--card);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:16px;margin-top:14px;}
+
+/* ═══ BINGO MANAGE ═══ */
+.bingo-manage{background:rgba(52,211,153,.04);border:2px solid rgba(52,211,153,.15);border-radius:14px;padding:16px;margin-bottom:14px;}
+.bingo-manage.inactive{border-color:rgba(255,255,255,.08);background:rgba(255,255,255,.02);}
+.bingo-manage.active-bingo{border-color:rgba(52,211,153,.4);box-shadow:0 0 20px rgba(52,211,153,.1);}
+.bingo-status{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;}
+.bingo-status.pending{background:rgba(255,255,255,.08);color:var(--muted);}
+.bingo-status.live{background:rgba(52,211,153,.2);color:var(--ok);animation:pulse 2s infinite;}
+.bingo-status.ended{background:rgba(248,113,113,.15);color:var(--danger);}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
+.countdown-display{background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:12px;margin:10px 0;text-align:center;}
+.countdown-display .cd-time{font-size:24px;font-weight:900;font-family:'Courier New',monospace;}
+.progress-bar{height:6px;background:rgba(255,255,255,.08);border-radius:3px;overflow:hidden;margin-top:8px;}
+.progress-bar .fill{height:100%;border-radius:3px;transition:width 1s;}
+.fill-ok{background:var(--ok);}.fill-warn{background:var(--warn);}.fill-danger{background:var(--danger);}
+.prize-textarea{
+  width:100%;min-height:80px;padding:12px;border-radius:10px;
+  border:2px solid rgba(52,211,153,.2);background:rgba(0,0,0,.3);
+  color:var(--text);font-size:14px;font-family:inherit;resize:vertical;outline:none;
+}
+
+/* ═══ FILIAL CARDS ═══ */
+.fil-card{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:14px;margin-bottom:10px;}
+.fil-card.same-nif{border-left:3px solid var(--accent);}
+.fil-card.diff-nif{border-left:3px solid var(--warn);}
+
+/* ═══ RESPONSIVE ═══ */
+@media(min-width:768px){
+  .modal-overlay{align-items:center;}
+  .modal-box{max-height:80vh;border-radius:16px;}
+  #dpad{bottom:80px;right:20px;grid-template-columns:56px 56px 56px;grid-template-rows:56px 56px 56px;gap:6px;}
+  .dk{width:56px;height:56px;font-size:22px;}
+  #gpsBtn{bottom:80px;left:20px;width:50px;height:50px;}
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════ -->
+<!-- WELCOME                            -->
+<!-- ═══════════════════════════════════ -->
+<div class="screen active" id="welcomeScreen">
+  <div class="screen-center">
+    <div class="form-box" style="text-align:center;">
+      <h2>🚩 Jogo de Bandeiras</h2>
+      <p class="sub">Escolhe como queres entrar</p>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-top:20px;">
+        <button class="btn btn-primary" onclick="showScreen('jgLoginScreen')">🎮 Jogador (JG)</button>
+        <button class="btn btn-secondary" onclick="showScreen('prLoginScreen')">🏢 Empresa (PR)</button>
+        <button class="btn btn-secondary" onclick="showScreen('filLoginScreen')">🏬 Filial (FIL)</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════ -->
+<!-- JG REGISTER                        -->
+<!-- ═══════════════════════════════════ -->
+<div class="screen" id="jgRegScreen">
+  <div class="screen-center">
+    <div class="form-box">
+      <h2>Registo — Jogador</h2>
+      <p class="sub"><span class="req">*</span> obrigatório</p>
+      <label>Nome <span class="req">*</span></label>
+      <input id="r_name" placeholder="O teu nome">
+      <label>E-mail <span class="req">*</span></label>
+      <input id="r_email" type="email" placeholder="email@exemplo.com">
+      <div class="row2">
+        <div><label>Senha <span class="req">*</span></label><input id="r_pass" type="password"></div>
+        <div><label>Confirmar <span class="req">*</span></label><input id="r_pass2" type="password"></div>
+      </div>
+      <label>Localidade</label><input id="r_loc" placeholder="Cidade">
+      <label>Contacto</label><input id="r_contact" placeholder="Telemóvel">
+      <div style="margin-top:16px;"><button class="btn btn-primary" id="jgRegBtn">Registar</button></div>
+      <div class="msg" id="jgRegMsg"></div>
+      <div style="display:flex;gap:10px;">
+        <button class="link-btn" onclick="showScreen('jgLoginScreen')">← Login</button>
+        <button class="link-btn" onclick="showScreen('welcomeScreen')">← Início</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════ -->
+<!-- JG LOGIN                           -->
+<!-- ═══════════════════════════════════ -->
+<div class="screen" id="jgLoginScreen">
+  <div class="screen-center">
+    <div class="form-box">
+      <h2>🎮 Entrada — Jogador</h2>
+      <p class="sub">Nome memorizado automaticamente</p>
+      <label>Nome</label><input id="l_name" disabled placeholder="(faz registo primeiro)">
+      <label>Senha <span class="req">*</span></label><input id="l_pass" type="password">
+      <div style="margin-top:16px;"><button class="btn btn-primary" id="jgLoginBtn">Entrar</button></div>
+      <div class="msg" id="jgLoginMsg"></div>
+      <div style="display:flex;gap:10px;">
+        <button class="link-btn" onclick="showScreen('jgRegScreen')">Criar conta</button>
+        <button class="link-btn" onclick="showScreen('welcomeScreen')">← Voltar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════ -->
+<!-- PR REGISTER                        -->
+<!-- ═══════════════════════════════════ -->
+<div class="screen" id="prRegScreen">
+  <div class="screen-center">
+    <div class="form-box">
+      <h2>Registo — Empresa (PR)</h2>
+      <p class="sub"><span class="req">*</span> obrigatório</p>
+      <label>Nome Empresa <span class="req">*</span></label><input id="pr_name">
+      <label>E-mail <span class="req">*</span></label><input id="pr_email" type="email">
+      <label>NIF <span class="req">*</span></label><input id="pr_nif">
+      <div class="row2">
+        <div><label>Morada <span class="req">*</span></label><input id="pr_morada"></div>
+        <div><label>Morada Fiscal <span class="req">*</span></label><input id="pr_moradaF"></div>
+      </div>
+      <label>Contacto <span class="req">*</span></label><input id="pr_contact">
+      <label>Atividade</label><input id="pr_activity">
+      <label>GPS (lat,lng)</label><input id="pr_gps" placeholder="38.7223,-9.1393">
+      <div class="row2">
+        <div><label>Senha <span class="req">*</span></label><input id="pr_pass" type="password"></div>
+        <div><label>Confirmar <span class="req">*</span></label><input id="pr_pass2" type="password"></div>
+      </div>
+      <label>Responsável <span class="req">*</span></label><input id="pr_resp">
+      <label>Situação</label>
+      <select id="pr_sit"><option>Dono</option><option>Gerente</option><option>Empregado</option><option>Controlador</option></select>
+      <div style="margin-top:16px;"><button class="btn btn-primary" id="prRegBtn">Registar</button></div>
+      <div class="msg" id="prRegMsg"></div>
+      <div style="display:flex;gap:10px;">
+        <button class="link-btn" onclick="showScreen('prLoginScreen')">← Login</button>
+        <button class="link-btn" onclick="showScreen('welcomeScreen')">← Início</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════ -->
+<!-- PR LOGIN                           -->
+<!-- ═══════════════════════════════════ -->
+<div class="screen" id="prLoginScreen">
+  <div class="screen-center">
+    <div class="form-box">
+      <h2>🏢 Entrada — Empresa</h2>
+      <label>NIF <span class="req">*</span></label><input id="prl_nif">
+      <label>Senha <span class="req">*</span></label><input id="prl_pass" type="password">
+      <div style="margin-top:16px;"><button class="btn btn-primary" id="prLoginBtn">Entrar</button></div>
+      <div class="msg" id="prLoginMsg"></div>
+      <div style="display:flex;gap:10px;">
+        <button class="link-btn" onclick="showScreen('prRegScreen')">Criar conta</button>
+        <button class="link-btn" onclick="showScreen('welcomeScreen')">← Voltar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════ -->
+<!-- FILIAL REGISTER                    -->
+<!-- ═══════════════════════════════════ -->
+<div class="screen" id="filRegScreen">
+  <div class="screen-center">
+    <div class="form-box">
+      <h2>Registo — Filial</h2>
+      <p class="sub"><span class="req">*</span> obrigatório</p>
+      <div class="info-box">
+        ℹ️ <b>Mesmo NIF</b> que a empresa mãe → precisas de um <b>código</b>.<br>
+        <b>NIF diferente</b> → registo autónomo, responsabilidade jurídica própria.
+      </div>
+      <label>NIF da Empresa Mãe <span class="req">*</span></label>
+      <input id="fr_nifMae" placeholder="NIF da marca a que te associas">
+      <label>NIF da Filial <span class="req">*</span></label>
+      <input id="fr_nif" placeholder="O teu NIF">
+      <div class="sm" id="fr_nifHint" style="min-height:20px;margin-top:4px;"></div>
+      <div id="fr_codeWrap" style="display:none;">
+        <label>Código de Acesso <span class="req">*</span></label>
+        <input id="fr_code" placeholder="FIL-XXXXXXXX">
+        <div class="sm" style="color:var(--accent);">Necessário porque NIF é igual ao da empresa mãe.</div>
+      </div>
+      <label>Nome da Filial <span class="req">*</span></label><input id="fr_name" placeholder="Nome da loja/filial">
+      <label>E-mail <span class="req">*</span></label><input id="fr_email" type="email">
+      <div class="row2">
+        <div><label>Morada <span class="req">*</span></label><input id="fr_morada"></div>
+        <div><label>Morada Fiscal <span class="req">*</span></label><input id="fr_moradaF"></div>
+      </div>
+      <label>Contacto <span class="req">*</span></label><input id="fr_contact">
+      <label>Atividade</label><input id="fr_activity">
+      <label>GPS (lat,lng)</label><input id="fr_gps">
+      <div class="row2">
+        <div><label>Senha <span class="req">*</span></label><input id="fr_pass" type="password"></div>
+        <div><label>Confirmar <span class="req">*</span></label><input id="fr_pass2" type="password"></div>
+      </div>
+      <label>Responsável <span class="req">*</span></label><input id="fr_resp">
+      <label>Situação</label>
+      <select id="fr_sit"><option>Dono</option><option>Gerente</option><option>Empregado</option><option>Controlador</option></select>
+      <div style="margin-top:16px;"><button class="btn btn-primary" id="filRegBtn">Registar Filial</button></div>
+      <div class="msg" id="filRegMsg"></div>
+      <div style="display:flex;gap:10px;">
+        <button class="link-btn" onclick="showScreen('filLoginScreen')">← Login</button>
+        <button class="link-btn" onclick="showScreen('welcomeScreen')">← Início</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════ -->
+<!-- FILIAL LOGIN                       -->
+<!-- ═══════════════════════════════════ -->
+<div class="screen" id="filLoginScreen">
+  <div class="screen-center">
+    <div class="form-box">
+      <h2>🏬 Entrada — Filial</h2>
+      <div class="info-box">
+        <b>Mesmo NIF</b> → NIF + Código + Senha.<br>
+        <b>NIF diferente</b> → NIF + Senha (sem código).
+      </div>
+      <label>NIF da Filial <span class="req">*</span></label><input id="fl_nif">
+      <label>Código (só se mesmo NIF que a mãe)</label><input id="fl_code" placeholder="Deixa vazio se NIF diferente">
+      <label>Senha <span class="req">*</span></label><input id="fl_pass" type="password">
+      <div style="margin-top:16px;"><button class="btn btn-primary" id="filLoginBtn">Entrar</button></div>
+      <div class="msg" id="filLoginMsg"></div>
+      <div style="display:flex;gap:10px;">
+        <button class="link-btn" onclick="showScreen('filRegScreen')">Criar conta filial</button>
+        <button class="link-btn" onclick="showScreen('welcomeScreen')">← Voltar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════ -->
+<!-- GAME (JG)                          -->
+<!-- ═══════════════════════════════════ -->
+<div class="screen" id="gameScreen">
+  <div id="topBar">
+    <div class="tbtn" onclick="openModal('mTrophies')">🏆 <span class="tv" id="tbTrophies">0</span></div>
+    <div class="tbtn" onclick="openModal('mFlags')">🚩 <span class="tv" id="tbFlags">0</span></div>
+    <div class="tbtn" onclick="openModal('mSkill')">📈 <span class="tv" id="tbSkill">0</span></div>
+    <div class="tbtn" onclick="openModal('mInfo')">ℹ️</div>
+    <div style="flex:1"></div>
+    <div class="tbtn" style="color:var(--danger);" onclick="logoutJG()">⏻ Sair</div>
+  </div>
+  <div id="mapArea">
+    <div id="map"></div>
+    <div class="hud-stats">
+      <div class="hud-pill">🚩 <span id="hFlags">0</span></div>
+      <div class="hud-pill">🎯 <span id="hForPrize">20</span></div>
+      <div class="hud-pill">⚡ <span id="hEnergy">100</span>%</div>
+      <div class="hud-pill">👁 <span id="hVision">5.00</span>m</div>
+      <div class="hud-pill">⭐ <span id="hSkill">0</span></div>
+    </div>
+    <div id="gpsBtn" onclick="useGPS()">📍</div>
+    <div id="dpad">
+      <div class="dk empty"></div><div class="dk" data-d="up">↑</div><div class="dk empty"></div>
+      <div class="dk" data-d="left">←</div><div class="dk" data-d="pick" style="font-size:14px;">⬤</div><div class="dk" data-d="right">→</div>
+      <div class="dk empty"></div><div class="dk" data-d="down">↓</div><div class="dk empty"></div>
+    </div>
+  </div>
+  <div id="ticker"><span id="tickerText">Bem-vindo! Todas as bandeiras são vermelhas — o suspense é descobrir o que têm dentro!</span></div>
+</div>
+
+<!-- ═══════════════════════════════════ -->
+<!-- REVEAL OVERLAY (suspense)          -->
+<!-- ═══════════════════════════════════ -->
+<div id="revealOverlay">
+  <div id="revealBox">
+    <div id="revealSuspense">
+      <div class="reveal-flag"><div class="flag-q">?</div></div>
+      <div class="reveal-suspense-text">A abrir bandeira…</div>
+      <div class="timer-ring">
+        <svg width="50" height="50">
+          <circle class="ring-bg" cx="25" cy="25" r="21"/>
+          <circle class="ring-fg" id="revealRing" cx="25" cy="25" r="21" stroke="var(--accent)" stroke-dasharray="132" stroke-dashoffset="0"/>
+        </svg>
+      </div>
+    </div>
+    <div class="reveal-result" id="revealResult">
+      <div class="reveal-icon" id="rvIcon"></div>
+      <div class="reveal-title" id="rvTitle"></div>
+      <div class="reveal-desc" id="rvDesc"></div>
+      <div class="reveal-company" id="rvCompany"></div>
+      <button class="btn btn-secondary" onclick="closeReveal()" style="margin-top:12px;">OK</button>
+    </div>
+  </div>
+</div>
+<div class="bingo-fireworks" id="fireworks"></div>
+
+<!-- ═══════════════════════════════════ -->
+<!-- PR DASHBOARD                       -->
+<!-- ═══════════════════════════════════ -->
+<div class="screen" id="prDashScreen">
+  <div class="pr-topbar">
+    <div class="tbtn active" onclick="prTab('prTabStats',this)">📊</div>
+    <div class="tbtn" onclick="prTab('prTabPacks',this)">📦 Pacotes</div>
+    <div class="tbtn" onclick="prTab('prTabBingo',this)">🎰 Bingos</div>
+    <div class="tbtn" onclick="prTab('prTabActive',this)">📋 Ativos</div>
+    <div class="tbtn" onclick="prTab('prTabMap',this)">🗺</div>
+    <div class="tbtn" onclick="prTab('prTabQR',this)">📱 QRs</div>
+    <div class="tbtn" onclick="prTab('prTabFil',this)">🏬 Filiais</div>
+    <div class="tbtn" onclick="prTab('prTabInfo',this)">ℹ️</div>
+    <div style="flex:1"></div>
+    <div class="tbtn" style="color:var(--danger);" onclick="showScreen('welcomeScreen')">⏻ Sair</div>
+  </div>
+  <div class="pr-content" id="prContent">
+
+    <!-- Stats -->
+    <div class="tab-content active" id="prTabStats">
+      <h3 style="margin-bottom:12px;">📊 Resumo</h3>
+      <div class="pr-grid" id="prStatsGrid"></div>
+    </div>
+
+    <!-- Pacotes -->
+    <div class="tab-content" id="prTabPacks">
+      <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:10px;">
+        <h3>📦 Comprar Pacote</h3>
+        <button class="btn btn-secondary btn-sm" onclick="prTab('prTabStats',null)">← Voltar</button>
+      </div>
+      <div class="pack-grid" id="packGrid"></div>
+      <div id="packConfigArea" style="display:none;">
+        <h4 style="margin:16px 0 8px;">⚙️ Configurar: <span id="cfgPackName"></span></h4>
+        <div class="lote-config">
+          <label style="color:var(--text);font-weight:700;">Nº de lotes (max: <span id="cfgMaxLots">0</span>)</label>
+          <p class="sm">1 lote = 20 premiadas = 1 prémio</p>
+          <input id="cfgLots" type="number" min="1" value="1" style="width:120px;margin-top:6px;">
+          <div id="lotesPreview" style="margin-top:8px;"></div>
+        </div>
+        <div class="lote-config">
+          <label style="color:var(--text);font-weight:700;">Tipo de prémio</label>
+          <select id="cfgPrizeType">
+            <option value="cafe">☕ Café</option><option value="d10">🏷 -10%</option>
+            <option value="d25">🏷 -25%</option><option value="almoco">🍽 Almoço até 50€</option>
+            <option value="surpresa">🎁 Surpresa</option><option value="custom">✏️ Personalizado</option>
+          </select>
+          <div id="cfgCustomWrap" style="display:none;margin-top:8px;"><input id="cfgCustomPrize" placeholder="Descreve o prémio"></div>
+        </div>
+        <div class="lote-config">
+          <label style="color:var(--text);font-weight:700;">Prazo recolha (dias)</label>
+          <input id="cfgDays" type="number" value="30" min="1" style="width:120px;">
+        </div>
+        <div class="lote-config">
+          <label style="color:var(--text);font-weight:700;">Prazo levantamento (máx 30 dias)</label>
+          <input id="cfgPickupDays" type="number" value="30" min="1" max="30" style="width:120px;">
+        </div>
+        <div class="confirm-box" id="confirmBox">
+          <h4 style="color:var(--warn);">⚠️ Confirma que os valores estão corretos!</h4>
+          <div class="confirm-summary" id="confirmSummary"></div>
+          <div style="display:flex;gap:10px;margin-top:14px;">
+            <button class="btn btn-danger" onclick="$('confirmBox').style.display='none'">✕ Cancelar</button>
+            <button class="btn btn-ok" onclick="confirmPurchase()">✓ Confirmar Compra</button>
+          </div>
+        </div>
+        <div style="display:flex;gap:10px;margin-top:14px;">
+          <button class="btn btn-primary" onclick="previewPurchase()">Rever e Confirmar →</button>
+          <button class="btn btn-secondary" onclick="cancelPackConfig()">← Voltar</button>
+        </div>
+        <div class="msg" id="prBuyMsg"></div>
+      </div>
+    </div>
+
+    <!-- Bingos -->
+    <div class="tab-content" id="prTabBingo">
+      <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:10px;">
+        <h3>🎰 Gerir Bingos</h3>
+        <button class="btn btn-secondary btn-sm" onclick="prTab('prTabStats',null)">← Voltar</button>
+      </div>
+      <p class="sm" style="margin-bottom:14px;">⚠️ As bandeiras de bingo são <b>visualmente idênticas</b> às outras — o jogador nunca sabe até apanhar!</p>
+      <div id="bingoManageList"></div>
+      <div id="noBingos" class="stat-card" style="text-align:center;"><p class="sm">Sem bingos. Compra um pacote com bingos primeiro.</p></div>
+    </div>
+
+    <!-- Ativos -->
+    <div class="tab-content" id="prTabActive">
+      <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:12px;">
+        <h3>📋 Pacotes Ativos</h3>
+        <button class="btn btn-secondary btn-sm" onclick="prTab('prTabStats',null)">← Voltar</button>
+      </div>
+      <div id="prActiveList"></div>
+    </div>
+
+    <!-- Mapa -->
+    <div class="tab-content" id="prTabMap">
+      <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:12px;">
+        <h3>🗺 Mapa de Bandeiras</h3>
+        <button class="btn btn-secondary btn-sm" onclick="prTab('prTabStats',null)">← Voltar</button>
+      </div>
+      <div id="prMap" style="height:50vh;min-height:300px;border-radius:12px;overflow:hidden;border:1px solid rgba(255,255,255,.1);"></div>
+    </div>
+
+    <!-- QRs -->
+    <div class="tab-content" id="prTabQR">
+      <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:12px;">
+        <h3>📱 QR Codes</h3>
+        <button class="btn btn-secondary btn-sm" onclick="prTab('prTabStats',null)">← Voltar</button>
+      </div>
+      <div id="prQRList"><p class="sm">Sem QRs.</p></div>
+    </div>
+
+    <!-- Filiais -->
+    <div class="tab-content" id="prTabFil">
+      <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:12px;">
+        <h3>🏬 Gerir Filiais</h3>
+        <button class="btn btn-secondary btn-sm" onclick="prTab('prTabStats',null)">← Voltar</button>
+      </div>
+      <div class="info-box" style="margin-bottom:14px;">
+        <b>Mesmo NIF:</b> Gera código — filial precisa dele para registar.<br>
+        <b>NIF diferente:</b> Filial regista-se sozinha, associada à marca com responsabilidade jurídica própria.
+      </div>
+      <button class="btn btn-primary btn-sm" id="genFilCodeBtn" style="margin-bottom:12px;">Gerar Código (mesmo NIF)</button>
+      <div class="msg" id="filCodeMsg"></div>
+      <div id="prFilList"></div>
+    </div>
+
+    <!-- Info -->
+    <div class="tab-content" id="prTabInfo">
+      <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:12px;">
+        <h3>ℹ️ Dados da Empresa</h3>
+        <button class="btn btn-secondary btn-sm" onclick="prTab('prTabStats',null)">← Voltar</button>
+      </div>
+      <div id="prInfoData"></div>
+      <div style="margin-top:16px;">
+        <button class="btn btn-danger btn-sm" onclick="showScreen('welcomeScreen')">⏻ Sair do Painel</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════ -->
+<!-- MODALS                             -->
+<!-- ═══════════════════════════════════ -->
+<div class="modal-overlay" id="mTrophies"><div class="modal-box"><div class="modal-head"><h3>🏆 Prémios / Troféus</h3><div class="modal-close" onclick="closeModal('mTrophies')">✕</div></div><div class="modal-body" id="mTrophiesBody">Sem prémios.</div></div></div>
+<div class="modal-overlay" id="mFlags"><div class="modal-box"><div class="modal-head"><h3>🚩 Bandeiras por Empresa</h3><div class="modal-close" onclick="closeModal('mFlags')">✕</div></div><div class="modal-body" id="mFlagsBody">Sem dados.</div></div></div>
+<div class="modal-overlay" id="mSkill"><div class="modal-box"><div class="modal-head"><h3>📈 Progressão de Skill</h3><div class="modal-close" onclick="closeModal('mSkill')">✕</div></div><div class="modal-body" id="mSkillBody"></div></div></div>
+<div class="modal-overlay" id="mInfo"><div class="modal-box"><div class="modal-head"><h3>ℹ️ Informações do Jogo</h3><div class="modal-close" onclick="closeModal('mInfo')">✕</div></div><div class="modal-body">
+  <div class="stat-card"><b>Regras do Jogo</b><div class="sm">
+    • Todas as bandeiras são <b>vermelhas e iguais</b> — sempre surpresa!<br>
+    • Raio tracejado (2.5m) = zona de apanha<br>
+    • 100 bandeiras = +1 skill (dobra: 200, 400, 800…)<br>
+    • +0.25m de visão por skill (máximo 50m)<br>
+    • 20 premiadas da mesma empresa = QR com prémio<br>
+    • Bingo = prémio especial com QR + GPS da loja<br>
+    • Nunca sabes o que vem — normal, premiada ou BINGO!
+  </div></div>
+  <div class="stat-card"><b>Controlos</b><div class="sm">
+    • Setas (teclado) ou D-pad (ecrã) = mover<br>
+    • ⬤ ou Espaço = apanhar bandeiras<br>
+    • 📍 = usar GPS real do dispositivo
+  </div></div>
+</div></div></div>
+<div class="modal-overlay" id="mCompany"><div class="modal-box"><div class="modal-head"><h3 id="mCompanyTitle">Empresa</h3><div class="modal-close" onclick="closeModal('mCompany')">✕</div></div><div class="modal-body" id="mCompanyBody"></div></div></div>
+<div class="modal-overlay" id="mStars"><div class="modal-box"><div class="modal-head"><h3>⭐ Avaliar Empresa</h3><div class="modal-close" onclick="closeModal('mStars')">✕</div></div><div class="modal-body" id="mStarsBody"></div></div></div>
+<div class="modal-overlay" id="mBingoFound"><div class="modal-box" style="max-width:480px;"><div class="modal-head"><h3>🎰 BINGO!</h3><div class="modal-close" onclick="closeModal('mBingoFound')">✕</div></div><div class="modal-body bingo-found-modal" id="mBingoBody"></div></div></div>
+
+<!-- ═══════════════════════════════════ -->
+<!-- JAVASCRIPT                         -->
+<!-- ═══════════════════════════════════ -->
+<script>
+/* ══════════════════════
+   UTILS
+   ══════════════════════ */
+const $=id=>document.getElementById(id);
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  $(id).classList.add('active');
+  if(id==='prDashScreen'){setTimeout(initPRMap,300);refreshPR();refreshBingoList();}
+}
+function openModal(id){$(id).classList.add('open');}
+function closeModal(id){$(id).classList.remove('open');}
+function setMsg(id,t,c='ok'){const e=$(id);e.textContent=t;e.className='msg '+c;}
+function ticker(m){$('tickerText').textContent=m;}
+function hash(s){let h=0;for(let i=0;i<s.length;i++)h=Math.imul(31,h)+s.charCodeAt(i)|0;return''+h;}
+function uid(){return crypto.randomUUID?crypto.randomUUID():Math.random().toString(36).substr(2,9)+Date.now().toString(36);}
+function fmtTime(ms){
+  if(ms<=0)return'00:00:00';
+  const s=Math.floor(ms/1000),m=Math.floor(s/60),h=Math.floor(m/60),d=Math.floor(h/24);
+  if(d>0)return`${d}d ${(h%24+'').padStart(2,'0')}:${(m%60+'').padStart(2,'0')}:${(s%60+'').padStart(2,'0')}`;
+  return`${(h+'').padStart(2,'0')}:${(m%60+'').padStart(2,'0')}:${(s%60+'').padStart(2,'0')}`;
+}
+
+/* ══════════════════════
+   PACKAGE DEFINITIONS
+   ══════════════════════ */
+const PACKAGES=[
+  {id:'p2000',qty:2000,price:49,radius:500,radiusLabel:'500m',maxLots:100,bingos:0,label:'2.000'},
+  {id:'p2500',qty:2500,price:59,radius:750,radiusLabel:'750m',maxLots:125,bingos:2,label:'2.500'},
+  {id:'p5000',qty:5000,price:99,radius:2000,radiusLabel:'2km',maxLots:250,bingos:5,label:'5.000'},
+  {id:'p10000',qty:10000,price:179,radius:5000,radiusLabel:'5km',maxLots:500,bingos:10,label:'10.000'},
+  {id:'p20000',qty:20000,price:299,radius:15000,radiusLabel:'15km',maxLots:1000,bingos:20,label:'20.000'},
+  {id:'p50000',qty:50000,price:599,radius:50000,radiusLabel:'50km',maxLots:2500,bingos:50,label:'50.000'},
+];
+let selectedPack=null;
+
+/* ══════════════════════
+   STATE
+   ══════════════════════ */
+const S={
+  jg:{name:'',email:'',passHash:''},loggedIn:false,
+  pos:{lat:38.7223,lng:-9.1393},
+  flagsTotal:0,skill:0,nextTarget:100,
+  visionM:5,maxVision:50,visionPerSkill:.25,pickupM:2.5,
+  energy:100,
+  companies:{},trophies:[],skillLog:[],
+  pr:{name:'',email:'',nif:'',morada:'',moradaF:'',contact:'',activity:'',gps:'',passHash:'',resp:'',sit:'',regDate:''},
+  prLoggedIn:false,prPacks:[],prFilials:[],prSkillPts:0,prTotalBought:0,
+  registeredFilials:[]
+};
+
+function save(){localStorage.setItem('JG5',JSON.stringify({jg:S.jg,companies:S.companies,trophies:S.trophies,flagsTotal:S.flagsTotal,skill:S.skill,nextTarget:S.nextTarget,skillLog:S.skillLog}));}
+function load(){try{const d=JSON.parse(localStorage.getItem('JG5'));if(d){Object.assign(S.jg,d.jg||{});S.companies=d.companies||{};S.trophies=d.trophies||[];S.flagsTotal=d.flagsTotal||0;S.skill=d.skill||0;S.nextTarget=d.nextTarget||100;S.skillLog=d.skillLog||[];recalcVision();}}catch(e){}}
+function savePR(){localStorage.setItem('PR5',JSON.stringify({pr:S.pr,prPacks:S.prPacks,prFilials:S.prFilials,prSkillPts:S.prSkillPts,prTotalBought:S.prTotalBought,registeredFilials:S.registeredFilials}));}
+function loadPR(){try{const d=JSON.parse(localStorage.getItem('PR5'));if(d){Object.assign(S.pr,d.pr||{});S.prPacks=d.prPacks||[];S.prFilials=d.prFilials||[];S.prSkillPts=d.prSkillPts||0;S.prTotalBought=d.prTotalBought||0;S.registeredFilials=d.registeredFilials||[];}}catch(e){}}
+
+/* ══════════════════════
+   JG AUTH
+   ══════════════════════ */
+$('jgRegBtn').onclick=()=>{
+  const n=$('r_name').value.trim(),e=$('r_email').value.trim(),p=$('r_pass').value,p2=$('r_pass2').value;
+  if(!n||!e||!p||!p2)return setMsg('jgRegMsg','Preenche todos os campos *','warn');
+  if(p!==p2)return setMsg('jgRegMsg','Senhas não coincidem','err');
+  S.jg={name:n,email:e,passHash:hash(p)};save();
+  $('l_name').value=n;
+  setMsg('jgRegMsg','Registado com sucesso!','ok');
+  setTimeout(()=>showScreen('jgLoginScreen'),600);
+};
+
+$('jgLoginBtn').onclick=()=>{
+  if(!S.jg.name)return setMsg('jgLoginMsg','Regista-te primeiro','warn');
+  if(!$('l_pass').value)return setMsg('jgLoginMsg','Senha* obrigatória','warn');
+  if(hash($('l_pass').value)!==S.jg.passHash)return setMsg('jgLoginMsg','Senha incorreta','err');
+  S.loggedIn=true;showScreen('gameScreen');initGame();
+  ticker(`Olá, ${S.jg.name}! Cada bandeira é uma surpresa — boa sorte!`);
+};
+
+function logoutJG(){S.loggedIn=false;showScreen('welcomeScreen');}
+
+/* ══════════════════════
+   PR AUTH
+   ══════════════════════ */
+$('prRegBtn').onclick=()=>{
+  for(const f of['pr_name','pr_email','pr_nif','pr_morada','pr_moradaF','pr_contact','pr_pass','pr_pass2','pr_resp'])
+    if(!$(f).value.trim())return setMsg('prRegMsg','Preenche todos os campos *','warn');
+  if($('pr_pass').value!==$('pr_pass2').value)return setMsg('prRegMsg','Senhas não coincidem','err');
+  S.pr={name:$('pr_name').value.trim(),email:$('pr_email').value.trim(),nif:$('pr_nif').value.trim(),
+    morada:$('pr_morada').value.trim(),moradaF:$('pr_moradaF').value.trim(),contact:$('pr_contact').value.trim(),
+    activity:$('pr_activity').value.trim(),gps:$('pr_gps').value.trim(),passHash:hash($('pr_pass').value),
+    resp:$('pr_resp').value.trim(),sit:$('pr_sit').value,regDate:new Date().toISOString()};
+  savePR();setMsg('prRegMsg','Empresa registada!','ok');
+  setTimeout(()=>showScreen('prLoginScreen'),600);
+};
+
+$('prLoginBtn').onclick=()=>{
+  if(!S.pr.nif)return setMsg('prLoginMsg','Regista a empresa primeiro','warn');
+  if($('prl_nif').value.trim()!==S.pr.nif)return setMsg('prLoginMsg','NIF não encontrado','err');
+  if(hash($('prl_pass').value)!==S.pr.passHash)return setMsg('prLoginMsg','Senha incorreta','err');
+  S.prLoggedIn=true;showScreen('prDashScreen');
+};
+
+/* ══════════════════════
+   FILIAL AUTH
+   ══════════════════════ */
+$('fr_nif').oninput=$('fr_nifMae').oninput=function(){
+  const a=$('fr_nif').value.trim(),b=$('fr_nifMae').value.trim();
+  if(!a||!b){$('fr_nifHint').textContent='';$('fr_codeWrap').style.display='none';return;}
+  if(a===b){
+    $('fr_nifHint').innerHTML='<span style="color:var(--accent);">✓ Mesmo NIF — código da empresa mãe necessário.</span>';
+    $('fr_codeWrap').style.display='block';
+  }else{
+    $('fr_nifHint').innerHTML='<span style="color:var(--warn);">⚡ NIF diferente — registo autónomo, sem código necessário.</span>';
+    $('fr_codeWrap').style.display='none';
+  }
+};
+
+$('filRegBtn').onclick=()=>{
+  const nm=$('fr_nifMae').value.trim(),nf=$('fr_nif').value.trim(),name=$('fr_name').value.trim(),
+    email=$('fr_email').value.trim(),mor=$('fr_morada').value.trim(),morf=$('fr_moradaF').value.trim(),
+    ct=$('fr_contact').value.trim(),pw=$('fr_pass').value,pw2=$('fr_pass2').value,rsp=$('fr_resp').value.trim();
+  if(!nm||!nf||!name||!email||!mor||!morf||!ct||!pw||!pw2||!rsp)
+    return setMsg('filRegMsg','Preenche todos os campos *','warn');
+  if(pw!==pw2)return setMsg('filRegMsg','Senhas não coincidem','err');
+  const same=nf===nm;let code='';
+  if(same){
+    code=$('fr_code').value.trim();
+    if(!code)return setMsg('filRegMsg','Mesmo NIF: código de acesso obrigatório','warn');
+    const f=S.prFilials.find(x=>x.code===code);
+    if(!f)return setMsg('filRegMsg','Código inválido','err');
+    if(f.used)return setMsg('filRegMsg','Código já utilizado','err');
+    f.used=true;f.accepted=true;f.filialName=name;
+  }
+  S.registeredFilials.push({id:uid(),name,email,nif:nf,nifMae:nm,morada:mor,moradaF:morf,contact:ct,
+    activity:$('fr_activity').value.trim(),gps:$('fr_gps').value.trim(),passHash:hash(pw),
+    resp:rsp,sit:$('fr_sit').value,regDate:new Date().toISOString(),sameNif:same,code,freeFlags:1000});
+  savePR();
+  setMsg('filRegMsg',`✅ Filial registada! ${same?'Código aceite.':'NIF diferente — registo autónomo.'} 1.000 bandeiras gratuitas!`,'ok');
+  setTimeout(()=>showScreen('filLoginScreen'),1200);
+};
+
+$('filLoginBtn').onclick=()=>{
+  const nf=$('fl_nif').value.trim(),cd=$('fl_code').value.trim(),pw=$('fl_pass').value;
+  if(!nf||!pw)return setMsg('filLoginMsg','NIF e Senha obrigatórios','warn');
+  const f=S.registeredFilials.find(x=>x.nif===nf);
+  if(!f)return setMsg('filLoginMsg','NIF não encontrado. Regista a filial primeiro.','err');
+  if(f.sameNif&&f.code!==cd)return setMsg('filLoginMsg','Código incorreto','err');
+  if(hash(pw)!==f.passHash)return setMsg('filLoginMsg','Senha incorreta','err');
+  S.prLoggedIn=true;showScreen('prDashScreen');
+};
+
+/* ══════════════════════
+   PR TABS
+   ══════════════════════ */
+function prTab(id,btn){
+  document.querySelectorAll('#prContent .tab-content').forEach(t=>t.classList.remove('active'));
+  $(id).classList.add('active');
+  document.querySelectorAll('.pr-topbar .tbtn').forEach(b=>b.classList.remove('active'));
+  if(btn)btn.classList.add('active');
+  if(id==='prTabMap')setTimeout(()=>{if(prMap)prMap.invalidateSize();},150);
+  if(id==='prTabPacks')renderPackCards();
+  if(id==='prTabBingo')refreshBingoList();
+  refreshPR();
+}
+
+/* ══════════════════════
+   PACK BUY
+   ══════════════════════ */
+function renderPackCards(){
+  $('packGrid').innerHTML=PACKAGES.map(p=>`
+    <div class="pack-card" id="pc_${p.id}" onclick="selectPack('${p.id}')">
+      <h4>📦 ${p.label}</h4>
+      <div class="price">${p.price}€<small> +IVA</small></div>
+      <div style="margin:6px 0;">
+        ${p.bingos?`<span class="pack-badge badge-bingo">🎰 ${p.bingos} bingos</span>`:''}
+        <span class="pack-badge badge-radius">📍 ${p.radiusLabel}</span>
+      </div>
+      <div class="sm">Máx ${p.maxLots} lotes</div>
+    </div>`).join('');
+}
+
+function selectPack(id){
+  selectedPack=PACKAGES.find(p=>p.id===id);if(!selectedPack)return;
+  document.querySelectorAll('.pack-card').forEach(c=>c.classList.remove('selected'));
+  $('pc_'+id).classList.add('selected');
+  $('packConfigArea').style.display='block';
+  $('cfgPackName').textContent=`${selectedPack.label} (${selectedPack.price}€)`;
+  $('cfgMaxLots').textContent=selectedPack.maxLots;
+  $('cfgLots').max=selectedPack.maxLots;
+  $('cfgLots').value=Math.min(5,selectedPack.maxLots);
+  $('confirmBox').style.display='none';setMsg('prBuyMsg','','ok');
+  updateLP();$('packConfigArea').scrollIntoView({behavior:'smooth'});
+}
+
+function cancelPackConfig(){
+  selectedPack=null;$('packConfigArea').style.display='none';
+  document.querySelectorAll('.pack-card').forEach(c=>c.classList.remove('selected'));
+}
+
+$('cfgLots').oninput=updateLP;
+function updateLP(){
+  if(!selectedPack)return;
+  const n=Math.min(+$('cfgLots').value||1,selectedPack.maxLots),p=n*20,r=selectedPack.qty-p;
+  $('lotesPreview').innerHTML=`<div class="sm" style="padding:8px;background:rgba(255,255,255,.03);border-radius:8px;">
+    <b>${n}</b> lotes = ${p} premiadas + ${r>=0?r:0} normais
+    ${selectedPack.bingos?` + ${selectedPack.bingos} bingos extra`:''}
+    ${r<0?'<br><span style="color:var(--danger)">⚠️ Lotes demais!</span>':''}
+  </div>`;
+}
+
+$('cfgPrizeType').onchange=()=>{$('cfgCustomWrap').style.display=$('cfgPrizeType').value==='custom'?'block':'none';};
+
+function previewPurchase(){
+  if(!selectedPack)return;
+  const l=Math.min(+$('cfgLots').value||1,selectedPack.maxLots);
+  if(l*20>selectedPack.qty)return setMsg('prBuyMsg','Lotes demais!','err');
+  const d=+$('cfgDays').value||30,pd=+$('cfgPickupDays').value||30;
+  const pl=$('cfgPrizeType').value==='custom'?($('cfgCustomPrize').value||'Custom'):$('cfgPrizeType').selectedOptions[0].text;
+  $('confirmSummary').innerHTML=`
+    <div class="cs-row"><span>Pacote</span><b>${selectedPack.label}</b></div>
+    <div class="cs-row"><span>Preço</span><b>${selectedPack.price}€</b></div>
+    <div class="cs-row"><span>Raio</span><b>${selectedPack.radiusLabel}</b></div>
+    <div class="cs-row"><span>Lotes</span><b>${l} (${l*20} premiadas)</b></div>
+    <div class="cs-row"><span>Bingos</span><b>${selectedPack.bingos}</b></div>
+    <div class="cs-row"><span>Prémio</span><b>${pl}</b></div>
+    <div class="cs-row"><span>Recolha</span><b>${d} dias</b></div>
+    <div class="cs-row"><span>Levantamento</span><b>${pd} dias</b></div>`;
+  $('confirmBox').style.display='block';
+  $('confirmBox').scrollIntoView({behavior:'smooth',block:'center'});
+}
+
+function confirmPurchase(){
+  if(!selectedPack)return;
+  const l=Math.min(+$('cfgLots').value||1,selectedPack.maxLots);
+  const d=+$('cfgDays').value||30,pd=+$('cfgPickupDays').value||30;
+  const pt=$('cfgPrizeType').value;
+  const pD=pt==='custom'?($('cfgCustomPrize').value||'Custom'):$('cfgPrizeType').selectedOptions[0].text;
+
+  const bd=[];
+  for(let i=0;i<selectedPack.bingos;i++){
+    bd.push({id:uid(),index:i,prize:'',status:'pending',activateAt:null,activeDuration:24,
+      claimDays:7,foundBy:null,foundAt:null,revealInTicker:false,
+      companyGps:S.pr.gps,companyName:S.pr.name,companyMorada:S.pr.morada,
+      companyContact:S.pr.contact,companyEmail:S.pr.email,companyActivity:S.pr.activity});
+  }
+
+  const fl=[];const pc=l*20;
+  for(let i=0;i<selectedPack.qty+selectedPack.bingos;i++){
+    const a=Math.random()*Math.PI*2,dd=Math.random()*selectedPack.radius;
+    const dl=dd*Math.cos(a)/111320,dg=dd*Math.sin(a)/(111320*Math.cos(S.pos.lat*Math.PI/180));
+    let t='normal';if(i<pc)t='premium';else if(i>=selectedPack.qty)t='bingo';
+    fl.push({id:uid(),lat:S.pos.lat+dl,lng:S.pos.lng+dg,type:t,picked:false});
+  }
+
+  S.prPacks.push({id:uid(),qty:selectedPack.qty,price:selectedPack.price,radius:selectedPack.radius,
+    radiusLabel:selectedPack.radiusLabel,lots:l,prizeDesc:pD,days:d,pickupDays:pd,
+    bingos:selectedPack.bingos,bingoDefs:bd,
+    createdAt:new Date().toISOString(),expiresAt:new Date(Date.now()+d*864e5).toISOString(),
+    flags:fl,qrs:[]});
+
+  S.prTotalBought+=selectedPack.qty;
+  S.prSkillPts=Math.floor(S.prTotalBought/1000)*10;
+  savePR();cancelPackConfig();
+  setMsg('prBuyMsg','✅ Pacote comprado com sucesso!','ok');
+  refreshPR();refreshBingoList();
+}
+
+/* ══════════════════════
+   BINGO MANAGE (PR)
+   ══════════════════════ */
+function refreshBingoList(){
+  const all=[];
+  S.prPacks.forEach((p,pi)=>(p.bingoDefs||[]).forEach((b,bi)=>all.push({...b,pi,bi})));
+  if(!all.length){$('bingoManageList').innerHTML='';$('noBingos').style.display='block';return;}
+  $('noBingos').style.display='none';
+
+  $('bingoManageList').innerHTML=all.map(b=>{
+    const now=Date.now();
+    let at=b.activateAt?new Date(b.activateAt).getTime():0;
+    let ends=at+(b.activeDuration||24)*36e5;
+    let sc='inactive',sl='⏸ Pendente',sb='pending',cd='';
+
+    if(b.status==='live'&&now<ends){
+      sc='active-bingo';sl='🟢 ATIVO';sb='live';
+      const r=ends-now,pct=Math.max(0,r/((b.activeDuration||24)*36e5)*100);
+      cd=`<div class="countdown-display"><div class="sm">Tempo ativo restante:</div>
+        <div class="cd-time" style="color:var(--ok);" id="cd_${b.id}">${fmtTime(r)}</div>
+        <div class="progress-bar"><div class="fill ${pct>30?'fill-ok':pct>10?'fill-warn':'fill-danger'}" style="width:${pct}%"></div></div></div>`;
+    }else if(b.status!=='pending'&&now>=ends){
+      sc='';sl='⏰ Expirado';sb='ended';
+    }
+
+    return`<div class="bingo-manage ${sc}">
+      <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:12px;">
+        <h4>🎰 Bingo #${b.index+1}</h4>
+        <span class="bingo-status ${sb}">${sl}</span>
+      </div>
+      ${cd}
+      <div style="margin-bottom:12px;">
+        <label style="color:var(--text);font-weight:700;font-size:13px;">🎁 Prémio (escreve o que quiseres dar):</label>
+        <textarea class="prize-textarea" id="bpz_${b.id}" ${b.status!=='pending'?'disabled':''}
+          placeholder="Ex: Viagem à Madeira para 2 pessoas…">${b.prize||''}</textarea>
+      </div>
+      ${b.status==='pending'?`
+        <div class="row2" style="margin-bottom:10px;">
+          <div><label class="sm">📅 Ativar em:</label>
+            <input type="datetime-local" id="bdt_${b.id}" style="width:100%;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,.12);background:rgba(0,0,0,.3);color:var(--text);"></div>
+          <div><label class="sm">⏱ Duração (horas):</label>
+            <input type="number" id="bdur_${b.id}" value="${b.activeDuration||24}" min="1" style="width:100%;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,.12);background:rgba(0,0,0,.3);color:var(--text);"></div>
+        </div>
+        <div class="row2" style="margin-bottom:10px;">
+          <div><label class="sm">📦 Levantamento (dias):</label>
+            <input type="number" id="bcl_${b.id}" value="${b.claimDays||7}" min="1" max="30" style="width:100%;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,.12);background:rgba(0,0,0,.3);color:var(--text);"></div>
+          <div><label class="sm">📢 Anunciar no rodapé?</label>
+            <select id="brev_${b.id}" style="width:100%;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,.12);background:rgba(0,0,0,.3);color:var(--text);">
+              <option value="0">Não</option><option value="1" ${b.revealInTicker?'selected':''}>Sim</option></select></div>
+        </div>
+        <div style="display:flex;gap:10px;">
+          <button class="btn btn-bingo" onclick="actBingo('${b.id}',${b.pi},${b.bi})">🚀 Ativar Bingo</button>
+          <button class="btn btn-secondary btn-sm" onclick="savBD('${b.id}',${b.pi},${b.bi})">💾 Guardar</button>
+        </div>
+      `:`<div class="sm" style="padding:8px;background:rgba(0,0,0,.2);border-radius:8px;">
+        🎁 ${b.prize||'?'} | ⏱ ${b.activeDuration}h | 📦 ${b.claimDays}d | 📢 ${b.revealInTicker?'Sim':'Não'}
+        ${b.foundBy?' | 👤 '+b.foundBy:''}
+      </div>`}
+      <div class="msg" id="bmsg_${b.id}"></div>
+    </div>`;
+  }).join('');
+}
+
+window.savBD=function(id,pi,bi){
+  S.prPacks[pi].bingoDefs[bi].prize=$('bpz_'+id)?.value||'';
+  savePR();refreshBingoList();
+};
+
+window.actBingo=function(id,pi,bi){
+  const b=S.prPacks[pi].bingoDefs[bi];
+  const p=$('bpz_'+id)?.value?.trim();
+  if(!p){setMsg('bmsg_'+id,'⚠️ Escreve o prémio primeiro!','warn');return;}
+  const dt=$('bdt_'+id),dur=$('bdur_'+id),cl=$('bcl_'+id),rev=$('brev_'+id);
+  let at=dt&&dt.value?new Date(dt.value).toISOString():new Date().toISOString();
+  if(!confirm(`⚠️ ATIVAR BINGO?\n\nPrémio: ${p}\nAtiva: ${new Date(at).toLocaleString()}\nDuração: ${dur?dur.value:24}h\nLevantamento: ${cl?cl.value:7} dias\n\nEstá correto?`))return;
+  b.prize=p;b.activateAt=at;b.activeDuration=dur?+dur.value:24;b.claimDays=cl?+cl.value:7;
+  b.revealInTicker=rev?rev.value==='1':false;b.status='live';
+  b.companyGps=S.pr.gps;b.companyName=S.pr.name;b.companyMorada=S.pr.morada;
+  b.companyContact=S.pr.contact;b.companyEmail=S.pr.email;b.companyActivity=S.pr.activity;
+  savePR();refreshBingoList();
+};
+
+// Bingo countdown timer
+setInterval(()=>{
+  S.prPacks.forEach(p=>{
+    (p.bingoDefs||[]).forEach(b=>{
+      if(!b.activateAt)return;
+      const now=Date.now(),at=new Date(b.activateAt).getTime(),ends=at+(b.activeDuration||24)*36e5;
+      if(b.status==='live'&&now>=ends&&!b.foundBy){b.status='ended';savePR();}
+      const el=$('cd_'+b.id);
+      if(el&&b.status==='live')el.textContent=fmtTime(ends-now);
+    });
+  });
+},1000);
+
+/* ══════════════════════
+   PR REFRESH
+   ══════════════════════ */
+let prMap=null;
+function initPRMap(){
+  if(prMap)return;const el=$('prMap');if(!el||!el.offsetHeight)return;
+  prMap=L.map(el,{attributionControl:false}).setView([S.pos.lat,S.pos.lng],12);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:20}).addTo(prMap);
+}
+
+function refreshPR(){
+  const tf=S.prPacks.reduce((s,p)=>s+p.flags.length,0);
+  const pk=S.prPacks.reduce((s,p)=>s+p.flags.filter(f=>f.picked).length,0);
+  const ap=S.prPacks.filter(p=>new Date(p.expiresAt)>new Date()).length;
+
+  $('prStatsGrid').innerHTML=`
+    <div class="pr-stat"><span class="sm">Bandeiras</span><b>${tf}</b></div>
+    <div class="pr-stat"><span class="sm">Recolhidas</span><b>${pk}</b></div>
+    <div class="pr-stat"><span class="sm">Pacotes</span><b>${ap}</b></div>
+    <div class="pr-stat"><span class="sm">Filiais</span><b>${S.registeredFilials.length}</b></div>
+    <div class="pr-stat"><span class="sm">Skill</span><b>${S.prSkillPts}</b></div>
+    <div class="pr-stat"><span class="sm">⭐</span><b>5.0★</b></div>`;
+
+  // Active packs
+  $('prActiveList').innerHTML=S.prPacks.length?S.prPacks.map((p,i)=>{
+    const dl=Math.max(0,Math.ceil((new Date(p.expiresAt)-Date.now())/864e5));
+    return`<div class="stat-card"><b>Pacote #${i+1}</b>
+      <div class="sm">${p.qty} band | ${p.lots} lotes | ${p.bingos||0} bingos | ${p.radiusLabel} | ${dl}d | ${p.prizeDesc}</div></div>`;
+  }).join(''):'<p class="sm">Sem pacotes.</p>';
+
+  // QRs
+  const aq=S.prPacks.flatMap(p=>(p.qrs||[]));
+  $('prQRList').innerHTML=aq.length?aq.map(q=>`<div class="stat-card"><b>${q.prize}</b><div class="sm">${q.player}</div></div>`).join(''):'<p class="sm">Sem QRs.</p>';
+
+  // Filiais
+  let fh='';
+  const uc=S.prFilials.filter(c=>!c.used);
+  if(uc.length){
+    fh+=`<h4 style="margin:10px 0 6px;">📋 Códigos pendentes (mesmo NIF)</h4>`;
+    fh+=uc.map(c=>`<div class="fil-card same-nif" style="display:flex;justify-content:space-between;align-items:center;">
+      <b>${c.code}</b><span class="info-tag tag-pending">⏳ Pendente</span>
+      <button class="btn btn-danger btn-sm" onclick="rmCode('${c.code}')">Anular</button></div>`).join('');
+  }
+  if(S.registeredFilials.length){
+    fh+=`<h4 style="margin:14px 0 6px;">✅ Filiais Registadas</h4>`;
+    fh+=S.registeredFilials.map(f=>`
+      <div class="fil-card ${f.sameNif?'same-nif':'diff-nif'}">
+        <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:6px;">
+          <b>${f.name}</b>
+          <div>${f.sameNif?'<span class="info-tag tag-same">Mesmo NIF</span>':'<span class="info-tag tag-diff">NIF Próprio</span>'}
+            <span class="info-tag tag-active">✅ Ativa</span></div>
+        </div>
+        <div class="sm">
+          <div>NIF: ${f.nif} ${f.sameNif?'(= Mãe)':''} | Mãe: ${f.nifMae}</div>
+          <div>${f.morada} | ${f.contact}</div>
+          <div>${f.resp} (${f.sit}) | ${new Date(f.regDate).toLocaleDateString()}</div>
+          <div>Bandeiras grátis: ${f.freeFlags}</div>
+          ${!f.sameNif?'<div style="color:var(--warn);margin-top:4px;">⚡ Responsabilidade jurídica própria — sem código</div>':''}
+        </div>
+        ${f.sameNif?`<button class="btn btn-danger btn-sm" style="margin-top:8px;" onclick="rmFil('${f.id}')">Remover acesso</button>`:''}
+      </div>`).join('');
+  }
+  if(!fh)fh='<p class="sm">Sem filiais. Gera um código (mesmo NIF) ou espera registo autónomo (NIF diferente).</p>';
+  $('prFilList').innerHTML=fh;
+
+  // Info
+  $('prInfoData').innerHTML=`<div class="stat-card"><div class="sm">
+    <div><b>Nome:</b> ${S.pr.name}</div><div><b>NIF:</b> ${S.pr.nif}</div>
+    <div><b>Email:</b> ${S.pr.email}</div><div><b>Morada:</b> ${S.pr.morada}</div>
+    <div><b>GPS:</b> ${S.pr.gps||'Não definido'}</div>
+    <div><b>Contacto:</b> ${S.pr.contact}</div>
+    <div><b>Responsável:</b> ${S.pr.resp} (${S.pr.sit})</div>
+  </div></div>`;
+
+  // Map
+  if(prMap){
+    prMap.eachLayer(l=>{if(!(l instanceof L.TileLayer))prMap.removeLayer(l);});
+    S.prPacks.forEach((p,i)=>{
+      L.circle([S.pos.lat,S.pos.lng],{radius:p.radius,color:'#fbbf24',fillColor:'#fbbf24',fillOpacity:.06,weight:1.5})
+        .addTo(prMap).bindTooltip(`Pacote #${i+1}`);
+    });
+  }
+}
+
+$('genFilCodeBtn').onclick=()=>{
+  const c='FIL-'+uid().substring(0,8).toUpperCase();
+  S.prFilials.push({code:c,used:false});savePR();refreshPR();
+  setMsg('filCodeMsg',`Código gerado: ${c} — partilha com a filial.`,'ok');
+};
+window.rmCode=c=>{S.prFilials=S.prFilials.filter(x=>x.code!==c);savePR();refreshPR();};
+window.rmFil=id=>{S.registeredFilials=S.registeredFilials.filter(f=>f.id!==id);savePR();refreshPR();};
+
+/* ════════════════════════════════════
+   GAME — ALL FLAGS RED (SUSPENSE)
+   ════════════════════════════════════ */
+let map,playerMarker,visionCircle,pickupCircle,flagLayer,gameInited=false;
+
+const CI={
+  'Café Lisboa':{activity:'Cafetaria',morada:'Rua Augusta 45, Lisboa',contact:'21 000 1234',email:'info@cafelisboa.pt',gps:'38.7107,-9.1368'},
+  'Restaurante Sol':{activity:'Restauração',morada:'Av. Liberdade 120, Lisboa',contact:'21 000 5678',email:'info@restosol.pt',gps:'38.7199,-9.1450'},
+  'Loja Tech':{activity:'Tecnologia',morada:'CC Colombo, Loja 234',contact:'21 000 9012',email:'info@lojatech.pt',gps:'38.7544,-9.1880'}
+};
+
+function initGame(){
+  if(gameInited){refreshHUD();return;}
+  gameInited=true;
+  map=L.map('map',{zoomControl:true,attributionControl:false}).setView([S.pos.lat,S.pos.lng],19);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:22}).addTo(map);
+  playerMarker=L.circleMarker([S.pos.lat,S.pos.lng],{radius:8,color:'#38bdf8',fillColor:'#38bdf8',fillOpacity:1}).addTo(map);
+  visionCircle=L.circle([S.pos.lat,S.pos.lng],{radius:S.visionM,color:'#38bdf8',fillColor:'#38bdf8',fillOpacity:.06,weight:1}).addTo(map);
+  pickupCircle=L.circle([S.pos.lat,S.pos.lng],{radius:S.pickupM,color:'#fff',dashArray:'6 8',fillOpacity:0,weight:1.5}).addTo(map);
+  flagLayer=L.layerGroup().addTo(map);
+  spawnFlags('Café Lisboa','☕',60);
+  spawnFlags('Restaurante Sol','🍽️',50);
+  spawnFlags('Loja Tech','💻',40);
+  recalcVision();updateMap();refreshHUD();
+  // Energy drain
+  setInterval(()=>{if(!S.loggedIn)return;S.energy=Math.max(0,S.energy-.1);$('hEnergy').textContent=S.energy.toFixed(0);},3000);
+  // Energy regen
+  setInterval(()=>{if(S.energy<100)S.energy=Math.min(100,S.energy+1);},10000);
+}
+
+function recalcVision(){S.visionM=Math.min(S.maxVision,5+S.skill*S.visionPerSkill);}
+
+function updateMap(){
+  if(!map)return;
+  const ll=[S.pos.lat,S.pos.lng];
+  playerMarker.setLatLng(ll);
+  visionCircle.setLatLng(ll).setRadius(S.visionM);
+  pickupCircle.setLatLng(ll).setRadius(S.pickupM);
+  map.panTo(ll,{animate:true,duration:.2});
+  flagLayer.eachLayer(m=>{
+    if(!m._fd)return;
+    const d=map.distance(ll,[m._fd.lat,m._fd.lng]);
+    if(d<=S.visionM&&!m._fd.picked){if(!map.hasLayer(m))map.addLayer(m);}
+    else if(!m._fd.picked){if(map.hasLayer(m))map.removeLayer(m);}
+  });
+}
+
+/*
+  ████████████████████████████████████████████
+  ALL FLAGS: SAME RED COLOR — NO DIFFERENCES
+  The player NEVER knows what's inside!
+  ████████████████████████████████████████████
+*/
+function spawnFlags(co,logo,n){
+  if(!S.companies[co])S.companies[co]={total:0,premium:0,stars:5,logo,info:CI[co]||{}};
+  for(let i=0;i<n;i++){
+    const a=Math.random()*Math.PI*2,d=Math.random()*40;
+    const lat=S.pos.lat+d*Math.cos(a)/111320;
+    const lng=S.pos.lng+d*Math.sin(a)/(111320*Math.cos(S.pos.lat*Math.PI/180));
+    const r=Math.random();
+    const type=r<.03?'bingo':r<.22?'premium':'normal';
+    const prizes=['Café','Desconto 10%','Desconto 25%','Surpresa','Almoço até 50€'];
+    const prize=type==='bingo'?'BINGO':type==='premium'?prizes[Math.floor(Math.random()*prizes.length)]:'';
+
+    // ██ ALL RED — IDENTICAL APPEARANCE ██
+    const mk=L.circleMarker([lat,lng],{
+      radius:6,color:'#dc2626',fillColor:'#dc2626',fillOpacity:.9,weight:2
+    });
+
+    mk._fd={id:uid(),company:co,logo,type,prize,lat,lng,picked:false,
+      bingoData:type==='bingo'?{
+        prize:'Surpresa de '+co,claimDays:7,
+        companyGps:CI[co]?.gps||'',companyName:co,
+        companyMorada:CI[co]?.morada||'',companyContact:CI[co]?.contact||'',
+        companyEmail:CI[co]?.email||'',companyActivity:CI[co]?.activity||''
+      }:null
+    };
+    mk.on('click',()=>onFC(mk));
+    flagLayer.addLayer(mk);
+  }
+}
+
+function onFC(m){
+  const f=m._fd;if(f.picked)return;
+  const d=map.distance([S.pos.lat,S.pos.lng],[f.lat,f.lng]);
+  if(d>S.pickupM){ticker(`Longe (${d.toFixed(1)}m). Aproxima-te ao raio tracejado.`);return;}
+  pickF(m);
+}
+
+function pickF(m){
+  const f=m._fd;if(f.picked||S.energy<=0)return;
+  f.picked=true;flagLayer.removeLayer(m);
+  S.flagsTotal++;S.energy=Math.max(0,S.energy-.5);
+  S.companies[f.company].total++;
+  if(f.type==='premium'||f.type==='bingo')S.companies[f.company].premium++;
+  showReveal(f);
+}
+
+function pickNearby(){
+  if(!S.loggedIn||S.energy<=0){ticker(S.energy<=0?'⚡ Sem energia!':'Entra no jogo primeiro.');return;}
+  let picked=[];
+  flagLayer.eachLayer(m=>{
+    if(!m._fd||m._fd.picked)return;
+    if(map.distance([S.pos.lat,S.pos.lng],[m._fd.lat,m._fd.lng])<=S.pickupM){
+      m._fd.picked=true;flagLayer.removeLayer(m);
+      S.flagsTotal++;S.energy=Math.max(0,S.energy-.5);
+      S.companies[m._fd.company].total++;
+      if(m._fd.type==='premium'||m._fd.type==='bingo')S.companies[m._fd.company].premium++;
+      picked.push(m._fd);
+    }
+  });
+  if(!picked.length){ticker('Sem bandeiras ao alcance. Aproxima-te mais.');return;}
+  showReveal(picked[0]);
+  for(let i=1;i<picked.length;i++)processAfterReveal(picked[i]);
+}
+
+/* ════════════════════════════════════
+   SUSPENSE REVEAL SYSTEM
+   ════════════════════════════════════ */
+let revealTimeout=null,currentRevealFlag=null;
+
+function showReveal(f){
+  currentRevealFlag=f;
+  const overlay=$('revealOverlay');
+  const suspense=$('revealSuspense');
+  const result=$('revealResult');
+
+  suspense.style.display='block';
+  result.classList.remove('show');result.style.display='none';
+  overlay.classList.add('open');
+
+  // Ring countdown animation (1.5s)
+  const ring=$('revealRing');
+  ring.style.transition='none';ring.style.strokeDashoffset='0';
+  requestAnimationFrame(()=>{
+    ring.style.transition='stroke-dashoffset 1.5s linear';
+    ring.style.strokeDashoffset='132';
+  });
+
+  clearTimeout(revealTimeout);
+  revealTimeout=setTimeout(()=>{
+    suspense.style.display='none';
+    result.style.display='block';
+
+    const icon=$('rvIcon'),title=$('rvTitle'),desc=$('rvDesc'),comp=$('rvCompany');
+
+    if(f.type==='bingo'){
+      icon.textContent='🎰';
+      title.textContent='🎉 BINGO! 🎉';
+      title.className='reveal-title reveal-bingo';
+      desc.textContent='Encontraste um BINGO! Prémio especial!';
+      comp.innerHTML=`<b>${f.company}</b><br>${f.bingoData?.prize||'Surpresa'}`;
+      launchFireworks();
+    }else if(f.type==='premium'){
+      icon.textContent='🎁';
+      title.textContent='PREMIADA!';
+      title.className='reveal-title reveal-premium';
+      desc.textContent=f.prize||'Prémio';
+      comp.innerHTML=`<b>${f.company}</b><br>+1 para QR (faltam ${20-S.companies[f.company].premium%20})`;
+    }else{
+      icon.textContent='🚩';
+      title.textContent='Bandeira Normal';
+      title.className='reveal-title reveal-normal';
+      desc.textContent='+1 para skill!';
+      comp.innerHTML=`<b>${f.company}</b>`;
+    }
+    setTimeout(()=>{result.classList.add('show');},50);
+  },1500);
+}
+
+function closeReveal(){
+  $('revealOverlay').classList.remove('open');
+  $('fireworks').innerHTML='';
+  if(currentRevealFlag){processAfterReveal(currentRevealFlag);currentRevealFlag=null;}
+}
+
+function processAfterReveal(f){
+  if(f.type==='bingo'){
+    setTimeout(()=>showBingoModal(f),300);
+  }else if(f.type==='premium'&&S.companies[f.company].premium>0&&S.companies[f.company].premium%20===0){
+    genPrize(f.company,f.prize);
+  }
+  checkSk();refreshHUD();save();
+}
+
+/* ═══ FIREWORKS ═══ */
+function launchFireworks(){
+  const fw=$('fireworks');fw.innerHTML='';
+  const colors=['#34d399','#fbbf24','#f87171','#38bdf8','#a78bfa','#fb923c','#f472b6'];
+  for(let i=0;i<50;i++){
+    const s=document.createElement('div');s.className='spark';
+    s.style.left=Math.random()*100+'%';
+    s.style.top=40+Math.random()*40+'%';
+    s.style.background=colors[Math.floor(Math.random()*colors.length)];
+    const dx=(Math.random()-.5)*300,dy=-(100+Math.random()*200);
+    s.animate([
+      {transform:'scale(1)',opacity:1},
+      {transform:`translate(${dx}px,${dy}px) scale(0)`,opacity:0}
+    ],{duration:1000+Math.random()*1500,easing:'ease-out',fill:'forwards',delay:Math.random()*800});
+    fw.appendChild(s);
+  }
+  setTimeout(()=>{fw.innerHTML='';},3000);
+}
+
+/* ═══ BINGO FOUND MODAL (JG) ═══ */
+function showBingoModal(f){
+  const bd=f.bingoData||{};
+  const qr=JSON.stringify({type:'BINGO',company:bd.companyName,prize:bd.prize,player:S.jg.name,date:new Date().toISOString(),code:uid()});
+  const clDl=new Date(Date.now()+(bd.claimDays||7)*864e5);
+  let gl='';
+  if(bd.companyGps){const p=bd.companyGps.split(',').map(s=>s.trim());if(p.length===2)gl=`https://www.google.com/maps/dir/?api=1&destination=${p[0]},${p[1]}`;}
+
+  const trophy={id:uid(),company:bd.companyName,prize:bd.prize||'BINGO',date:Date.now(),stars:0,isBingo:true,claimDeadline:clDl.toISOString(),qrData:qr};
+  S.trophies.push(trophy);save();
+
+  $('mBingoBody').innerHTML=`
+    <div class="big-icon">🎰</div>
+    <h2 style="color:var(--ok);">BINGO!</h2>
+    <div class="prize-box"><div class="sm">O teu prémio:</div><div class="prize-text">${bd.prize||'Surpresa'}</div></div>
+    <div class="company-info-box">
+      <h4 style="margin-bottom:8px;text-align:center;">${bd.companyName}</h4>
+      <div class="info-row"><span>📌</span><span>${bd.companyActivity||'—'}</span></div>
+      <div class="info-row"><span>📍</span><span>${bd.companyMorada||'—'}</span></div>
+      <div class="info-row"><span>📞</span><span>${bd.companyContact||'—'}</span></div>
+      <div class="info-row"><span>📧</span><span>${bd.companyEmail||'—'}</span></div>
+      <div class="info-row"><span>🌐</span><span>${bd.companyGps||'Não disponível'}</span></div>
+    </div>
+    ${gl?`<a href="${gl}" target="_blank" class="gps-btn">📍 Abrir GPS — Ir à loja</a>`:'<div class="gps-btn" style="opacity:.5;">📍 GPS não disponível</div>'}
+    <div class="claim-countdown">
+      <div class="sm">⏰ Prazo para levantar:</div>
+      <div style="font-size:20px;font-weight:900;color:var(--warn);">${bd.claimDays||7} dias</div>
+      <div class="sm">Até: ${clDl.toLocaleDateString()} ${clDl.toLocaleTimeString()}</div>
+    </div>
+    <div><div class="sm">📱 Mostra este QR na loja:</div><div class="qr-claim-box" id="bingoQR"></div></div>
+    <div style="margin-top:14px;">
+      <div class="sm">⭐ Avalia esta empresa:</div>
+      <div class="stars" id="bSt">${[1,2,3,4,5].map(i=>`<span class="star active" data-v="${i}">★</span>`).join('')}</div>
+      <button class="btn btn-primary" style="margin-top:8px;" onclick="subBSt('${trophy.id}')">Confirmar Avaliação</button>
+    </div>
+    <button class="btn btn-secondary" style="margin-top:14px;" onclick="closeModal('mBingoFound')">Fechar</button>`;
+
+  openModal('mBingoFound');
+  setTimeout(()=>{const el=$('bingoQR');if(el){el.innerHTML='';new QRCode(el,{text:qr,width:180,height:180});}},100);
+
+  let sel=5;
+  document.querySelectorAll('#bSt .star').forEach(s=>{
+    s.onclick=()=>{sel=+s.dataset.v;document.querySelectorAll('#bSt .star').forEach((st,i)=>st.classList.toggle('active',i<sel));};
+  });
+  window._bSel=()=>sel;
+}
+
+window.subBSt=function(id){
+  const t=S.trophies.find(x=>x.id===id);
+  if(t){t.stars=window._bSel();if(S.companies[t.company])S.companies[t.company].stars=((S.companies[t.company].stars||5)+t.stars)/2;save();}
+  closeModal('mBingoFound');ticker(`${window._bSel()}★ para ${t?.company}!`);
+};
+
+/* ═══ SKILL + PRIZES ═══ */
+function checkSk(){
+  while(S.flagsTotal>=S.nextTarget){
+    S.skill++;S.nextTarget*=2;recalcVision();
+    S.skillLog.push({date:new Date().toISOString(),skill:S.skill});
+    ticker(`⭐ +1 Skill! Agora: ${S.skill}. Visão: ${S.visionM.toFixed(2)}m`);
+  }
+  if(map)updateMap();
+}
+
+function genPrize(co,prize){
+  const t={id:uid(),company:co,prize,date:Date.now(),stars:0,isBingo:false,
+    claimDeadline:new Date(Date.now()+30*864e5).toISOString(),
+    qrData:JSON.stringify({type:'PRIZE',company:co,prize,player:S.jg.name,code:uid()})};
+  S.trophies.push(t);save();
+  ticker(`🎉 PRÉMIO! ${co}: ${prize}`);
+}
+
+/* ═══ HUD REFRESH ═══ */
+function refreshHUD(){
+  $('hFlags').textContent=S.flagsTotal;
+  $('hSkill').textContent=S.skill;
+  $('hVision').textContent=S.visionM.toFixed(2);
+  $('hEnergy').textContent=S.energy.toFixed(0);
+  $('tbFlags').textContent=S.flagsTotal;
+  $('tbSkill').textContent=S.skill;
+  $('tbTrophies').textContent=S.trophies.length;
+
+  let mn=20;
+  Object.values(S.companies).forEach(v=>{const r=20-(v.premium%20);if(r<mn)mn=r;});
+  $('hForPrize').textContent=mn===20?'20':mn;
+
+  // Trophies
+  if(S.trophies.length){
+    $('mTrophiesBody').innerHTML=S.trophies.map((t,i)=>{
+      const dl=Math.max(0,Math.ceil((new Date(t.claimDeadline)-Date.now())/864e5));
+      return`<div class="stat-card">
+        <b>${t.isBingo?'🎰':'🎁'} ${t.company}</b>
+        <div class="sm">${t.prize} | ${t.stars?t.stars+'★':''} | ${dl} dias restantes</div>
+        <div id="qr${i}" style="margin-top:10px;background:#fff;padding:10px;border-radius:8px;display:inline-block;"></div>
+      </div>`;
+    }).join('');
+    S.trophies.forEach((t,i)=>{const el=$('qr'+i);if(el){el.innerHTML='';new QRCode(el,{text:t.qrData,width:120,height:120});}});
+  }else $('mTrophiesBody').innerHTML='<p class="sm">Sem prémios ainda. Apanha bandeiras!</p>';
+
+  // Flags by company
+  const e=Object.entries(S.companies);
+  $('mFlagsBody').innerHTML=e.length?e.map(([c,v])=>`
+    <div class="stat-card" style="cursor:pointer;" onclick="showCD('${c.replace(/'/g,"\\'")}')">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span style="font-size:24px;">${v.logo||'🏢'}</span>
+        <div><b>${c}</b><div class="sm">${(v.stars||5).toFixed(1)}★ | Total: ${v.total} | Premiadas: ${v.premium} | Faltam: ${20-v.premium%20}</div></div>
+      </div>
+    </div>`).join(''):'<p class="sm">Sem bandeiras recolhidas.</p>';
+
+  // Skill
+  $('mSkillBody').innerHTML=`
+    <div class="stat-card"><b>Skill: ${S.skill}</b><div class="sm">Próximo: ${S.nextTarget} (faltam ${S.nextTarget-S.flagsTotal})</div></div>
+    <div class="stat-card"><b>Visão: ${S.visionM.toFixed(2)}m</b><div class="sm">+${S.visionPerSkill}m por skill | Máx: ${S.maxVision}m</div></div>
+    ${S.skillLog.length?'<h4 style="margin:12px 0 8px;">Histórico</h4>'+S.skillLog.slice(-15).reverse().map(l=>
+      `<div class="sm" style="padding:3px 0;border-bottom:1px solid rgba(255,255,255,.05);">Skill ${l.skill} — ${new Date(l.date).toLocaleString()}</div>`
+    ).join(''):''}`;
+}
+
+window.showCD=function(name){
+  const c=S.companies[name],info=c?.info||CI[name]||{};
+  let gl='';
+  if(info.gps){const p=info.gps.split(',').map(s=>s.trim());if(p.length===2)gl=`https://www.google.com/maps/dir/?api=1&destination=${p[0]},${p[1]}`;}
+  $('mCompanyTitle').textContent=name;
+  $('mCompanyBody').innerHTML=`
+    <div class="stat-card">
+      <div style="font-size:40px;text-align:center;">${c?.logo||'🏢'}</div>
+      <b>${name}</b>
+      <div class="sm" style="margin-top:8px;">
+        <div>📌 Atividade: ${info.activity||'—'}</div>
+        <div>📍 Morada: ${info.morada||'—'}</div>
+        <div>📞 Contacto: ${info.contact||'—'}</div>
+        <div>📧 Email: ${info.email||'—'}</div>
+      </div>
+      ${gl?`<a href="${gl}" target="_blank" class="gps-btn" style="margin-top:10px;">📍 Abrir GPS — Direções</a>`:''}
+    </div>
+    <div class="stat-card">
+      <div class="sm">Total: <b>${c?.total||0}</b> | Premiadas: <b>${c?.premium||0}</b> | Faltam: <b>${20-((c?.premium||0)%20)}</b> | ${(c?.stars||5).toFixed(1)}★</div>
+    </div>`;
+  openModal('mCompany');
+};
+
+/* ═══ MOVEMENT ═══ */
+const STEP=1.5;
+function moveBy(dx,dy){
+  if(!S.loggedIn||S.energy<=0){if(S.energy<=0)ticker('⚡ Sem energia!');return;}
+  const lr=S.pos.lat*Math.PI/180;
+  S.pos.lat+=dy/111320;
+  S.pos.lng+=dx/(111320*Math.cos(lr));
+  S.energy=Math.max(0,S.energy-.15);
+  updateMap();refreshHUD();
+}
+
+// D-pad
+document.querySelectorAll('.dk[data-d]').forEach(b=>{
+  const h=()=>{
+    const d=b.dataset.d;
+    if(d==='up')moveBy(0,STEP);
+    if(d==='down')moveBy(0,-STEP);
+    if(d==='left')moveBy(-STEP,0);
+    if(d==='right')moveBy(STEP,0);
+    if(d==='pick')pickNearby();
+  };
+  b.addEventListener('click',h);
+  b.addEventListener('touchstart',e=>{e.preventDefault();h();},{passive:false});
+});
+
+// Keyboard
+window.addEventListener('keydown',e=>{
+  if(e.key==='ArrowUp')moveBy(0,STEP);
+  if(e.key==='ArrowDown')moveBy(0,-STEP);
+  if(e.key==='ArrowLeft')moveBy(-STEP,0);
+  if(e.key==='ArrowRight')moveBy(STEP,0);
+  if(e.key===' '){e.preventDefault();pickNearby();}
+});
+
+// Hold to move continuously
+let holdI=null;
+document.querySelectorAll('.dk[data-d]').forEach(b=>{
+  const d=b.dataset.d;if(d==='pick')return;
+  const fn=()=>{
+    if(d==='up')moveBy(0,STEP);if(d==='down')moveBy(0,-STEP);
+    if(d==='left')moveBy(-STEP,0);if(d==='right')moveBy(STEP,0);
+  };
+  b.addEventListener('pointerdown',e=>{e.preventDefault();clearInterval(holdI);holdI=setInterval(fn,120);});
+  b.addEventListener('pointerup',()=>clearInterval(holdI));
+  b.addEventListener('pointerleave',()=>clearInterval(holdI));
+  b.addEventListener('pointercancel',()=>clearInterval(holdI));
+});
+
+/* ═══ GPS ═══ */
+function useGPS(){
+  if(!navigator.geolocation){ticker('GPS não disponível.');return;}
+  ticker('📍 A obter localização GPS...');
+  navigator.geolocation.getCurrentPosition(p=>{
+    S.pos.lat=p.coords.latitude;S.pos.lng=p.coords.longitude;
+    updateMap();map.setView([S.pos.lat,S.pos.lng],19);
+    ticker(`📍 GPS: ${S.pos.lat.toFixed(5)}, ${S.pos.lng.toFixed(5)}`);
+    flagLayer.clearLayers();
+    spawnFlags('Café Lisboa','☕',60);
+    spawnFlags('Restaurante Sol','🍽️',50);
+    spawnFlags('Loja Tech','💻',40);
+  },err=>ticker('❌ GPS: '+err.message),{enableHighAccuracy:true});
+}
+
+/* ═══ TICKER ALERTS ═══ */
+setInterval(()=>{
+  if(!S.loggedIn)return;
+  // Bingo announcements
+  S.prPacks.forEach(p=>{
+    (p.bingoDefs||[]).forEach(b=>{
+      if(b.status==='live'&&b.revealInTicker){
+        ticker(`🎰 BINGO da empresa ${b.companyName}! ${b.prize?'Prémio disponível!':'Surpresa!'}`);
+      }
+    });
+  });
+  // Claim deadline warnings
+  S.trophies.forEach(t=>{
+    if(t.claimDeadline){
+      const dl=Math.ceil((new Date(t.claimDeadline)-Date.now())/864e5);
+      if(dl>0&&dl<=5)ticker(`⚠️ ${dl} dia(s) para levantar prémio de ${t.company}!`);
+    }
+  });
+},25000);
+
+/* ═══ CLOSE MODALS ON OVERLAY CLICK ═══ */
+document.querySelectorAll('.modal-overlay').forEach(m=>{
+  m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open');});
+});
+$('revealOverlay').addEventListener('click',e=>{
+  if(e.target===$('revealOverlay')&&$('revealResult').classList.contains('show'))closeReveal();
+});
+
+/* ═══ INIT ═══ */
+load();loadPR();
+if(S.jg.name)$('l_name').value=S.jg.name;
+renderPackCards();
+</script>
+</body>
+</html>
