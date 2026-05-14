@@ -15,8 +15,6 @@
     
     button { background: #0f0; color: #000; border: none; padding: 10px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 14px; }
     button:hover { filter: brightness(1.2); }
-    button:disabled { background: #555; color: #888; cursor: not-allowed; }
-    
     .btn-dark { background: #111; color: #0f0; border: 1px solid #0f0; }
     .btn-danger { background: #d32f2f; color: #fff; border: 1px solid #ff0000; }
     .btn-warning { background: #ff9800; color: #fff; border: 1px solid #ff9800; }
@@ -60,19 +58,23 @@
     .dpad { display: grid; grid-template-columns: 50px 50px 50px; gap: 5px; }
     .dpad button { width: 50px; height: 50px; font-size: 20px; padding: 0; }
 
-    /* JANELA MODAL DA BANDEIRA */
-    #modal-overlay { position: fixed; inset:0; background:rgba(0,0,0,0.8); z-index: 5000; display:flex; align-items:center; justify-content:center;}
+    /* JANELAS MODAIS */
+    #modal-overlay, #pr-alert-overlay { position: fixed; inset:0; background:rgba(0,0,0,0.8); z-index: 6000; display:flex; align-items:center; justify-content:center;}
     .modal-box { background:#111; border: 2px solid #0f0; padding:20px; border-radius:10px; max-width:400px; text-align:center; color:#fff; }
     .comp-logo { width: 80px; height: 80px; object-fit: cover; border-radius: 50%; border: 2px solid #0f0; margin-bottom:10px; background:#fff;}
 
     /* PAINEL EMPRESA (DASHBOARD) */
     #pr-dashboard-screen { position: absolute; inset: 0; background: radial-gradient(circle, #001122 0%, #000000 100%); z-index: 5000; padding: 20px; overflow-y: auto; }
-    .dash-box { max-width: 800px; margin: 0 auto; background: rgba(0,0,0,0.8); border: 2px solid #0f0; border-radius: 10px; padding: 20px; }
+    .dash-box { max-width: 900px; margin: 0 auto; background: rgba(0,0,0,0.8); border: 2px solid #0f0; border-radius: 10px; padding: 20px; }
+    
+    .pr-menu { display: flex; border-bottom: 2px solid #0f0; margin-bottom: 20px; }
+    .pr-menu-btn { flex: 1; background: #111; color: #0f0; padding: 15px; border-radius: 8px 8px 0 0; font-size: 14px; border: none; margin-right: 5px; }
+    .pr-menu-btn.active { background: #0f0; color: #000; }
+
     .pack-card { background: #111; border: 1px solid #0f0; padding: 15px; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
     .pack-info { font-size: 13px; color: #a7fca7; }
     .pack-title { font-size: 16px; font-weight: bold; color: #0f0; margin-bottom: 5px; }
 
-    /* CAMPANHAS E LISTA DE DETENTORES QR */
     .camp-card { background: #000; border: 1px solid #4CAF50; padding: 15px; border-radius: 5px; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0,255,0,0.1); }
     .camp-pending { border-color: #ff9800; box-shadow: 0 4px 10px rgba(255,152,0,0.2); }
     .camp-suspended { border-color: #ff9800; opacity: 0.8; }
@@ -137,14 +139,14 @@
             <input type="text" id="pr-reg-nif" placeholder="* NIF" />
             <input type="text" id="pr-reg-tel" placeholder="* Telemóvel" />
           </div>
-          <input type="text" id="pr-reg-logo" placeholder="URL do Logótipo ou Foto da Loja" />
+          <input type="text" id="pr-reg-logo" placeholder="URL do Logótipo ou Foto" />
           <input type="email" id="pr-reg-email" placeholder="* E-mail do Responsável" />
           <input type="text" id="pr-reg-morada" placeholder="* Morada Fiscal Completa" />
           
           <div style="font-size:12px; color:#81c784; margin-bottom:5px;">Coordenadas GPS da Loja Física (Centro do Raio):</div>
           <div class="form-grid">
-            <input type="text" id="pr-reg-lat" placeholder="Latitude (Ex: 41.1496)" />
-            <input type="text" id="pr-reg-lng" placeholder="Longitude (Ex: -8.6109)" />
+            <input type="text" id="pr-reg-lat" placeholder="Lat (Ex: 41.1496)" />
+            <input type="text" id="pr-reg-lng" placeholder="Lng (Ex: -8.6109)" />
           </div>
 
           <div class="form-grid">
@@ -159,60 +161,100 @@
     </div>
   </div>
 
-  <!-- ================= DASHBOARD DA EMPRESA ================= -->
+  <!-- ================= DASHBOARD DA EMPRESA (FASE 2) ================= -->
   <div id="pr-dashboard-screen" class="hidden">
     <div class="dash-box">
-      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #0f0; padding-bottom:15px; margin-bottom:20px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
         <h1 style="margin:0; color:#0f0;">🏢 PAINEL DA SEDE</h1>
         <button class="btn-dark" onclick="location.reload()">Sair</button>
       </div>
 
-      <div style="margin-bottom:20px; display:flex; align-items:center; gap:15px;">
-        <img id="dash-pr-logo" src="" style="width:60px; height:60px; border-radius:50%; border:2px solid #0f0; display:none; background:#fff;" />
+      <div style="display:flex; align-items:center; gap:15px; margin-bottom:20px;">
+        <img id="dash-pr-logo" src="" style="width:50px; height:50px; border-radius:50%; border:2px solid #0f0; display:none; background:#fff;" />
         <div>
-          <h2 style="color:#fff; margin:0;"><span id="dash-pr-name">Empresa</span></h2>
-          <p style="color:#a7fca7; font-size:14px; margin:5px 0;">NIF: <span id="dash-pr-nif"></span> | Validade Global: <span id="dash-pr-validade" style="color:#fff; font-weight:bold;"></span></p>
+          <h2 style="color:#fff; margin:0; font-size:18px;"><span id="dash-pr-name">Empresa</span></h2>
+          <p style="color:#a7fca7; font-size:12px; margin:0;">NIF: <span id="dash-pr-nif"></span> | Atividade: <span id="dash-pr-atividade"></span></p>
         </div>
       </div>
 
-      <!-- COMPRAR NOVO PACOTE -->
-      <div style="background:#1a1a1a; border:2px dashed #0f0; padding:15px; border-radius:8px; margin-bottom:30px;">
-        <h3 style="margin-top:0; color:#0f0;">📦 Comprar Novo Pacote (Totalidade Entra em Jogo)</h3>
-        <p style="font-size:12px; color:#ccc;">O pacote só consome a validade global quando o ativar. Tem 60 minutos de proteção após ativar (onde a suspensão é livre). Se houver prémios definidos, o pacote será bloqueado (Inadmissível de suspensão) assim que o primeiro jogador apanhar a sua primeira bandeira de prémio para garantir jogo justo.</p>
-        
-        <label style="font-size:12px; color:#0f0;">1. Escolher o Pacote:</label>
-        <select id="buy-pack-type">
-          <option value="Médio|2500|15|5|60">Pacote Médio - 2.500 Band. | Raio 5km | 60 Dias (15€)</option>
-          <option value="Mais|5000|20|10|90">Pacote Mais - 5.000 Band. | Raio 10km | 90 Dias (20€)</option>
-          <option value="Grande|10000|25|15|120">Pacote Grande - 10.000 Band. | Raio 15km | 120 Dias (25€)</option>
-          <option value="Super|20000|30|100|180">Pacote Super - 20.000 Band. | Raio 100km | 180 Dias (30€)</option>
-          <option value="Nacional|50000|50|10000|180">Pacote Nacional - 50.000 Band. | Todo País | 180 Dias (50€)</option>
-        </select>
+      <!-- MENUS DO DASHBOARD -->
+      <div class="pr-menu">
+        <button id="menu-loja" class="pr-menu-btn" onclick="switchDashView('loja')">🛒 Comprar Pacotes</button>
+        <button id="menu-agendar" class="pr-menu-btn active" onclick="switchDashView('agendar')">📅 Agendar Campanha</button>
+        <button id="menu-stats" class="pr-menu-btn" onclick="switchDashView('stats')">📈 Relatórios & QRs</button>
+      </div>
 
-        <div class="form-grid" style="margin-bottom:10px;">
-          <div>
-            <label style="font-size:12px; color:#0f0;">2. Lotes Premiados</label>
-            <input type="number" id="buy-lots" placeholder="Ex: 50 (0 = Sem prémios)" value="0" />
+      <!-- VISTA: COMPRAR PACOTES -->
+      <div id="view-loja" class="hidden">
+        <h3 style="color:#0f0; margin-top:0;">🛒 Loja de Pacotes (Stock)</h3>
+        <p style="font-size:12px; color:#aaa; margin-bottom:15px;">A compra adiciona pacotes ao seu cofre. Eles não expiram até que você decida agendá-los e ativá-los na aba seguinte.</p>
+        
+        <div class="pack-card"><div class="pack-info"><b>Pacote Médio</b> (15€)<br>2.500 Bandeiras • Raio 5km • Val. 60 Dias</div><button onclick="buyPackage('Médio', 2500, 15, 60, 5)">Comprar</button></div>
+        <div class="pack-card"><div class="pack-info"><b>Pacote Mais</b> (20€)<br>5.000 Bandeiras • Raio 10km • Val. 90 Dias</div><button onclick="buyPackage('Mais', 5000, 20, 90, 10)">Comprar</button></div>
+        <div class="pack-card"><div class="pack-info"><b>Pacote Grande</b> (25€)<br>10.000 Bandeiras • Raio 15km • Val. 120 Dias</div><button onclick="buyPackage('Grande', 10000, 25, 120, 15)">Comprar</button></div>
+        <div class="pack-card"><div class="pack-info"><b>Pacote Super</b> (30€)<br>20.000 Bandeiras • Raio 100km • Val. 180 Dias</div><button onclick="buyPackage('Super', 20000, 30, 180, 100)">Comprar</button></div>
+        <div class="pack-card"><div class="pack-info"><b>Pacote Nacional</b> (50€)<br>50.000 Bandeiras • Todo o País • Val. 180 Dias</div><button onclick="buyPackage('Nacional', 50000, 50, 180, 9999)">Comprar</button></div>
+      </div>
+
+      <!-- VISTA: AGENDAR CAMPANHA -->
+      <div id="view-agendar">
+        <h3 style="color:#ff9800; margin-top:0;">📅 Configurar e Agendar Campanha</h3>
+        <p style="font-size:12px; color:#ccc;">Escolha um pacote do seu cofre, defina os prémios e agende o dia e hora em que a campanha vai para a rua!</p>
+        
+        <div style="background:#1a1a1a; border:1px solid #ff9800; padding:15px; border-radius:8px; margin-bottom:20px;">
+          <label style="font-size:12px; color:#0f0;">1. Pacote Disponível no Cofre:</label>
+          <select id="agenda-pack-select">
+            <!-- Povoado por JS -->
+          </select>
+
+          <div class="form-grid">
+            <div>
+              <label style="font-size:12px; color:#0f0;">2. Lotes (1 Lote = 20 Bandeiras)</label>
+              <input type="number" id="agenda-lots" placeholder="Ex: 50 (0=Sem Prémio)" value="0" />
+            </div>
+            <div>
+              <label style="font-size:12px; color:#0f0;">3. Dias p/ Levantamento</label>
+              <input type="number" id="agenda-days" placeholder="Mínimo 5" value="5" />
+            </div>
           </div>
-          <div>
-            <label style="font-size:12px; color:#0f0;">3. Dias p/ Levantar Prémio</label>
-            <input type="number" id="buy-days" placeholder="Mín. 5 Dias" value="5" />
-          </div>
+
+          <label style="font-size:12px; color:#0f0;">4. Qual o Prémio? (Se Lotes > 0)</label>
+          <input type="text" id="agenda-prize" placeholder="Ex: 1 Relógio, 1 Café..." />
+
+          <label style="font-size:12px; color:#0f0;">5. Data e Hora de Início (Agendamento)</label>
+          <input type="datetime-local" id="agenda-date" style="font-family:sans-serif;" />
+
+          <button style="width:100%; background:#ff9800;" onclick="scheduleCampaign()">AGENDAR E ATIVAR CAMPANHA</button>
         </div>
-        <label style="font-size:12px; color:#0f0;">4. Prémio (Obrigatório se Lotes > 0)</label>
-        <input type="text" id="buy-prize" placeholder="Ex: 1 Café, 50% Desconto" />
-        
-        <button style="width:100%; background:#0f0; color:#000;" onclick="purchaseNewPackage()">PAGAR E GUARDAR PACOTE</button>
+
+        <h3 style="color:#0f0;">⏳ Campanhas Agendadas / Suspensas</h3>
+        <div id="campanhas-ativas-lista"></div>
       </div>
 
-      <!-- LISTA DE PACOTES DA EMPRESA (O GRÁFICO DO ROI) -->
-      <h3 style="color:#0f0;">📈 A Sua Carteira de Pacotes (Gestão)</h3>
-      <p style="font-size:12px; color:#a7fca7;">Os pacotes Expirados saem do jogo, mas os QRs gerados neles continuam ativos até ao seu prazo terminar.</p>
-      
-      <div id="pacotes-lista" style="margin-bottom:30px;">
-        <!-- Injetado por JS -->
+      <!-- VISTA: ESTATÍSTICAS E RELATÓRIOS -->
+      <div id="view-stats" class="hidden">
+        <h3 style="color:#0f0; margin-top:0;">📊 Relatórios Analíticos e QRs</h3>
+        <div id="stats-content">
+          <!-- Povoado por JS -->
+        </div>
       </div>
 
+      <!-- PONTE FILIAIS -->
+      <h3 style="color:#0f0; margin-top:30px; border-top:1px dashed #0f0; padding-top:15px;">🔑 Gerir Filiais</h3>
+      <div style="background:#111; padding:15px; border-radius:8px; border:1px dashed #0f0; text-align:center;">
+        <button style="padding:10px; font-size:14px;" onclick="generateBranchCode()">GERAR CÓDIGO DE ACESSO PARA FILIAL</button>
+        <div id="branch-code-result" style="margin-top:10px; font-size:20px; font-weight:bold; color:#fff; letter-spacing:2px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- AVISO DE FIM DE CAMPANHA -->
+  <div id="pr-alert-overlay" class="hidden">
+    <div class="modal-box" style="border-color:#ff0000;">
+      <h2 style="color:#ff0000; margin-top:0;">⚠️ Atenção!</h2>
+      <p id="pr-alert-msg" style="font-size:14px; margin-bottom:20px;"></p>
+      <button style="width:100%; background:#0f0;" onclick="document.getElementById('pr-alert-overlay').classList.add('hidden'); switchDashView('loja');">IR PARA A LOJA</button>
+      <button class="btn-link" style="width:100%; margin-top:10px;" onclick="document.getElementById('pr-alert-overlay').classList.add('hidden');">Fechar</button>
     </div>
   </div>
 
@@ -235,7 +277,6 @@
     </div>
   </div>
 
-  <!-- MODAL DA BANDEIRA APANHADA -->
   <div id="modal-overlay" class="hidden">
     <div class="modal-box">
       <h2 style="color:#0f0; margin-top:0;">Bandeira Apanhada!</h2>
@@ -287,21 +328,19 @@
       document.getElementById('pr-reg-view').classList.toggle('hidden', view !== 'REG');
     }
 
-    // ================= JOGADOR =================
+    // ================= JOGADOR (FASE 1) =================
     function doLoginJG() {
       const name = document.getElementById("jg-log-nome").value.trim();
       if (!name) return alert("Preenche o Nome!");
       localStorage.setItem("zap_player_name", name);
       player.name = name;
-      
       const lastNif = localStorage.getItem("zap_pr_nif");
       if(lastNif) activeCompany = JSON.parse(localStorage.getItem("zap_pr_data_" + lastNif));
-
       startGame();
     }
     function doRegisterJG() { doLoginJG(); }
 
-    // ================= EMPRESA E PACOTES =================
+    // ================= EMPRESA E PACOTES (FASE 2) =================
     function doRegisterPR() {
       const name = document.getElementById("pr-reg-nome").value.trim();
       const nif = document.getElementById("pr-reg-nif").value.trim();
@@ -309,27 +348,19 @@
       const logo = document.getElementById("pr-reg-logo").value.trim();
       if (!name || !nif || !atividade) { alert("Preenche Nome, NIF e Atividade!"); return; }
 
+      // Empresa criada sem campanhas ativas. Tem o Pacote Oferta guardado no cofre (pacotesDisponiveis).
       const data = { 
         name, nif, atividade, logo, 
-        validade: Date.now() + (30 * 24 * 60 * 60 * 1000), 
-        pacotes: [{
-          id: "PAC-" + Math.random().toString(36).substr(2,6).toUpperCase(),
-          nome: "Oferta Inicial",
-          flagsTotal: 1000, flagsRestantes: 1000, raioKm: 0.5,
-          lotesTotais: 0, premio: "Sem prémio (Só Energia)",
-          diasLevantamento: 0,
-          flagsPremioIniciais: 0, flagsPremioRestantes: 0, flagsEnergiaRestantes: 1000,
-          status: "saved", 
-          activationTime: 0,
-          diasValidade: 30, 
-          validadeExpiraEm: 0, 
-          vencedores: []
-        }]
+        pacotesDisponiveis: [{
+          id: "COFRE-" + Math.random().toString(36).substr(2,6).toUpperCase(),
+          nome: "Oferta Inicial (Grátis)", flagsTotal: 1000, validadeDias: 30, raioKm: 0.5
+        }],
+        campanhas: [] 
       };
       
       localStorage.setItem("zap_pr_data_" + nif, JSON.stringify(data));
       localStorage.setItem("zap_pr_nif", nif);
-      alert("Empresa Registada! O seu pacote de Oferta (1.000 band) está guardado e pronto a ativar.");
+      alert("Empresa Registada! 1.000 Bandeiras adicionadas ao seu Cofre. Agende a sua campanha!");
       loadCompanyDashboard(nif);
     }
 
@@ -342,198 +373,258 @@
       loadCompanyDashboard(nif);
     }
 
+    function switchDashView(tab) {
+      document.getElementById('menu-loja').classList.remove('active');
+      document.getElementById('menu-agendar').classList.remove('active');
+      document.getElementById('menu-stats').classList.remove('active');
+      document.getElementById('view-loja').classList.add('hidden');
+      document.getElementById('view-agendar').classList.add('hidden');
+      document.getElementById('view-stats').classList.add('hidden');
+      document.getElementById('menu-' + tab).classList.add('active');
+      document.getElementById('view-' + tab).classList.remove('hidden');
+      if (tab === 'agendar') renderAvailablePackages();
+      if (tab === 'stats') renderStats();
+    }
+
     function loadCompanyDashboard(nif) {
       activeCompany = JSON.parse(localStorage.getItem("zap_pr_data_" + nif));
       document.getElementById("login-screen").classList.add("hidden");
       document.getElementById("pr-dashboard-screen").classList.remove("hidden");
-      
       document.getElementById("dash-pr-name").innerText = activeCompany.name;
       document.getElementById("dash-pr-nif").innerText = activeCompany.nif;
+      document.getElementById("dash-pr-atividade").innerText = activeCompany.atividade;
       
-      if(activeCompany.validade) {
-         let diff = activeCompany.validade - Date.now();
-         let dias = Math.ceil(diff / (24*60*60*1000));
-         document.getElementById("dash-pr-validade").innerText = dias > 0 ? `${dias} Dias` : "Expirado";
-      }
-
       if(activeCompany.logo) {
         document.getElementById("dash-pr-logo").src = activeCompany.logo;
         document.getElementById("dash-pr-logo").style.display = "block";
       }
 
-      if(!activeCompany.pacotes) activeCompany.pacotes = [];
+      if(!activeCompany.pacotesDisponiveis) activeCompany.pacotesDisponiveis = [];
+      if(!activeCompany.campanhas) activeCompany.campanhas = [];
       
+      // Auto-preenche data de hoje no calendário
+      let now = new Date();
+      now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+      document.getElementById("agenda-date").value = now.toISOString().slice(0,16);
+
+      switchDashView('agendar');
       updateCompanyDashboard();
+
       if(dashInterval) clearInterval(dashInterval);
       dashInterval = setInterval(updateCompanyDashboard, 1000);
     }
 
-    function purchaseNewPackage() {
-      const selectVal = document.getElementById("buy-pack-type").value.split("|");
-      const pName = selectVal[0];
-      const pFlags = parseInt(selectVal[1]);
-      const pPrice = parseInt(selectVal[2]);
-      const pRaio = parseInt(selectVal[3]);
-      const pDiasValidade = parseInt(selectVal[4]);
-
-      const lotesPedidos = parseInt(document.getElementById("buy-lots").value || "0");
-      const diasPremio = parseInt(document.getElementById("buy-days").value || "5");
-      const premioTxt = document.getElementById("buy-prize").value.trim();
-
-      const maxLotes = Math.floor(pFlags / 20);
-
-      if(lotesPedidos > 0 && !premioTxt) { alert("Como definiu lotes, tem de escrever o prémio!"); return; }
-      if(lotesPedidos > maxLotes) { alert(`Esse pacote só suporta um máximo de ${maxLotes} lotes.`); return; }
-      if(lotesPedidos > 0 && diasPremio < 5) { alert("O mínimo de dias para levantamento são 5."); return; }
-
-      // REGRA: Os dias do prémio não podem ultrapassar a validade do pacote
-      if(lotesPedidos > 0 && diasPremio > pDiasValidade) {
-        alert(`Não pode dar ${diasPremio} dias de levantamento porque o pacote expira em ${pDiasValidade} dias! Baixe os dias.`);
-        return;
-      }
-
-      const confirmMsg = lotesPedidos > 0 
-        ? `Comprar Pacote ${pName} (${pFlags.toLocaleString()} band.) por ${pPrice}€?\nVai gerar ${lotesPedidos} prémios de "${premioTxt}".`
-        : `Comprar Pacote ${pName} (${pFlags.toLocaleString()} band.) por ${pPrice}€?\nNÃO terá prémios (Só publicidade e energia).`;
-
-      if (confirm(confirmMsg)) {
-        const flagsPremio = lotesPedidos * 20;
-        const flagsEnergia = pFlags - flagsPremio;
-
-        const novoPacote = {
-          id: "PAC-" + Math.random().toString(36).substr(2,6).toUpperCase(),
-          nome: "Pacote " + pName,
-          flagsTotal: pFlags,
-          flagsRestantes: pFlags,
-          raioKm: pRaio,
-          lotesTotais: lotesPedidos,
-          premio: lotesPedidos > 0 ? premioTxt : "Sem prémio (Só Energia)",
-          diasLevantamento: lotesPedidos > 0 ? diasPremio : 0,
-          flagsPremioIniciais: flagsPremio,
-          flagsPremioRestantes: flagsPremio,
-          flagsEnergiaRestantes: flagsEnergia,
-          status: "saved", 
-          activationTime: 0,
-          diasValidade: pDiasValidade, 
-          validadeExpiraEm: 0, 
-          vencedores: []
-        };
-
-        activeCompany.pacotes.push(novoPacote);
-        updateCompanyDashboard();
-        
-        document.getElementById("buy-lots").value = "0";
-        document.getElementById("buy-prize").value = "";
-        alert(`Pacote comprado e guardado na sua Carteira! Pode ativá-lo quando quiser.`);
+    function buyPackage(nome, bandeiras, preco, dias, raio) {
+      if (confirm(`Comprar Pacote ${nome} (${bandeiras.toLocaleString()}) por ${preco}€?`)) {
+        activeCompany.pacotesDisponiveis.push({
+          id: "COFRE-" + Math.random().toString(36).substr(2,6).toUpperCase(),
+          nome: "Pacote " + nome,
+          flagsTotal: bandeiras,
+          validadeDias: dias,
+          raioKm: raio
+        });
+        localStorage.setItem("zap_pr_data_" + activeCompany.nif, JSON.stringify(activeCompany));
+        alert("Pacote comprado! Está guardado no seu cofre. Vá à aba 'Agendar Campanha' para o usar.");
+        if(document.getElementById('view-agendar').classList.contains('hidden') === false) {
+          renderAvailablePackages();
+        }
       }
     }
 
-    function changePackStatus(packId, newStatus) {
-      const idx = activeCompany.pacotes.findIndex(p => p.id === packId);
-      if (idx > -1) {
-        const pkg = activeCompany.pacotes[idx];
-        
-        // Bloqueio de Suspensão se já começou a dar prémios do lote
-        if (newStatus === 'suspended' && pkg.flagsPremioRestantes < pkg.flagsPremioIniciais) {
-           alert("ATENÇÃO: Já há jogadores que recolheram as primeiras bandeiras deste Lote. Não pode suspender a campanha para não os prejudicar!");
+    function renderAvailablePackages() {
+      const sel = document.getElementById("agenda-pack-select");
+      sel.innerHTML = "";
+      if (activeCompany.pacotesDisponiveis.length === 0) {
+        sel.innerHTML = "<option value=''>Cofre Vazio - Compre pacotes na Loja</option>";
+        return;
+      }
+      activeCompany.pacotesDisponiveis.forEach(p => {
+        sel.innerHTML += `<option value='${p.id}'>${p.nome} (${p.flagsTotal.toLocaleString()} band. | Val. ${p.validadeDias} dias)</option>`;
+      });
+    }
+
+    function scheduleCampaign() {
+      const packId = document.getElementById("agenda-pack-select").value;
+      if (!packId) { alert("Não tem pacotes no cofre."); return; }
+
+      const lotesPedidos = parseInt(document.getElementById("agenda-lots").value || "0");
+      const diasPremio = parseInt(document.getElementById("agenda-days").value || "5");
+      const premioTxt = document.getElementById("agenda-prize").value.trim();
+      const startDateStr = document.getElementById("agenda-date").value;
+
+      if (!startDateStr) { alert("Escolha uma data e hora para o arranque."); return; }
+      
+      let startTs = new Date(startDateStr).getTime();
+      if (startTs < Date.now()) startTs = Date.now(); // Não permite agendar pro passado
+
+      const packIdx = activeCompany.pacotesDisponiveis.findIndex(p => p.id === packId);
+      const chosenPack = activeCompany.pacotesDisponiveis[packIdx];
+      const maxLotes = Math.floor(chosenPack.flagsTotal / 20);
+
+      if(lotesPedidos > 0 && !premioTxt) { alert("Como definiu lotes, descreva o prémio."); return; }
+      if(lotesPedidos > maxLotes) { alert(`Este pacote suporta no máximo ${maxLotes} lotes.`); return; }
+      if(lotesPedidos > 0 && diasPremio < 5) { alert("O mínimo de dias para levantamento são 5."); return; }
+      if(lotesPedidos > 0 && diasPremio > chosenPack.validadeDias) {
+        alert(`Não pode dar ${diasPremio} dias para levantar o prémio pois o pacote inteiro expira em ${chosenPack.validadeDias} dias!`);
+        return;
+      }
+
+      // Remove do Cofre
+      activeCompany.pacotesDisponiveis.splice(packIdx, 1);
+
+      // Calcula os dias globais
+      const validadeExpiraEm = startTs + (chosenPack.validadeDias * 24 * 60 * 60 * 1000);
+
+      const novaCampanha = {
+        id: "CAMP-" + Math.random().toString(36).substr(2, 6).toUpperCase(),
+        nome: chosenPack.nome,
+        premio: lotesPedidos > 0 ? premioTxt : "Sem Prémio (Publicidade/Energia)",
+        lotesIniciais: lotesPedidos,
+        flagsTotais: chosenPack.flagsTotal,
+        flagsRestantes: chosenPack.flagsTotal,
+        flagsPremioIniciais: lotesPedidos * 20,
+        flagsPremioRestantes: lotesPedidos * 20,
+        flagsEnergiaRestantes: chosenPack.flagsTotal - (lotesPedidos * 20),
+        diasLevantamento: lotesPedidos > 0 ? diasPremio : 0,
+        raioKm: chosenPack.raioKm,
+        status: "pending",
+        activationTime: startTs,
+        expiraEm: validadeExpiraEm,
+        vencedores: [],
+        alerted: false
+      };
+
+      activeCompany.campanhas.push(novaCampanha);
+      renderAvailablePackages();
+      updateCompanyDashboard();
+      
+      alert(`Campanha agendada com sucesso para ${new Date(startTs).toLocaleString()}!`);
+    }
+
+    function changeCampStatus(campId, newStatus) {
+      const camp = activeCompany.campanhas.find(c => c.id === campId);
+      if (camp) {
+        if (newStatus === 'suspended' && camp.flagsPremioRestantes < camp.flagsPremioIniciais) {
+           alert("ATENÇÃO: Já há jogadores com bandeiras deste prémio no seu saco. A campanha não pode ser suspensa a meio para garantir jogo justo!");
            return;
         }
-
-        if (newStatus === 'pending') {
-          if (pkg.validadeExpiraEm === 0) {
-            pkg.validadeExpiraEm = Date.now() + (pkg.diasValidade * 24 * 60 * 60 * 1000);
-          }
-          const delayMs = isTestMode ? 60000 : 3600000; 
-          pkg.activationTime = Date.now() + delayMs;
-        }
-        
-        pkg.status = newStatus;
+        camp.status = newStatus;
         updateCompanyDashboard();
       }
     }
 
     function updateCompanyDashboard() {
-      const listaDiv = document.getElementById("pacotes-lista");
+      const listaDiv = document.getElementById("campanhas-ativas-lista");
+      if(!listaDiv) return; // Se não estiver na aba correta
+
       listaDiv.innerHTML = "";
       const now = Date.now();
 
-      if (activeCompany.pacotes.length === 0) {
-        listaDiv.innerHTML = "<div class='pack-info'>Ainda não comprou pacotes.</div>";
+      if (activeCompany.campanhas.length === 0) {
+        listaDiv.innerHTML = "<div class='pack-info'>Ainda não tem campanhas ativas ou agendadas.</div>";
       } else {
-        activeCompany.pacotes.forEach(pkg => {
+        activeCompany.campanhas.forEach(camp => {
           
-          if (pkg.status === 'pending' && now >= pkg.activationTime) { pkg.status = 'active'; }
+          if (camp.status === 'pending' && now >= camp.activationTime) { camp.status = 'active'; }
           
           let pacoteExpirado = false;
-          let txtValidade = "Não Iniciada";
-          
-          if (pkg.validadeExpiraEm > 0) {
-            let diasVal = Math.ceil((pkg.validadeExpiraEm - now) / (24*60*60*1000));
-            if (diasVal <= 0 && (pkg.status === 'active' || pkg.status === 'suspended')) { 
-              pacoteExpirado = true; pkg.status = 'expired'; 
+          let diasVal = Math.ceil((camp.expiraEm - now) / (24*60*60*1000));
+          if (diasVal <= 0 && (camp.status === 'active' || camp.status === 'suspended')) { 
+            pacoteExpirado = true; camp.status = 'expired'; 
+            
+            // Dispara Alerta se acabou agora
+            if(!camp.alerted) {
+              camp.alerted = true;
+              document.getElementById("pr-alert-msg").innerText = `A sua campanha "${camp.nome}" (${camp.premio}) terminou o seu prazo de validade! O seu alcance no jogo baixou.`;
+              document.getElementById("pr-alert-overlay").classList.remove("hidden");
             }
-            txtValidade = pacoteExpirado ? "Expirou" : diasVal + " Dias";
           }
 
-          let isSuspended = (pkg.status === 'suspended' || pkg.status === 'saved');
-          let cardHtml = `<div class="camp-card ${pkg.status === 'pending' ? 'camp-pending' : ''} ${(pacoteExpirado || isSuspended) ? 'camp-suspended' : ''}">`;
-          cardHtml += `<div class="pack-title">${pkg.nome} - ${pkg.flagsTotal.toLocaleString()} Bandeiras ${pacoteExpirado ? '(EXPIRADO)' : ''}</div>`;
+          let isSuspended = (camp.status === 'suspended');
+          let cardHtml = `<div class="camp-card ${camp.status === 'pending' ? 'camp-pending' : ''} ${(pacoteExpirado || isSuspended) ? 'camp-suspended' : ''}">`;
+          cardHtml += `<div class="pack-title">${camp.nome} ${pacoteExpirado ? '(EXPIRADO)' : ''}</div>`;
           
-          if (pkg.status === 'saved') {
+          if (camp.status === 'pending') {
+            const diff = Math.max(0, camp.activationTime - now);
+            const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+            const h = Math.floor((diff / (1000 * 60 * 60)) % 24);
+            const m = Math.floor((diff / 1000 / 60) % 60);
+            const s = Math.floor((diff / 1000) % 60);
+            
             cardHtml += `
-              <p style="font-size:12px; color:#aaa; margin:5px 0;">O pacote está guardado. Prémio: ${pkg.premio}</p>
-              <button style="background:#0f0;" onclick="changePackStatus('${pkg.id}', 'pending')">🟢 ATIVAR (Entra no Mapa em 60m)</button>
-            `;
-          } else if (pkg.status === 'pending') {
-            const diff = Math.max(0, pkg.activationTime - now);
-            const m = Math.floor((diff/1000)/60).toString().padStart(2, '0');
-            const s = Math.floor((diff/1000)%60).toString().padStart(2, '0');
-            cardHtml += `
-              <p style="font-size:12px; color:#aaa; margin:5px 0;">Período de carência de 60m. Vai para o mapa em:</p>
-              <div class="camp-timer">⏱️ ${m}:${s}</div>
-              <button class="btn-warning" onclick="changePackStatus('${pkg.id}', 'suspended')">⏸️ SUSPENDER E VOLTAR A GUARDAR</button>
+              <p style="font-size:12px; color:#aaa; margin:5px 0;">Agendada para: <b>${new Date(camp.activationTime).toLocaleString()}</b></p>
+              <div class="camp-timer">⏱️ Arranque em: ${d}d ${h}h ${m}m ${s}s</div>
+              <button class="btn-warning" onclick="changeCampStatus('${camp.id}', 'suspended')">⏸️ SUSPENDER</button>
             `;
           } else {
-            const consumido = pkg.flagsTotal - pkg.flagsRestantes;
-            const pct = (consumido / pkg.flagsTotal) * 100;
-            const qrsGerados = pkg.vencedores.length;
-
-            let statusTxt = pkg.status === 'active' ? `<span style="color:#0f0;">🟢 ATIVO NO MAPA</span>` : (pacoteExpirado ? `<span style="color:red;">🔴 EXPIRADO</span>` : `<span style="color:#ff9800;">⏸️ SUSPENSO</span>`);
+            const consumido = camp.flagsTotais - camp.flagsRestantes;
+            const pct = (consumido / camp.flagsTotais) * 100;
             
-            // Só mostra o botão Suspender se não estiver expirado e se a regra permitir
+            let statusTxt = camp.status === 'active' ? `<span style="color:#0f0;">🟢 ATIVA NO MAPA</span>` : (pacoteExpirado ? `<span style="color:red;">🔴 EXPIRADA</span>` : `<span style="color:#ff9800;">⏸️ SUSPENSA</span>`);
             let btnAction = "";
             if (!pacoteExpirado) {
-               let canSuspend = pkg.flagsPremioRestantes >= pkg.flagsPremioIniciais;
-               btnAction = `<button class="btn-dark" style="font-size:10px; padding:5px;" ${canSuspend ? '' : 'disabled title="Já há jogadores a recolher este prémio!"'} onclick="changePackStatus('${pkg.id}', '${pkg.status === 'active' ? 'suspended' : 'active'}')">${pkg.status === 'active' ? '⏸️ SUSPENDER' : '▶️ RETOMAR'}</button>`;
+               let canSuspend = camp.flagsPremioRestantes >= camp.flagsPremioIniciais;
+               btnAction = `<button class="btn-dark" style="font-size:10px; padding:5px;" ${canSuspend ? '' : 'disabled title="Jogadores já começaram a recolher!"'} onclick="changeCampStatus('${camp.id}', '${camp.status === 'active' ? 'suspended' : 'active'}')">${camp.status === 'active' ? '⏸️ SUSPENDER' : '▶️ RETOMAR'}</button>`;
             }
 
             cardHtml += `
               <div style="display:flex; justify-content:space-between; align-items:center;">${statusTxt} ${btnAction}</div>
-              <div style="font-size:12px; color:#a7fca7; margin-top:5px;"><b>Raio:</b> ${pkg.raioKm}km | <b>Validade Restante:</b> ${txtValidade} | <b>Prémio:</b> ${pkg.premio}</div>
-              
-              <div style="display:flex; justify-content:space-between; font-size:12px; margin-top:10px; color:#fff; background:#111; padding:5px; border-radius:4px;">
-                <span>📦 Lotes: ${pkg.lotesTotais}</span>
-                <span>🚩 Consumo: ${consumido}/${pkg.flagsTotal}</span>
-                <span>🎫 QRs Gerados: ${qrsGerados}</span>
-              </div>
-              <div class="stat-bar" style="width:100%; height:12px; border-radius:4px; margin-top:5px;">
-                <div class="stat-fill" style="width:${pct}%; background:${pacoteExpirado ? 'red' : '#0f0'};"></div>
-              </div>
+              <div style="font-size:12px; color:#a7fca7; margin-top:5px;"><b>Prémio:</b> ${camp.premio} | <b>Validade Restante:</b> ${pacoteExpirado ? 'Terminou' : diasVal + ' dias'}</div>
+              <div class="stat-bar" style="width:100%; height:8px; border-radius:4px; margin-top:10px;"><div class="stat-fill" style="width:${pct}%; background:${pacoteExpirado ? 'red' : '#ff9800'};"></div></div>
             `;
-
-            if (pkg.lotesTotais > 0 && qrsGerados > 0) {
-              cardHtml += `<h4 style="margin:15px 0 5px 0; color:#4CAF50;">🏆 QRs Gerados e Detentores</h4>`;
-              pkg.vencedores.forEach(v => {
-                const diasFaltam = Math.ceil((v.expiraEm - Date.now()) / (24*60*60*1000));
-                cardHtml += `<div class="winner-item"><span>🎫 <b>${v.codigo}</b></span><span>Jogador: <b style="color:#0f0;">${v.jogador}</b></span><span style="color:${diasFaltam<0 ? '#ff0000' : '#0f0'}; font-weight:bold;">⏳ ${diasFaltam<0 ? 'Expirou' : diasFaltam+'d'}</span></div>`;
-              });
-            }
           }
           cardHtml += `</div>`;
           listaDiv.innerHTML += cardHtml;
         });
       }
       localStorage.setItem("zap_pr_data_" + activeCompany.nif, JSON.stringify(activeCompany));
+    }
+
+    function renderStats() {
+      const content = document.getElementById("stats-content");
+      let totalCompradas = 0; let totalApanhadas = 0; let totalQRs = 0; let diasEmJogo = 1;
+      let htmlQrs = "";
+
+      activeCompany.campanhas.forEach(c => {
+        if(c.status !== 'pending') {
+          totalCompradas += c.flagsTotais;
+          totalApanhadas += (c.flagsTotais - c.flagsRestantes);
+          totalQRs += c.vencedores.length;
+          
+          let dias = Math.ceil((Date.now() - c.activationTime) / (24*60*60*1000));
+          if(dias > diasEmJogo) diasEmJogo = dias;
+
+          c.vencedores.forEach(v => {
+            htmlQrs += `<div class="winner-item"><span>🎫 <b>${v.codigo}</b></span><span>Detentor: <b style="color:#0f0;">${v.jogador}</b></span><span>Prémio: ${c.premio}</span></div>`;
+          });
+        }
+      });
+
+      let mediaDia = Math.floor(totalApanhadas / diasEmJogo);
+      let mediaSemana = mediaDia * 7;
+
+      content.innerHTML = `
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:20px;">
+          <div style="background:#111; padding:15px; border-radius:8px; text-align:center; border:1px solid #4CAF50;">
+            <div style="color:#a7fca7; font-size:12px;">Total Bandeiras Apanhadas</div>
+            <div style="font-size:24px; color:#fff; font-weight:bold;">${totalApanhadas} <span style="font-size:14px; color:#aaa;">/ ${totalCompradas}</span></div>
+          </div>
+          <div style="background:#111; padding:15px; border-radius:8px; text-align:center; border:1px solid #00f0ff;">
+            <div style="color:#a7fca7; font-size:12px;">Desempenho</div>
+            <div style="font-size:14px; color:#fff; font-weight:bold;">${mediaDia} <span style="font-size:10px; color:#aaa;">band/dia</span></div>
+            <div style="font-size:14px; color:#fff; font-weight:bold;">${mediaSemana} <span style="font-size:10px; color:#aaa;">band/semana</span></div>
+          </div>
+        </div>
+        <div style="background:#1a1a1a; padding:15px; border-radius:8px; border:1px dashed #ff9800;">
+          <h4 style="margin:0 0 10px 0; color:#ff9800;">🏆 Registo de QRs Entregues (${totalQRs})</h4>
+          ${htmlQrs || "<div style='font-size:12px; color:#aaa;'>Ainda não foram gerados QRs.</div>"}
+        </div>
+      `;
+    }
+
+    function generateBranchCode() {
+      const code = `${activeCompany.name.substring(0, 4).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+      document.getElementById("branch-code-result").innerText = code;
     }
 
     // ================= MAPA E JOGO =================
@@ -615,13 +706,13 @@
 
       const resBox = document.getElementById('modal-result-box');
       
-      if (!activeCompany || !activeCompany.pacotes) {
+      if (!activeCompany || !activeCompany.campanhas) {
         resBox.style.borderColor = "#0f0";
         resBox.innerHTML = `<span style="color:#0f0; font-weight:bold;">Bandeira Normal ZAP</span><br><span style="font-size:12px; color:#fff;">Ganhaste +Skill e 5% de Energia.</span>`;
         player.energy = Math.min(player.maxEnergy, player.energy + 50); updateUI(); return;
       }
 
-      const ativas = activeCompany.pacotes.filter(p => p.status === 'active' && p.flagsRestantes > 0);
+      const ativas = activeCompany.campanhas.filter(c => c.status === 'active' && c.flagsRestantes > 0);
       if (ativas.length === 0) { resBox.innerHTML = `As campanhas desta empresa estão suspensas ou esgotadas!`; return; }
 
       let totalSaco = ativas.reduce((sum, p) => sum + p.flagsRestantes, 0);
