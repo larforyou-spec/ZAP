@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
   <style>
+    /* ================= DESIGN GERAL ================= */
     * { box-sizing: border-box; user-select: none; font-family: 'Courier New', Courier, monospace; }
     html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #222; color: #0f0; }
     .hidden { display: none !important; }
@@ -26,12 +27,11 @@
     .tab-btn.active { background: #0f0; color: #000; }
     .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 
-    /* MAPA */
+    /* MAPA E AVATAR */
     #game-screen { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; }
     #map { width: 100%; height: 100%; }
     .catch-circle { stroke-dasharray: 6, 6; } 
 
-    /* AVATAR */
     .avatar-wrapper { position: relative; width: 40px; height: 50px; transition: transform 0.2s linear; }
     .ava-head { position: absolute; top: 0; left: 10px; width: 20px; height: 20px; background: #ffeb3b; border-radius: 50%; border: 2px solid #000; z-index: 3; }
     .ava-body { position: absolute; top: 18px; left: 10px; width: 20px; height: 18px; background: #2196f3; border-radius: 4px; border: 2px solid #000; z-index: 2; }
@@ -123,16 +123,14 @@
             <input type="text" id="pr-reg-nif" placeholder="* NIF" />
             <input type="text" id="pr-reg-tel" placeholder="* Telemóvel" />
           </div>
-          <input type="text" id="pr-reg-logo" placeholder="URL do Logótipo (ex: https://logo.com/img.png)" />
+          <input type="text" id="pr-reg-logo" placeholder="URL do Logótipo ou Foto da Loja" />
           <input type="email" id="pr-reg-email" placeholder="* E-mail do Responsável" />
           <input type="text" id="pr-reg-morada" placeholder="* Morada Fiscal Completa" />
-          
-          <div style="font-size:12px; color:#81c784; margin-bottom:5px;">Coordenadas GPS da Loja Física (Centro do Raio de Ação):</div>
+          <div style="font-size:12px; color:#81c784; margin-bottom:5px;">Coordenadas GPS da Loja Física:</div>
           <div class="form-grid">
             <input type="text" id="pr-reg-lat" placeholder="Latitude (Ex: 41.1496)" />
             <input type="text" id="pr-reg-lng" placeholder="Longitude (Ex: -8.6109)" />
           </div>
-
           <div class="form-grid">
             <input type="password" id="pr-reg-pass1" placeholder="* Senha" />
             <input type="password" id="pr-reg-pass2" placeholder="* Confirmar Senha" />
@@ -140,7 +138,6 @@
           <button style="width:100%; padding:14px; margin-top:10px;" onclick="doRegisterPR()">REGISTAR EMPRESA</button>
           <button class="btn-link" style="width:100%; text-align:center; margin-top:10px;" onclick="switchPRView('LOG')">Voltar ao Login</button>
         </div>
-
       </div>
     </div>
   </div>
@@ -164,38 +161,53 @@
         </div>
       </div>
 
-      <div style="display:flex; gap:10px; margin-bottom:30px;">
+      <!-- PAINEL DE GESTÃO DE LOTES E BANDEIRAS -->
+      <div style="display:flex; gap:10px; margin-bottom:20px;">
         <div style="flex:1; background:#111; border:1px solid #0f0; padding:15px; border-radius:8px; text-align:center;">
           <h3 style="margin:0; color:#0f0;">OFERTA LIVRE</h3>
-          <p style="font-size:11px; color:#aaa;">1.000 Bandeiras Iniciais. Raio 500m. Sem Lotes.</p>
+          <p style="font-size:11px; color:#aaa;">Sem prémios. Dá Skill e 5% Energia.</p>
           <div style="font-size:24px; font-weight:bold; color:#fff;" id="dash-stock-livre">0</div>
         </div>
         <div style="flex:1; background:#111; border:1px solid #ff9800; padding:15px; border-radius:8px; text-align:center;">
           <h3 style="margin:0; color:#ff9800;">STOCK PAGO</h3>
-          <p style="font-size:11px; color:#aaa;">Inclui Lotes Premiados, QR e Bingos.</p>
+          <p style="font-size:11px; color:#aaa;">Aguardar criação de Lotes/Campanhas.</p>
           <div style="font-size:24px; font-weight:bold; color:#fff;" id="dash-stock-pago">0</div>
         </div>
       </div>
 
+      <!-- NOVO: CRIAÇÃO DE LOTES DE CAMPANHA -->
+      <div style="background:#1a1a1a; border:2px dashed #ff9800; padding:15px; border-radius:8px; margin-bottom:30px;">
+        <h3 style="margin-top:0; color:#ff9800;">🎯 Configurar Lotes e Prémios</h3>
+        <p style="font-size:12px; color:#ccc;">Do seu stock pago atual, quantas bandeiras quer usar para dar prémios? (1 Lote = 20 Bandeiras = 1 Prémio garantido).</p>
+        
+        <div style="display:flex; gap:10px; align-items:center; margin-bottom:10px;">
+          <div style="flex:1;">
+            <label style="font-size:12px; color:#0f0;">Lotes a Ativar (Máximo: <span id="dash-max-lotes">0</span>)</label>
+            <input type="number" id="pr-camp-lotes" placeholder="Quantos lotes?" />
+          </div>
+          <div style="flex:2;">
+            <label style="font-size:12px; color:#0f0;">Prémio a Entregar no QR (Ex: 1 Café, 50% Desconto)</label>
+            <input type="text" id="pr-camp-premio" placeholder="Descreva o prémio" />
+          </div>
+        </div>
+        <button style="width:100%; background:#ff9800;" onclick="createLotsCampaign()">CRIAR LOTES E ATIVAR CAMPANHA</button>
+        
+        <!-- RESUMO DA CAMPANHA ATIVA -->
+        <div id="campanha-ativa" style="margin-top:15px; padding:10px; background:#000; border:1px solid #4CAF50; display:none;">
+          <strong style="color:#4CAF50;">CAMPANHA ATIVA:</strong><br>
+          <span style="font-size:13px; color:#fff;">Lotes Totais Criados: <b id="camp-lotes">0</b> ( = <b id="camp-band-premios">0</b> Bandeiras de Prémio)</span><br>
+          <span style="font-size:13px; color:#fff;">Prémio a entregar: <b id="camp-premio-txt" style="color:#ff9800;"></b></span><br>
+          <span style="font-size:12px; color:#aaa;">O restante stock pago ficará como Bandeiras de Energia (Roleta de 1% a 100%).</span>
+        </div>
+      </div>
+
       <h3 style="color:#0f0;">📦 Comprar Pacotes Pagos</h3>
-      <p style="font-size:12px; color:#a7fca7; margin-bottom: 15px;">* Todos os pacotes usam o Ponto de Referência GPS da sua loja como centro do raio de ação.</p>
+      <p style="font-size:12px; color:#a7fca7; margin-bottom: 15px;">* Todos os pacotes usam as suas Coordenadas GPS da loja como centro do raio de ação.</p>
       
-      <div class="pack-card">
-        <div class="pack-info"><div class="pack-title">Pacote Médio</div>2.500 Bandeiras • Raio 5km • Lotes Ativos</div>
-        <div><button onclick="buyPackage('Médio', 2500, 15)">Comprar 15€</button></div>
-      </div>
-      <div class="pack-card">
-        <div class="pack-info"><div class="pack-title">Pacote Grande</div>10.000 Bandeiras • Raio 15km • Lotes Ativos</div>
-        <div><button onclick="buyPackage('Grande', 10000, 25)">Comprar 25€</button></div>
-      </div>
-      <div class="pack-card">
-        <div class="pack-info"><div class="pack-title">Pacote Super</div>20.000 Bandeiras • Raio 100km • Lotes Ativos</div>
-        <div><button onclick="buyPackage('Super', 20000, 30)">Comprar 30€</button></div>
-      </div>
-      <div class="pack-card">
-        <div class="pack-info"><div class="pack-title">Pacote Nacional</div>50.000 Bandeiras • Todo o País • Lotes Ativos</div>
-        <div><button onclick="buyPackage('Nacional', 50000, 50)">Comprar 50€</button></div>
-      </div>
+      <div class="pack-card"><div class="pack-info"><div class="pack-title">Pacote Médio</div>2.500 Bandeiras • Raio 5km</div><div><button onclick="buyPackage('Médio', 2500, 15)">Comprar 15€</button></div></div>
+      <div class="pack-card"><div class="pack-info"><div class="pack-title">Pacote Grande</div>10.000 Bandeiras • Raio 15km</div><div><button onclick="buyPackage('Grande', 10000, 25)">Comprar 25€</button></div></div>
+      <div class="pack-card"><div class="pack-info"><div class="pack-title">Pacote Super</div>20.000 Bandeiras • Raio 100km</div><div><button onclick="buyPackage('Super', 20000, 30)">Comprar 30€</button></div></div>
+      <div class="pack-card"><div class="pack-info"><div class="pack-title">Pacote Nacional</div>50.000 Bandeiras • Todo o País</div><div><button onclick="buyPackage('Nacional', 50000, 50)">Comprar 50€</button></div></div>
 
       <h3 style="color:#0f0; margin-top:30px;">🔑 Gerir Filiais</h3>
       <div style="background:#111; padding:15px; border-radius:8px; border:1px dashed #0f0; text-align:center;">
@@ -234,15 +246,8 @@
       <h3 id="modal-comp-name" style="margin:5px 0;"></h3>
       <p id="modal-comp-activity" style="color:#a7fca7; font-size:14px; margin:0 0 15px 0;"></p>
       
-      <div id="modal-prize-box" style="background:#222; padding:10px; border-radius:5px; margin-bottom:15px; border:1px dashed #ff9800; display:none;">
-        <span style="color:#ff9800; font-weight:bold;">Sorteio Lote Ativo!</span><br>
-        <span style="font-size:12px;">Bandeira de Pacote Pago. Podes ganhar QRs ou Bingos.</span>
-      </div>
-
-      <div id="modal-free-box" style="background:#222; padding:10px; border-radius:5px; margin-bottom:15px; border:1px dashed #0f0; display:none;">
-        <span style="color:#0f0; font-weight:bold;">Bandeira de Oferta Livre</span><br>
-        <span style="font-size:12px;">Ganhaste +Skill! Visite as nossas instalações.</span>
-      </div>
+      <!-- Caixa de Resultados Gerada pelo JS -->
+      <div id="modal-result-box" style="background:#222; padding:10px; border-radius:5px; margin-bottom:15px; border:1px dashed #fff;"></div>
 
       <button style="width:100%;" onclick="closeFlagModal()">FECHAR E CONTINUAR</button>
     </div>
@@ -255,7 +260,8 @@
     const moveDist = isTestMode ? 4 : 0.5;   
     const energyCost = isTestMode ? 4 : 0.5; 
 
-    let player = { name: "", energy: 1000, maxEnergy: 1000, skill: 1, vision: 5, flags: 0, lat: 41.1496, lng: -8.6109 };
+    // O Player agora tem o contador de lotes apanhados por NIF
+    let player = { name: "", energy: 1000, maxEnergy: 1000, skill: 1, vision: 5, flags: 0, lat: 41.1496, lng: -8.6109, progressPR: {} };
     let map = null, playerMarker = null, visionCircle = null, catchCircle = null;  
     let allFlags = [];
     let activeCompany = null; 
@@ -265,6 +271,9 @@
       if (savedName) document.getElementById("jg-log-nome").value = savedName;
       const savedNif = localStorage.getItem("zap_pr_nif");
       if (savedNif) document.getElementById("pr-log-nif").value = savedNif;
+      
+      const savedProgress = localStorage.getItem("zap_player_progress");
+      if (savedProgress) player.progressPR = JSON.parse(savedProgress);
     };
 
     function switchMainTab(mode) {
@@ -286,7 +295,7 @@
       document.getElementById('pr-reg-view').classList.toggle('hidden', view !== 'REG');
     }
 
-    // ================= FASE 1: JOGADOR =================
+    // ================= JOGADOR (FASE 1) =================
     function doLoginJG() {
       const name = document.getElementById("jg-log-nome").value.trim();
       if (!name) return alert("Preenche o Nome!");
@@ -301,7 +310,7 @@
 
     function doRegisterJG() { doLoginJG(); }
 
-    // ================= FASE 2: EMPRESA =================
+    // ================= EMPRESA E LOTES (FASE 2) =================
     function doRegisterPR() {
       const name = document.getElementById("pr-reg-nome").value.trim();
       const nif = document.getElementById("pr-reg-nif").value.trim();
@@ -310,12 +319,17 @@
       
       if (!name || !nif || !atividade) { alert("Preenche Nome, NIF e Atividade!"); return; }
 
-      // Começa automaticamente com o Pacote "Oferta Livre" (1.000)
-      const data = { name, nif, atividade, logo, stockLivre: 1000, stockPago: 0 };
+      // Adicionados campos da Campanha
+      const data = { 
+        name, nif, atividade, logo, 
+        stockLivre: 1000, stockPago: 0,
+        campanha: { ativa: false, lotesTotais: 0, premio: "", flagsPremioRestantes: 0, flagsEnergiaRestantes: 0 }
+      };
+      
       localStorage.setItem("zap_pr_data_" + nif, JSON.stringify(data));
       localStorage.setItem("zap_pr_nif", nif);
       
-      alert("Empresa Registada! Recebeu 1.000 Bandeiras (Raio 500m) de Oferta!");
+      alert("Empresa Registada! Recebeu 1.000 Bandeiras de Oferta Livre!");
       loadCompanyDashboard(nif);
     }
 
@@ -354,24 +368,54 @@
     function updateCompanyStock() {
       document.getElementById("dash-stock-livre").innerText = activeCompany.stockLivre.toLocaleString();
       document.getElementById("dash-stock-pago").innerText = activeCompany.stockPago.toLocaleString();
+      
+      // Matemática de Lotes Possíveis
+      const maxLotes = Math.floor(activeCompany.stockPago / 20);
+      document.getElementById("dash-max-lotes").innerText = maxLotes;
+
+      if(activeCompany.campanha.ativa) {
+        document.getElementById("campanha-ativa").style.display = "block";
+        document.getElementById("camp-lotes").innerText = activeCompany.campanha.lotesTotais;
+        document.getElementById("camp-band-premios").innerText = activeCompany.campanha.lotesTotais * 20;
+        document.getElementById("camp-premio-txt").innerText = activeCompany.campanha.premio;
+      }
+
       localStorage.setItem("zap_pr_data_" + activeCompany.nif, JSON.stringify(activeCompany));
     }
 
     function buyPackage(nome, bandeiras, preco) {
-      if (confirm(`Comprar Pacote ${nome} (${bandeiras.toLocaleString()} band.) por ${preco}€?\nO Raio de Ação será aplicado a partir do seu GPS.`)) {
+      if (confirm(`Comprar Pacote ${nome} (${bandeiras.toLocaleString()} band.) por ${preco}€?`)) {
         activeCompany.stockPago += bandeiras;
         updateCompanyStock();
-        alert(`Sucesso! Foram adicionadas ${bandeiras.toLocaleString()} bandeiras à sua conta.`);
+        alert(`Sucesso! Pode agora configurar quantos Lotes quer ativar.`);
       }
     }
 
-    function generateBranchCode() {
-      if (activeCompany.stockLivre <= 0 && activeCompany.stockPago <= 0) return alert("Não tem bandeiras em stock!");
-      const code = `${activeCompany.name.substring(0, 4).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
-      document.getElementById("branch-code-result").innerText = code;
+    function createLotsCampaign() {
+      const lotesPedidos = parseInt(document.getElementById("pr-camp-lotes").value);
+      const premioTxt = document.getElementById("pr-camp-premio").value.trim();
+      const maxLotes = Math.floor(activeCompany.stockPago / 20);
+
+      if(!lotesPedidos || lotesPedidos <= 0 || !premioTxt) { alert("Preencha a quantidade de lotes e o prémio!"); return; }
+      if(lotesPedidos > maxLotes) { alert(`Só tem stock para criar ${maxLotes} lotes.`); return; }
+
+      // Configuração Matemática do Saco de Bandeiras Pagas
+      const bandeirasPremio = lotesPedidos * 20;
+      const bandeirasEnergia = activeCompany.stockPago - bandeirasPremio;
+
+      activeCompany.campanha = {
+        ativa: true,
+        lotesTotais: lotesPedidos,
+        premio: premioTxt,
+        flagsPremioRestantes: bandeirasPremio,
+        flagsEnergiaRestantes: bandeirasEnergia
+      };
+
+      updateCompanyStock();
+      alert(`Campanha Ativada! Foram separados ${lotesPedidos} Prémios. As restantes bandeiras do pacote vão dar Energia aos jogadores.`);
     }
 
-    // ================= FASE 1: MAPA =================
+    // ================= MAPA E JOGO =================
     function startGame() {
       document.getElementById("login-screen").classList.add("hidden");
       document.getElementById("game-screen").classList.remove("hidden");
@@ -430,6 +474,7 @@
       }
     }
 
+    // ================= APANHAR E SORTEIO DO LOTE =================
     function catchFlag() {
       let closest = null; let minDist = Infinity;
       allFlags.forEach(f => { 
@@ -444,36 +489,83 @@
       player.flags += 1; map.removeLayer(closest.marker); allFlags = allFlags.filter(f => f !== closest); 
       updateUI(); spawnRandomFlags(1); 
       
-      showFlagModal(); 
+      processCaughtFlag(); // Processa a matemática do Lote/Sorteio
     }
 
-    function showFlagModal() {
+    function processCaughtFlag() {
       document.getElementById('modal-overlay').classList.remove('hidden');
       
       let mockName = activeCompany ? activeCompany.name : "Restaurante Central";
       let mockAtiv = activeCompany ? activeCompany.atividade : "Restauração";
       let mockLogo = activeCompany ? activeCompany.logo : "";
-      let mockPago = activeCompany ? (activeCompany.stockPago > 0) : false; 
-
+      
       document.getElementById('modal-comp-name').innerText = mockName;
       document.getElementById('modal-comp-activity').innerText = mockAtiv;
+      if(mockLogo) { document.getElementById('modal-logo').src = mockLogo; document.getElementById('modal-logo').classList.remove('hidden'); } 
+      else { document.getElementById('modal-logo').classList.add('hidden'); }
+
+      const resBox = document.getElementById('modal-result-box');
       
-      if(mockLogo) {
-        document.getElementById('modal-logo').src = mockLogo;
-        document.getElementById('modal-logo').classList.remove('hidden');
-      } else {
-        document.getElementById('modal-logo').classList.add('hidden');
+      // Se não há empresa configurada ou está só na Oferta Livre
+      if (!activeCompany || !activeCompany.campanha || !activeCompany.campanha.ativa) {
+        resBox.style.borderColor = "#0f0";
+        resBox.innerHTML = `<span style="color:#0f0; font-weight:bold;">Bandeira de Oferta Livre</span><br><span style="font-size:12px; color:#fff;">Ganhaste +Skill e 5% de Energia.</span>`;
+        player.energy = Math.min(player.maxEnergy, player.energy + 50); // 5% de 1000m
+        if(activeCompany && activeCompany.stockLivre > 0) { activeCompany.stockLivre--; updateCompanyStock(); }
+        updateUI();
+        return;
       }
 
-      if(mockPago) {
-        document.getElementById('modal-prize-box').style.display = 'block';
-        document.getElementById('modal-free-box').style.display = 'none';
-        if(activeCompany) { activeCompany.stockPago -= 1; updateCompanyStock(); }
+      // MATEMÁTICA DO SACO (Campanha Ativa)
+      const camp = activeCompany.campanha;
+      const totalSaco = camp.flagsPremioRestantes + camp.flagsEnergiaRestantes;
+      
+      // Sorteio
+      const sorteio = Math.random() * totalSaco;
+
+      if (sorteio < camp.flagsPremioRestantes) {
+        // CALHOU BANDEIRA DE LOTE (PRÉMIO)
+        camp.flagsPremioRestantes--;
+        activeCompany.stockPago--;
+        
+        // Regista progresso do Jogador (x / 20)
+        if (!player.progressPR[activeCompany.nif]) player.progressPR[activeCompany.nif] = 0;
+        player.progressPR[activeCompany.nif]++;
+        
+        if (player.progressPR[activeCompany.nif] >= 20) {
+          // BINGO! GANHOU O PRÉMIO!
+          resBox.style.borderColor = "#ff0000";
+          resBox.innerHTML = `<span style="color:#ff0000; font-weight:bold; font-size:18px;">🎉 PARABÉNS! GANHASTE! 🎉</span><br><span style="font-size:13px; color:#fff;">Completaste o Lote de 20 bandeiras!<br>Prémio Recebido: <b style="color:#ff9800;">${camp.premio}</b><br>QR Code gerado na tua carteira.</span>`;
+          player.progressPR[activeCompany.nif] = 0; // Reinicia o lote
+        } else {
+          // Só somou mais uma para o lote
+          resBox.style.borderColor = "#ff9800";
+          resBox.innerHTML = `<span style="color:#ff9800; font-weight:bold;">Bandeira de Lote!</span><br><span style="font-size:12px; color:#fff;">Estás mais perto do prémio: <b>${player.progressPR[activeCompany.nif]} / 20</b></span>`;
+        }
+
       } else {
-        document.getElementById('modal-prize-box').style.display = 'none';
-        document.getElementById('modal-free-box').style.display = 'block';
-        if(activeCompany) { activeCompany.stockLivre -= 1; updateCompanyStock(); }
+        // CALHOU BANDEIRA NORMAL DE ENERGIA
+        camp.flagsEnergiaRestantes--;
+        activeCompany.stockPago--;
+        
+        // Roleta da Energia
+        let randEnergy = Math.random() * 100;
+        let gain = 0; let msg = "";
+
+        if (randEnergy < 1) { gain = 1000; msg = "JACKPOT! Energia Cheia (+100%)!"; }
+        else if (randEnergy < 6) { gain = 500; msg = "Sorte! +50% Energia!"; }
+        else if (randEnergy < 46) { gain = 100; msg = "Muito Bom! +10% Energia!"; }
+        else { gain = 50; msg = "Bom! +5% Energia."; }
+
+        player.energy = Math.min(player.maxEnergy, player.energy + gain);
+        
+        resBox.style.borderColor = "#00f0ff";
+        resBox.innerHTML = `<span style="color:#00f0ff; font-weight:bold;">Bandeira de Energia</span><br><span style="font-size:12px; color:#fff;">${msg}</span>`;
       }
+
+      localStorage.setItem("zap_player_progress", JSON.stringify(player.progressPR));
+      updateCompanyStock();
+      updateUI();
     }
 
     function closeFlagModal() { document.getElementById('modal-overlay').classList.add('hidden'); }
