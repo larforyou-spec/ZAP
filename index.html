@@ -2,328 +2,252 @@
 <html lang="pt">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>ZAP FLAGS | Larforyou&reg;</title>
-
-  <!-- Leaflet & QR Code -->
+  
+  <!-- LEAFLET CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
   <style>
-    /* ===================== BASE / VARIÁVEIS ===================== */
-    :root { --green: #0f0; --bg: #000; --panel: rgba(0,0,0,0.88); --border: 2px solid var(--green); --accent: #00ff9d; }
-    * { box-sizing: border-box; }
-    html, body { height: 100%; margin: 0; padding: 0; font-family: 'Courier New', monospace; background: var(--bg); color: var(--green); overflow: hidden; user-select: none; touch-action: manipulation; }
+    /* ================= DESIGN GERAL ================= */
+    * { box-sizing: border-box; user-select: none; font-family: 'Courier New', Courier, monospace; }
+    html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #000; color: #0f0; }
     .hidden { display: none !important; }
     
-    button { background: var(--green); color: #000; border: none; padding: 8px 12px; font-weight: bold; font-size: 14px; cursor: pointer; border-radius: 2px; transition: filter 0.15s ease; line-height: 1; }
-    button:disabled { opacity: 0.45; cursor: not-allowed; filter: grayscale(0.2); }
-    button:hover:not(:disabled) { filter: brightness(1.15); }
-
-    input, select, textarea { background: #222; color: var(--green); border: 1px solid var(--green); padding: 8px; width: 100%; margin-bottom: 8px; border-radius: 2px; font-family: 'Courier New', monospace; font-size: 14px; }
-    input::placeholder, textarea::placeholder { color: #6f6; }
-    label { display: block; margin: 2px 0 4px; font-size: 13px; opacity: 0.95; }
-
-    /* ===================== ECRÃ INICIAL ===================== */
-    #start-screen { position: absolute; inset: 0; background: var(--bg); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 10000; padding: 20px; text-align: center; }
-    .start-card { width: 100%; max-width: 520px; border: var(--border); padding: 20px; background: rgba(0,0,0,0.95); box-shadow: 0 0 24px rgba(0,255,0,0.18) inset; display: flex; flex-direction: column; gap: 12px; }
-    .start-title { font-size: 2.8rem; text-shadow: 0 0 10px var(--green); margin: 0 0 4px 0; }
-    .start-actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
-    .small-note { font-size: 12px; opacity: 0.8; margin: 0; }
-
-    /* ===================== MAPA E ENERGIA ===================== */
-    #map { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
+    button { background: #0f0; color: #000; border: none; padding: 12px 15px; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 14px; }
+    button:hover { filter: brightness(1.2); }
+    .btn-dark { background: #111; color: #0f0; border: 1px solid #0f0; }
+    .btn-dark:hover { background: #222; }
+    .btn-link { background: none; border: none; color: #a7fca7; text-decoration: underline; padding: 0; font-size: 12px; font-weight: normal; margin-top: 10px; }
+    .btn-link:hover { color: #fff; }
     
-    #energy-side-bar { position: absolute; top: 10px; left: 10px; width: calc((100vw - 20px) / 8); height: calc((100vh - 20px) / 8); min-width: 36px; min-height: 36px; max-width: 96px; max-height: 96px; background: var(--panel); border: var(--border); z-index: 1005; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 4px; box-shadow: 0 0 10px rgba(0,255,0,0.15) inset; }
-    #energy-side-fill { width: 70%; height: 70%; border: 1px solid var(--green); display: flex; align-items: flex-end; justify-content: center; position: relative; overflow: hidden; background: rgba(0,255,0,0.05); }
-    #energy-side-level { width: 100%; background: linear-gradient(180deg, var(--green), var(--accent)); height: 100%; transform-origin: bottom; transition: transform 0.3s ease; }
-    #energy-side-text { font-size: 10px; margin-top: 2px; text-align: center; line-height: 1; text-shadow: 0 0 4px rgba(0,255,0,0.5); }
+    input, select { width: 100%; padding: 10px; margin-bottom: 10px; border-radius: 4px; border: 1px solid #0f0; background: #111; color: #0f0; }
+    input::placeholder { color: #0a0; opacity: 0.7; }
+    
+    /* ================= LOGIN E REGISTO ================= */
+    #login-screen { position: absolute; inset: 0; background: radial-gradient(circle, #002200 0%, #000000 100%); display: flex; align-items: center; justify-content: center; z-index: 10000; padding: 15px; overflow-y: auto; }
+    .login-box { width: 100%; max-width: 500px; background: rgba(0, 0, 0, 0.9); border: 2px solid #0f0; border-radius: 8px; padding: 25px; box-shadow: 0 0 20px rgba(0,255,0,0.2) inset; margin: auto; }
+    .tab-container { display: flex; margin-bottom: 15px; border-radius: 4px; overflow: hidden; border: 1px solid #0f0; }
+    .tab-btn { flex: 1; padding: 12px; background: #111; color: #0f0; border-radius: 0; }
+    .tab-btn.active { background: #0f0; color: #000; }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .title-h1 { text-align: center; color: #0f0; margin-top:0; text-shadow: 0 0 10px #0f0; font-size: 28px; }
 
-    /* ===================== TOP BAR ===================== */
-    #top-bar { position: absolute; top: 10px; left: calc((100vw - 20px) / 8 + 20px); right: 10px; height: 48px; background: var(--panel); border: var(--border); z-index: 1000; display: flex; align-items: center; justify-content: space-between; padding: 0 8px; gap: 8px; }
-    .top-group { display: flex; align-items: center; gap: 6px; flex-wrap: nowrap; }
-    .top-btn { padding: 4px 8px; font-size: 12px; min-width: 52px; height: 28px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--green); box-shadow: 0 0 4px rgba(0,255,0,0.1) inset; }
-    .top-stat { font-size: 12px; white-space: nowrap; border: 1px dashed var(--green); padding: 2px 6px; border-radius: 2px; }
+    /* ================= MAPA ================= */
+    #map-wrap { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; }
+    #map { width: 100%; height: 100%; background: #000; }
+    
+    .catch-circle { stroke-dasharray: 5, 5; } /* Círculo Tracejado */
 
-    /* ===================== AVATAR MODERNO (CABEÇA, CORPO, PERNAS E BRAÇOS) ===================== */
+    /* ================= AVATAR ANIMADO ================= */
     .avatar-wrapper { position: relative; width: 40px; height: 50px; transition: transform 0.2s linear; }
     .ava-head { position: absolute; top: 0; left: 10px; width: 20px; height: 20px; background: #ffeb3b; border-radius: 50%; border: 2px solid #000; z-index: 3; }
     .ava-body { position: absolute; top: 18px; left: 10px; width: 20px; height: 18px; background: #2196f3; border-radius: 4px; border: 2px solid #000; z-index: 2; }
-    .ava-arm-l, .ava-arm-r { position: absolute; top: 20px; width: 8px; height: 16px; background: #ffeb3b; border-radius: 4px; border: 2px solid #000; transition: transform 0.3s; z-index: 3; }
+    .ava-arm-l, .ava-arm-r { position: absolute; top: 20px; width: 8px; height: 16px; background: #ffeb3b; border-radius: 4px; border: 2px solid #000; transition: transform 0.3s ease; z-index: 3; }
     .ava-arm-l { left: 0px; } .ava-arm-r { right: 0px; }
     .ava-leg-l, .ava-leg-r { position: absolute; top: 34px; width: 8px; height: 16px; background: #333; border-radius: 4px; border: 2px solid #000; z-index: 1; transition: transform 0.1s; }
     .ava-leg-l { left: 10px; } .ava-leg-r { right: 10px; }
     
-    /* Animações do Avatar */
+    /* Classes de Animação aplicadas no JS */
     .walking .ava-leg-l { transform: translateY(-4px); }
-    .walking .ava-leg-r { transform: translateY(2px); }
-    .catching .ava-arm-r { transform: rotate(-90deg) translateX(-10px); }
+    .walking .ava-leg-r { transform: translateY(4px); }
+    .catching .ava-arm-r { transform: rotate(-90deg) translateY(10px) translateX(-5px); }
 
-    /* Bandeiras e QRs */
-    .flag-marker { width: 34px; height: 34px; position: relative; }
-    .flag-stick { position: absolute; width: 2px; height: 18px; left: 14px; top: 12px; border-radius: 2px; background: #aaa; }
-    .flag-banner { position: absolute; left: 14px; top: 4px; width: 16px; height: 10px; clip-path: polygon(0 0, 100% 28%, 0 100%); border: 1px solid #fff; }
+    .flag-marker { width: 24px; height: 24px; background: #FF0000; border: 2px solid white; border-radius: 50%; box-shadow: 0 0 10px #FF0000; }
 
-    /* ===================== JANELAS ARRASTÁVEIS ===================== */
-    .draggable-window { position: absolute; top: 80px; left: 80px; width: 360px; max-width: 90vw; max-height: 70vh; background: var(--panel); border: var(--border); z-index: 3000; display: flex; flex-direction: column; box-shadow: 0 0 30px rgba(0,255,0,0.25); overflow: hidden; }
-    .window-header { height: 36px; background: rgba(0,40,0,0.9); border-bottom: 1px solid var(--green); display: flex; align-items: center; justify-content: space-between; padding: 0 8px; cursor: grab; }
-    .window-title { font-size: 13px; font-weight: bold; }
-    .window-close { width: 26px; height: 26px; border: 1px solid var(--green); background: #200; color: var(--green); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; }
-    .window-body { padding: 10px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; font-size: 13px; }
-    .kv-row { display: flex; justify-content: space-between; border-bottom: 1px dashed rgba(0,255,0,0.25); padding-bottom: 4px; }
+    /* ================= UI DO JOGO ================= */
+    #top-bar { position: absolute; top: 10px; left: 10px; right: 10px; background: rgba(0, 0, 0, 0.9); border: 1px solid #0f0; border-radius: 6px; padding: 10px; z-index: 2000; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 10px; align-items: center;}
+    .stat { flex: 1; text-align: center; font-size: 12px; font-weight: bold; color: #0f0; }
+    .stat-bar { height: 6px; background: #222; border-radius: 3px; margin-top: 4px; overflow: hidden; border: 1px solid rgba(0,255,0,0.3); }
+    .stat-fill { height: 100%; background: linear-gradient(90deg, #008f1f, #00ff66); width: 100%; transition: width 0.3s; }
 
-    /* ===================== MODAIS ESPECÍFICOS ===================== */
-    .modal { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: var(--bg); border: 3px solid var(--green); padding: 20px; z-index: 4000; width: 90%; max-width: 480px; text-align: center; }
-    .modal h2 { margin-top: 0; text-shadow: 0 0 6px var(--green); }
-    .qr-canvas { width: 128px; height: 128px; background: #fff; padding: 4px; border-radius: 4px; margin: 10px auto; }
-    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    #offline-controls { position: absolute; bottom: 80px; left: 20px; z-index: 3000; background: rgba(0,0,0,0.9); border: 1px solid #0f0; border-radius: 6px; padding: 10px; text-align: center; box-shadow: 0 0 15px rgba(0,255,0,0.2) inset; }
+    .dpad { display: grid; grid-template-columns: 50px 50px 50px; gap: 5px; margin-top: 10px; }
+    .dpad button { width: 50px; height: 50px; font-size: 20px; padding: 0; }
 
-    /* ===================== MARCAS LARFORYOU ===================== */
-    .watermark { position: fixed; bottom: 35px; left: 15px; font-size: 20px; font-weight: bold; color: rgba(0, 255, 0, 0.4); text-shadow: 2px 2px 4px #000; z-index: 9999; pointer-events: none; }
-    .copyright { position: fixed; bottom: 5px; width: 100%; text-align: center; font-size: 11px; color: rgba(0, 255, 0, 0.4); z-index: 9999; pointer-events: none; }
+    /* ================= MARCAS LARFORYOU ================= */
+    .watermark { position: fixed; bottom: 35px; left: 15px; font-size: 20px; font-weight: bold; color: rgba(0, 255, 0, 0.5); text-shadow: 2px 2px 4px #000; z-index: 9999; pointer-events: none; }
+    .copyright { position: fixed; bottom: 5px; width: 100%; text-align: center; font-size: 11px; color: rgba(0, 255, 0, 0.5); z-index: 9999; pointer-events: none; }
   </style>
 </head>
 <body>
 
-  <!-- MARCAS LARFORYOU -->
   <div class="watermark">Larforyou&reg;</div>
   <div class="copyright">&copy; 2024 Larforyou&reg; - Marca Registada. Todos os direitos reservados.</div>
 
-  <!-- ECRÃ INICIAL -->
-  <div id="start-screen">
-    <div class="start-card">
-      <h1 class="start-title">ZAP FLAGS</h1>
-      <p class="small-note">Liga o teu GPS ou joga em casa (Modo Teste).</p>
-      <div class="start-actions">
-        <button onclick="openAuthWindow('login-player')">🔑 Entrar Jogador</button>
-        <button onclick="openAuthWindow('login-company')" style="background:#222; color:#0f0; border:1px solid #0f0;">🏢 Entrar Empresa</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- MAPA E ENERGIA -->
-  <div id="map"></div>
-  <aside id="energy-side-bar">
-    <div id="energy-side-fill">
-      <div id="energy-side-level" style="transform: scaleY(1);"></div>
-    </div>
-    <div id="energy-side-text">ENERGIA<br><span id="energy-side-percent">1000m</span></div>
-  </aside>
-
-  <!-- TOP BAR -->
-  <header id="top-bar" class="hidden">
-    <div class="top-group">
-      <span class="top-stat">🏴 <strong id="top-flag-count">0</strong></span>
-      <span class="top-stat">Nível <strong id="top-skill-level">1</strong> (<span id="top-vision">5</span>m)</span>
-    </div>
-    <div class="top-group">
-      <button class="top-btn" onclick="openSkillWindow()">📊 Skill</button>
-      <button class="top-btn" onclick="catchFlag()">✋ Apanhar</button>
-      <button class="top-btn" onclick="confirmExit()">🚪 Sair</button>
-    </div>
-  </header>
-
-  <!-- DPAD OFFLINE (Para testes rápidos) -->
-  <div id="offline-controls" class="draggable-window hidden" style="width:140px; min-width:140px; left:auto; right:20px; top:auto; bottom:80px; min-height:auto;">
-    <header class="window-header"><span class="window-title">Mover</span></header>
-    <div class="window-body" style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:5px; text-align:center;">
-      <div></div><button onclick="moveHomePlayer(0, 1)">⬆</button><div></div>
-      <button onclick="moveHomePlayer(-1, 0)">⬅</button><button onclick="centerOnPlayer()">🎯</button><button onclick="moveHomePlayer(1, 0)">➡</button>
-      <div></div><button onclick="moveHomePlayer(0, -1)">⬇</button><div></div>
-    </div>
-  </div>
-
-  <!-- AUTENTICAÇÃO / REGISTO -->
-  <section id="auth-window" class="draggable-window hidden">
-    <header class="window-header">
-      <span id="auth-window-title" class="window-title">🔐 Autenticação</span>
-      <button class="window-close" onclick="closeWindow('auth-window')">×</button>
-    </header>
-    <div class="window-body">
+  <!-- ================= ECRÃ DE LOGIN / REGISTO ================= -->
+  <div id="login-screen">
+    <div class="login-box">
+      <h1 class="title-h1">ZAP FLAGS</h1>
       
-      <!-- NAVEGAÇÃO JOGADOR -->
-      <div style="display:flex; gap:8px; margin-bottom:10px;">
-        <button class="top-btn" onclick="showAuthTab('login-player')">Entrar</button>
-        <button class="top-btn" onclick="showAuthTab('register-player')">Registar</button>
+      <div style="display:flex; gap:10px; margin-bottom:15px;">
+        <button id="btn-tab-jg" class="tab-btn active" onclick="switchMainTab('JG')">JOGADOR</button>
+        <button id="btn-tab-pr" class="tab-btn btn-dark" onclick="switchMainTab('PR')">EMPRESA / PR</button>
       </div>
 
-      <!-- LOGIN JOGADOR (Fase 1: Memoriza Nome) -->
-      <div id="tab-login-player" class="auth-tab">
-        <label>Nome do Jogador (Memorizado)</label>
-        <input id="login-player-name" type="text" placeholder="Escreve o teu nome" />
-        <label>Senha</label>
-        <input id="login-player-password" type="password" placeholder="••••••••" />
-        <button style="width:100%; margin-top:10px;" onclick="doLogin('player')">ENTRAR NO JOGO</button>
-      </div>
-
-      <!-- REGISTO JOGADOR (Fase 1: Campos Exatos do Relatório) -->
-      <div id="tab-register-player" class="auth-tab hidden">
-        <p class="small-note">* Campos Obrigatórios</p>
-        <label>* Nome (Único)</label>
-        <input id="reg-player-username" type="text" placeholder="Nome no jogo" />
-        
-        <label>* Email</label>
-        <input id="reg-player-email" type="email" placeholder="exemplo@email.com" />
-        
-        <div class="form-grid">
-          <div><label>* Senha</label><input id="reg-player-password" type="password" /></div>
-          <div><label>* Confirmar</label><input id="reg-player-password2" type="password" /></div>
+      <!-- JOGADOR -->
+      <div id="area-jg">
+        <div id="jg-login-view">
+          <div style="font-size:12px; color:#a7fca7; margin-bottom:15px; text-align:center;">Entrar na Conta Jogador</div>
+          <input type="text" id="jg-log-nome" placeholder="* Nome do Jogador" />
+          <input type="password" id="jg-log-senha" placeholder="* Senha" />
+          <button class="btn-link" onclick="alert('Recuperação enviada para o e-mail!')">Esqueci a Senha?</button>
+          <button style="width:100%; padding:14px; margin-top:10px;" onclick="doLogin('JG')">ENTRAR NO JOGO</button>
         </div>
 
-        <div class="form-grid">
-          <div><label>Contacto</label><input id="reg-player-phone" type="text" placeholder="Opcional" /></div>
-          <div><label>Localidade</label><input id="reg-player-city" type="text" placeholder="Opcional" /></div>
+        <div id="jg-reg-view" class="hidden">
+          <div style="font-size:12px; color:#81c784; margin-bottom:10px; text-align:center;">* Campos Obrigatórios</div>
+          <input type="text" id="jg-reg-name" placeholder="* Nome de Jogador (Único)" />
+          <input type="email" id="jg-reg-email" placeholder="* E-mail" />
+          <div class="form-grid">
+            <input type="password" id="jg-reg-pass1" placeholder="* Senha" />
+            <input type="password" id="jg-reg-pass2" placeholder="* Confirmar Senha" />
+          </div>
+          <div class="form-grid">
+            <input type="text" id="jg-reg-contact" placeholder="Contacto (Opcional)" />
+            <input type="text" id="jg-reg-local" placeholder="Localidade (Opcional)" />
+          </div>
+          <input type="text" id="jg-reg-distrito" placeholder="Distrito (Opcional)" />
+          
+          <button style="width:100%; padding:14px;" onclick="doRegister('JG')">CONCLUIR REGISTO</button>
+          <button class="btn-link" style="width:100%; text-align:center; margin-top:10px;" onclick="switchView('JG', 'LOG')">Voltar ao Login</button>
         </div>
-        <label>Distrito</label>
-        <input id="reg-player-district" type="text" placeholder="Opcional" />
-
-        <button style="width:100%; margin-top:10px;" onclick="doRegister('player')">CRIAR CONTA E JOGAR</button>
       </div>
 
-      <!-- OUTROS TABS ESCONDIDOS PARA FASE 2 -->
-      <div id="tab-login-company" class="auth-tab hidden">
-        <p>Login de Empresa (A ser atualizado na Fase 2)</p>
+      <!-- EMPRESA (Placeholder para a Fase 2) -->
+      <div id="area-pr" class="hidden">
+        <div style="text-align:center; color:#0f0;">Área de Empresa será atualizada na FASE 2.</div>
       </div>
-      <div id="tab-register-company" class="auth-tab hidden">
-        <p>Registo de Empresa (A ser atualizado na Fase 2)</p>
-      </div>
-
     </div>
-  </section>
-
-  <!-- JANELA DE SKILL -->
-  <section id="skill-window" class="draggable-window hidden">
-    <header class="window-header">
-      <span class="window-title">📊 Skill / Progresso</span>
-      <button class="window-close" onclick="closeWindow('skill-window')">×</button>
-    </header>
-    <div class="window-body">
-      <div class="kv-row"><span>Nível de Skill</span><strong><span id="skill-percent">1</span></strong></div>
-      <div class="kv-row"><span>Visão Atual</span><strong><span id="skill-vision">5</span> metros</strong></div>
-      <div class="kv-row"><span>Total Bandeiras</span><strong><span id="skill-flags">0</span></strong></div>
-      <div class="kv-row"><span>Energia Restante</span><strong><span id="skill-energy">1000</span> m</strong></div>
-      <p class="small-note">Regra: 100 bandeiras = nível 1. Dobra a cada nível. Cada nível +0.25m visão.</p>
-    </div>
-  </section>
-
-  <!-- MODAL GENÉRICO -->
-  <div id="alert-modal" class="modal hidden">
-    <h2 id="alert-title">Aviso</h2>
-    <div id="alert-body"></div>
-    <button style="margin-top:15px;" onclick="document.getElementById('alert-modal').classList.add('hidden')">FECHAR</button>
   </div>
- <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script>
-    // ================= CONFIGURAÇÕES E MODO TESTE =================
-    // Palavra-passe combinada: Quando disser "teste apagar", passamos isto para false!
-    const isTestMode = true; 
-    const moveDist = isTestMode ? 4 : 0.5;   // Anda 4m (teste) ou 0.50m (normal)
-    const energyCost = isTestMode ? 4 : 0.5; // Gasta 4m (teste) ou 0.50m (normal)
 
-    // ================= ESTADO DO JOGADOR =================
+  <!-- ================= JOGO E MAPA ================= -->
+  <div id="game-screen" class="hidden">
+    <div id="map-wrap"><div id="map"></div></div>
+
+    <div id="top-bar">
+      <div class="stat">Energia <span id="val-ener">1000</span>m<div class="stat-bar"><div id="bar-ener" class="stat-fill"></div></div></div>
+      <div class="stat">Nível <span id="val-skill">1</span><br><span style="font-size:10px; color:#a7fca7;">(<span id="val-visao">5</span>m Visão)</span></div>
+      <div class="stat">Bandeiras<br><span id="val-flags" style="color:#fff; font-size:16px;">0</span></div>
+      <button class="btn-dark" style="padding:6px;" onclick="catchFlag()">✋ APANHAR</button>
+    </div>
+
+    <!-- D-Pad -->
+    <div id="offline-controls">
+      <div style="font-size:12px; color:#0f0; margin-bottom:5px;">Movimento</div>
+      <div class="dpad">
+        <div></div><button onclick="movePlayer(0, 1)">▲</button><div></div>
+        <button onclick="movePlayer(-1, 0)">◀</button><button onclick="centerPlayer()">🎯</button><button onclick="movePlayer(1, 0)">▶</button>
+        <div></div><button onclick="movePlayer(0, -1)">▼</button><div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LEAFLET JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    // ================= 1. CONFIGURAÇÕES MODO TESTE =================
+    // Palavra-passe "teste apagar" desativa este modo!
+    const isTestMode = true; 
+    const moveDist = isTestMode ? 4 : 0.5;   // Metros por clique
+    const energyCost = isTestMode ? 4 : 0.5; // Gasto por clique
+    const idleTime = isTestMode ? 15000 : 900000; // 15 Segundos vs 15 Minutos
+
+    // ================= 2. VARIÁVEIS GLOBAIS =================
     let player = {
       name: "",
-      energy: 1000, // Começa com 1000m
+      energy: 1000,
       maxEnergy: 1000,
-      flags: 0,
       skill: 1,
       vision: 5,
-      lat: 38.7223,
-      lng: -9.1393
+      flags: 0,
+      lat: 41.1496,
+      lng: -8.6109
     };
 
     let map = null;
-    let visionCircle = null;
     let playerMarker = null;
-    let isOffline = true;
+    let visionCircle = null; // Círculo Azul (Visão)
+    let catchCircle = null;  // Círculo Verde Tracejado (2.5m Ação)
+    let allFlags = [];
+    let lastMoveTime = Date.now();
 
-    // ================= ARRANQUE DO JOGO =================
-    window.onload = function() {
-      // Vai buscar o nome à memória e preenche o Login
+    // ================= 3. LÓGICA DE INTERFACE (LOGIN) =================
+    window.onload = () => {
       const savedName = localStorage.getItem("zap_player_name");
-      if (savedName) {
-        document.getElementById("login-player-name").value = savedName;
-      }
+      if (savedName) document.getElementById("jg-log-nome").value = savedName;
     };
+
+    function switchMainTab(mode) {
+      document.getElementById('area-jg').classList.toggle('hidden', mode !== 'JG');
+      document.getElementById('area-pr').classList.toggle('hidden', mode !== 'PR');
+      document.getElementById('btn-tab-jg').className = mode === 'JG' ? 'tab-btn active' : 'tab-btn btn-dark';
+      document.getElementById('btn-tab-pr').className = mode === 'PR' ? 'tab-btn active' : 'tab-btn btn-dark';
+    }
+
+    function switchView(context, view) {
+      if (context === 'JG') {
+        document.getElementById('jg-login-view').classList.toggle('hidden', view !== 'LOG');
+        document.getElementById('jg-reg-view').classList.toggle('hidden', view !== 'REG');
+      }
+    }
+
+    function doLogin(type) {
+      if (type === 'JG') {
+        const name = document.getElementById("jg-log-nome").value.trim();
+        const pass = document.getElementById("jg-log-senha").value;
+        if (!name || !pass) { alert("Preenche Nome e Senha!"); return; }
+
+        const isReg = localStorage.getItem("zap_reg_" + name.toLowerCase());
+        if (!isReg) {
+          alert("Jogador não encontrado! Reencaminhado para o Registo.");
+          switchView('JG', 'REG');
+          document.getElementById("jg-reg-name").value = name;
+          return;
+        }
+
+        localStorage.setItem("zap_player_name", name);
+        player.name = name;
+        startGame();
+      }
+    }
+
+    function doRegister(type) {
+      if (type === 'JG') {
+        const name = document.getElementById("jg-reg-name").value.trim();
+        const email = document.getElementById("jg-reg-email").value.trim();
+        const p1 = document.getElementById("jg-reg-pass1").value;
+        const p2 = document.getElementById("jg-reg-pass2").value;
+
+        if (!name || !email || !p1) { alert("Preenche os campos obrigatórios (*)"); return; }
+        if (p1 !== p2) { alert("Senhas não coincidem!"); return; }
+
+        localStorage.setItem("zap_reg_" + name.toLowerCase(), "true");
+        localStorage.setItem("zap_player_name", name);
+        
+        alert("Registo concluído! Bem-vindo(a) " + name);
+        player.name = name;
+        startGame();
+      }
+    }
+
+    // ================= 4. INICIALIZAÇÃO DO MAPA E AVATAR =================
+    function startGame() {
+      document.getElementById("login-screen").classList.add("hidden");
+      document.getElementById("game-screen").classList.remove("hidden");
+      initMap();
+      spawnRandomFlags(15); // Espalha 15 bandeiras pelo mundo
+      renderAvatar();
+    }
 
     function initMap() {
       if (map) return;
       map = L.map('map', { zoomControl: false }).setView([player.lat, player.lng], 19);
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution: '© OSM' }).addTo(map);
     }
 
-    // ================= LOGIN E REGISTO =================
-    function openAuthWindow(tabId) {
-      document.getElementById("start-screen").classList.add("hidden");
-      document.getElementById("auth-window").classList.remove("hidden");
-      showAuthTab(tabId);
-    }
-
-    function showAuthTab(tabId) {
-      document.getElementById("tab-login-player").classList.add("hidden");
-      document.getElementById("tab-register-player").classList.add("hidden");
-      document.getElementById(tabId).classList.remove("hidden");
-    }
-
-    // Função de Registo (Obrigatórios com *)
-    function doRegister(type) {
-      if (type === 'player') {
-        const name = document.getElementById("reg-player-username").value.trim();
-        const email = document.getElementById("reg-player-email").value.trim();
-        const p1 = document.getElementById("reg-player-password").value;
-        const p2 = document.getElementById("reg-player-password2").value;
-
-        if (!name || !email || !p1) { alert("Preenche os campos obrigatórios (*)."); return; }
-        if (p1 !== p2) { alert("As senhas não coincidem!"); return; }
-
-        // Cria o registo oficial na memória do browser
-        localStorage.setItem("zap_registered_" + name.toLowerCase(), "true");
-        localStorage.setItem("zap_player_name", name); // Memoriza para a próxima
-        
-        player.name = name;
-        alert("Registo concluído com sucesso! Bem-vindo(a) " + name);
-        enterGame();
-      }
-    }
-
-    // Função de Login (Com reencaminhamento automático)
-    function doLogin(type) {
-      if (type === 'player') {
-        const name = document.getElementById("login-player-name").value.trim();
-        const p1 = document.getElementById("login-player-password").value;
-
-        if (!name || !p1) { alert("Preenche o Nome e a Senha!"); return; }
-
-        // Verifica se o jogador já se registou no passado
-        const isRegistered = localStorage.getItem("zap_registered_" + name.toLowerCase());
-
-        if (!isRegistered) {
-          // JOGADOR NÃO EXISTE: Reencaminha para o Registo e auto-preenche o nome!
-          alert("Jogador não encontrado. Vais ser reencaminhado para o Registo!");
-          showAuthTab('tab-register-player');
-          document.getElementById("reg-player-username").value = name;
-          return;
-        }
-        
-        // Se existir, entra normalmente!
-        localStorage.setItem("zap_player_name", name); 
-        player.name = name;
-        enterGame();
-      }
-    }
-
-    function enterGame() {
-      document.getElementById("auth-window").classList.add("hidden");
-      document.getElementById("offline-controls").classList.remove("hidden");
-      document.getElementById("top-bar").classList.remove("hidden");
-      
-      initMap();
-      updatePlayerUI();
-      renderAvatar();
-    }
-
-    // ================= AVATAR MODERNO E MOVIMENTO =================
     function renderAvatar() {
+      // 1. Avatar (Com Braços e Pernas)
       if (!playerMarker) {
         const avatarHTML = `
           <div id="avatar-anim" class="avatar-wrapper">
@@ -336,94 +260,154 @@
           </div>
         `;
         const icon = L.divIcon({ className: '', html: avatarHTML, iconSize: [40, 50], iconAnchor: [20, 50] });
-        playerMarker = L.marker([player.lat, player.lng], { icon: icon }).addTo(map);
+        playerMarker = L.marker([player.lat, player.lng], { icon: icon, zIndexOffset: 1000 }).addTo(map);
       } else {
         playerMarker.setLatLng([player.lat, player.lng]);
       }
 
+      // 2. Círculo Azul (Visão: aumenta com o skill, descobre bandeiras)
       if (!visionCircle) {
-        visionCircle = L.circle([player.lat, player.lng], { radius: player.vision, color: "#ff0000", fillOpacity: 0.1, weight: 2 }).addTo(map);
+        visionCircle = L.circle([player.lat, player.lng], { radius: player.vision, color: "#0066ff", fillOpacity: 0.05, weight: 1 }).addTo(map);
       } else {
         visionCircle.setLatLng([player.lat, player.lng]);
         visionCircle.setRadius(player.vision);
-        visionCircle.bringToFront();
       }
+
+      // 3. Círculo Verde Tracejado (Ação 2.5m fixo: apanha bandeiras)
+      if (!catchCircle) {
+        catchCircle = L.circle([player.lat, player.lng], { radius: 2.5, color: "#00ff00", className: "catch-circle", fillOpacity: 0.1, weight: 2 }).addTo(map);
+      } else {
+        catchCircle.setLatLng([player.lat, player.lng]);
+      }
+
       map.setView([player.lat, player.lng], 19);
+      checkVisibleFlags(); // Vê se alguma bandeira entrou no círculo azul
     }
 
-    function moveHomePlayer(dx, dy) {
-      if (player.energy < energyCost) {
-        alert("Energia esgotada! Clica em Descansar ou renovar energia.");
-        return;
-      }
+    function centerPlayer() { map.setView([player.lat, player.lng], 19); }
+
+    // ================= 5. MOVIMENTO E ENERGIA =================
+    function movePlayer(dx, dy) {
+      if (player.energy < energyCost) { alert("Sem energia!"); return; }
 
       player.energy -= energyCost;
+      lastMoveTime = Date.now(); // Reset do relógio de descanso
+      updateUI();
 
+      // Animação das pernas e virar o corpo
       const ava = document.getElementById("avatar-anim");
       if (ava) {
         ava.classList.add("walking");
         if (dx > 0) ava.style.transform = "scaleX(1)";
         if (dx < 0) ava.style.transform = "scaleX(-1)";
-        setTimeout(() => ava.classList.remove("walking"), 200);
+        setTimeout(() => ava.classList.remove("walking"), 250);
       }
 
       player.lat += (dy * moveDist) / 111320;
       player.lng += (dx * moveDist) / (111320 * Math.cos(player.lat * Math.PI / 180));
-
+      
       renderAvatar();
-      updatePlayerUI();
     }
 
-    // ================= APANHAR BANDEIRAS E SKILL =================
+    // Relógio de Descanso (Parado recupera 10%)
+    setInterval(() => {
+      const timeIdle = Date.now() - lastMoveTime;
+      if (timeIdle >= idleTime && player.energy < player.maxEnergy) {
+        player.energy = Math.min(player.maxEnergy, player.energy + (player.maxEnergy * 0.10));
+        updateUI();
+        lastMoveTime = Date.now(); // Reinicia o relógio
+      }
+    }, 1000);
+
+    function updateUI() {
+      document.getElementById('val-ener').innerText = Math.floor(player.energy);
+      document.getElementById('bar-ener').style.width = (player.energy / player.maxEnergy) * 100 + "%";
+      document.getElementById('val-skill').innerText = player.skill;
+      document.getElementById('val-visao').innerText = player.vision.toFixed(2);
+      document.getElementById('val-flags').innerText = player.flags;
+    }
+
+    // ================= 6. LÓGICA DE BANDEIRAS E SKILL =================
+    // Função Matemática de Distância
+    function getDist(lat1, lng1, lat2, lng2) {
+      const R = 6371e3;
+      const dPhi = (lat2 - lat1) * Math.PI / 180;
+      const dLam = (lng2 - lng1) * Math.PI / 180;
+      const a = Math.sin(dPhi/2)*Math.sin(dPhi/2) + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLam/2)*Math.sin(dLam/2);
+      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    }
+
+    // Cria bandeiras espalhadas pelo mundo (Invisíveis ao início)
+    function spawnRandomFlags(amount) {
+      for(let i=0; i<amount; i++) {
+        let rLat = player.lat + ((Math.random() - 0.5) * 0.001);
+        let rLng = player.lng + ((Math.random() - 0.5) * 0.001);
+        
+        let icon = L.divIcon({ className: '', html: `<div class="flag-marker"></div>`, iconSize: [24,24] });
+        let marker = L.marker([rLat, rLng], { icon: icon });
+        
+        allFlags.push({ lat: rLat, lng: rLng, marker: marker, isVisible: false });
+      }
+    }
+
+    // Só mostra as bandeiras que entram no círculo azul de visão
+    function checkVisibleFlags() {
+      allFlags.forEach(f => {
+        let dist = getDist(player.lat, player.lng, f.lat, f.lng);
+        if (dist <= player.vision && !f.isVisible) {
+          f.marker.addTo(map);
+          f.isVisible = true;
+        } else if (dist > player.vision && f.isVisible) {
+          map.removeLayer(f.marker);
+          f.isVisible = false;
+        }
+      });
+    }
+
+    // Apanhar Bandeira (Só funciona a 2.5m)
     function catchFlag() {
+      let closest = null;
+      let minDist = Infinity;
+
+      allFlags.forEach(f => {
+        let d = getDist(player.lat, player.lng, f.lat, f.lng);
+        if(d < minDist) { minDist = d; closest = f; }
+      });
+
+      if (!closest) { alert("Não há bandeiras no mapa!"); return; }
+
+      // REGRA: Só apanha dentro do Círculo Tracejado (2.5m)
+      if (minDist > 2.5) {
+        alert(`A bandeira está a ${Math.floor(minDist)}m. Aproxima-te até entrares no círculo tracejado (2.5m)!`);
+        return;
+      }
+
+      // Animação do Braço a estender
       const ava = document.getElementById("avatar-anim");
       if (ava) {
         ava.classList.add("catching");
         setTimeout(() => ava.classList.remove("catching"), 400);
       }
 
-      player.flags += 100; // Simulação rápida
+      player.flags += 1; // Apanhou!
+      map.removeLayer(closest.marker);
+      allFlags = allFlags.filter(f => f !== closest); // Remove da lista
+
       recalcSkill();
-      updatePlayerUI();
-      alert("Apanhaste uma bandeira! Estendeste a mão com sucesso!");
+      updateUI();
+      
+      // Repõe uma nova algures para nunca acabarem
+      spawnRandomFlags(1);
+      checkVisibleFlags();
     }
 
+    // Matemática do Skill
     function recalcSkill() {
-      let nextTarget = 100;
-      let newSkill = 1;
-      let tempFlags = player.flags;
-
-      while (tempFlags >= nextTarget) {
-        newSkill++;
-        tempFlags -= nextTarget;
-        nextTarget *= 2;
-      }
-
+      let next = 100, newSkill = 1, tempFlags = player.flags;
+      while (tempFlags >= next) { newSkill++; tempFlags -= next; next *= 2; }
       player.skill = newSkill;
       player.vision = Math.min(50, 5 + (player.skill - 1) * 0.25);
-      
-      if (visionCircle) visionCircle.setRadius(player.vision);
     }
-
-    function updatePlayerUI() {
-      document.getElementById("energy-side-percent").innerText = Math.floor(player.energy) + "m";
-      document.getElementById("energy-side-level").style.transform = `scaleY(${player.energy / player.maxEnergy})`;
-      
-      document.getElementById("top-flag-count").innerText = player.flags;
-      document.getElementById("top-skill-level").innerText = player.skill;
-      document.getElementById("top-vision").innerText = player.vision.toFixed(2);
-    }
-
-    // ================= JANELAS UI =================
-    function openSkillWindow() {
-      document.getElementById("skill-window").classList.remove("hidden");
-      document.getElementById("skill-percent").innerText = player.skill;
-      document.getElementById("skill-vision").innerText = player.vision.toFixed(2);
-      document.getElementById("skill-flags").innerText = player.flags;
-      document.getElementById("skill-energy").innerText = player.energy;
-    }
-
-    function closeWindow(id) { document.getElementById(id).classList.add("hidden"); }
-    function centerOnPlayer() { map.setView([player.lat, player.lng], 19); }
-    function confirmExit() { if(confirm("Sair do jogo?")) location.reload(); }
   </script>
+</body>
+</html>
