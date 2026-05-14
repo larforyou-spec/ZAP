@@ -68,6 +68,10 @@
     .pack-info { font-size: 13px; color: #a7fca7; }
     .pack-title { font-size: 16px; font-weight: bold; color: #0f0; margin-bottom: 5px; }
 
+    /* NOVO: LISTA DE VENCEDORES QR */
+    .winner-item { background: #222; border: 1px dashed #ff9800; padding: 10px; border-radius: 5px; margin-top: 5px; font-size: 12px; display: flex; justify-content: space-between; align-items: center; }
+    .winner-item b { color: #ff9800; }
+
     .watermark { position: fixed; bottom: 35px; left: 15px; font-size: 20px; font-weight: bold; color: rgba(0, 255, 0, 0.4); text-shadow: 2px 2px 4px #000; z-index: 9999; pointer-events: none; }
     .copyright { position: fixed; bottom: 5px; width: 100%; text-align: center; font-size: 11px; color: rgba(0, 255, 0, 0.4); z-index: 9999; pointer-events: none; }
   </style>
@@ -77,7 +81,7 @@
   <div class="watermark">Larforyou&reg;</div>
   <div class="copyright">&copy; 2024 Larforyou&reg; - Marca Registada. Todos os direitos reservados.</div>
 
-  <!-- LOGIN E REGISTO -->
+  <!-- ================= LOGIN E REGISTO ================= -->
   <div id="login-screen">
     <div class="login-box">
       <h1 style="text-align: center; color: #0f0; margin-top:0;">ZAP FLAGS</h1>
@@ -123,14 +127,14 @@
             <input type="text" id="pr-reg-nif" placeholder="* NIF" />
             <input type="text" id="pr-reg-tel" placeholder="* Telemóvel" />
           </div>
-          <input type="text" id="pr-reg-logo" placeholder="URL do Logótipo ou Foto" />
+          <input type="text" id="pr-reg-logo" placeholder="URL do Logótipo ou Foto da Loja" />
           <input type="email" id="pr-reg-email" placeholder="* E-mail do Responsável" />
           <input type="text" id="pr-reg-morada" placeholder="* Morada Fiscal Completa" />
           
           <div style="font-size:12px; color:#81c784; margin-bottom:5px;">Coordenadas GPS da Loja Física (Centro do Raio):</div>
           <div class="form-grid">
-            <input type="text" id="pr-reg-lat" placeholder="Lat (Ex: 41.1496)" />
-            <input type="text" id="pr-reg-lng" placeholder="Lng (Ex: -8.6109)" />
+            <input type="text" id="pr-reg-lat" placeholder="Latitude (Ex: 41.1496)" />
+            <input type="text" id="pr-reg-lng" placeholder="Longitude (Ex: -8.6109)" />
           </div>
 
           <div class="form-grid">
@@ -145,7 +149,7 @@
     </div>
   </div>
 
-  <!-- DASHBOARD DA EMPRESA -->
+  <!-- ================= FASE 2: DASHBOARD DA EMPRESA ================= -->
   <div id="pr-dashboard-screen" class="hidden">
     <div class="dash-box">
       <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #0f0; padding-bottom:15px; margin-bottom:20px;">
@@ -159,64 +163,69 @@
           <div>
             <h2 style="color:#fff; margin:0;"><span id="dash-pr-name">Empresa</span></h2>
             <p style="color:#a7fca7; font-size:14px; margin:5px 0;">Atividade: <span id="dash-pr-atividade"></span></p>
-            <p style="color:#a7fca7; font-size:12px; margin:0;">NIF: <span id="dash-pr-nif"></span></p>
+            <p style="color:#a7fca7; font-size:12px; margin:0;">NIF: <span id="dash-pr-nif"></span> | Validade Stock: <span id="dash-pr-validade" style="color:#fff; font-weight:bold;"></span></p>
           </div>
         </div>
       </div>
 
-      <!-- PAINEL DE GESTÃO DE LOTES E BANDEIRAS -->
-      <div style="display:flex; gap:10px; margin-bottom:20px;">
+      <div style="display:flex; gap:10px; margin-bottom:30px;">
         <div style="flex:1; background:#111; border:1px solid #0f0; padding:15px; border-radius:8px; text-align:center;">
           <h3 style="margin:0; color:#0f0;">OFERTA LIVRE</h3>
-          <p style="font-size:11px; color:#aaa;">Sem prémios. Dá Skill e 5% Energia.</p>
+          <p style="font-size:11px; color:#aaa;">Sem prémios. Dá Skill e Energia.</p>
           <div style="font-size:24px; font-weight:bold; color:#fff;" id="dash-stock-livre">0</div>
         </div>
         <div style="flex:1; background:#111; border:1px solid #ff9800; padding:15px; border-radius:8px; text-align:center;">
           <h3 style="margin:0; color:#ff9800;">STOCK PAGO</h3>
-          <p style="font-size:11px; color:#aaa;">Aguardar criação de Lotes/Campanhas.</p>
+          <p style="font-size:11px; color:#aaa;">Para ativar Lotes Premiados e QRs.</p>
           <div style="font-size:24px; font-weight:bold; color:#fff;" id="dash-stock-pago">0</div>
         </div>
       </div>
 
-      <!-- CRIAÇÃO DE LOTES DE CAMPANHA -->
+      <!-- CRIAÇÃO DE LOTES DE CAMPANHA COM GRÁFICO E LISTA -->
       <div style="background:#1a1a1a; border:2px dashed #ff9800; padding:15px; border-radius:8px; margin-bottom:30px;">
         <h3 style="margin-top:0; color:#ff9800;">🎯 Configurar Lotes e Prémios</h3>
-        <p style="font-size:12px; color:#ccc;">Do seu stock pago atual, quantas bandeiras quer usar para dar prémios? (1 Lote = 20 Bandeiras = 1 Prémio garantido).</p>
+        <p style="font-size:12px; color:#ccc;">(1 Lote = 20 Bandeiras = 1 Prémio garantido).</p>
         
-        <div style="display:flex; gap:10px; align-items:center; margin-bottom:10px;">
-          <div style="flex:1;">
+        <div class="form-grid" style="margin-bottom:10px;">
+          <div>
             <label style="font-size:12px; color:#0f0;">Lotes a Ativar (Máx: <span id="dash-max-lotes">0</span>)</label>
             <input type="number" id="pr-camp-lotes" placeholder="Quantos lotes?" />
           </div>
-          <div style="flex:2;">
-            <label style="font-size:12px; color:#0f0;">Prémio no Lote Completo (Ex: 1 Café, 50% Desconto)</label>
-            <input type="text" id="pr-camp-premio" placeholder="Descreva o prémio" />
+          <div>
+            <label style="font-size:12px; color:#0f0;">Dias p/ Levantar Prémio (Mínimo: 5)</label>
+            <input type="number" id="pr-camp-dias" placeholder="Ex: 30" min="5" value="5" />
           </div>
         </div>
+        
+        <label style="font-size:12px; color:#0f0;">Prémio no Lote Completo (Ex: 1 Café, 50% Desconto)</label>
+        <input type="text" id="pr-camp-premio" placeholder="Descreva o prémio" />
+        
         <button style="width:100%; background:#ff9800;" onclick="createLotsCampaign()">CRIAR LOTES E ATIVAR CAMPANHA</button>
         
-        <!-- RESUMO DA CAMPANHA ATIVA -->
+        <!-- RESUMO E GRÁFICO DA CAMPANHA ATIVA -->
         <div id="campanha-ativa" style="margin-top:15px; padding:10px; background:#000; border:1px solid #4CAF50; display:none;">
-          <strong style="color:#4CAF50;">CAMPANHA ATIVA:</strong><br>
-          <span style="font-size:13px; color:#fff;">Lotes Totais Criados: <b id="camp-lotes">0</b> ( = <b id="camp-band-premios">0</b> Bandeiras de Prémio)</span><br>
-          <span style="font-size:13px; color:#fff;">Prémio a entregar: <b id="camp-premio-txt" style="color:#ff9800;"></b></span><br>
-          <span style="font-size:12px; color:#aaa;">O restante stock pago ficará como Bandeiras de Energia (Roleta de 1% a 100%).</span>
+          <strong style="color:#4CAF50;">CAMPANHA ATIVA: <span id="camp-premio-txt" style="color:#ff9800;"></span></strong><br>
+          <p style="font-size:12px; color:#fff;">Lotes Totais: <b id="camp-lotes">0</b> | O restante stock dá energia (1% a 100%).</p>
+          
+          <div style="font-size:11px; margin-top:10px; color:#aaa;">Progresso do Saco de Bandeiras:</div>
+          <div class="stat-bar" style="width:100%; height:15px; border-radius:5px;"><div id="camp-grafico" class="stat-fill" style="background:#ff9800; width:0%;"></div></div>
+          
+          <h4 style="color:#0f0; margin-bottom:5px;">🏆 QRs Gerados e Vencedores</h4>
+          <div id="camp-vencedores" style="max-height: 150px; overflow-y:auto;">
+            <!-- Lista de Vencedores injetada por JS -->
+          </div>
         </div>
       </div>
 
       <h3 style="color:#0f0;">📦 Comprar Pacotes Pagos</h3>
-      <p style="font-size:12px; color:#a7fca7; margin-bottom: 15px;">* Todos os pacotes usam o Ponto de Referência GPS da sua loja como centro do raio de ação.</p>
+      <p style="font-size:12px; color:#a7fca7; margin-bottom: 15px;">* O Raio de Ação tem como centro as Coordenadas GPS registadas da loja.</p>
       
-      <div class="pack-card"><div class="pack-info"><div class="pack-title">Pacote Médio</div>2.500 Bandeiras • Raio 5km • Lotes Ativos</div><div><button onclick="buyPackage('Médio', 2500, 15)">Comprar 15€</button></div></div>
-      <div class="pack-card"><div class="pack-info"><div class="pack-title">Pacote Grande</div>10.000 Bandeiras • Raio 15km • Lotes Ativos</div><div><button onclick="buyPackage('Grande', 10000, 25)">Comprar 25€</button></div></div>
-      <div class="pack-card"><div class="pack-info"><div class="pack-title">Pacote Super</div>20.000 Bandeiras • Raio 100km • Lotes Ativos</div><div><button onclick="buyPackage('Super', 20000, 30)">Comprar 30€</button></div></div>
-      <div class="pack-card"><div class="pack-info"><div class="pack-title">Pacote Nacional</div>50.000 Bandeiras • Todo o País • Lotes Ativos</div><div><button onclick="buyPackage('Nacional', 50000, 50)">Comprar 50€</button></div></div>
+      <div class="pack-card"><div class="pack-info"><div class="pack-title">Pacote Médio</div>2.500 Bandeiras • Raio 5km • Validade 60 Dias</div><div><button onclick="buyPackage('Médio', 2500, 15, 60)">Comprar 15€</button></div></div>
+      <div class="pack-card"><div class="pack-info"><div class="pack-title">Pacote Mais</div>5.000 Bandeiras • Raio 10km • Validade 90 Dias</div><div><button onclick="buyPackage('Mais', 5000, 20, 90)">Comprar 20€</button></div></div>
+      <div class="pack-card"><div class="pack-info"><div class="pack-title">Pacote Grande</div>10.000 Bandeiras • Raio 15km • Validade 120 Dias</div><div><button onclick="buyPackage('Grande', 10000, 25, 120)">Comprar 25€</button></div></div>
+      <div class="pack-card"><div class="pack-info"><div class="pack-title">Pacote Super</div>20.000 Bandeiras • Raio 100km • Validade 180 Dias</div><div><button onclick="buyPackage('Super', 20000, 30, 180)">Comprar 30€</button></div></div>
+      <div class="pack-card"><div class="pack-info"><div class="pack-title">Pacote Nacional</div>50.000 Bandeiras • Todo o País • Validade 180 Dias</div><div><button onclick="buyPackage('Nacional', 50000, 50, 180)">Comprar 50€</button></div></div>
 
-      <h3 style="color:#0f0; margin-top:30px;">🔑 Gerir Filiais</h3>
-      <div style="background:#111; padding:15px; border-radius:8px; border:1px dashed #0f0; text-align:center;">
-        <button style="padding:15px; font-size:16px;" onclick="generateBranchCode()">GERAR CÓDIGO PARA FILIAL</button>
-        <div id="branch-code-result" style="margin-top:15px; font-size:24px; font-weight:bold; color:#fff; letter-spacing:2px;"></div>
-      </div>
     </div>
   </div>
 
@@ -250,9 +259,7 @@
       <h3 id="modal-comp-name" style="margin:5px 0;"></h3>
       <p id="modal-comp-activity" style="color:#a7fca7; font-size:14px; margin:0 0 15px 0;"></p>
       
-      <!-- Caixa de Resultados Gerada pelo JS -->
       <div id="modal-result-box" style="background:#222; padding:10px; border-radius:5px; margin-bottom:15px; border:1px dashed #fff;"></div>
-
       <button style="width:100%;" onclick="closeFlagModal()">FECHAR E CONTINUAR</button>
     </div>
   </div>
@@ -264,7 +271,6 @@
     const moveDist = isTestMode ? 4 : 0.5;   
     const energyCost = isTestMode ? 4 : 0.5; 
 
-    // O Player agora tem o contador de lotes apanhados por NIF
     let player = { name: "", energy: 1000, maxEnergy: 1000, skill: 1, vision: 5, flags: 0, lat: 41.1496, lng: -8.6109, progressPR: {} };
     let map = null, playerMarker = null, visionCircle = null, catchCircle = null;  
     let allFlags = [];
@@ -300,25 +306,22 @@
       document.getElementById('pr-reg-view').classList.toggle('hidden', view !== 'REG');
     }
 
-    // ================= JOGADOR (FASE 1) =================
+    // ================= FASE 1: JOGADOR =================
     function doLoginJG() {
       const name = document.getElementById("jg-log-nome").value.trim();
       if (!name) return alert("Preenche o Nome!");
       localStorage.setItem("zap_player_name", name);
       player.name = name;
       
-      // Carrega a empresa da memória PARA O JOGO LER!
       const lastNif = localStorage.getItem("zap_pr_nif");
-      if(lastNif) {
-        activeCompany = JSON.parse(localStorage.getItem("zap_pr_data_" + lastNif));
-      }
+      if(lastNif) activeCompany = JSON.parse(localStorage.getItem("zap_pr_data_" + lastNif));
 
       startGame();
     }
 
     function doRegisterJG() { doLoginJG(); }
 
-    // ================= EMPRESA E LOTES (FASE 2) =================
+    // ================= FASE 2: EMPRESA =================
     function doRegisterPR() {
       const name = document.getElementById("pr-reg-nome").value.trim();
       const nif = document.getElementById("pr-reg-nif").value.trim();
@@ -327,16 +330,19 @@
       
       if (!name || !nif || !atividade) { alert("Preenche Nome, NIF e Atividade!"); return; }
 
+      const validadeOferta = Date.now() + (30 * 24 * 60 * 60 * 1000); // 30 dias para os 1000 grátis
+
       const data = { 
         name, nif, atividade, logo, 
         stockLivre: 1000, stockPago: 0,
-        campanha: { ativa: false, lotesTotais: 0, premio: "", flagsPremioRestantes: 0, flagsEnergiaRestantes: 0 }
+        validade: validadeOferta,
+        campanha: { ativa: false, lotesTotais: 0, premio: "", diasLevantamento: 5, flagsTotais: 0, flagsPremioRestantes: 0, flagsEnergiaRestantes: 0, qrsGerados: [] }
       };
       
       localStorage.setItem("zap_pr_data_" + nif, JSON.stringify(data));
       localStorage.setItem("zap_pr_nif", nif);
       
-      alert("Empresa Registada! Recebeu 1.000 Bandeiras de Oferta Livre!");
+      alert("Empresa Registada! Recebeu 1.000 Bandeiras de Oferta (Raio 500m).");
       loadCompanyDashboard(nif);
     }
 
@@ -364,12 +370,57 @@
       document.getElementById("dash-pr-nif").innerText = activeCompany.nif;
       document.getElementById("dash-pr-atividade").innerText = activeCompany.atividade;
       
+      if(activeCompany.validade) {
+         let diff = activeCompany.validade - Date.now();
+         let dias = Math.ceil(diff / (24*60*60*1000));
+         document.getElementById("dash-pr-validade").innerText = dias > 0 ? `${dias} Dias` : "Expirado";
+      }
+
       if(activeCompany.logo) {
         document.getElementById("dash-pr-logo").src = activeCompany.logo;
         document.getElementById("dash-pr-logo").style.display = "block";
       }
 
       updateCompanyStock();
+    }
+
+    function buyPackage(nome, bandeiras, preco, dias) {
+      if (confirm(`Comprar Pacote ${nome} (${bandeiras.toLocaleString()} band.) por ${preco}€?\nValidade de ${dias} dias adicionada.`)) {
+        activeCompany.stockPago += bandeiras;
+        // Atualiza a validade global do stock pago
+        activeCompany.validade = Date.now() + (dias * 24 * 60 * 60 * 1000);
+        updateCompanyStock();
+        alert(`Sucesso! Pode agora configurar quantos Lotes quer ativar.`);
+        loadCompanyDashboard(activeCompany.nif); // Refresh info
+      }
+    }
+
+    function createLotsCampaign() {
+      const lotesPedidos = parseInt(document.getElementById("pr-camp-lotes").value);
+      const diasPremio = parseInt(document.getElementById("pr-camp-dias").value);
+      const premioTxt = document.getElementById("pr-camp-premio").value.trim();
+      const maxLotes = Math.floor(activeCompany.stockPago / 20);
+
+      if(!lotesPedidos || lotesPedidos <= 0 || !premioTxt) { alert("Preencha a quantidade de lotes e o prémio!"); return; }
+      if(lotesPedidos > maxLotes) { alert(`Só tem stock para criar ${maxLotes} lotes.`); return; }
+      if(!diasPremio || diasPremio < 5) { alert("O mínimo de dias para levantar o prémio são 5 dias."); return; }
+
+      const bandeirasPremio = lotesPedidos * 20;
+      const bandeirasEnergia = activeCompany.stockPago - bandeirasPremio;
+
+      activeCompany.campanha = {
+        ativa: true,
+        lotesTotais: lotesPedidos,
+        premio: premioTxt,
+        diasLevantamento: diasPremio,
+        flagsTotais: activeCompany.stockPago,
+        flagsPremioRestantes: bandeirasPremio,
+        flagsEnergiaRestantes: bandeirasEnergia,
+        qrsGerados: [] // Limpa lista antiga
+      };
+
+      updateCompanyStock();
+      alert(`Campanha Ativada! Foram separados ${lotesPedidos} Prémios com limite de levantamento de ${diasPremio} dias.`);
     }
 
     function updateCompanyStock() {
@@ -379,51 +430,38 @@
       const maxLotes = Math.floor(activeCompany.stockPago / 20);
       document.getElementById("dash-max-lotes").innerText = maxLotes;
 
-      if(activeCompany.campanha.ativa) {
+      if(activeCompany.campanha && activeCompany.campanha.ativa) {
         document.getElementById("campanha-ativa").style.display = "block";
         document.getElementById("camp-lotes").innerText = activeCompany.campanha.lotesTotais;
-        document.getElementById("camp-band-premios").innerText = activeCompany.campanha.lotesTotais * 20;
         document.getElementById("camp-premio-txt").innerText = activeCompany.campanha.premio;
+
+        // Gráfico de Consumo da Campanha
+        const total = activeCompany.campanha.flagsTotais;
+        const restam = activeCompany.campanha.flagsPremioRestantes + activeCompany.campanha.flagsEnergiaRestantes;
+        const consumido = total - restam;
+        let pct = (consumido / total) * 100;
+        document.getElementById("camp-grafico").style.width = pct + "%";
+
+        // Lista de Vencedores
+        const winList = document.getElementById("camp-vencedores");
+        winList.innerHTML = "";
+        if(activeCompany.campanha.qrsGerados.length === 0) {
+          winList.innerHTML = "<div style='font-size:11px; color:#aaa;'>Ainda não saíram prémios.</div>";
+        } else {
+          activeCompany.campanha.qrsGerados.forEach(q => {
+            const diasFaltam = Math.ceil((q.expiraEm - Date.now()) / (24*60*60*1000));
+            winList.innerHTML += `
+              <div class="winner-item">
+                <span>👤 ${q.jogador}</span>
+                <span>🎫 <b>${q.codigo}</b></span>
+                <span style="color:${diasFaltam<0 ? 'red' : '#0f0'}">${diasFaltam<0 ? 'Expirou' : diasFaltam+'d'}</span>
+              </div>
+            `;
+          });
+        }
       }
 
       localStorage.setItem("zap_pr_data_" + activeCompany.nif, JSON.stringify(activeCompany));
-    }
-
-    function buyPackage(nome, bandeiras, preco) {
-      if (confirm(`Comprar Pacote ${nome} (${bandeiras.toLocaleString()} band.) por ${preco}€?`)) {
-        activeCompany.stockPago += bandeiras;
-        updateCompanyStock();
-        alert(`Sucesso! Pode agora configurar quantos Lotes quer ativar.`);
-      }
-    }
-
-    function createLotsCampaign() {
-      const lotesPedidos = parseInt(document.getElementById("pr-camp-lotes").value);
-      const premioTxt = document.getElementById("pr-camp-premio").value.trim();
-      const maxLotes = Math.floor(activeCompany.stockPago / 20);
-
-      if(!lotesPedidos || lotesPedidos <= 0 || !premioTxt) { alert("Preencha a quantidade de lotes e o prémio!"); return; }
-      if(lotesPedidos > maxLotes) { alert(`Só tem stock para criar ${maxLotes} lotes.`); return; }
-
-      const bandeirasPremio = lotesPedidos * 20;
-      const bandeirasEnergia = activeCompany.stockPago - bandeirasPremio;
-
-      activeCompany.campanha = {
-        ativa: true,
-        lotesTotais: lotesPedidos,
-        premio: premioTxt,
-        flagsPremioRestantes: bandeirasPremio,
-        flagsEnergiaRestantes: bandeirasEnergia
-      };
-
-      updateCompanyStock();
-      alert(`Campanha Ativada! Foram separados ${lotesPedidos} Prémios. As restantes bandeiras darão Energia.`);
-    }
-
-    function generateBranchCode() {
-      if (activeCompany.stockLivre <= 0 && activeCompany.stockPago <= 0) return alert("Não tem bandeiras em stock!");
-      const code = `${activeCompany.name.substring(0, 4).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
-      document.getElementById("branch-code-result").innerText = code;
     }
 
     // ================= MAPA E JOGO =================
@@ -485,7 +523,6 @@
       }
     }
 
-    // ================= APANHAR E SORTEIO DO LOTE =================
     function catchFlag() {
       let closest = null; let minDist = Infinity;
       allFlags.forEach(f => { 
@@ -535,8 +572,20 @@
           player.progressPR[activeCompany.nif]++;
           
           if (player.progressPR[activeCompany.nif] >= 20) {
+            
+            // GERA O QR CODE COM DATA DE VALIDADE
+            const qrCode = "ZAP-" + activeCompany.name.substring(0,2).toUpperCase() + "-" + Math.random().toString(36).substring(2,6).toUpperCase();
+            const expTime = Date.now() + (camp.diasLevantamento * 24 * 60 * 60 * 1000);
+
+            // Grava o Vencedor no Painel da Empresa
+            camp.qrsGerados.push({
+              jogador: player.name || "Convidado",
+              codigo: qrCode,
+              expiraEm: expTime
+            });
+
             resBox.style.borderColor = "#ff0000";
-            resBox.innerHTML = `<span style="color:#ff0000; font-weight:bold; font-size:18px;">🎉 PARABÉNS! GANHASTE! 🎉</span><br><span style="font-size:13px; color:#fff;">Completaste o Lote de 20 bandeiras!<br>Prémio Recebido: <b style="color:#ff9800;">${camp.premio}</b><br>QR Code gerado na tua carteira.</span>`;
+            resBox.innerHTML = `<span style="color:#ff0000; font-weight:bold; font-size:18px;">🎉 PARABÉNS! GANHASTE! 🎉</span><br><span style="font-size:13px; color:#fff;">Prémio: <b style="color:#ff9800;">${camp.premio}</b><br>QR Code gerado: <b>${qrCode}</b><br>Tens ${camp.diasLevantamento} dias para levantar na loja!</span>`;
             player.progressPR[activeCompany.nif] = 0; 
           } else {
             resBox.style.borderColor = "#ff9800";
@@ -551,8 +600,8 @@
           let gain = 0; let msg = "";
 
           if (randEnergy < 1) { gain = 1000; msg = "JACKPOT! Energia Cheia (+100%)!"; }
-          else if (randEnergy < 6) { gain = 500; msg = "Sorte! +50% Energia!"; }
-          else if (randEnergy < 46) { gain = 100; msg = "Muito Bom! +10% Energia!"; }
+          else if (randEnergy < 5) { gain = 500; msg = "Sorte! +50% Energia!"; }
+          else if (randEnergy < 45) { gain = 100; msg = "Muito Bom! +10% Energia!"; }
           else { gain = 50; msg = "Bom! +5% Energia."; }
 
           player.energy = Math.min(player.maxEnergy, player.energy + gain);
@@ -582,7 +631,6 @@
     function updateUI() {
       document.getElementById('val-ener').innerText = Math.floor(player.energy);
       document.getElementById('bar-ener').style.width = (player.energy / player.maxEnergy) * 100 + "%";
-      
       document.getElementById('val-skill').innerText = player.skill;
       document.getElementById('val-visao').innerText = player.vision.toFixed(2);
       
@@ -593,7 +641,6 @@
       document.getElementById('val-flags').innerText = player.flags;
     }
 
-    // Drag and drop controls
     document.querySelectorAll('.drag-window').forEach(el => {
       const handle = el.querySelector('.drag-handle');
       if(!handle) return;
