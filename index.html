@@ -17,6 +17,7 @@
     button:hover { filter: brightness(1.2); }
     .btn-dark { background: #111; color: #0f0; border: 1px solid #0f0; }
     .btn-danger { background: #d32f2f; color: #fff; border: 1px solid #ff0000; }
+    .btn-warning { background: #ff9800; color: #fff; border: 1px solid #ff9800; }
     .btn-link { background: none; border: none; color: #a7fca7; text-decoration: underline; padding: 0; font-size: 12px; }
     input, select { width: 100%; padding: 10px; margin-bottom: 10px; border-radius: 4px; border: 1px solid #0f0; background: #111; color: #0f0; }
     
@@ -65,10 +66,14 @@
     /* PAINEL EMPRESA (DASHBOARD) */
     #pr-dashboard-screen { position: absolute; inset: 0; background: radial-gradient(circle, #001122 0%, #000000 100%); z-index: 5000; padding: 20px; overflow-y: auto; }
     .dash-box { max-width: 800px; margin: 0 auto; background: rgba(0,0,0,0.8); border: 2px solid #0f0; border-radius: 10px; padding: 20px; }
+    .pack-card { background: #111; border: 1px solid #0f0; padding: 15px; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+    .pack-info { font-size: 13px; color: #a7fca7; }
+    .pack-title { font-size: 16px; font-weight: bold; color: #0f0; margin-bottom: 5px; }
 
-    /* CAMPANHAS E PACOTES */
+    /* CAMPANHAS E LISTA DE DETENTORES QR */
     .camp-card { background: #000; border: 1px solid #4CAF50; padding: 15px; border-radius: 5px; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0,255,0,0.1); }
     .camp-pending { border-color: #ff9800; box-shadow: 0 4px 10px rgba(255,152,0,0.2); }
+    .camp-suspended { border-color: #d32f2f; opacity: 0.8; }
     .camp-timer { font-size: 20px; font-weight: bold; color: #ff9800; margin: 5px 0; }
     
     .winner-item { background: #222; border: 1px dashed #0f0; padding: 10px; border-radius: 5px; margin-top: 5px; font-size: 12px; display: flex; justify-content: space-between; align-items: center; }
@@ -133,7 +138,7 @@
           <input type="email" id="pr-reg-email" placeholder="* E-mail do Responsável" />
           <input type="text" id="pr-reg-morada" placeholder="* Morada Fiscal Completa" />
           
-          <div style="font-size:12px; color:#81c784; margin-bottom:5px;">Coordenadas GPS da Loja Física (Centro dos Raios de Ação):</div>
+          <div style="font-size:12px; color:#81c784; margin-bottom:5px;">Coordenadas GPS da Loja Física (Centro do Raio):</div>
           <div class="form-grid">
             <input type="text" id="pr-reg-lat" placeholder="Latitude (Ex: 41.1496)" />
             <input type="text" id="pr-reg-lng" placeholder="Longitude (Ex: -8.6109)" />
@@ -163,45 +168,67 @@
         <img id="dash-pr-logo" src="" style="width:60px; height:60px; border-radius:50%; border:2px solid #0f0; display:none; background:#fff;" />
         <div>
           <h2 style="color:#fff; margin:0;"><span id="dash-pr-name">Empresa</span></h2>
-          <p style="color:#a7fca7; font-size:14px; margin:5px 0;">NIF: <span id="dash-pr-nif"></span></p>
+          <p style="color:#a7fca7; font-size:14px; margin:5px 0;">NIF: <span id="dash-pr-nif"></span> | Validade Máxima (Global): <span id="dash-pr-validade" style="color:#fff; font-weight:bold;"></span></p>
         </div>
       </div>
 
-      <!-- COMPRAR E ATIVAR NOVO PACOTE -->
-      <div style="background:#1a1a1a; border:2px dashed #0f0; padding:15px; border-radius:8px; margin-bottom:30px;">
-        <h3 style="margin-top:0; color:#0f0;">📦 Comprar / Ativar Novo Pacote</h3>
-        <p style="font-size:12px; color:#ccc;">Escolha o pacote e defina os lotes premiados. Se não quiser dar prémios, coloque 0 lotes (será um pacote de publicidade e energia). O Raio usa sempre o GPS da loja.</p>
-        
-        <label style="font-size:12px; color:#0f0;">Escolher o Pacote:</label>
-        <select id="buy-pack-type">
-          <option value="Médio|2500|15|5|60">Médio - 2.500 Band. | Raio 5km | 60 Dias (15€)</option>
-          <option value="Mais|5000|20|10|90">Mais - 5.000 Band. | Raio 10km | 90 Dias (20€)</option>
-          <option value="Grande|10000|25|15|120">Grande - 10.000 Band. | Raio 15km | 120 Dias (25€)</option>
-          <option value="Super|20000|30|100|180">Super - 20.000 Band. | Raio 100km | 180 Dias (30€)</option>
-          <option value="Nacional|50000|50|10000|180">Nacional - 50.000 Band. | Todo País | 180 Dias (50€)</option>
-        </select>
+      <div style="display:flex; gap:10px; margin-bottom:30px;">
+        <div style="flex:1; background:#111; border:1px solid #0f0; padding:15px; border-radius:8px; text-align:center;">
+          <h3 style="margin:0; color:#0f0;">OFERTA LIVRE</h3>
+          <p style="font-size:11px; color:#aaa;">Bandeiras Iniciais Grátis.</p>
+          <div style="font-size:24px; font-weight:bold; color:#fff;" id="dash-stock-livre">0</div>
+        </div>
+        <div style="flex:1; background:#111; border:1px solid #ff9800; padding:15px; border-radius:8px; text-align:center;">
+          <h3 style="margin:0; color:#ff9800;">STOCK PAGO DISPONÍVEL</h3>
+          <p style="font-size:11px; color:#aaa;">Pode usá-las a qualquer momento para criar campanhas/lotes.</p>
+          <div style="font-size:24px; font-weight:bold; color:#fff;" id="dash-stock-pago">0</div>
+        </div>
+      </div>
 
+      <!-- CRIAÇÃO DE LOTES / CAMPANHAS -->
+      <div style="background:#1a1a1a; border:2px dashed #ff9800; padding:15px; border-radius:8px; margin-bottom:30px;">
+        <h3 style="margin-top:0; color:#ff9800;">🎯 Criar Nova Campanha</h3>
+        <p style="font-size:12px; color:#ccc;">Deduzirá as bandeiras do seu Stock Pago. O tempo só começará a contar quando clicar em 'Ativar'.</p>
+        
         <div class="form-grid" style="margin-bottom:10px;">
           <div>
-            <label style="font-size:12px; color:#0f0;">Lotes Premiados (1 Lote = 20 Band)</label>
-            <input type="number" id="buy-lots" placeholder="Ex: 50 (0 = Sem prémios)" value="0" />
+            <label style="font-size:12px; color:#0f0;">Bandeiras do Stock a Alocar (Max: <span id="dash-max-bandeiras">0</span>)</label>
+            <input type="number" id="pr-camp-flags" placeholder="Ex: 5000" />
           </div>
           <div>
-            <label style="font-size:12px; color:#0f0;">Dias p/ Levantar Prémio</label>
-            <input type="number" id="buy-days" placeholder="Mínimo 5" value="5" />
+            <label style="font-size:12px; color:#0f0;">Lotes Premiados (1 Lote = 20 Bandeiras)</label>
+            <input type="number" id="pr-camp-lotes" placeholder="Ex: 25 (0 = Sem prémios)" />
           </div>
         </div>
-        <label style="font-size:12px; color:#0f0;">Prémio a Entregar (Se escolheu Lotes > 0)</label>
-        <input type="text" id="buy-prize" placeholder="Ex: 1 Café e 1 Nata" />
         
-        <button style="width:100%; background:#0f0; color:#000;" onclick="purchaseNewPackage()">PAGAR E INICIAR PACOTE</button>
+        <div class="form-grid" style="margin-bottom:10px;">
+          <div>
+            <label style="font-size:12px; color:#0f0;">Prémio (Se Lotes > 0)</label>
+            <input type="text" id="pr-camp-premio" placeholder="Ex: 1 Peluche" />
+          </div>
+          <div>
+            <label style="font-size:12px; color:#0f0;">Dias p/ Levantar Prémio (Min: 5)</label>
+            <input type="number" id="pr-camp-dias" placeholder="Ex: 30" min="5" value="5" />
+          </div>
+        </div>
+        
+        <button style="width:100%; background:#ff9800;" onclick="createCampaign()">GUARDAR NOVA CAMPANHA</button>
       </div>
 
-      <!-- LISTA DE PACOTES ATIVOS (O GRÁFICO DO ROI) -->
-      <h3 style="color:#0f0;">📈 Os Seus Pacotes Ativos (Gráfico de ROI)</h3>
-      <div id="pacotes-lista" style="margin-bottom:30px;">
+      <!-- LISTA DE CAMPANHAS ATIVAS E PENDENTES -->
+      <h3 style="color:#0f0;">📈 As Suas Campanhas (Gestão)</h3>
+      <div id="campanhas-lista" style="margin-bottom:30px;">
         <!-- Injetado por JS -->
       </div>
+
+      <h3 style="color:#0f0;">📦 Comprar Pacotes Pagos (Stock)</h3>
+      <p style="font-size:12px; color:#a7fca7; margin-bottom: 15px;">* Compra stock que fica guardado. Não tem de o usar todo de uma vez.</p>
+      
+      <div class="pack-card"><div class="pack-info"><b>Pacote Médio</b> (15€)<br>2.500 Bandeiras • Raio 5km • Val. 60 Dias</div><button onclick="buyPackage('Médio', 2500, 15, 60)">Comprar</button></div>
+      <div class="pack-card"><div class="pack-info"><b>Pacote Mais</b> (20€)<br>5.000 Bandeiras • Raio 10km • Val. 90 Dias</div><button onclick="buyPackage('Mais', 5000, 20, 90)">Comprar</button></div>
+      <div class="pack-card"><div class="pack-info"><b>Pacote Grande</b> (25€)<br>10.000 Bandeiras • Raio 15km • Val. 120 Dias</div><button onclick="buyPackage('Grande', 10000, 25, 120)">Comprar</button></div>
+      <div class="pack-card"><div class="pack-info"><b>Pacote Super</b> (30€)<br>20.000 Bandeiras • Raio 100km • Val. 180 Dias</div><button onclick="buyPackage('Super', 20000, 30, 180)">Comprar</button></div>
+      <div class="pack-card"><div class="pack-info"><b>Pacote Nacional</b> (50€)<br>50.000 Bandeiras • Todo o País • Val. 180 Dias</div><button onclick="buyPackage('Nacional', 50000, 50, 180)">Comprar</button></div>
 
       <h3 style="color:#0f0; margin-top:30px;">🔑 Gerir Filiais</h3>
       <div style="background:#111; padding:15px; border-radius:8px; border:1px dashed #0f0; text-align:center;">
@@ -244,7 +271,7 @@
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
-    // ================= CONFIGURAÇÕES E TESTE =================
+    // ================= CONFIGURAÇÕES =================
     const isTestMode = true; 
     const moveDist = isTestMode ? 4 : 0.5;   
     const energyCost = isTestMode ? 4 : 0.5; 
@@ -259,7 +286,6 @@
       if (savedName) document.getElementById("jg-log-nome").value = savedName;
       const savedNif = localStorage.getItem("zap_pr_nif");
       if (savedNif) document.getElementById("pr-log-nif").value = savedNif;
-      
       const savedProgress = localStorage.getItem("zap_player_progress");
       if (savedProgress) player.progressPR = JSON.parse(savedProgress);
     };
@@ -297,7 +323,7 @@
     }
     function doRegisterJG() { doLoginJG(); }
 
-    // ================= EMPRESA E PACOTES (FASE 2) =================
+    // ================= EMPRESA E CAMPANHAS (FASE 2) =================
     function doRegisterPR() {
       const name = document.getElementById("pr-reg-nome").value.trim();
       const nif = document.getElementById("pr-reg-nif").value.trim();
@@ -305,30 +331,17 @@
       const logo = document.getElementById("pr-reg-logo").value.trim();
       if (!name || !nif || !atividade) { alert("Preenche Nome, NIF e Atividade!"); return; }
 
-      // Cria a Empresa e já lhe atribui o primeiro pacote livre (1.000, 500m raio, sem lotes, 30 dias)
+      // Cria a Empresa com 1000 de oferta (só energia) e validade de 30 dias.
       const data = { 
         name, nif, atividade, logo, 
-        pacotes: [{
-          id: "PAC-" + Math.random().toString(36).substr(2,6).toUpperCase(),
-          nome: "Oferta Inicial Livre",
-          flagsTotal: 1000,
-          flagsRestantes: 1000,
-          raioKm: 0.5,
-          lotesTotais: 0,
-          premio: "Sem prémio (Só Energia)",
-          diasLevantamento: 0,
-          flagsPremioRestantes: 0,
-          flagsEnergiaRestantes: 1000,
-          status: "pending",
-          activationTime: Date.now() + (isTestMode ? 60000 : 3600000), // 60 segundos ou 60 minutos
-          validadeExpiraEm: Date.now() + (30 * 24 * 60 * 60 * 1000), // 30 Dias
-          vencedores: []
-        }]
+        stockLivre: 1000, stockPago: 0,
+        validade: Date.now() + (30 * 24 * 60 * 60 * 1000), 
+        campanhas: [] 
       };
       
       localStorage.setItem("zap_pr_data_" + nif, JSON.stringify(data));
       localStorage.setItem("zap_pr_nif", nif);
-      alert("Empresa Registada! O pacote de Oferta (1.000 Bandeiras) entrará no mapa em 60 minutos.");
+      alert("Empresa Registada! Recebeu 1.000 Bandeiras de Oferta (Sem prémios).");
       loadCompanyDashboard(nif);
     }
 
@@ -349,141 +362,168 @@
       document.getElementById("dash-pr-name").innerText = activeCompany.name;
       document.getElementById("dash-pr-nif").innerText = activeCompany.nif;
       
+      if(activeCompany.validade) {
+         let diff = activeCompany.validade - Date.now();
+         let dias = Math.ceil(diff / (24*60*60*1000));
+         document.getElementById("dash-pr-validade").innerText = dias > 0 ? `${dias} Dias` : "Expirado";
+      }
+
       if(activeCompany.logo) {
         document.getElementById("dash-pr-logo").src = activeCompany.logo;
         document.getElementById("dash-pr-logo").style.display = "block";
       }
 
-      if(!activeCompany.pacotes) activeCompany.pacotes = [];
-      
+      if(!activeCompany.campanhas) activeCompany.campanhas = [];
       updateCompanyDashboard();
+
       if(dashInterval) clearInterval(dashInterval);
       dashInterval = setInterval(updateCompanyDashboard, 1000);
     }
 
-    function purchaseNewPackage() {
-      const selectVal = document.getElementById("buy-pack-type").value.split("|");
-      const pName = selectVal[0];
-      const pFlags = parseInt(selectVal[1]);
-      const pPrice = parseInt(selectVal[2]);
-      const pRaio = parseInt(selectVal[3]);
-      const pDiasValidade = parseInt(selectVal[4]);
-
-      const lotesPedidos = parseInt(document.getElementById("buy-lots").value || "0");
-      const diasPremio = parseInt(document.getElementById("buy-days").value || "5");
-      const premioTxt = document.getElementById("buy-prize").value.trim();
-
-      const maxLotes = Math.floor(pFlags / 20);
-
-      if(lotesPedidos > 0 && !premioTxt) { alert("Como definiu lotes, tem de escrever o prémio!"); return; }
-      if(lotesPedidos > maxLotes) { alert(`Esse pacote só suporta um máximo de ${maxLotes} lotes.`); return; }
-      if(lotesPedidos > 0 && diasPremio < 5) { alert("O mínimo de dias para levantar o prémio são 5."); return; }
-
-      const confirmMsg = lotesPedidos > 0 
-        ? `Confirmar compra do Pacote ${pName} (${pFlags} band.) por ${pPrice}€?\nVai gerar ${lotesPedidos} prémios de "${premioTxt}".`
-        : `Confirmar compra do Pacote ${pName} (${pFlags} band.) por ${pPrice}€?\nNÃO terá prémios (Apenas publicidade e energia).`;
-
-      if (confirm(confirmMsg)) {
-        const bandeirasPremio = lotesPedidos * 20;
-        const bandeirasEnergia = pFlags - bandeirasPremio;
-        const delayMs = isTestMode ? 60000 : 3600000; // 60s ou 60min
-
-        const novoPacote = {
-          id: "PAC-" + Math.random().toString(36).substr(2,6).toUpperCase(),
-          nome: "Pacote " + pName,
-          flagsTotal: pFlags,
-          flagsRestantes: pFlags,
-          raioKm: pRaio,
-          lotesTotais: lotesPedidos,
-          premio: lotesPedidos > 0 ? premioTxt : "Sem prémio (Só Energia)",
-          diasLevantamento: lotesPedidos > 0 ? diasPremio : 0,
-          flagsPremioRestantes: bandeirasPremio,
-          flagsEnergiaRestantes: bandeirasEnergia,
-          status: "pending",
-          activationTime: Date.now() + delayMs,
-          validadeExpiraEm: Date.now() + (pDiasValidade * 24 * 60 * 60 * 1000),
-          vencedores: []
-        };
-
-        activeCompany.pacotes.push(novoPacote);
+    function buyPackage(nome, bandeiras, preco, dias) {
+      if (confirm(`Comprar Pacote ${nome} (${bandeiras.toLocaleString()}) por ${preco}€?\nSoma ${dias} dias de validade.`)) {
+        activeCompany.stockPago += bandeiras;
+        
+        // Atualiza a validade global do stock pago
+        let validadeAtual = activeCompany.validade || Date.now();
+        if(validadeAtual < Date.now()) validadeAtual = Date.now();
+        activeCompany.validade = validadeAtual + (dias * 24 * 60 * 60 * 1000);
+        
         updateCompanyDashboard();
-        alert(`Pacote comprado! A fatura será emitida. O período de carência de 60 minutos começou.`);
+        alert(`Sucesso! Bandeiras adicionadas ao seu stock. Crie agora uma campanha em cima.`);
       }
     }
 
-    function cancelPackage(packId) {
-      if(confirm("Tem a certeza que quer cancelar este pacote? O valor será reembolsado/anulado.")) {
-        activeCompany.pacotes = activeCompany.pacotes.filter(p => p.id !== packId);
+    function createCampaign() {
+      const flagsPedidos = parseInt(document.getElementById("pr-camp-flags").value);
+      const lotesPedidos = parseInt(document.getElementById("pr-camp-lotes").value || "0");
+      const diasPremio = parseInt(document.getElementById("pr-camp-dias").value || "5");
+      const premioTxt = document.getElementById("pr-camp-premio").value.trim();
+
+      if(!flagsPedidos || flagsPedidos <= 0) { alert("Preencha a quantidade de bandeiras a alocar."); return; }
+      if(flagsPedidos > activeCompany.stockPago) { alert(`Só tem ${activeCompany.stockPago} bandeiras no stock pago.`); return; }
+      
+      if(lotesPedidos > 0) {
+        if(!premioTxt) { alert("Tem de descrever o prémio do Lote."); return; }
+        if(diasPremio < 5) { alert("O mínimo de dias para levantamento são 5."); return; }
+        if((lotesPedidos * 20) > flagsPedidos) { alert(`Com ${flagsPedidos} bandeiras só pode criar um máximo de ${Math.floor(flagsPedidos / 20)} lotes.`); return; }
+        
+        // Regra Anti-Erro de Prazo de Levantamento vs Validade do Pacote
+        let validadeGeralRestante = Math.ceil((activeCompany.validade - Date.now()) / (24*60*60*1000));
+        if (diasPremio > validadeGeralRestante) {
+          alert(`Não pode dar ${diasPremio} dias para levantar o prémio porque o seu Stock Pago expira em ${validadeGeralRestante} dias! Aumente o stock ou baixe os dias do prémio.`);
+          return;
+        }
+      }
+
+      activeCompany.stockPago -= flagsPedidos; 
+
+      const flagsPremio = lotesPedidos * 20;
+      const flagsEnergia = flagsPedidos - flagsPremio;
+
+      const novaCampanha = {
+        id: "CAMP-" + Math.random().toString(36).substr(2, 6).toUpperCase(),
+        premio: lotesPedidos > 0 ? premioTxt : "Sem Prémios (Só Energia/Publicidade)",
+        lotesIniciais: lotesPedidos,
+        flagsTotais: flagsPedidos,
+        flagsRestantes: flagsPedidos,
+        flagsPremioRestantes: flagsPremio,
+        flagsEnergiaRestantes: flagsEnergia,
+        diasLevantamento: diasPremio,
+        status: "saved", // Guardada, não ativada
+        vencedores: []
+      };
+
+      activeCompany.campanhas.push(novaCampanha);
+      updateCompanyDashboard();
+      
+      document.getElementById("pr-camp-flags").value = "";
+      document.getElementById("pr-camp-lotes").value = "";
+      document.getElementById("pr-camp-premio").value = "";
+      alert(`Campanha guardada com sucesso! Clique em "Ativar" na lista abaixo quando quiser enviá-la para o jogo.`);
+    }
+
+    function changeCampStatus(campId, newStatus) {
+      const idx = activeCompany.campanhas.findIndex(c => c.id === campId);
+      if (idx > -1) {
+        if (newStatus === 'pending') {
+          const delayMs = isTestMode ? 60000 : 3600000; // 60 seg no teste
+          activeCompany.campanhas[idx].activationTime = Date.now() + delayMs;
+        }
+        activeCompany.campanhas[idx].status = newStatus;
         updateCompanyDashboard();
       }
     }
 
     function updateCompanyDashboard() {
-      const listaDiv = document.getElementById("pacotes-lista");
+      document.getElementById("dash-stock-livre").innerText = activeCompany.stockLivre.toLocaleString();
+      document.getElementById("dash-stock-pago").innerText = activeCompany.stockPago.toLocaleString();
+      document.getElementById("dash-max-bandeiras").innerText = activeCompany.stockPago;
+
+      if(activeCompany.validade) {
+         let diff = activeCompany.validade - Date.now();
+         document.getElementById("dash-pr-validade").innerText = diff > 0 ? `${Math.ceil(diff / 86400000)} Dias` : "Expirado";
+      }
+
+      const listaDiv = document.getElementById("campanhas-lista");
       listaDiv.innerHTML = "";
       const now = Date.now();
 
-      if (activeCompany.pacotes.length === 0) {
-        listaDiv.innerHTML = "<div class='pack-info'>Ainda não comprou pacotes de publicidade.</div>";
+      if (activeCompany.campanhas.length === 0) {
+        listaDiv.innerHTML = "<div class='pack-info'>Ainda não criou campanhas.</div>";
       } else {
-        activeCompany.pacotes.forEach(pkg => {
+        activeCompany.campanhas.forEach(camp => {
           
-          if (pkg.status === 'pending' && now >= pkg.activationTime) { pkg.status = 'active'; }
-          
-          // Verifica Validade do Pacote
-          let pacoteExpirado = false;
-          let diasValidade = Math.ceil((pkg.validadeExpiraEm - now) / (24*60*60*1000));
-          if (diasValidade <= 0 && pkg.status === 'active') { pacoteExpirado = true; pkg.status = 'expired'; }
+          if (camp.status === 'pending' && now >= camp.activationTime) { camp.status = 'active'; }
 
-          let cardHtml = `<div class="camp-card ${pkg.status === 'pending' ? 'camp-pending' : ''}" style="${pacoteExpirado ? 'opacity:0.6; border-color:red;' : ''}">`;
-          cardHtml += `<div class="pack-title">${pkg.nome} ${pacoteExpirado ? '(EXPIRADO)' : ''}</div>`;
+          let isSuspended = (camp.status === 'suspended' || camp.status === 'saved');
+          let cardHtml = `<div class="camp-card ${camp.status === 'pending' ? 'camp-pending' : ''} ${isSuspended ? 'camp-suspended' : ''}">`;
+          cardHtml += `<div class="pack-title">${camp.premio}</div>`;
           
-          if (pkg.status === 'pending') {
-            const diff = Math.max(0, pkg.activationTime - now);
+          if (camp.status === 'saved') {
+            cardHtml += `
+              <p style="font-size:12px; color:#aaa; margin:5px 0;">Campanha Guardada. Bandeiras alocadas: ${camp.flagsTotais}</p>
+              <button style="background:#0f0;" onclick="changeCampStatus('${camp.id}', 'pending')">🟢 ATIVAR (Entra em 60m)</button>
+            `;
+          } else if (camp.status === 'pending') {
+            const diff = Math.max(0, camp.activationTime - now);
             const m = Math.floor((diff/1000)/60).toString().padStart(2, '0');
             const s = Math.floor((diff/1000)%60).toString().padStart(2, '0');
             cardHtml += `
-              <p style="font-size:12px; color:#aaa; margin:5px 0;">Em período de carência de 60m. Tempo restante:</p>
+              <p style="font-size:12px; color:#aaa; margin:5px 0;">Período de carência de 60m. Vai para o mapa em:</p>
               <div class="camp-timer">⏱️ ${m}:${s}</div>
-              <button class="btn-danger" style="margin-top:5px;" onclick="cancelPackage('${pkg.id}')">Cancelar e Reembolsar</button>
+              <button class="btn-warning" onclick="changeCampStatus('${camp.id}', 'suspended')">⏸️ SUSPENDER</button>
             `;
           } else {
-            // GRÁFICO E ESTATÍSTICAS (O RADAR)
-            const consumido = pkg.flagsTotal - pkg.flagsRestantes;
-            const pct = (consumido / pkg.flagsTotal) * 100;
-            const qrsGerados = pkg.vencedores.length;
+            const consumido = camp.flagsTotais - camp.flagsRestantes;
+            const pct = (consumido / camp.flagsTotais) * 100;
+            const qrsGerados = camp.vencedores.length;
+
+            let statusTxt = camp.status === 'active' ? `<span style="color:#0f0;">🟢 ATIVA NO MAPA</span>` : `<span style="color:red;">⏸️ SUSPENSA</span>`;
 
             cardHtml += `
-              <div style="font-size:12px; color:#a7fca7; margin-bottom:10px;">
-                <b>Raio:</b> ${pkg.raioKm}km | <b>Validade:</b> ${pacoteExpirado ? 'Expirou' : diasValidade + ' dias'} | <b>Prémio:</b> ${pkg.premio}
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                ${statusTxt}
+                <button class="btn-dark" style="font-size:10px; padding:5px;" onclick="changeCampStatus('${camp.id}', '${camp.status === 'active' ? 'suspended' : 'active'}')">
+                  ${camp.status === 'active' ? '⏸️ SUSPENDER' : '▶️ RETOMAR'}
+                </button>
               </div>
-              <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:5px; color:#fff; background:#111; padding:5px; border-radius:4px;">
-                <span>📦 Lotes: ${pkg.lotesTotais}</span>
-                <span>🚩 Consumo: ${consumido}/${pkg.flagsTotal}</span>
-                <span>🎫 QRs Gerados: ${qrsGerados}</span>
+              <div style="display:flex; justify-content:space-between; font-size:12px; margin-top:10px; color:#fff; background:#111; padding:5px; border-radius:4px;">
+                <span>📦 Lotes: ${camp.lotesIniciais}</span>
+                <span>🚩 Consumo: ${consumido}/${camp.flagsTotais}</span>
+                <span>🎫 QRs: ${qrsGerados}</span>
               </div>
-              <div class="stat-bar" style="width:100%; height:12px; border-radius:4px;">
-                <div class="stat-fill" style="width:${pct}%; background:${pacoteExpirado ? 'red' : '#0f0'};"></div>
+              <div class="stat-bar" style="width:100%; height:12px; border-radius:4px; margin-top:5px;">
+                <div class="stat-fill" style="width:${pct}%; background:#ff9800;"></div>
               </div>
             `;
 
-            // LISTA DE VENCEDORES DO QR
-            if (pkg.lotesTotais > 0 && qrsGerados > 0) {
-              cardHtml += `<h4 style="margin:15px 0 5px 0; color:#4CAF50;">🏆 Detentores Atuais (QRs a Levantar)</h4>`;
-              pkg.vencedores.forEach(v => {
+            if (camp.lotesIniciais > 0 && qrsGerados > 0) {
+              cardHtml += `<h4 style="margin:15px 0 5px 0; color:#4CAF50;">🏆 QRs Gerados</h4>`;
+              camp.vencedores.forEach(v => {
                 const diasFaltam = Math.ceil((v.expiraEm - Date.now()) / (24*60*60*1000));
-                const color = diasFaltam < 0 ? '#ff0000' : '#0f0';
-                const txtTempo = diasFaltam < 0 ? 'Expirou' : diasFaltam + ' dias';
-                cardHtml += `
-                  <div class="winner-item">
-                    <span style="color:#fff;">🎫 <b>${v.codigo}</b></span>
-                    <span>Jogador: <b style="color:#0f0;">${v.jogador}</b></span>
-                    <span style="color:${color}; font-weight:bold;">⏳ ${txtTempo}</span>
-                  </div>
-                `;
+                cardHtml += `<div class="winner-item"><span>🎫 <b>${v.codigo}</b></span><span>Detentor: <b style="color:#0f0;">${v.jogador}</b></span><span style="color:${diasFaltam<0 ? '#ff0000' : '#0f0'}; font-weight:bold;">⏳ ${diasFaltam<0 ? 'Expirou' : diasFaltam+'d'}</span></div>`;
               });
-            } else if (pkg.lotesTotais > 0 && qrsGerados === 0 && !pacoteExpirado) {
-              cardHtml += `<div style="font-size:11px; color:#aaa; margin-top:10px;">Ainda não saíram prémios neste pacote.</div>`;
             }
           }
           
@@ -496,7 +536,7 @@
     }
 
     function generateBranchCode() {
-      if (activeCompany.pacotes.length === 0) return alert("Não tem pacotes ativos para a filial gerir.");
+      if (activeCompany.campanhas.length === 0) return alert("Não tem campanhas criadas para a filial gerir.");
       const code = `${activeCompany.name.substring(0, 4).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
       document.getElementById("branch-code-result").innerText = code;
     }
@@ -555,7 +595,7 @@
       }
     }
 
-    // ================= APANHAR E VERIFICAR TODOS OS PACOTES ATIVOS =================
+    // ================= APANHAR =================
     function catchFlag() {
       let closest = null; let minDist = Infinity;
       allFlags.forEach(f => { let d = Math.sqrt(Math.pow(player.lat - f.lat, 2) + Math.pow(player.lng - f.lng, 2)) * 111320; if(d < minDist) { minDist = d; closest = f; } });
@@ -581,84 +621,88 @@
 
       const resBox = document.getElementById('modal-result-box');
       
-      if (!activeCompany || !activeCompany.pacotes) {
+      if (!activeCompany || !activeCompany.campanhas) {
+        resBox.style.borderColor = "#0f0";
         resBox.innerHTML = `<span style="color:#0f0; font-weight:bold;">Bandeira de Oferta Livre</span><br><span style="font-size:12px; color:#fff;">Ganhaste +Skill e 5% de Energia.</span>`;
-        player.energy = Math.min(player.maxEnergy, player.energy + 50); updateUI(); return;
-      }
-
-      // Procura pacotes ativos que ainda tenham bandeiras
-      const ativas = activeCompany.pacotes.filter(p => p.status === 'active' && p.flagsRestantes > 0);
-      if (ativas.length === 0) { resBox.innerHTML = `Esta empresa não tem pacotes de bandeiras ativos!`; return; }
-
-      let totalSaco = ativas.reduce((sum, p) => sum + p.flagsRestantes, 0);
-      let sorteio = Math.random() * totalSaco;
-
-      let pacoteHit = null;
-      for (let p of ativas) { if (sorteio < p.flagsRestantes) { pacoteHit = p; break; } sorteio -= p.flagsRestantes; }
-
-      pacoteHit.flagsRestantes--;
-
-      // LÓGICA DE SORTEIO DENTRO DO PACOTE (Prémio vs Energia)
-      let chancePremio = pacoteHit.flagsPremioRestantes / (pacoteHit.flagsPremioRestantes + pacoteHit.flagsEnergiaRestantes);
-
-      if (Math.random() < chancePremio && pacoteHit.flagsPremioRestantes > 0) {
-        // Calhou Bandeira do Lote!
-        pacoteHit.flagsPremioRestantes--;
-        
-        if (!player.progressPR[pacoteHit.id]) player.progressPR[pacoteHit.id] = 0;
-        player.progressPR[pacoteHit.id]++;
-        
-        if (player.progressPR[pacoteHit.id] >= 20) {
-          const qrCode = "ZAP-" + activeCompany.name.substring(0,2).toUpperCase() + "-" + Math.random().toString(36).substring(2,6).toUpperCase();
-          const expTime = Date.now() + (pacoteHit.diasLevantamento * 24 * 60 * 60 * 1000);
-          pacoteHit.vencedores.push({ jogador: player.name || "Tu", codigo: qrCode, expiraEm: expTime });
-          resBox.style.borderColor = "#ff0000";
-          resBox.innerHTML = `<span style="color:#ff0000; font-weight:bold; font-size:18px;">🎉 PARABÉNS! GANHASTE! 🎉</span><br><span style="font-size:13px; color:#fff;">Prémio: <b style="color:#ff9800;">${pacoteHit.premio}</b><br>QR: <b>${qrCode}</b><br>Tens ${pacoteHit.diasLevantamento} dias para levantar!</span>`;
-          player.progressPR[pacoteHit.id] = 0; 
-        } else {
-          resBox.style.borderColor = "#ff9800";
-          resBox.innerHTML = `<span style="color:#ff9800; font-weight:bold;">Bandeira de Lote (${pacoteHit.premio})!</span><br><span style="font-size:12px; color:#fff;">Faltam: <b>${20 - player.progressPR[pacoteHit.id]}</b></span>`;
-        }
+        player.energy = Math.min(player.maxEnergy, player.energy + 50); 
+        if(activeCompany && activeCompany.stockLivre > 0) { activeCompany.stockLivre--; }
       } else {
-        // Calhou Energia
-        pacoteHit.flagsEnergiaRestantes--;
-        let randEnergy = Math.random() * 100;
-        let gain = 0; let msg = "";
+        const ativas = activeCompany.campanhas.filter(c => c.status === 'active' && c.flagsRestantes > 0);
         
-        // MATEMÁTICA DA ENERGIA (1% dá 100%, 5% dá 50%, 40% dá 10%, restante 5%)
-        if (randEnergy < 1) { gain = 1000; msg = "JACKPOT! Energia Cheia (+100%)!"; }
-        else if (randEnergy < 6) { gain = 500; msg = "Sorte! +50% Energia!"; }
-        else if (randEnergy < 46) { gain = 100; msg = "Muito Bom! +10% Energia!"; }
-        else { gain = 50; msg = "Bom! +5% Energia."; }
+        if (ativas.length === 0) { 
+          // Se não há campanhas ativas, mas há oferta livre:
+          if(activeCompany.stockLivre > 0) {
+            activeCompany.stockLivre--;
+            resBox.style.borderColor = "#0f0";
+            resBox.innerHTML = `<span style="color:#0f0; font-weight:bold;">Bandeira de Oferta</span><br><span style="font-size:12px; color:#fff;">Ganhaste +Skill e 5% de Energia.</span>`;
+            player.energy = Math.min(player.maxEnergy, player.energy + 50); 
+          } else {
+            resBox.innerHTML = `As campanhas desta empresa estão suspensas ou esgotadas!`; 
+          }
+        } else {
+          let totalSaco = (activeCompany.stockLivre > 0 ? activeCompany.stockLivre : 0) + ativas.reduce((sum, c) => sum + c.flagsRestantes, 0);
+          let sorteio = Math.random() * totalSaco;
 
-        player.energy = Math.min(player.maxEnergy, player.energy + gain);
-        resBox.style.borderColor = "#00f0ff";
-        resBox.innerHTML = `<span style="color:#00f0ff; font-weight:bold;">Bandeira de Energia</span><br><span style="font-size:12px; color:#fff;">${msg}</span>`;
+          if (activeCompany.stockLivre > 0 && sorteio < activeCompany.stockLivre) {
+            activeCompany.stockLivre--;
+            resBox.style.borderColor = "#0f0";
+            resBox.innerHTML = `<span style="color:#0f0; font-weight:bold;">Bandeira de Oferta</span><br><span style="font-size:12px; color:#fff;">Ganhaste +Skill e 5% de Energia.</span>`;
+            player.energy = Math.min(player.maxEnergy, player.energy + 50); 
+          } else {
+            sorteio -= (activeCompany.stockLivre > 0 ? activeCompany.stockLivre : 0);
+            let campHit = null;
+            for (let c of ativas) { if (sorteio < c.flagsRestantes) { campHit = c; break; } sorteio -= c.flagsRestantes; }
+            
+            campHit.flagsRestantes--;
+            
+            if (campHit.lotesIniciais > 0) {
+              let isPremio = Math.random() < (campHit.flagsPremioRestantes / (campHit.flagsPremioRestantes + campHit.flagsEnergiaRestantes));
+              
+              if (isPremio && campHit.flagsPremioRestantes > 0) {
+                campHit.flagsPremioRestantes--;
+                if (!player.progressPR[campHit.id]) player.progressPR[campHit.id] = 0;
+                player.progressPR[campHit.id]++;
+                
+                if (player.progressPR[campHit.id] >= 20) {
+                  const qrCode = "ZAP-" + activeCompany.name.substring(0,2).toUpperCase() + "-" + Math.random().toString(36).substring(2,6).toUpperCase();
+                  const expTime = Date.now() + (campHit.diasLevantamento * 24 * 60 * 60 * 1000);
+                  campHit.vencedores.push({ jogador: player.name || "Convidado", codigo: qrCode, expiraEm: expTime });
+                  resBox.style.borderColor = "#ff0000";
+                  resBox.innerHTML = `<span style="color:#ff0000; font-weight:bold; font-size:18px;">🎉 PARABÉNS! GANHASTE! 🎉</span><br><span style="font-size:13px; color:#fff;">Prémio: <b style="color:#ff9800;">${campHit.premio}</b><br>QR: <b>${qrCode}</b><br>Tens ${campHit.diasLevantamento} dias para levantar!</span>`;
+                  player.progressPR[campHit.id] = 0; 
+                } else {
+                  resBox.style.borderColor = "#ff9800";
+                  resBox.innerHTML = `<span style="color:#ff9800; font-weight:bold;">Bandeira de Lote (${campHit.premio})!</span><br><span style="font-size:12px; color:#fff;">Faltam: <b>${20 - player.progressPR[campHit.id]}</b></span>`;
+                }
+              } else {
+                campHit.flagsEnergiaRestantes--;
+                let randEnergy = Math.random() * 100;
+                let gain = 0; let msg = "";
+                if (randEnergy < 1) { gain = 1000; msg = "JACKPOT! Energia Cheia (+100%)!"; }
+                else if (randEnergy < 5) { gain = 500; msg = "Sorte! +50% Energia!"; }
+                else if (randEnergy < 45) { gain = 100; msg = "Muito Bom! +10% Energia!"; }
+                else { gain = 50; msg = "Bom! +5% Energia."; }
+                player.energy = Math.min(player.maxEnergy, player.energy + gain);
+                resBox.style.borderColor = "#00f0ff";
+                resBox.innerHTML = `<span style="color:#00f0ff; font-weight:bold;">Bandeira de Energia</span><br><span style="font-size:12px; color:#fff;">${msg}</span>`;
+              }
+            } else {
+              campHit.flagsEnergiaRestantes--;
+              player.energy = Math.min(player.maxEnergy, player.energy + 50);
+              resBox.innerHTML = `<span style="color:#00f0ff; font-weight:bold;">Bandeira de Energia (Publicidade)</span>`;
+            }
+          }
+        }
+        localStorage.setItem("zap_player_progress", JSON.stringify(player.progressPR));
       }
-
-      localStorage.setItem("zap_player_progress", JSON.stringify(player.progressPR));
-      localStorage.setItem("zap_pr_data_" + activeCompany.nif, JSON.stringify(activeCompany));
+      if(activeCompany) localStorage.setItem("zap_pr_data_" + activeCompany.nif, JSON.stringify(activeCompany));
       recalcSkill(); updateUI();
     }
 
     function closeFlagModal() { document.getElementById('modal-overlay').classList.add('hidden'); }
-
-    function recalcSkill() {
-      nextSkillTarget = 100 * Math.pow(2, player.skill - 1);
-      if (player.flags >= nextSkillTarget) {
-        player.skill++; player.vision = Math.min(50, 5 + (player.skill - 1) * 0.25);
-        nextSkillTarget = 100 * Math.pow(2, player.skill - 1);
-      }
-    }
-
-    function updateUI() {
-      document.getElementById('val-ener').innerText = Math.floor(player.energy);
-      document.getElementById('bar-ener').style.width = (player.energy / player.maxEnergy) * 100 + "%";
-      document.getElementById('val-skill').innerText = player.skill;
-      document.getElementById('val-visao').innerText = player.vision.toFixed(2);
-      document.getElementById('val-flags').innerText = player.flags;
-    }
-
+    function recalcSkill() { nextSkillTarget = 100 * Math.pow(2, player.skill - 1); if (player.flags >= nextSkillTarget) { player.skill++; player.vision = Math.min(50, 5 + (player.skill - 1) * 0.25); nextSkillTarget = 100 * Math.pow(2, player.skill - 1); } }
+    function updateUI() { document.getElementById('val-ener').innerText = Math.floor(player.energy); document.getElementById('bar-ener').style.width = (player.energy / player.maxEnergy) * 100 + "%"; }
+    
     document.querySelectorAll('.drag-window').forEach(el => {
       const handle = el.querySelector('.drag-handle');
       if(!handle) return;
