@@ -5,69 +5,78 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>ZAP FLAGS | Larforyou&reg;</title>
   
-  <!-- LEAFLET CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
   <style>
     /* ================= DESIGN GERAL ================= */
     * { box-sizing: border-box; user-select: none; font-family: 'Courier New', Courier, monospace; }
-    html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #000; color: #0f0; }
+    html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #222; color: #0f0; }
     .hidden { display: none !important; }
     
-    button { background: #0f0; color: #000; border: none; padding: 12px 15px; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 14px; }
+    button { background: #0f0; color: #000; border: none; padding: 10px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 14px; }
     button:hover { filter: brightness(1.2); }
     .btn-dark { background: #111; color: #0f0; border: 1px solid #0f0; }
-    .btn-dark:hover { background: #222; }
-    .btn-link { background: none; border: none; color: #a7fca7; text-decoration: underline; padding: 0; font-size: 12px; font-weight: normal; margin-top: 10px; }
-    .btn-link:hover { color: #fff; }
+    .btn-link { background: none; border: none; color: #a7fca7; text-decoration: underline; padding: 0; font-size: 12px; }
+    input { width: 100%; padding: 10px; margin-bottom: 10px; border-radius: 4px; border: 1px solid #0f0; background: #111; color: #0f0; }
     
-    input, select { width: 100%; padding: 10px; margin-bottom: 10px; border-radius: 4px; border: 1px solid #0f0; background: #111; color: #0f0; }
-    input::placeholder { color: #0a0; opacity: 0.7; }
-    
-    /* ================= LOGIN E REGISTO ================= */
+    /* ================= LOGIN ================= */
     #login-screen { position: absolute; inset: 0; background: radial-gradient(circle, #002200 0%, #000000 100%); display: flex; align-items: center; justify-content: center; z-index: 10000; padding: 15px; overflow-y: auto; }
-    .login-box { width: 100%; max-width: 500px; background: rgba(0, 0, 0, 0.9); border: 2px solid #0f0; border-radius: 8px; padding: 25px; box-shadow: 0 0 20px rgba(0,255,0,0.2) inset; margin: auto; }
+    .login-box { width: 100%; max-width: 500px; background: rgba(0, 0, 0, 0.9); border: 2px solid #0f0; border-radius: 8px; padding: 25px; margin: auto; }
     .tab-container { display: flex; margin-bottom: 15px; border-radius: 4px; overflow: hidden; border: 1px solid #0f0; }
     .tab-btn { flex: 1; padding: 12px; background: #111; color: #0f0; border-radius: 0; }
     .tab-btn.active { background: #0f0; color: #000; }
     .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    .title-h1 { text-align: center; color: #0f0; margin-top:0; text-shadow: 0 0 10px #0f0; font-size: 28px; }
 
-    /* ================= MAPA ================= */
-    #map-wrap { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; }
-    #map { width: 100%; height: 100%; background: #000; }
-    
-    .catch-circle { stroke-dasharray: 5, 5; } /* Círculo Tracejado */
+    /* ================= MAPA CLARO E CÍRCULOS ================= */
+    #game-screen { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; }
+    #map { width: 100%; height: 100%; }
+    .catch-circle { stroke-dasharray: 6, 6; } /* Círculo Tracejado */
 
     /* ================= AVATAR ANIMADO ================= */
     .avatar-wrapper { position: relative; width: 40px; height: 50px; transition: transform 0.2s linear; }
     .ava-head { position: absolute; top: 0; left: 10px; width: 20px; height: 20px; background: #ffeb3b; border-radius: 50%; border: 2px solid #000; z-index: 3; }
     .ava-body { position: absolute; top: 18px; left: 10px; width: 20px; height: 18px; background: #2196f3; border-radius: 4px; border: 2px solid #000; z-index: 2; }
-    .ava-arm-l, .ava-arm-r { position: absolute; top: 20px; width: 8px; height: 16px; background: #ffeb3b; border-radius: 4px; border: 2px solid #000; transition: transform 0.3s ease; z-index: 3; }
+    .ava-arm-l, .ava-arm-r { position: absolute; top: 20px; width: 8px; height: 16px; background: #ffeb3b; border-radius: 4px; border: 2px solid #000; transition: transform 0.3s; z-index: 3; }
     .ava-arm-l { left: 0px; } .ava-arm-r { right: 0px; }
     .ava-leg-l, .ava-leg-r { position: absolute; top: 34px; width: 8px; height: 16px; background: #333; border-radius: 4px; border: 2px solid #000; z-index: 1; transition: transform 0.1s; }
     .ava-leg-l { left: 10px; } .ava-leg-r { right: 10px; }
-    
-    /* Classes de Animação aplicadas no JS */
     .walking .ava-leg-l { transform: translateY(-4px); }
     .walking .ava-leg-r { transform: translateY(4px); }
     .catching .ava-arm-r { transform: rotate(-90deg) translateY(10px) translateX(-5px); }
 
     .flag-marker { width: 24px; height: 24px; background: #FF0000; border: 2px solid white; border-radius: 50%; box-shadow: 0 0 10px #FF0000; }
 
-    /* ================= UI DO JOGO ================= */
-    #top-bar { position: absolute; top: 10px; left: 10px; right: 10px; background: rgba(0, 0, 0, 0.9); border: 1px solid #0f0; border-radius: 6px; padding: 10px; z-index: 2000; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 10px; align-items: center;}
+    /* ================= UI TOP BAR E MENU LATERAL ================= */
+    #top-bar { position: absolute; top: 10px; left: 10px; right: 10px; background: rgba(0, 0, 0, 0.85); border: 1px solid #0f0; border-radius: 6px; padding: 10px; z-index: 2000; display: flex; justify-content: space-between; gap: 10px; }
     .stat { flex: 1; text-align: center; font-size: 12px; font-weight: bold; color: #0f0; }
-    .stat-bar { height: 6px; background: #222; border-radius: 3px; margin-top: 4px; overflow: hidden; border: 1px solid rgba(0,255,0,0.3); }
-    .stat-fill { height: 100%; background: linear-gradient(90deg, #008f1f, #00ff66); width: 100%; transition: width 0.3s; }
+    .stat-bar { height: 6px; background: #222; border-radius: 3px; margin-top: 4px; border: 1px solid rgba(0,255,0,0.3); overflow:hidden;}
+    .stat-fill { height: 100%; background: #0f0; transition: width 0.3s; }
+    
+    /* MENU LATERAL DIREITO (Arrastável) */
+    #right-toolbar { position: absolute; top: 80px; right: 10px; z-index: 3000; display: flex; flex-direction: column; gap: 8px; background: rgba(0,0,0,0.7); padding: 5px; border-radius: 8px; border: 1px solid #0f0; }
+    .tool-btn { width: 45px; height: 45px; border-radius: 50%; font-size: 18px; padding: 0; box-shadow: 0 0 10px rgba(0,255,0,0.3); }
 
-    #offline-controls { position: absolute; bottom: 80px; left: 20px; z-index: 3000; background: rgba(0,0,0,0.9); border: 1px solid #0f0; border-radius: 6px; padding: 10px; text-align: center; box-shadow: 0 0 15px rgba(0,255,0,0.2) inset; }
-    .dpad { display: grid; grid-template-columns: 50px 50px 50px; gap: 5px; margin-top: 10px; }
+    /* SETAS DE COMANDO (Arrastável) */
+    #offline-controls { position: absolute; bottom: 90px; left: 20px; z-index: 3000; background: rgba(0,0,0,0.85); border: 1px solid #0f0; border-radius: 6px; padding: 10px; text-align: center; }
+    .drag-handle { background: rgba(0,255,0,0.2); cursor: move; padding: 3px; margin-bottom: 5px; font-size: 10px; color: #fff; }
+    .dpad { display: grid; grid-template-columns: 50px 50px 50px; gap: 5px; }
     .dpad button { width: 50px; height: 50px; font-size: 20px; padding: 0; }
 
-    /* ================= MARCAS LARFORYOU ================= */
-    .watermark { position: fixed; bottom: 35px; left: 15px; font-size: 20px; font-weight: bold; color: rgba(0, 255, 0, 0.5); text-shadow: 2px 2px 4px #000; z-index: 9999; pointer-events: none; }
-    .copyright { position: fixed; bottom: 5px; width: 100%; text-align: center; font-size: 11px; color: rgba(0, 255, 0, 0.5); z-index: 9999; pointer-events: none; }
+    /* ================= JANELAS DE INFORMAÇÃO (Ampliáveis e Arrastáveis) ================= */
+    .game-window { position: absolute; top: 100px; left: 50px; width: 300px; max-height: 400px; background: rgba(0,0,0,0.95); border: 2px solid #0f0; z-index: 4000; display: flex; flex-direction: column; resize: both; overflow: auto; box-shadow: 0 0 20px rgba(0,255,0,0.3); }
+    .win-header { background: #003300; padding: 8px; font-weight: bold; display: flex; justify-content: space-between; cursor: move; border-bottom: 1px solid #0f0; }
+    .win-close { background: red; color: white; border: none; padding: 2px 8px; font-weight: bold; cursor: pointer; border-radius: 4px; }
+    .win-content { padding: 15px; font-size: 13px; color: #a7fca7; overflow-y: auto; }
+    .win-item { border-bottom: 1px dashed #0f0; padding-bottom: 8px; margin-bottom: 8px; }
+
+    /* ================= RODAPÉ DE NOTÍCIAS (TICKER) ================= */
+    #ticker-wrap { position: fixed; bottom: 25px; left: 0; width: 100%; background: rgba(0, 50, 0, 0.9); border-top: 1px solid #0f0; border-bottom: 1px solid #0f0; color: #fff; z-index: 8000; padding: 5px 0; overflow: hidden; white-space: nowrap; font-size: 13px; font-weight: bold;}
+    #ticker { display: inline-block; animation: ticker 25s linear infinite; }
+    @keyframes ticker { 0% { transform: translateX(100vw); } 100% { transform: translateX(-100%); } }
+
+    /* Marcas Larforyou */
+    .watermark { position: fixed; bottom: 60px; left: 15px; font-size: 20px; font-weight: bold; color: rgba(0, 255, 0, 0.4); text-shadow: 2px 2px 4px #000; z-index: 9999; pointer-events: none; }
+    .copyright { position: fixed; bottom: 5px; width: 100%; text-align: center; font-size: 11px; color: rgba(0, 255, 0, 0.4); z-index: 9999; pointer-events: none; }
   </style>
 </head>
 <body>
@@ -75,104 +84,120 @@
   <div class="watermark">Larforyou&reg;</div>
   <div class="copyright">&copy; 2024 Larforyou&reg; - Marca Registada. Todos os direitos reservados.</div>
 
-  <!-- ================= ECRÃ DE LOGIN / REGISTO ================= -->
+  <!-- RODAPÉ NOTÍCIAS -->
+  <div id="ticker-wrap"><div id="ticker">⚡ Bem-vindo ao ZAP FLAGS! 🏆 Jogador 'Alex' ganhou BINGO na loja ZARA! 🎁 50% de Desconto no Café Central a terminar em 5 dias! ⚡ Troca QRs por bandeiras sem prémio para ganhar Skill!</div></div>
+
+  <!-- LOGIN -->
   <div id="login-screen">
     <div class="login-box">
-      <h1 class="title-h1">ZAP FLAGS</h1>
+      <h1 style="text-align: center; color: #0f0; margin-top:0;">ZAP FLAGS</h1>
       
       <div style="display:flex; gap:10px; margin-bottom:15px;">
         <button id="btn-tab-jg" class="tab-btn active" onclick="switchMainTab('JG')">JOGADOR</button>
         <button id="btn-tab-pr" class="tab-btn btn-dark" onclick="switchMainTab('PR')">EMPRESA / PR</button>
       </div>
 
-      <!-- JOGADOR -->
       <div id="area-jg">
         <div id="jg-login-view">
-          <div style="font-size:12px; color:#a7fca7; margin-bottom:15px; text-align:center;">Entrar na Conta Jogador</div>
           <input type="text" id="jg-log-nome" placeholder="* Nome do Jogador" />
           <input type="password" id="jg-log-senha" placeholder="* Senha" />
-          <button class="btn-link" onclick="alert('Recuperação enviada para o e-mail!')">Esqueci a Senha?</button>
-          <button style="width:100%; padding:14px; margin-top:10px;" onclick="doLogin('JG')">ENTRAR NO JOGO</button>
+          <button style="width:100%; padding:14px; margin-top:10px;" onclick="doLogin()">ENTRAR NO JOGO</button>
         </div>
-
         <div id="jg-reg-view" class="hidden">
-          <div style="font-size:12px; color:#81c784; margin-bottom:10px; text-align:center;">* Campos Obrigatórios</div>
-          <input type="text" id="jg-reg-name" placeholder="* Nome de Jogador (Único)" />
+          <div style="font-size:12px; color:#81c784; margin-bottom:10px;">* Campos Obrigatórios</div>
+          <input type="text" id="jg-reg-name" placeholder="* Nome de Jogador" />
           <input type="email" id="jg-reg-email" placeholder="* E-mail" />
           <div class="form-grid">
             <input type="password" id="jg-reg-pass1" placeholder="* Senha" />
-            <input type="password" id="jg-reg-pass2" placeholder="* Confirmar Senha" />
+            <input type="password" id="jg-reg-pass2" placeholder="* Confirmar" />
           </div>
-          <div class="form-grid">
-            <input type="text" id="jg-reg-contact" placeholder="Contacto (Opcional)" />
-            <input type="text" id="jg-reg-local" placeholder="Localidade (Opcional)" />
-          </div>
-          <input type="text" id="jg-reg-distrito" placeholder="Distrito (Opcional)" />
-          
-          <button style="width:100%; padding:14px;" onclick="doRegister('JG')">CONCLUIR REGISTO</button>
-          <button class="btn-link" style="width:100%; text-align:center; margin-top:10px;" onclick="switchView('JG', 'LOG')">Voltar ao Login</button>
+          <button style="width:100%; padding:14px;" onclick="doRegister()">CONCLUIR REGISTO</button>
         </div>
       </div>
-
-      <!-- EMPRESA (Placeholder para a Fase 2) -->
+      
       <div id="area-pr" class="hidden">
         <div style="text-align:center; color:#0f0;">Área de Empresa será atualizada na FASE 2.</div>
       </div>
     </div>
   </div>
 
-  <!-- ================= JOGO E MAPA ================= -->
+  <!-- JOGO -->
   <div id="game-screen" class="hidden">
-    <div id="map-wrap"><div id="map"></div></div>
+    <div id="map"></div>
 
+    <!-- TOP BAR -->
     <div id="top-bar">
-      <div class="stat">Energia <span id="val-ener">1000</span>m<div class="stat-bar"><div id="bar-ener" class="stat-fill"></div></div></div>
-      <div class="stat">Nível <span id="val-skill">1</span><br><span style="font-size:10px; color:#a7fca7;">(<span id="val-visao">5</span>m Visão)</span></div>
-      <div class="stat">Bandeiras<br><span id="val-flags" style="color:#fff; font-size:16px;">0</span></div>
-      <button class="btn-dark" style="padding:6px;" onclick="catchFlag()">✋ APANHAR</button>
+      <div class="stat">Energia <span id="val-ener">1000</span>m
+        <div class="stat-bar"><div id="bar-ener" class="stat-fill"></div></div>
+      </div>
+      <div class="stat">Nível <span id="val-skill">1</span> (<span id="val-visao">5</span>m)
+        <div class="stat-bar"><div id="bar-skill" class="stat-fill" style="background:#00f0ff;"></div></div>
+      </div>
+      <button class="btn-dark" style="padding:6px; font-size:12px;" onclick="catchFlag()">✋ APANHAR</button>
+      <button class="btn-dark" style="padding:6px; font-size:12px;" onclick="location.reload()">🚪 SAIR</button>
     </div>
 
-    <!-- D-Pad -->
-    <div id="offline-controls">
-      <div style="font-size:12px; color:#0f0; margin-bottom:5px;">Movimento</div>
+    <!-- MENU LATERAL DIREITO (Arrastável) -->
+    <div id="right-toolbar" class="drag-window">
+      <div class="drag-handle" style="text-align:center;">☰ Menu</div>
+      <button class="tool-btn btn-dark" onclick="centerPlayer()" title="Localização Atual">📍</button>
+      <button class="tool-btn btn-dark" onclick="openWindow('win-flags')" title="Bandeiras e Empresas">🏴</button>
+      <button class="tool-btn btn-dark" onclick="openWindow('win-qrs')" title="QRs Ganhos">🎫</button>
+      <button class="tool-btn btn-dark" onclick="openWindow('win-trophies')" title="Troféus">🏆</button>
+    </div>
+
+    <!-- SETAS DE COMANDO (Arrastável) -->
+    <div id="offline-controls" class="drag-window">
+      <div class="drag-handle">☰ Mover</div>
       <div class="dpad">
         <div></div><button onclick="movePlayer(0, 1)">▲</button><div></div>
         <button onclick="movePlayer(-1, 0)">◀</button><button onclick="centerPlayer()">🎯</button><button onclick="movePlayer(1, 0)">▶</button>
         <div></div><button onclick="movePlayer(0, -1)">▼</button><div></div>
       </div>
     </div>
+
+    <!-- JANELAS INTERATIVAS (Arrastáveis e Ampliáveis) -->
+    <div id="win-flags" class="game-window drag-window hidden">
+      <div class="win-header"><span class="drag-handle" style="flex:1;">🏴 Bandeiras por Empresa</span><button class="win-close" onclick="closeWindow('win-flags')">X</button></div>
+      <div class="win-content">
+        <div class="win-item"><b>Total Apanhadas:</b> <span id="val-flags">0</span></div>
+        <div class="win-item"><b>Zara:</b> 15/20 para prémio</div>
+        <div class="win-item"><b>Café Central:</b> 5/20 para prémio</div>
+      </div>
+    </div>
+
+    <div id="win-qrs" class="game-window drag-window hidden" style="left:100px;">
+      <div class="win-header"><span class="drag-handle" style="flex:1;">🎫 QRs e Prémios</span><button class="win-close" onclick="closeWindow('win-qrs')">X</button></div>
+      <div class="win-content">
+        <div class="win-item">Ainda não tens QRs gerados. Junta 20 bandeiras de uma empresa!</div>
+      </div>
+    </div>
+
+    <div id="win-trophies" class="game-window drag-window hidden" style="left:150px;">
+      <div class="win-header"><span class="drag-handle" style="flex:1;">🏆 Troféus e Skill</span><button class="win-close" onclick="closeWindow('win-trophies')">X</button></div>
+      <div class="win-content">
+        <div class="win-item">Troféu de Iniciante 🥉</div>
+      </div>
+    </div>
+
   </div>
 
-  <!-- LEAFLET JS -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
-    // ================= 1. CONFIGURAÇÕES MODO TESTE =================
-    // Palavra-passe "teste apagar" desativa este modo!
+    // ================= CONFIGURAÇÕES E TESTE =================
     const isTestMode = true; 
-    const moveDist = isTestMode ? 4 : 0.5;   // Metros por clique
-    const energyCost = isTestMode ? 4 : 0.5; // Gasto por clique
-    const idleTime = isTestMode ? 15000 : 900000; // 15 Segundos vs 15 Minutos
+    const moveDist = isTestMode ? 4 : 0.5;   
+    const energyCost = isTestMode ? 4 : 0.5; 
+    const idleTime = isTestMode ? 15000 : 900000; 
 
-    // ================= 2. VARIÁVEIS GLOBAIS =================
-    let player = {
-      name: "",
-      energy: 1000,
-      maxEnergy: 1000,
-      skill: 1,
-      vision: 5,
-      flags: 0,
-      lat: 41.1496,
-      lng: -8.6109
-    };
-
-    let map = null;
-    let playerMarker = null;
-    let visionCircle = null; // Círculo Azul (Visão)
-    let catchCircle = null;  // Círculo Verde Tracejado (2.5m Ação)
+    // ================= VARIÁVEIS =================
+    let player = { name: "", energy: 1000, maxEnergy: 1000, skill: 1, vision: 5, flags: 0, lat: 41.1496, lng: -8.6109 };
+    let map = null, playerMarker = null, visionCircle = null, catchCircle = null;  
     let allFlags = [];
+    let nextSkillTarget = 100;
     let lastMoveTime = Date.now();
 
-    // ================= 3. LÓGICA DE INTERFACE (LOGIN) =================
+    // ================= ARRANQUE =================
     window.onload = () => {
       const savedName = localStorage.getItem("zap_player_name");
       if (savedName) document.getElementById("jg-log-nome").value = savedName;
@@ -185,116 +210,88 @@
       document.getElementById('btn-tab-pr').className = mode === 'PR' ? 'tab-btn active' : 'tab-btn btn-dark';
     }
 
-    function switchView(context, view) {
-      if (context === 'JG') {
-        document.getElementById('jg-login-view').classList.toggle('hidden', view !== 'LOG');
-        document.getElementById('jg-reg-view').classList.toggle('hidden', view !== 'REG');
+    function doLogin() {
+      const name = document.getElementById("jg-log-nome").value.trim();
+      const pass = document.getElementById("jg-log-senha").value;
+      if (!name || !pass) { alert("Preenche Nome e Senha!"); return; }
+
+      const isReg = localStorage.getItem("zap_reg_" + name.toLowerCase());
+      if (!isReg) {
+        document.getElementById('jg-login-view').classList.add('hidden');
+        document.getElementById('jg-reg-view').classList.remove('hidden');
+        document.getElementById("jg-reg-name").value = name;
+        return;
       }
+      localStorage.setItem("zap_player_name", name);
+      player.name = name;
+      startGame();
     }
 
-    function doLogin(type) {
-      if (type === 'JG') {
-        const name = document.getElementById("jg-log-nome").value.trim();
-        const pass = document.getElementById("jg-log-senha").value;
-        if (!name || !pass) { alert("Preenche Nome e Senha!"); return; }
+    function doRegister() {
+      const name = document.getElementById("jg-reg-name").value.trim();
+      const p1 = document.getElementById("jg-reg-pass1").value;
+      const p2 = document.getElementById("jg-reg-pass2").value;
 
-        const isReg = localStorage.getItem("zap_reg_" + name.toLowerCase());
-        if (!isReg) {
-          alert("Jogador não encontrado! Reencaminhado para o Registo.");
-          switchView('JG', 'REG');
-          document.getElementById("jg-reg-name").value = name;
-          return;
-        }
+      if (!name || !p1) { alert("Preenche os campos obrigatórios (*)"); return; }
+      if (p1 !== p2) { alert("Senhas não coincidem!"); return; }
 
-        localStorage.setItem("zap_player_name", name);
-        player.name = name;
-        startGame();
-      }
+      localStorage.setItem("zap_reg_" + name.toLowerCase(), "true");
+      localStorage.setItem("zap_player_name", name);
+      player.name = name;
+      startGame();
     }
 
-    function doRegister(type) {
-      if (type === 'JG') {
-        const name = document.getElementById("jg-reg-name").value.trim();
-        const email = document.getElementById("jg-reg-email").value.trim();
-        const p1 = document.getElementById("jg-reg-pass1").value;
-        const p2 = document.getElementById("jg-reg-pass2").value;
-
-        if (!name || !email || !p1) { alert("Preenche os campos obrigatórios (*)"); return; }
-        if (p1 !== p2) { alert("Senhas não coincidem!"); return; }
-
-        localStorage.setItem("zap_reg_" + name.toLowerCase(), "true");
-        localStorage.setItem("zap_player_name", name);
-        
-        alert("Registo concluído! Bem-vindo(a) " + name);
-        player.name = name;
-        startGame();
-      }
-    }
-
-    // ================= 4. INICIALIZAÇÃO DO MAPA E AVATAR =================
+    // ================= MAPA CLARO =================
     function startGame() {
       document.getElementById("login-screen").classList.add("hidden");
       document.getElementById("game-screen").classList.remove("hidden");
-      initMap();
-      spawnRandomFlags(15); // Espalha 15 bandeiras pelo mundo
+      
+      // MAPA CLARO E VISÍVEL
+      map = L.map('map', { zoomControl: false }).setView([player.lat, player.lng], 20);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 22 }).addTo(map);
+      
+      spawnRandomFlags(10); 
       renderAvatar();
     }
 
-    function initMap() {
-      if (map) return;
-      map = L.map('map', { zoomControl: false }).setView([player.lat, player.lng], 19);
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution: '© OSM' }).addTo(map);
-    }
-
+    // ================= AVATAR E CÍRCULOS =================
     function renderAvatar() {
-      // 1. Avatar (Com Braços e Pernas)
       if (!playerMarker) {
-        const avatarHTML = `
-          <div id="avatar-anim" class="avatar-wrapper">
-            <div class="ava-head"></div>
-            <div class="ava-arm-l"></div>
-            <div class="ava-arm-r" id="ava-arm-right"></div>
-            <div class="ava-body"></div>
-            <div class="ava-leg-l"></div>
-            <div class="ava-leg-r"></div>
-          </div>
-        `;
+        const avatarHTML = `<div id="avatar-anim" class="avatar-wrapper"><div class="ava-head"></div><div class="ava-arm-l"></div><div class="ava-arm-r"></div><div class="ava-body"></div><div class="ava-leg-l"></div><div class="ava-leg-r"></div></div>`;
         const icon = L.divIcon({ className: '', html: avatarHTML, iconSize: [40, 50], iconAnchor: [20, 50] });
         playerMarker = L.marker([player.lat, player.lng], { icon: icon, zIndexOffset: 1000 }).addTo(map);
       } else {
         playerMarker.setLatLng([player.lat, player.lng]);
       }
 
-      // 2. Círculo Azul (Visão: aumenta com o skill, descobre bandeiras)
-      if (!visionCircle) {
-        visionCircle = L.circle([player.lat, player.lng], { radius: player.vision, color: "#0066ff", fillOpacity: 0.05, weight: 1 }).addTo(map);
-      } else {
-        visionCircle.setLatLng([player.lat, player.lng]);
-        visionCircle.setRadius(player.vision);
-      }
+      // Círculo Azul (Visão 5m)
+      if (!visionCircle) visionCircle = L.circle([player.lat, player.lng], { radius: player.vision, color: "#0066ff", fillOpacity: 0.1, weight: 1 }).addTo(map);
+      else { visionCircle.setLatLng([player.lat, player.lng]); visionCircle.setRadius(player.vision); }
 
-      // 3. Círculo Verde Tracejado (Ação 2.5m fixo: apanha bandeiras)
-      if (!catchCircle) {
-        catchCircle = L.circle([player.lat, player.lng], { radius: 2.5, color: "#00ff00", className: "catch-circle", fillOpacity: 0.1, weight: 2 }).addTo(map);
-      } else {
-        catchCircle.setLatLng([player.lat, player.lng]);
-      }
+      // Círculo Verde Tracejado (Apanhar 2.5m)
+      if (!catchCircle) catchCircle = L.circle([player.lat, player.lng], { radius: 2.5, color: "#00ff00", className: "catch-circle", fillOpacity: 0.2, weight: 2 }).addTo(map);
+      else catchCircle.setLatLng([player.lat, player.lng]);
 
-      map.setView([player.lat, player.lng], 19);
-      checkVisibleFlags(); // Vê se alguma bandeira entrou no círculo azul
+      map.setView([player.lat, player.lng], 20);
+      checkVisibleFlags(); 
     }
 
-    function centerPlayer() { map.setView([player.lat, player.lng], 19); }
+    function centerPlayer() { map.setView([player.lat, player.lng], 20); }
 
-    // ================= 5. MOVIMENTO E ENERGIA =================
+    // ================= MOVIMENTO =================
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowUp' || e.key === 'w') movePlayer(0, 1);
+      if (e.key === 'ArrowDown' || e.key === 's') movePlayer(0, -1);
+      if (e.key === 'ArrowLeft' || e.key === 'a') movePlayer(-1, 0);
+      if (e.key === 'ArrowRight' || e.key === 'd') movePlayer(1, 0);
+    });
+
     function movePlayer(dx, dy) {
       if (player.energy < energyCost) { alert("Sem energia!"); return; }
 
       player.energy -= energyCost;
-      lastMoveTime = Date.now(); // Reset do relógio de descanso
-      updateUI();
-
-      // Animação das pernas e virar o corpo
+      lastMoveTime = Date.now(); 
+      
       const ava = document.getElementById("avatar-anim");
       if (ava) {
         ava.classList.add("walking");
@@ -307,28 +304,10 @@
       player.lng += (dx * moveDist) / (111320 * Math.cos(player.lat * Math.PI / 180));
       
       renderAvatar();
+      updateUI();
     }
 
-    // Relógio de Descanso (Parado recupera 10%)
-    setInterval(() => {
-      const timeIdle = Date.now() - lastMoveTime;
-      if (timeIdle >= idleTime && player.energy < player.maxEnergy) {
-        player.energy = Math.min(player.maxEnergy, player.energy + (player.maxEnergy * 0.10));
-        updateUI();
-        lastMoveTime = Date.now(); // Reinicia o relógio
-      }
-    }, 1000);
-
-    function updateUI() {
-      document.getElementById('val-ener').innerText = Math.floor(player.energy);
-      document.getElementById('bar-ener').style.width = (player.energy / player.maxEnergy) * 100 + "%";
-      document.getElementById('val-skill').innerText = player.skill;
-      document.getElementById('val-visao').innerText = player.vision.toFixed(2);
-      document.getElementById('val-flags').innerText = player.flags;
-    }
-
-    // ================= 6. LÓGICA DE BANDEIRAS E SKILL =================
-    // Função Matemática de Distância
+    // ================= LÓGICA BANDEIRAS =================
     function getDist(lat1, lng1, lat2, lng2) {
       const R = 6371e3;
       const dPhi = (lat2 - lat1) * Math.PI / 180;
@@ -337,77 +316,91 @@
       return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     }
 
-    // Cria bandeiras espalhadas pelo mundo (Invisíveis ao início)
+    // Bandeiras nascem perto do raio de visão para teste rápido!
     function spawnRandomFlags(amount) {
       for(let i=0; i<amount; i++) {
-        let rLat = player.lat + ((Math.random() - 0.5) * 0.001);
-        let rLng = player.lng + ((Math.random() - 0.5) * 0.001);
-        
+        let rLat = player.lat + ((Math.random() - 0.5) * 0.0001);
+        let rLng = player.lng + ((Math.random() - 0.5) * 0.0001);
         let icon = L.divIcon({ className: '', html: `<div class="flag-marker"></div>`, iconSize: [24,24] });
         let marker = L.marker([rLat, rLng], { icon: icon });
-        
         allFlags.push({ lat: rLat, lng: rLng, marker: marker, isVisible: false });
       }
     }
 
-    // Só mostra as bandeiras que entram no círculo azul de visão
     function checkVisibleFlags() {
       allFlags.forEach(f => {
         let dist = getDist(player.lat, player.lng, f.lat, f.lng);
-        if (dist <= player.vision && !f.isVisible) {
-          f.marker.addTo(map);
-          f.isVisible = true;
-        } else if (dist > player.vision && f.isVisible) {
-          map.removeLayer(f.marker);
-          f.isVisible = false;
-        }
+        if (dist <= player.vision && !f.isVisible) { f.marker.addTo(map); f.isVisible = true; }
+        else if (dist > player.vision && f.isVisible) { map.removeLayer(f.marker); f.isVisible = false; }
       });
     }
 
-    // Apanhar Bandeira (Só funciona a 2.5m)
     function catchFlag() {
-      let closest = null;
-      let minDist = Infinity;
+      let closest = null; let minDist = Infinity;
+      allFlags.forEach(f => { let d = getDist(player.lat, player.lng, f.lat, f.lng); if(d < minDist) { minDist = d; closest = f; } });
+      if (!closest) { alert("Não vês bandeiras!"); return; }
 
-      allFlags.forEach(f => {
-        let d = getDist(player.lat, player.lng, f.lat, f.lng);
-        if(d < minDist) { minDist = d; closest = f; }
-      });
+      if (minDist > 2.5) { alert(`Bandeira a ${Math.floor(minDist)}m. Entra no círculo tracejado (2.5m)!`); return; }
 
-      if (!closest) { alert("Não há bandeiras no mapa!"); return; }
-
-      // REGRA: Só apanha dentro do Círculo Tracejado (2.5m)
-      if (minDist > 2.5) {
-        alert(`A bandeira está a ${Math.floor(minDist)}m. Aproxima-te até entrares no círculo tracejado (2.5m)!`);
-        return;
-      }
-
-      // Animação do Braço a estender
       const ava = document.getElementById("avatar-anim");
-      if (ava) {
-        ava.classList.add("catching");
-        setTimeout(() => ava.classList.remove("catching"), 400);
-      }
+      if (ava) { ava.classList.add("catching"); setTimeout(() => ava.classList.remove("catching"), 400); }
 
-      player.flags += 1; // Apanhou!
+      player.flags += 1; 
       map.removeLayer(closest.marker);
-      allFlags = allFlags.filter(f => f !== closest); // Remove da lista
+      allFlags = allFlags.filter(f => f !== closest); 
 
       recalcSkill();
       updateUI();
-      
-      // Repõe uma nova algures para nunca acabarem
       spawnRandomFlags(1);
       checkVisibleFlags();
     }
 
-    // Matemática do Skill
+    // ================= SKILL & UI =================
     function recalcSkill() {
-      let next = 100, newSkill = 1, tempFlags = player.flags;
-      while (tempFlags >= next) { newSkill++; tempFlags -= next; next *= 2; }
-      player.skill = newSkill;
-      player.vision = Math.min(50, 5 + (player.skill - 1) * 0.25);
+      nextSkillTarget = 100 * Math.pow(2, player.skill - 1);
+      if (player.flags >= nextSkillTarget) {
+        player.skill++;
+        player.vision = Math.min(50, 5 + (player.skill - 1) * 0.25);
+        nextSkillTarget = 100 * Math.pow(2, player.skill - 1);
+      }
     }
+
+    function updateUI() {
+      document.getElementById('val-ener').innerText = Math.floor(player.energy);
+      document.getElementById('bar-ener').style.width = (player.energy / player.maxEnergy) * 100 + "%";
+      
+      document.getElementById('val-skill').innerText = player.skill;
+      document.getElementById('val-visao').innerText = player.vision.toFixed(2);
+      
+      // Fita de crescimento do skill
+      let prevTarget = player.skill === 1 ? 0 : 100 * Math.pow(2, player.skill - 2);
+      let progress = ((player.flags - prevTarget) / (nextSkillTarget - prevTarget)) * 100;
+      document.getElementById('bar-skill').style.width = progress + "%";
+      
+      document.getElementById('val-flags').innerText = player.flags;
+    }
+
+    // ================= JANELAS ARRASTÁVEIS E MENU =================
+    function openWindow(id) { document.getElementById(id).classList.remove('hidden'); }
+    function closeWindow(id) { document.getElementById(id).classList.add('hidden'); }
+
+    document.querySelectorAll('.drag-window').forEach(el => {
+      const handle = el.querySelector('.drag-handle');
+      if(!handle) return;
+      let isDragging = false, startX, startY, startLeft, startTop;
+      handle.addEventListener('mousedown', e => {
+        isDragging = true;
+        startLeft = el.offsetLeft; startTop = el.offsetTop;
+        startX = e.clientX; startY = e.clientY;
+      });
+      window.addEventListener('mousemove', e => {
+        if (!isDragging) return;
+        el.style.left = (startLeft + e.clientX - startX) + 'px';
+        el.style.top = (startTop + e.clientY - startY) + 'px';
+        el.style.right = 'auto'; el.style.bottom = 'auto';
+      });
+      window.addEventListener('mouseup', () => isDragging = false);
+    });
   </script>
 </body>
 </html>
