@@ -18,6 +18,7 @@
     .btn-dark { background: #111; color: #0f0; border: 1px solid #0f0; }
     .btn-danger { background: #d32f2f; color: #fff; border: 1px solid #ff0000; }
     .btn-warning { background: #ff9800; color: #fff; border: 1px solid #ff9800; }
+    .btn-edit { background: #2196f3; color: #fff; border: 1px solid #2196f3; }
     .btn-link { background: none; border: none; color: #a7fca7; text-decoration: underline; padding: 0; font-size: 12px; }
     input, select { width: 100%; padding: 10px; margin-bottom: 10px; border-radius: 4px; border: 1px solid #0f0; background: #111; color: #0f0; }
     
@@ -58,9 +59,9 @@
     .dpad { display: grid; grid-template-columns: 50px 50px 50px; gap: 5px; }
     .dpad button { width: 50px; height: 50px; font-size: 20px; padding: 0; }
 
-    /* JANELAS MODAIS */
-    #modal-overlay, #pr-alert-overlay { position: fixed; inset:0; background:rgba(0,0,0,0.8); z-index: 6000; display:flex; align-items:center; justify-content:center;}
-    .modal-box { background:#111; border: 2px solid #0f0; padding:20px; border-radius:10px; max-width:400px; text-align:center; color:#fff; }
+    /* JANELAS MODAIS E ALERTAS */
+    .modal-overlay { position: fixed; inset:0; background:rgba(0,0,0,0.85); z-index: 6000; display:flex; align-items:center; justify-content:center;}
+    .modal-box { background:#111; border: 2px solid #0f0; padding:20px; border-radius:10px; max-width:400px; width: 90%; text-align:center; color:#fff; }
     .comp-logo { width: 80px; height: 80px; object-fit: cover; border-radius: 50%; border: 2px solid #0f0; margin-bottom:10px; background:#fff;}
 
     /* PAINEL EMPRESA (DASHBOARD) */
@@ -77,8 +78,7 @@
 
     .camp-card { background: #000; border: 1px solid #4CAF50; padding: 15px; border-radius: 5px; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0,255,0,0.1); }
     .camp-pending { border-color: #ff9800; box-shadow: 0 4px 10px rgba(255,152,0,0.2); }
-    .camp-suspended { border-color: #ff9800; opacity: 0.8; }
-    .camp-expired { border-color: #d32f2f; opacity: 0.6; }
+    .camp-eliminated { border-color: #d32f2f; opacity: 0.6; }
     .camp-timer { font-size: 20px; font-weight: bold; color: #ff9800; margin: 5px 0; }
     
     .winner-item { background: #222; border: 1px dashed #0f0; padding: 10px; border-radius: 5px; margin-top: 5px; font-size: 12px; display: flex; justify-content: space-between; align-items: center; }
@@ -139,14 +139,14 @@
             <input type="text" id="pr-reg-nif" placeholder="* NIF" />
             <input type="text" id="pr-reg-tel" placeholder="* Telemóvel" />
           </div>
-          <input type="text" id="pr-reg-logo" placeholder="URL do Logótipo ou Foto" />
+          <input type="text" id="pr-reg-logo" placeholder="URL do Logótipo ou Foto da Loja" />
           <input type="email" id="pr-reg-email" placeholder="* E-mail do Responsável" />
           <input type="text" id="pr-reg-morada" placeholder="* Morada Fiscal Completa" />
           
           <div style="font-size:12px; color:#81c784; margin-bottom:5px;">Coordenadas GPS da Loja Física (Centro do Raio):</div>
           <div class="form-grid">
-            <input type="text" id="pr-reg-lat" placeholder="Lat (Ex: 41.1496)" />
-            <input type="text" id="pr-reg-lng" placeholder="Lng (Ex: -8.6109)" />
+            <input type="text" id="pr-reg-lat" placeholder="Latitude (Ex: 41.1496)" />
+            <input type="text" id="pr-reg-lng" placeholder="Longitude (Ex: -8.6109)" />
           </div>
 
           <div class="form-grid">
@@ -156,21 +156,20 @@
           <button style="width:100%; padding:14px; margin-top:10px;" onclick="doRegisterPR()">REGISTAR EMPRESA</button>
           <button class="btn-link" style="width:100%; text-align:center; margin-top:10px;" onclick="switchPRView('LOG')">Voltar ao Login</button>
         </div>
-
       </div>
     </div>
   </div>
 
-  <!-- ================= DASHBOARD DA EMPRESA (FASE 2) ================= -->
+  <!-- ================= FASE 2: DASHBOARD DA EMPRESA ================= -->
   <div id="pr-dashboard-screen" class="hidden">
     <div class="dash-box">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #0f0; padding-bottom:15px; margin-bottom:20px;">
         <h1 style="margin:0; color:#0f0;">🏢 PAINEL DA SEDE</h1>
         <button class="btn-dark" onclick="location.reload()">Sair</button>
       </div>
 
       <div style="display:flex; align-items:center; gap:15px; margin-bottom:20px;">
-        <img id="dash-pr-logo" src="" style="width:50px; height:50px; border-radius:50%; border:2px solid #0f0; display:none; background:#fff;" />
+        <img id="dash-pr-logo" src="" style="width:60px; height:60px; border-radius:50%; border:2px solid #0f0; display:none; background:#fff;" />
         <div>
           <h2 style="color:#fff; margin:0; font-size:18px;"><span id="dash-pr-name">Empresa</span></h2>
           <p style="color:#a7fca7; font-size:12px; margin:0;">NIF: <span id="dash-pr-nif"></span> | Atividade: <span id="dash-pr-atividade"></span></p>
@@ -179,9 +178,9 @@
 
       <!-- MENUS DO DASHBOARD -->
       <div class="pr-menu">
-        <button id="menu-loja" class="pr-menu-btn" onclick="switchDashView('loja')">🛒 Comprar Pacotes</button>
-        <button id="menu-agendar" class="pr-menu-btn active" onclick="switchDashView('agendar')">📅 Agendar Campanha</button>
-        <button id="menu-stats" class="pr-menu-btn" onclick="switchDashView('stats')">📈 Relatórios & QRs</button>
+        <button id="menu-loja" class="pr-menu-btn" onclick="switchDashView('loja')">🛒 Loja</button>
+        <button id="menu-agendar" class="pr-menu-btn active" onclick="switchDashView('agendar')">📅 Gerir Campanhas</button>
+        <button id="menu-stats" class="pr-menu-btn" onclick="switchDashView('stats')">📈 Relatórios</button>
       </div>
 
       <!-- VISTA: COMPRAR PACOTES -->
@@ -196,16 +195,14 @@
         <div class="pack-card"><div class="pack-info"><b>Pacote Nacional</b> (50€)<br>50.000 Bandeiras • Todo o País • Val. 180 Dias</div><button onclick="buyPackage('Nacional', 50000, 50, 180, 9999)">Comprar</button></div>
       </div>
 
-      <!-- VISTA: AGENDAR CAMPANHA -->
+      <!-- VISTA: GERIR CAMPANHAS -->
       <div id="view-agendar">
-        <h3 style="color:#ff9800; margin-top:0;">📅 Configurar e Agendar Campanha</h3>
-        <p style="font-size:12px; color:#ccc;">Escolha um pacote do seu cofre, defina os prémios e agende o dia e hora em que a campanha vai para a rua!</p>
+        <h3 style="color:#ff9800; margin-top:0;">📅 Configurar e Ativar Pacotes</h3>
+        <p style="font-size:12px; color:#ccc;">Escolha um pacote do cofre, defina os prémios e ative. Terá 60 minutos de proteção para editar/cancelar antes de ir para o mapa. <b>Após ativar o pacote todo entra em jogo, e não é possível suspender.</b></p>
         
         <div style="background:#1a1a1a; border:1px solid #ff9800; padding:15px; border-radius:8px; margin-bottom:20px;">
-          <label style="font-size:12px; color:#0f0;">1. Pacote Disponível no Cofre:</label>
-          <select id="agenda-pack-select">
-            <!-- Povoado por JS -->
-          </select>
+          <label style="font-size:12px; color:#0f0;">1. Escolher Pacote (Cofre):</label>
+          <select id="agenda-pack-select"></select>
 
           <div class="form-grid">
             <div>
@@ -221,22 +218,17 @@
           <label style="font-size:12px; color:#0f0;">4. Qual o Prémio? (Se Lotes > 0)</label>
           <input type="text" id="agenda-prize" placeholder="Ex: 1 Relógio, 1 Café..." />
 
-          <label style="font-size:12px; color:#0f0;">5. Data e Hora de Início (Agendamento)</label>
-          <input type="datetime-local" id="agenda-date" style="font-family:sans-serif;" />
-
-          <button style="width:100%; background:#ff9800;" onclick="scheduleCampaign()">AGENDAR E ATIVAR CAMPANHA</button>
+          <button style="width:100%; background:#ff9800; margin-top:10px;" onclick="scheduleCampaign()">INICIAR CONTAGEM DO PACOTE</button>
         </div>
 
-        <h3 style="color:#0f0;">⏳ Campanhas Agendadas / Suspensas</h3>
+        <h3 style="color:#0f0;">⏳ As suas Campanhas (No Mapa)</h3>
         <div id="campanhas-ativas-lista"></div>
       </div>
 
       <!-- VISTA: ESTATÍSTICAS E RELATÓRIOS -->
       <div id="view-stats" class="hidden">
         <h3 style="color:#0f0; margin-top:0;">📊 Relatórios Analíticos e QRs</h3>
-        <div id="stats-content">
-          <!-- Povoado por JS -->
-        </div>
+        <div id="stats-content"></div>
       </div>
 
       <!-- PONTE FILIAIS -->
@@ -248,13 +240,25 @@
     </div>
   </div>
 
-  <!-- AVISO DE FIM DE CAMPANHA -->
-  <div id="pr-alert-overlay" class="hidden">
-    <div class="modal-box" style="border-color:#ff0000;">
-      <h2 style="color:#ff0000; margin-top:0;">⚠️ Atenção!</h2>
-      <p id="pr-alert-msg" style="font-size:14px; margin-bottom:20px;"></p>
-      <button style="width:100%; background:#0f0;" onclick="document.getElementById('pr-alert-overlay').classList.add('hidden'); switchDashView('loja');">IR PARA A LOJA</button>
-      <button class="btn-link" style="width:100%; margin-top:10px;" onclick="document.getElementById('pr-alert-overlay').classList.add('hidden');">Fechar</button>
+  <!-- MODAL DE EDIÇÃO DE CAMPANHA (DURANTE A CONTAGEM) -->
+  <div id="edit-camp-modal" class="modal-overlay hidden">
+    <div class="modal-box" style="border-color:#2196f3;">
+      <h2 style="color:#2196f3; margin-top:0;">✏️ Editar Lotes/Prémios</h2>
+      <p style="font-size:12px;">Pode fazer alterações livremente enquanto o relógio não chegar a zero.</p>
+      
+      <input type="hidden" id="edit-camp-id" />
+      
+      <label style="text-align:left; font-size:12px; color:#0f0;">Lotes (Max dependente do pacote)</label>
+      <input type="number" id="edit-camp-lotes" />
+      
+      <label style="text-align:left; font-size:12px; color:#0f0;">Dias de Levantamento (Min 5)</label>
+      <input type="number" id="edit-camp-dias" />
+      
+      <label style="text-align:left; font-size:12px; color:#0f0;">Prémio</label>
+      <input type="text" id="edit-camp-premio" />
+      
+      <button style="width:100%; background:#2196f3; color:#fff;" onclick="saveEditedCampaign()">GUARDAR ALTERAÇÕES</button>
+      <button class="btn-link" style="width:100%; margin-top:10px;" onclick="document.getElementById('edit-camp-modal').classList.add('hidden')">Cancelar</button>
     </div>
   </div>
 
@@ -277,6 +281,7 @@
     </div>
   </div>
 
+  <!-- MODAL DA BANDEIRA APANHADA -->
   <div id="modal-overlay" class="hidden">
     <div class="modal-box">
       <h2 style="color:#0f0; margin-top:0;">Bandeira Apanhada!</h2>
@@ -284,13 +289,13 @@
       <h3 id="modal-comp-name" style="margin:5px 0;"></h3>
       <p id="modal-comp-activity" style="color:#a7fca7; font-size:14px; margin:0 0 15px 0;"></p>
       <div id="modal-result-box" style="background:#222; padding:10px; border-radius:5px; margin-bottom:15px; border:1px dashed #fff;"></div>
-      <button style="width:100%;" onclick="closeFlagModal()">FECHAR E CONTINUAR</button>
+      <button style="width:100%;" onclick="document.getElementById('modal-overlay').classList.add('hidden');">FECHAR E CONTINUAR</button>
     </div>
   </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
-    // ================= CONFIGURAÇÕES E TESTE =================
+    // ================= CONFIGURAÇÕES =================
     const isTestMode = true; 
     const moveDist = isTestMode ? 4 : 0.5;   
     const energyCost = isTestMode ? 4 : 0.5; 
@@ -328,19 +333,21 @@
       document.getElementById('pr-reg-view').classList.toggle('hidden', view !== 'REG');
     }
 
-    // ================= JOGADOR (FASE 1) =================
+    // ================= JOGADOR =================
     function doLoginJG() {
       const name = document.getElementById("jg-log-nome").value.trim();
       if (!name) return alert("Preenche o Nome!");
       localStorage.setItem("zap_player_name", name);
       player.name = name;
+      
       const lastNif = localStorage.getItem("zap_pr_nif");
       if(lastNif) activeCompany = JSON.parse(localStorage.getItem("zap_pr_data_" + lastNif));
+
       startGame();
     }
     function doRegisterJG() { doLoginJG(); }
 
-    // ================= EMPRESA E PACOTES (FASE 2) =================
+    // ================= EMPRESA E PACOTES =================
     function doRegisterPR() {
       const name = document.getElementById("pr-reg-nome").value.trim();
       const nif = document.getElementById("pr-reg-nif").value.trim();
@@ -348,19 +355,33 @@
       const logo = document.getElementById("pr-reg-logo").value.trim();
       if (!name || !nif || !atividade) { alert("Preenche Nome, NIF e Atividade!"); return; }
 
-      // Empresa criada sem campanhas ativas. Tem o Pacote Oferta guardado no cofre (pacotesDisponiveis).
+      // Cria a Empresa com o Pacote Grátis que já entra "Ativo" (Sem prémios)
       const data = { 
         name, nif, atividade, logo, 
-        pacotesDisponiveis: [{
-          id: "COFRE-" + Math.random().toString(36).substr(2,6).toUpperCase(),
-          nome: "Oferta Inicial (Grátis)", flagsTotal: 1000, validadeDias: 30, raioKm: 0.5
-        }],
-        campanhas: [] 
+        pacotesDisponiveis: [],
+        campanhas: [{
+          id: "FREE-" + Math.random().toString(36).substr(2,6).toUpperCase(),
+          nome: "Oferta Inicial (Grátis)",
+          flagsTotais: 1000,
+          flagsRestantes: 1000,
+          raioKm: 0.5,
+          lotesIniciais: 0,
+          premio: "Sem prémio (Só Energia)",
+          diasLevantamento: 0,
+          flagsPremioIniciais: 0,
+          flagsPremioRestantes: 0,
+          flagsEnergiaRestantes: 1000,
+          status: "active", // Oferta arranca logo
+          activationTime: Date.now(),
+          expiraEm: Date.now() + (30 * 24 * 60 * 60 * 1000), // 30 Dias
+          vencedores: [],
+          isFree: true // Bloqueia edições
+        }] 
       };
       
       localStorage.setItem("zap_pr_data_" + nif, JSON.stringify(data));
       localStorage.setItem("zap_pr_nif", nif);
-      alert("Empresa Registada! 1.000 Bandeiras adicionadas ao seu Cofre. Agende a sua campanha!");
+      alert("Empresa Registada! As 1.000 Bandeiras grátis já estão no mapa!");
       loadCompanyDashboard(nif);
     }
 
@@ -382,6 +403,7 @@
       document.getElementById('view-stats').classList.add('hidden');
       document.getElementById('menu-' + tab).classList.add('active');
       document.getElementById('view-' + tab).classList.remove('hidden');
+      
       if (tab === 'agendar') renderAvailablePackages();
       if (tab === 'stats') renderStats();
     }
@@ -401,11 +423,6 @@
 
       if(!activeCompany.pacotesDisponiveis) activeCompany.pacotesDisponiveis = [];
       if(!activeCompany.campanhas) activeCompany.campanhas = [];
-      
-      // Auto-preenche data de hoje no calendário
-      let now = new Date();
-      now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-      document.getElementById("agenda-date").value = now.toISOString().slice(0,16);
 
       switchDashView('agendar');
       updateCompanyDashboard();
@@ -424,10 +441,8 @@
           raioKm: raio
         });
         localStorage.setItem("zap_pr_data_" + activeCompany.nif, JSON.stringify(activeCompany));
-        alert("Pacote comprado! Está guardado no seu cofre. Vá à aba 'Agendar Campanha' para o usar.");
-        if(document.getElementById('view-agendar').classList.contains('hidden') === false) {
-          renderAvailablePackages();
-        }
+        alert("Pacote comprado! Está guardado na aba 'Gerir Campanhas'.");
+        if(!document.getElementById('view-agendar').classList.contains('hidden')) renderAvailablePackages();
       }
     }
 
@@ -450,12 +465,6 @@
       const lotesPedidos = parseInt(document.getElementById("agenda-lots").value || "0");
       const diasPremio = parseInt(document.getElementById("agenda-days").value || "5");
       const premioTxt = document.getElementById("agenda-prize").value.trim();
-      const startDateStr = document.getElementById("agenda-date").value;
-
-      if (!startDateStr) { alert("Escolha uma data e hora para o arranque."); return; }
-      
-      let startTs = new Date(startDateStr).getTime();
-      if (startTs < Date.now()) startTs = Date.now(); // Não permite agendar pro passado
 
       const packIdx = activeCompany.pacotesDisponiveis.findIndex(p => p.id === packId);
       const chosenPack = activeCompany.pacotesDisponiveis[packIdx];
@@ -464,16 +473,17 @@
       if(lotesPedidos > 0 && !premioTxt) { alert("Como definiu lotes, descreva o prémio."); return; }
       if(lotesPedidos > maxLotes) { alert(`Este pacote suporta no máximo ${maxLotes} lotes.`); return; }
       if(lotesPedidos > 0 && diasPremio < 5) { alert("O mínimo de dias para levantamento são 5."); return; }
+      
+      // REGRA: Dias do prémio NÃO pode exceder validade do pacote!
       if(lotesPedidos > 0 && diasPremio > chosenPack.validadeDias) {
-        alert(`Não pode dar ${diasPremio} dias para levantar o prémio pois o pacote inteiro expira em ${chosenPack.validadeDias} dias!`);
+        alert(`ERRO: Não pode dar ${diasPremio} dias de prazo para reclamar o prémio, porque a validade legal do seu pacote é de apenas ${chosenPack.validadeDias} dias! Reduza os dias de levantamento.`);
         return;
       }
 
-      // Remove do Cofre
-      activeCompany.pacotesDisponiveis.splice(packIdx, 1);
+      activeCompany.pacotesDisponiveis.splice(packIdx, 1); // Tira do cofre
 
-      // Calcula os dias globais
-      const validadeExpiraEm = startTs + (chosenPack.validadeDias * 24 * 60 * 60 * 1000);
+      const validadeExpiraEm = Date.now() + (chosenPack.validadeDias * 24 * 60 * 60 * 1000);
+      const delayMs = isTestMode ? 60000 : 3600000; // 60 segundos no teste!
 
       const novaCampanha = {
         id: "CAMP-" + Math.random().toString(36).substr(2, 6).toUpperCase(),
@@ -488,40 +498,99 @@
         diasLevantamento: lotesPedidos > 0 ? diasPremio : 0,
         raioKm: chosenPack.raioKm,
         status: "pending",
-        activationTime: startTs,
+        activationTime: Date.now() + delayMs,
         expiraEm: validadeExpiraEm,
         vencedores: [],
-        alerted: false
+        isFree: false
       };
 
       activeCompany.campanhas.push(novaCampanha);
       renderAvailablePackages();
       updateCompanyDashboard();
-      
-      alert(`Campanha agendada com sucesso para ${new Date(startTs).toLocaleString()}!`);
+      alert(`Campanha agendada! O pacote entra em jogo e as ${chosenPack.flagsTotal} bandeiras serão ativadas no mapa quando o relógio terminar.`);
     }
 
-    function changeCampStatus(campId, newStatus) {
+    // ================= FUNÇÕES DE EDIÇÃO E ELIMINAÇÃO (As Novidades!) =================
+    function openEditCampaign(campId) {
       const camp = activeCompany.campanhas.find(c => c.id === campId);
-      if (camp) {
-        if (newStatus === 'suspended' && camp.flagsPremioRestantes < camp.flagsPremioIniciais) {
-           alert("ATENÇÃO: Já há jogadores com bandeiras deste prémio no seu saco. A campanha não pode ser suspensa a meio para garantir jogo justo!");
-           return;
+      if(camp.isFree) return alert("O pacote de oferta não pode ser editado.");
+
+      document.getElementById('edit-camp-id').value = camp.id;
+      document.getElementById('edit-camp-lotes').value = camp.lotesIniciais;
+      document.getElementById('edit-camp-dias').value = camp.diasLevantamento;
+      document.getElementById('edit-camp-premio').value = camp.premio === "Sem Prémio (Publicidade/Energia)" ? "" : camp.premio;
+      document.getElementById('edit-camp-modal').classList.remove('hidden');
+    }
+
+    function saveEditedCampaign() {
+      const campId = document.getElementById('edit-camp-id').value;
+      const camp = activeCompany.campanhas.find(c => c.id === campId);
+
+      const lotes = parseInt(document.getElementById('edit-camp-lotes').value || "0");
+      const dias = parseInt(document.getElementById('edit-camp-dias').value || "5");
+      const premio = document.getElementById('edit-camp-premio').value.trim();
+
+      const maxLotes = Math.floor(camp.flagsTotais / 20);
+      if(lotes > maxLotes) return alert(`Lotes a mais! O máximo é ${maxLotes}.`);
+      if(lotes > 0 && !premio) return alert("Falta a descrição do prémio.");
+      if(lotes > 0 && dias < 5) return alert("O mínimo são 5 dias.");
+      
+      let diasDoPacote = Math.ceil((camp.expiraEm - Date.now()) / (24*60*60*1000));
+      if(lotes > 0 && dias > diasDoPacote) return alert(`O pacote expira em ${diasDoPacote} dias. Não pode dar ${dias} dias de levantamento.`);
+
+      camp.lotesIniciais = lotes;
+      camp.diasLevantamento = lotes > 0 ? dias : 0;
+      camp.premio = lotes > 0 ? premio : "Sem Prémio (Publicidade/Energia)";
+      camp.flagsPremioIniciais = lotes * 20;
+      camp.flagsPremioRestantes = lotes * 20;
+      camp.flagsEnergiaRestantes = camp.flagsTotais - (lotes * 20);
+
+      updateCompanyDashboard();
+      document.getElementById('edit-camp-modal').classList.add('hidden');
+      alert("Lotes da campanha atualizados com sucesso!");
+    }
+
+    function eliminateCampaign(campId) {
+      const warning = "⚠️ AVISO LEGAL E RESPONSABILIDADE ⚠️\n\nTem a certeza absoluta que quer ELIMINAR este pacote?\n\nAo fazê-lo, a empresa assume TOTAL RESPONSABILIDADE perante os jogadores por qualquer prémio que já esteja ativo ou que venha a ser reclamado referente a esta campanha.\n\nEsta ação é IRREVERSÍVEL. Deseja prosseguir e remover o pacote do jogo?";
+
+      if(confirm(warning)) {
+        const idx = activeCompany.campanhas.findIndex(c => c.id === campId);
+        if(idx > -1) {
+          activeCompany.campanhas[idx].status = 'eliminated';
+          updateCompanyDashboard();
+          alert("Pacote eliminado. A empresa assumiu a responsabilidade legal pelos prémios pendentes.");
         }
-        camp.status = newStatus;
+      }
+    }
+
+    function cancelPendingCampaign(campId) {
+      const idx = activeCompany.campanhas.findIndex(c => c.id === campId);
+      if (idx > -1) {
+        const camp = activeCompany.campanhas[idx];
+        // Devolve o pacote ao cofre
+        activeCompany.pacotesDisponiveis.push({
+          id: "COFRE-" + Math.random().toString(36).substr(2,6).toUpperCase(),
+          nome: camp.nome,
+          flagsTotal: camp.flagsTotais,
+          validadeDias: Math.ceil((camp.expiraEm - Date.now()) / (24*60*60*1000)),
+          raioKm: camp.raioKm
+        });
+        activeCompany.campanhas.splice(idx, 1);
         updateCompanyDashboard();
+        renderAvailablePackages();
+        alert("A campanha foi cancelada e o pacote devolvido ao seu cofre.");
       }
     }
 
     function updateCompanyDashboard() {
       const listaDiv = document.getElementById("campanhas-ativas-lista");
-      if(!listaDiv) return; // Se não estiver na aba correta
+      if(!listaDiv) return; 
 
       listaDiv.innerHTML = "";
       const now = Date.now();
 
       if (activeCompany.campanhas.length === 0) {
-        listaDiv.innerHTML = "<div class='pack-info'>Ainda não tem campanhas ativas ou agendadas.</div>";
+        listaDiv.innerHTML = "<div class='pack-info'>Ainda não tem campanhas no mapa.</div>";
       } else {
         activeCompany.campanhas.forEach(camp => {
           
@@ -529,49 +598,59 @@
           
           let pacoteExpirado = false;
           let diasVal = Math.ceil((camp.expiraEm - now) / (24*60*60*1000));
-          if (diasVal <= 0 && (camp.status === 'active' || camp.status === 'suspended')) { 
-            pacoteExpirado = true; camp.status = 'expired'; 
-            
-            // Dispara Alerta se acabou agora
-            if(!camp.alerted) {
-              camp.alerted = true;
-              document.getElementById("pr-alert-msg").innerText = `A sua campanha "${camp.nome}" (${camp.premio}) terminou o seu prazo de validade! O seu alcance no jogo baixou.`;
-              document.getElementById("pr-alert-overlay").classList.remove("hidden");
-            }
+          if (diasVal <= 0 && camp.status === 'active') { pacoteExpirado = true; camp.status = 'expired'; }
+
+          if (camp.status === 'eliminated') {
+             listaDiv.innerHTML += `<div class="camp-card camp-eliminated"><div class="pack-title">${camp.nome} (ELIMINADO)</div><p style="font-size:12px; color:#aaa;">Este pacote foi removido pela empresa por motivos de força maior.</p></div>`;
+             return;
           }
 
-          let isSuspended = (camp.status === 'suspended');
-          let cardHtml = `<div class="camp-card ${camp.status === 'pending' ? 'camp-pending' : ''} ${(pacoteExpirado || isSuspended) ? 'camp-suspended' : ''}">`;
+          let cardHtml = `<div class="camp-card ${camp.status === 'pending' ? 'camp-pending' : ''}">`;
           cardHtml += `<div class="pack-title">${camp.nome} ${pacoteExpirado ? '(EXPIRADO)' : ''}</div>`;
           
           if (camp.status === 'pending') {
             const diff = Math.max(0, camp.activationTime - now);
-            const d = Math.floor(diff / (1000 * 60 * 60 * 24));
-            const h = Math.floor((diff / (1000 * 60 * 60)) % 24);
-            const m = Math.floor((diff / 1000 / 60) % 60);
-            const s = Math.floor((diff / 1000) % 60);
-            
+            const m = Math.floor((diff/1000)/60).toString().padStart(2, '0');
+            const s = Math.floor((diff/1000)%60).toString().padStart(2, '0');
             cardHtml += `
-              <p style="font-size:12px; color:#aaa; margin:5px 0;">Agendada para: <b>${new Date(camp.activationTime).toLocaleString()}</b></p>
-              <div class="camp-timer">⏱️ Arranque em: ${d}d ${h}h ${m}m ${s}s</div>
-              <button class="btn-warning" onclick="changeCampStatus('${camp.id}', 'suspended')">⏸️ SUSPENDER</button>
+              <div style="font-size:12px; color:#a7fca7;"><b>Raio:</b> ${camp.raioKm}km | <b>Prémio:</b> ${camp.premio} | <b>Lotes:</b> ${camp.lotesIniciais}</div>
+              <p style="font-size:12px; color:#aaa; margin:5px 0;">O pacote está protegido na fase de carência. Pode editar os lotes ou cancelar.</p>
+              <div class="camp-timer">⏱️ Arranque em: ${m}:${s}</div>
+              <div style="display:flex; gap:10px; margin-top:10px;">
+                ${!camp.isFree ? `<button class="btn-edit" style="flex:1;" onclick="openEditCampaign('${camp.id}')">✏️ EDITAR</button>
+                <button class="btn-warning" style="flex:1;" onclick="cancelPendingCampaign('${camp.id}')">❌ CANCELAR</button>` : `<span style="font-size:11px; color:#aaa;">O Pacote de Oferta não pode ser editado.</span>`}
+              </div>
             `;
           } else {
             const consumido = camp.flagsTotais - camp.flagsRestantes;
             const pct = (consumido / camp.flagsTotais) * 100;
             
-            let statusTxt = camp.status === 'active' ? `<span style="color:#0f0;">🟢 ATIVA NO MAPA</span>` : (pacoteExpirado ? `<span style="color:red;">🔴 EXPIRADA</span>` : `<span style="color:#ff9800;">⏸️ SUSPENSA</span>`);
+            let statusTxt = camp.status === 'active' ? `<span style="color:#0f0;">🟢 ATIVA NO MAPA</span>` : `<span style="color:red;">🔴 TERMINADA</span>`;
+            
+            // NOVO: Sem botão Suspender. Apenas ELIMINAR!
             let btnAction = "";
-            if (!pacoteExpirado) {
-               let canSuspend = camp.flagsPremioRestantes >= camp.flagsPremioIniciais;
-               btnAction = `<button class="btn-dark" style="font-size:10px; padding:5px;" ${canSuspend ? '' : 'disabled title="Jogadores já começaram a recolher!"'} onclick="changeCampStatus('${camp.id}', '${camp.status === 'active' ? 'suspended' : 'active'}')">${camp.status === 'active' ? '⏸️ SUSPENDER' : '▶️ RETOMAR'}</button>`;
+            if (!pacoteExpirado && !camp.isFree) {
+               btnAction = `<button class="btn-danger" style="font-size:10px; padding:5px;" onclick="eliminateCampaign('${camp.id}')">❌ ELIMINAR PACOTE</button>`;
             }
 
             cardHtml += `
               <div style="display:flex; justify-content:space-between; align-items:center;">${statusTxt} ${btnAction}</div>
-              <div style="font-size:12px; color:#a7fca7; margin-top:5px;"><b>Prémio:</b> ${camp.premio} | <b>Validade Restante:</b> ${pacoteExpirado ? 'Terminou' : diasVal + ' dias'}</div>
-              <div class="stat-bar" style="width:100%; height:8px; border-radius:4px; margin-top:10px;"><div class="stat-fill" style="width:${pct}%; background:${pacoteExpirado ? 'red' : '#ff9800'};"></div></div>
+              <div style="font-size:12px; color:#a7fca7; margin-top:5px;"><b>Raio:</b> ${camp.raioKm}km | <b>Prémio:</b> ${camp.premio} | <b>Validade:</b> ${pacoteExpirado ? 'Terminou' : diasVal + ' dias'}</div>
+              <div style="display:flex; justify-content:space-between; font-size:12px; margin-top:10px; color:#fff; background:#111; padding:5px; border-radius:4px;">
+                <span>📦 Lotes: ${camp.lotesIniciais}</span>
+                <span>🚩 Consumo: ${consumido}/${camp.flagsTotais}</span>
+                <span>🎫 QRs: ${camp.vencedores.length}</span>
+              </div>
+              <div class="stat-bar" style="width:100%; height:8px; border-radius:4px; margin-top:5px;"><div class="stat-fill" style="width:${pct}%; background:${pacoteExpirado ? 'red' : '#0f0'};"></div></div>
             `;
+
+            if (camp.vencedores.length > 0) {
+              cardHtml += `<h4 style="margin:10px 0 5px 0; color:#4CAF50;">🏆 QRs Gerados</h4>`;
+              camp.vencedores.forEach(v => {
+                const diasFaltam = Math.ceil((v.expiraEm - Date.now()) / (24*60*60*1000));
+                cardHtml += `<div class="winner-item"><span>🎫 <b>${v.codigo}</b></span><span>Detentor: <b style="color:#0f0;">${v.jogador}</b></span><span style="color:${diasFaltam<0 ? '#ff0000' : '#0f0'}">${diasFaltam<0 ? 'Expirou' : diasFaltam+'d'}</span></div>`;
+              });
+            }
           }
           cardHtml += `</div>`;
           listaDiv.innerHTML += cardHtml;
@@ -586,7 +665,7 @@
       let htmlQrs = "";
 
       activeCompany.campanhas.forEach(c => {
-        if(c.status !== 'pending') {
+        if(c.status !== 'pending' && c.status !== 'saved' && c.status !== 'eliminated') {
           totalCompradas += c.flagsTotais;
           totalApanhadas += (c.flagsTotais - c.flagsRestantes);
           totalQRs += c.vencedores.length;
@@ -610,7 +689,7 @@
             <div style="font-size:24px; color:#fff; font-weight:bold;">${totalApanhadas} <span style="font-size:14px; color:#aaa;">/ ${totalCompradas}</span></div>
           </div>
           <div style="background:#111; padding:15px; border-radius:8px; text-align:center; border:1px solid #00f0ff;">
-            <div style="color:#a7fca7; font-size:12px;">Desempenho</div>
+            <div style="color:#a7fca7; font-size:12px;">Desempenho Geral</div>
             <div style="font-size:14px; color:#fff; font-weight:bold;">${mediaDia} <span style="font-size:10px; color:#aaa;">band/dia</span></div>
             <div style="font-size:14px; color:#fff; font-weight:bold;">${mediaSemana} <span style="font-size:10px; color:#aaa;">band/semana</span></div>
           </div>
@@ -696,7 +775,7 @@
     function processCaughtFlag() {
       document.getElementById('modal-overlay').classList.remove('hidden');
       
-      let mockName = activeCompany ? activeCompany.name : "Restaurante Central";
+      let mockName = activeCompany ? activeCompany.name : "ZAP Central";
       let mockAtiv = activeCompany ? activeCompany.atividade : "Restauração";
       let mockLogo = activeCompany ? activeCompany.logo : "";
       
@@ -712,8 +791,9 @@
         player.energy = Math.min(player.maxEnergy, player.energy + 50); updateUI(); return;
       }
 
+      // Procura APENAS pacotes ATIVOS no mapa (ignora pendentes, guardados e eliminados)
       const ativas = activeCompany.campanhas.filter(c => c.status === 'active' && c.flagsRestantes > 0);
-      if (ativas.length === 0) { resBox.innerHTML = `As campanhas desta empresa estão suspensas ou esgotadas!`; return; }
+      if (ativas.length === 0) { resBox.innerHTML = `As campanhas desta empresa esgotaram ou foram eliminadas!`; return; }
 
       let totalSaco = ativas.reduce((sum, p) => sum + p.flagsRestantes, 0);
       let sorteio = Math.random() * totalSaco;
