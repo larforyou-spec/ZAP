@@ -30,7 +30,7 @@
     /* ================= MAPA CLARO E CÍRCULOS ================= */
     #game-screen { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; }
     #map { width: 100%; height: 100%; }
-    .catch-circle { stroke-dasharray: 6, 6; } /* Círculo Tracejado */
+    .catch-circle { stroke-dasharray: 6, 6; } 
 
     /* ================= AVATAR ANIMADO ================= */
     .avatar-wrapper { position: relative; width: 40px; height: 50px; transition: transform 0.2s linear; }
@@ -52,29 +52,39 @@
     .stat-bar { height: 6px; background: #222; border-radius: 3px; margin-top: 4px; border: 1px solid rgba(0,255,0,0.3); overflow:hidden;}
     .stat-fill { height: 100%; background: #0f0; transition: width 0.3s; }
     
-    /* MENU LATERAL DIREITO (Arrastável) */
     #right-toolbar { position: absolute; top: 80px; right: 10px; z-index: 3000; display: flex; flex-direction: column; gap: 8px; background: rgba(0,0,0,0.7); padding: 5px; border-radius: 8px; border: 1px solid #0f0; }
     .tool-btn { width: 45px; height: 45px; border-radius: 50%; font-size: 18px; padding: 0; box-shadow: 0 0 10px rgba(0,255,0,0.3); }
 
-    /* SETAS DE COMANDO (Arrastável) */
+    /* SETAS DE COMANDO */
     #offline-controls { position: absolute; bottom: 90px; left: 20px; z-index: 3000; background: rgba(0,0,0,0.85); border: 1px solid #0f0; border-radius: 6px; padding: 10px; text-align: center; }
     .drag-handle { background: rgba(0,255,0,0.2); cursor: move; padding: 3px; margin-bottom: 5px; font-size: 10px; color: #fff; }
     .dpad { display: grid; grid-template-columns: 50px 50px 50px; gap: 5px; }
     .dpad button { width: 50px; height: 50px; font-size: 20px; padding: 0; }
 
-    /* ================= JANELAS DE INFORMAÇÃO (Ampliáveis e Arrastáveis) ================= */
-    .game-window { position: absolute; top: 100px; left: 50px; width: 300px; max-height: 400px; background: rgba(0,0,0,0.95); border: 2px solid #0f0; z-index: 4000; display: flex; flex-direction: column; resize: both; overflow: auto; box-shadow: 0 0 20px rgba(0,255,0,0.3); }
+    /* ================= JANELAS DE INFORMAÇÃO ================= */
+    .game-window { position: absolute; top: 100px; left: 50px; width: 340px; max-height: 450px; background: rgba(0,0,0,0.95); border: 2px solid #0f0; z-index: 4000; display: flex; flex-direction: column; resize: both; overflow: auto; box-shadow: 0 0 20px rgba(0,255,0,0.3); }
     .win-header { background: #003300; padding: 8px; font-weight: bold; display: flex; justify-content: space-between; cursor: move; border-bottom: 1px solid #0f0; }
     .win-close { background: red; color: white; border: none; padding: 2px 8px; font-weight: bold; cursor: pointer; border-radius: 4px; }
     .win-content { padding: 15px; font-size: 13px; color: #a7fca7; overflow-y: auto; }
     .win-item { border-bottom: 1px dashed #0f0; padding-bottom: 8px; margin-bottom: 8px; }
 
-    /* ================= RODAPÉ DE NOTÍCIAS (TICKER) ================= */
+    /* ================= NOVO: JANELA SOCIAL E TROCAS ================= */
+    .social-tabs { display: flex; border-bottom: 1px solid #0f0; margin-bottom: 10px; }
+    .soc-btn { flex: 1; background: #111; color: #0f0; padding: 5px; font-size: 12px; border: none; border-radius: 0; }
+    .soc-btn.active { background: #0f0; color: #000; }
+    
+    .player-list-item { display: flex; justify-content: space-between; align-items: center; background: #111; padding: 8px; margin-bottom: 5px; border-radius: 4px; }
+    .status-dot { height: 10px; width: 10px; background: #0f0; border-radius: 50%; display: inline-block; margin-right: 5px;}
+    
+    /* DRAG AND DROP (Trocas) */
+    .drop-zone { border: 2px dashed #0f0; background: rgba(0,255,0,0.1); min-height: 100px; padding: 10px; text-align: center; border-radius: 8px; margin-top: 10px; }
+    .draggable-qr { background: #fff; color: #000; padding: 10px; text-align: center; border-radius: 5px; font-weight: bold; cursor: grab; display: inline-block; box-shadow: 0 0 10px #fff;}
+
+    /* ================= RODAPÉ TICKER ================= */
     #ticker-wrap { position: fixed; bottom: 25px; left: 0; width: 100%; background: rgba(0, 50, 0, 0.9); border-top: 1px solid #0f0; border-bottom: 1px solid #0f0; color: #fff; z-index: 8000; padding: 5px 0; overflow: hidden; white-space: nowrap; font-size: 13px; font-weight: bold;}
     #ticker { display: inline-block; animation: ticker 25s linear infinite; }
     @keyframes ticker { 0% { transform: translateX(100vw); } 100% { transform: translateX(-100%); } }
 
-    /* Marcas Larforyou */
     .watermark { position: fixed; bottom: 60px; left: 15px; font-size: 20px; font-weight: bold; color: rgba(0, 255, 0, 0.4); text-shadow: 2px 2px 4px #000; z-index: 9999; pointer-events: none; }
     .copyright { position: fixed; bottom: 5px; width: 100%; text-align: center; font-size: 11px; color: rgba(0, 255, 0, 0.4); z-index: 9999; pointer-events: none; }
   </style>
@@ -84,14 +94,12 @@
   <div class="watermark">Larforyou&reg;</div>
   <div class="copyright">&copy; 2024 Larforyou&reg; - Marca Registada. Todos os direitos reservados.</div>
 
-  <!-- RODAPÉ NOTÍCIAS -->
-  <div id="ticker-wrap"><div id="ticker">⚡ Bem-vindo ao ZAP FLAGS! 🏆 Jogador 'Alex' ganhou BINGO na loja ZARA! 🎁 50% de Desconto no Café Central a terminar em 5 dias! ⚡ Troca QRs por bandeiras sem prémio para ganhar Skill!</div></div>
+  <div id="ticker-wrap"><div id="ticker">⚡ Bem-vindo ao ZAP FLAGS! 🏆 'Miguel' ganhou BINGO na ZARA! 🎁 50% de Desconto na EDP termina amanhã! 🤝 Adiciona amigos na nova aba Social e troca QRs!</div></div>
 
   <!-- LOGIN -->
   <div id="login-screen">
     <div class="login-box">
       <h1 style="text-align: center; color: #0f0; margin-top:0;">ZAP FLAGS</h1>
-      
       <div style="display:flex; gap:10px; margin-bottom:15px;">
         <button id="btn-tab-jg" class="tab-btn active" onclick="switchMainTab('JG')">JOGADOR</button>
         <button id="btn-tab-pr" class="tab-btn btn-dark" onclick="switchMainTab('PR')">EMPRESA / PR</button>
@@ -125,28 +133,24 @@
   <div id="game-screen" class="hidden">
     <div id="map"></div>
 
-    <!-- TOP BAR -->
     <div id="top-bar">
-      <div class="stat">Energia <span id="val-ener">1000</span>m
-        <div class="stat-bar"><div id="bar-ener" class="stat-fill"></div></div>
-      </div>
-      <div class="stat">Nível <span id="val-skill">1</span> (<span id="val-visao">5</span>m)
-        <div class="stat-bar"><div id="bar-skill" class="stat-fill" style="background:#00f0ff;"></div></div>
-      </div>
+      <div class="stat">Energia <span id="val-ener">1000</span>m<div class="stat-bar"><div id="bar-ener" class="stat-fill"></div></div></div>
+      <div class="stat">Nível <span id="val-skill">1</span> (<span id="val-visao">5</span>m)<div class="stat-bar"><div id="bar-skill" class="stat-fill" style="background:#00f0ff;"></div></div></div>
       <button class="btn-dark" style="padding:6px; font-size:12px;" onclick="catchFlag()">✋ APANHAR</button>
       <button class="btn-dark" style="padding:6px; font-size:12px;" onclick="location.reload()">🚪 SAIR</button>
     </div>
 
-    <!-- MENU LATERAL DIREITO (Arrastável) -->
+    <!-- MENU LATERAL DIREITO COM O NOVO BOTÃO SOCIAL -->
     <div id="right-toolbar" class="drag-window">
       <div class="drag-handle" style="text-align:center;">☰ Menu</div>
       <button class="tool-btn btn-dark" onclick="centerPlayer()" title="Localização Atual">📍</button>
       <button class="tool-btn btn-dark" onclick="openWindow('win-flags')" title="Bandeiras e Empresas">🏴</button>
       <button class="tool-btn btn-dark" onclick="openWindow('win-qrs')" title="QRs Ganhos">🎫</button>
+      <button class="tool-btn btn-dark" onclick="openWindow('win-social')" title="Amigos e Trocas">👥</button>
       <button class="tool-btn btn-dark" onclick="openWindow('win-trophies')" title="Troféus">🏆</button>
     </div>
 
-    <!-- SETAS DE COMANDO (Arrastável) -->
+    <!-- SETAS DE COMANDO -->
     <div id="offline-controls" class="drag-window">
       <div class="drag-handle">☰ Mover</div>
       <div class="dpad">
@@ -156,16 +160,17 @@
       </div>
     </div>
 
-    <!-- JANELAS INTERATIVAS (Arrastáveis e Ampliáveis) -->
+    <!-- JANELA: BANDEIRAS -->
     <div id="win-flags" class="game-window drag-window hidden">
       <div class="win-header"><span class="drag-handle" style="flex:1;">🏴 Bandeiras por Empresa</span><button class="win-close" onclick="closeWindow('win-flags')">X</button></div>
       <div class="win-content">
         <div class="win-item"><b>Total Apanhadas:</b> <span id="val-flags">0</span></div>
-        <div class="win-item"><b>Zara:</b> 15/20 para prémio</div>
+        <div class="win-item"><b>Larforyou:</b> 2/20 para prémio</div>
         <div class="win-item"><b>Café Central:</b> 5/20 para prémio</div>
       </div>
     </div>
 
+    <!-- JANELA: QRS -->
     <div id="win-qrs" class="game-window drag-window hidden" style="left:100px;">
       <div class="win-header"><span class="drag-handle" style="flex:1;">🎫 QRs e Prémios</span><button class="win-close" onclick="closeWindow('win-qrs')">X</button></div>
       <div class="win-content">
@@ -173,6 +178,7 @@
       </div>
     </div>
 
+    <!-- JANELA: TROFÉUS -->
     <div id="win-trophies" class="game-window drag-window hidden" style="left:150px;">
       <div class="win-header"><span class="drag-handle" style="flex:1;">🏆 Troféus e Skill</span><button class="win-close" onclick="closeWindow('win-trophies')">X</button></div>
       <div class="win-content">
@@ -180,24 +186,76 @@
       </div>
     </div>
 
+    <!-- NOVA JANELA: SOCIAL E TROCAS -->
+    <div id="win-social" class="game-window drag-window hidden" style="left:80px; width:360px;">
+      <div class="win-header"><span class="drag-handle" style="flex:1;">👥 Social e Trocas</span><button class="win-close" onclick="closeWindow('win-social')">X</button></div>
+      
+      <div class="social-tabs">
+        <button id="tab-lista" class="soc-btn active" onclick="switchSoc('lista')">Jogadores</button>
+        <button id="tab-chat" class="soc-btn" onclick="switchSoc('chat')">Chat</button>
+        <button id="tab-troca" class="soc-btn" onclick="switchSoc('troca')">Trocar QR</button>
+      </div>
+
+      <div class="win-content" style="padding:10px;">
+        <!-- TAB LISTA -->
+        <div id="view-lista">
+          <div class="player-list-item"><span class="status-dot"></span> <b>Miguel88</b> <button class="btn-dark" style="padding:4px; font-size:10px;" onclick="alert('Pedido de Amizade Enviado!')">Adicionar</button></div>
+          <div class="player-list-item"><span class="status-dot"></span> <b>Ana_ZAP</b> <button class="btn-dark" style="padding:4px; font-size:10px;" onclick="alert('Pedido de Amizade Enviado!')">Adicionar</button></div>
+          <div class="player-list-item"><span class="status-dot" style="background:red;"></span> <b>Joao123</b> <button class="btn-dark" style="padding:4px; font-size:10px;" onclick="alert('Pedido de Amizade Enviado!')">Adicionar</button></div>
+        </div>
+
+        <!-- TAB CHAT -->
+        <div id="view-chat" class="hidden">
+          <div style="background:#111; height:150px; padding:10px; border-radius:5px; margin-bottom:10px; overflow-y:auto;">
+            <p style="color:#aaa; font-size:11px; margin:0;">[Miguel88]: Boas! Tens algum QR do Café Central?</p>
+            <p style="color:#fff; font-size:11px; margin:5px 0;">[Tu]: Tenho sim, queres trocar?</p>
+          </div>
+          <div style="display:flex; gap:5px;">
+            <input type="text" placeholder="Escreve mensagem..." style="margin:0;" />
+            <button onclick="alert('Mensagem enviada (Simulação)')">Enviar</button>
+          </div>
+        </div>
+
+        <!-- TAB TROCA (DRAG AND DROP) -->
+        <div id="view-troca" class="hidden">
+          <p style="margin:0 0 10px 0; font-size:12px;">Arrasta o teu QR para a caixa de troca para oferecer a um amigo!</p>
+          
+          <div style="display:flex; justify-content:space-around;">
+            <div style="text-align:center;">
+              <b>Os teus QRs</b><br><br>
+              <!-- Objeto que pode ser arrastado -->
+              <div id="qr-1" class="draggable-qr" draggable="true" ondragstart="drag(event)">
+                🎫 QR ZARA<br><span style="font-size:10px;">(50% Desconto)</span>
+              </div>
+            </div>
+            
+            <div style="width:50%;">
+              <!-- Zona onde se larga o objeto -->
+              <div id="caixa-troca" class="drop-zone" ondrop="drop(event)" ondragover="allowDrop(event)">
+                Largar QR aqui!
+              </div>
+            </div>
+          </div>
+          <button style="width:100%; margin-top:15px;" onclick="alert('Proposta de troca enviada ao amigo! A aguardar aceitação...')">CONFIRMAR TROCA</button>
+        </div>
+      </div>
+    </div>
+
   </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
-    // ================= CONFIGURAÇÕES E TESTE =================
     const isTestMode = true; 
     const moveDist = isTestMode ? 4 : 0.5;   
     const energyCost = isTestMode ? 4 : 0.5; 
     const idleTime = isTestMode ? 15000 : 900000; 
 
-    // ================= VARIÁVEIS =================
     let player = { name: "", energy: 1000, maxEnergy: 1000, skill: 1, vision: 5, flags: 0, lat: 41.1496, lng: -8.6109 };
     let map = null, playerMarker = null, visionCircle = null, catchCircle = null;  
     let allFlags = [];
     let nextSkillTarget = 100;
     let lastMoveTime = Date.now();
 
-    // ================= ARRANQUE =================
     window.onload = () => {
       const savedName = localStorage.getItem("zap_player_name");
       if (savedName) document.getElementById("jg-log-nome").value = savedName;
@@ -241,12 +299,10 @@
       startGame();
     }
 
-    // ================= MAPA CLARO =================
     function startGame() {
       document.getElementById("login-screen").classList.add("hidden");
       document.getElementById("game-screen").classList.remove("hidden");
       
-      // MAPA CLARO E VISÍVEL
       map = L.map('map', { zoomControl: false }).setView([player.lat, player.lng], 20);
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 22 }).addTo(map);
       
@@ -254,7 +310,6 @@
       renderAvatar();
     }
 
-    // ================= AVATAR E CÍRCULOS =================
     function renderAvatar() {
       if (!playerMarker) {
         const avatarHTML = `<div id="avatar-anim" class="avatar-wrapper"><div class="ava-head"></div><div class="ava-arm-l"></div><div class="ava-arm-r"></div><div class="ava-body"></div><div class="ava-leg-l"></div><div class="ava-leg-r"></div></div>`;
@@ -264,11 +319,9 @@
         playerMarker.setLatLng([player.lat, player.lng]);
       }
 
-      // Círculo Azul (Visão 5m)
       if (!visionCircle) visionCircle = L.circle([player.lat, player.lng], { radius: player.vision, color: "#0066ff", fillOpacity: 0.1, weight: 1 }).addTo(map);
       else { visionCircle.setLatLng([player.lat, player.lng]); visionCircle.setRadius(player.vision); }
 
-      // Círculo Verde Tracejado (Apanhar 2.5m)
       if (!catchCircle) catchCircle = L.circle([player.lat, player.lng], { radius: 2.5, color: "#00ff00", className: "catch-circle", fillOpacity: 0.2, weight: 2 }).addTo(map);
       else catchCircle.setLatLng([player.lat, player.lng]);
 
@@ -278,8 +331,8 @@
 
     function centerPlayer() { map.setView([player.lat, player.lng], 20); }
 
-    // ================= MOVIMENTO =================
     window.addEventListener('keydown', (e) => {
+      if (document.getElementById("game-screen").classList.contains("hidden")) return;
       if (e.key === 'ArrowUp' || e.key === 'w') movePlayer(0, 1);
       if (e.key === 'ArrowDown' || e.key === 's') movePlayer(0, -1);
       if (e.key === 'ArrowLeft' || e.key === 'a') movePlayer(-1, 0);
@@ -307,7 +360,15 @@
       updateUI();
     }
 
-    // ================= LÓGICA BANDEIRAS =================
+    setInterval(() => {
+      const timeIdle = Date.now() - lastMoveTime;
+      if (timeIdle >= idleTime && player.energy < player.maxEnergy) {
+        player.energy = Math.min(player.maxEnergy, player.energy + (player.maxEnergy * 0.10));
+        updateUI();
+        lastMoveTime = Date.now(); 
+      }
+    }, 1000);
+
     function getDist(lat1, lng1, lat2, lng2) {
       const R = 6371e3;
       const dPhi = (lat2 - lat1) * Math.PI / 180;
@@ -316,7 +377,6 @@
       return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     }
 
-    // Bandeiras nascem perto do raio de visão para teste rápido!
     function spawnRandomFlags(amount) {
       for(let i=0; i<amount; i++) {
         let rLat = player.lat + ((Math.random() - 0.5) * 0.0001);
@@ -355,7 +415,6 @@
       checkVisibleFlags();
     }
 
-    // ================= SKILL & UI =================
     function recalcSkill() {
       nextSkillTarget = 100 * Math.pow(2, player.skill - 1);
       if (player.flags >= nextSkillTarget) {
@@ -368,11 +427,9 @@
     function updateUI() {
       document.getElementById('val-ener').innerText = Math.floor(player.energy);
       document.getElementById('bar-ener').style.width = (player.energy / player.maxEnergy) * 100 + "%";
-      
       document.getElementById('val-skill').innerText = player.skill;
       document.getElementById('val-visao').innerText = player.vision.toFixed(2);
       
-      // Fita de crescimento do skill
       let prevTarget = player.skill === 1 ? 0 : 100 * Math.pow(2, player.skill - 2);
       let progress = ((player.flags - prevTarget) / (nextSkillTarget - prevTarget)) * 100;
       document.getElementById('bar-skill').style.width = progress + "%";
@@ -380,10 +437,35 @@
       document.getElementById('val-flags').innerText = player.flags;
     }
 
-    // ================= JANELAS ARRASTÁVEIS E MENU =================
+    // ================= JANELAS, ABAS E DRAG & DROP =================
     function openWindow(id) { document.getElementById(id).classList.remove('hidden'); }
     function closeWindow(id) { document.getElementById(id).classList.add('hidden'); }
 
+    // Alternar Abas na janela Social
+    function switchSoc(tab) {
+      document.getElementById('tab-lista').classList.remove('active');
+      document.getElementById('tab-chat').classList.remove('active');
+      document.getElementById('tab-troca').classList.remove('active');
+      
+      document.getElementById('view-lista').classList.add('hidden');
+      document.getElementById('view-chat').classList.add('hidden');
+      document.getElementById('view-troca').classList.add('hidden');
+
+      document.getElementById('tab-' + tab).classList.add('active');
+      document.getElementById('view-' + tab).classList.remove('hidden');
+    }
+
+    // Lógica Drag and Drop para a Troca de QR
+    function allowDrop(ev) { ev.preventDefault(); }
+    function drag(ev) { ev.dataTransfer.setData("text", ev.target.id); }
+    function drop(ev) {
+      ev.preventDefault();
+      var data = ev.dataTransfer.getData("text");
+      ev.target.appendChild(document.getElementById(data));
+      ev.target.style.border = "2px solid #0f0";
+    }
+
+    // Lógica para arrastar janelas pelo ecrã
     document.querySelectorAll('.drag-window').forEach(el => {
       const handle = el.querySelector('.drag-handle');
       if(!handle) return;
