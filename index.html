@@ -8,7 +8,6 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
   <style>
-    /* ================= DESIGN GERAL ================= */
     * { box-sizing: border-box; user-select: none; font-family: 'Courier New', Courier, monospace; }
     html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #222; color: #0f0; }
     .hidden { display: none !important; }
@@ -19,7 +18,7 @@
     .btn-link { background: none; border: none; color: #a7fca7; text-decoration: underline; padding: 0; font-size: 12px; }
     input, select { width: 100%; padding: 10px; margin-bottom: 10px; border-radius: 4px; border: 1px solid #0f0; background: #111; color: #0f0; }
     
-    /* ================= LOGIN ================= */
+    /* LOGIN E REGISTO */
     #login-screen { position: absolute; inset: 0; background: radial-gradient(circle, #002200 0%, #000000 100%); display: flex; align-items: center; justify-content: center; z-index: 10000; padding: 15px; overflow-y: auto; }
     .login-box { width: 100%; max-width: 500px; background: rgba(0, 0, 0, 0.9); border: 2px solid #0f0; border-radius: 8px; padding: 25px; margin: auto; }
     .tab-container { display: flex; margin-bottom: 15px; border-radius: 4px; overflow: hidden; border: 1px solid #0f0; }
@@ -27,12 +26,12 @@
     .tab-btn.active { background: #0f0; color: #000; }
     .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 
-    /* ================= MAPA E CÍRCULOS ================= */
+    /* MAPA */
     #game-screen { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; }
     #map { width: 100%; height: 100%; }
     .catch-circle { stroke-dasharray: 6, 6; } 
 
-    /* ================= AVATAR ANIMADO ================= */
+    /* AVATAR */
     .avatar-wrapper { position: relative; width: 40px; height: 50px; transition: transform 0.2s linear; }
     .ava-head { position: absolute; top: 0; left: 10px; width: 20px; height: 20px; background: #ffeb3b; border-radius: 50%; border: 2px solid #000; z-index: 3; }
     .ava-body { position: absolute; top: 18px; left: 10px; width: 20px; height: 18px; background: #2196f3; border-radius: 4px; border: 2px solid #000; z-index: 2; }
@@ -46,39 +45,30 @@
 
     .flag-marker { width: 24px; height: 24px; background: #FF0000; border: 2px solid white; border-radius: 50%; box-shadow: 0 0 10px #FF0000; }
 
-    /* ================= UI TOP BAR E MENU LATERAL ================= */
+    /* UI TOP E CONTROLOS */
     #top-bar { position: absolute; top: 10px; left: 10px; right: 10px; background: rgba(0, 0, 0, 0.85); border: 1px solid #0f0; border-radius: 6px; padding: 10px; z-index: 2000; display: flex; justify-content: space-between; gap: 10px; }
     .stat { flex: 1; text-align: center; font-size: 12px; font-weight: bold; color: #0f0; }
     .stat-bar { height: 6px; background: #222; border-radius: 3px; margin-top: 4px; border: 1px solid rgba(0,255,0,0.3); overflow:hidden;}
     .stat-fill { height: 100%; background: #0f0; transition: width 0.3s; }
     
-    #right-toolbar { position: absolute; top: 80px; right: 10px; z-index: 3000; display: flex; flex-direction: column; gap: 8px; background: rgba(0,0,0,0.7); padding: 5px; border-radius: 8px; border: 1px solid #0f0; }
-    .tool-btn { width: 45px; height: 45px; border-radius: 50%; font-size: 18px; padding: 0; box-shadow: 0 0 10px rgba(0,255,0,0.3); }
-
-    /* SETAS DE COMANDO */
     #offline-controls { position: absolute; bottom: 90px; left: 20px; z-index: 3000; background: rgba(0,0,0,0.85); border: 1px solid #0f0; border-radius: 6px; padding: 10px; text-align: center; }
     .drag-handle { background: rgba(0,255,0,0.2); cursor: move; padding: 3px; margin-bottom: 5px; font-size: 10px; color: #fff; }
     .dpad { display: grid; grid-template-columns: 50px 50px 50px; gap: 5px; }
     .dpad button { width: 50px; height: 50px; font-size: 20px; padding: 0; }
 
-    /* ================= JANELAS DO JOGO E MODAIS ================= */
-    .game-window { position: absolute; background: rgba(0,0,0,0.95); border: 2px solid #0f0; z-index: 4000; display: flex; flex-direction: column; resize: both; overflow: auto; box-shadow: 0 0 20px rgba(0,255,0,0.3); }
-    .win-header { background: #003300; padding: 8px; font-weight: bold; display: flex; justify-content: space-between; cursor: move; border-bottom: 1px solid #0f0; }
-    .win-close { background: red; color: white; border: none; padding: 2px 8px; font-weight: bold; cursor: pointer; border-radius: 4px; }
-    .win-content { padding: 15px; font-size: 13px; color: #a7fca7; overflow-y: auto; }
-    
+    /* JANELA MODAL DA BANDEIRA */
     #modal-overlay { position: fixed; inset:0; background:rgba(0,0,0,0.8); z-index: 5000; display:flex; align-items:center; justify-content:center;}
     .modal-box { background:#111; border: 2px solid #0f0; padding:20px; border-radius:10px; max-width:400px; text-align:center; color:#fff; }
     .comp-logo { width: 80px; height: 80px; object-fit: cover; border-radius: 50%; border: 2px solid #0f0; margin-bottom:10px; background:#fff;}
 
-    /* ================= FASE 2: ECRÃ DA EMPRESA (DASHBOARD) ================= */
+    /* PAINEL EMPRESA (DASHBOARD) */
     #pr-dashboard-screen { position: absolute; inset: 0; background: radial-gradient(circle, #001122 0%, #000000 100%); z-index: 5000; padding: 20px; overflow-y: auto; }
     .dash-box { max-width: 800px; margin: 0 auto; background: rgba(0,0,0,0.8); border: 2px solid #0f0; border-radius: 10px; padding: 20px; }
     .pack-card { background: #111; border: 1px solid #0f0; padding: 15px; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
     .pack-info { font-size: 13px; color: #a7fca7; }
     .pack-title { font-size: 16px; font-weight: bold; color: #0f0; margin-bottom: 5px; }
 
-    .watermark { position: fixed; bottom: 60px; left: 15px; font-size: 20px; font-weight: bold; color: rgba(0, 255, 0, 0.4); text-shadow: 2px 2px 4px #000; z-index: 9999; pointer-events: none; }
+    .watermark { position: fixed; bottom: 35px; left: 15px; font-size: 20px; font-weight: bold; color: rgba(0, 255, 0, 0.4); text-shadow: 2px 2px 4px #000; z-index: 9999; pointer-events: none; }
     .copyright { position: fixed; bottom: 5px; width: 100%; text-align: center; font-size: 11px; color: rgba(0, 255, 0, 0.4); z-index: 9999; pointer-events: none; }
   </style>
 </head>
@@ -87,7 +77,7 @@
   <div class="watermark">Larforyou&reg;</div>
   <div class="copyright">&copy; 2024 Larforyou&reg; - Marca Registada. Todos os direitos reservados.</div>
 
-  <!-- ================= ECRÃ DE LOGIN ================= -->
+  <!-- LOGIN E REGISTO -->
   <div id="login-screen">
     <div class="login-box">
       <h1 style="text-align: center; color: #0f0; margin-top:0;">ZAP FLAGS</h1>
@@ -96,12 +86,12 @@
         <button id="btn-tab-pr" class="tab-btn btn-dark" onclick="switchMainTab('PR')">EMPRESA (SEDE)</button>
       </div>
 
-      <!-- ÁREA DO JOGADOR -->
       <div id="area-jg">
         <div id="jg-login-view">
           <input type="text" id="jg-log-nome" placeholder="* Nome do Jogador" />
           <input type="password" id="jg-log-senha" placeholder="* Senha" />
           <button style="width:100%; padding:14px; margin-top:10px;" onclick="doLoginJG()">ENTRAR NO JOGO</button>
+          <button class="btn-link" style="width:100%; margin-top:15px;" onclick="switchJGView('REG')">Não tem conta? Registar Jogador</button>
         </div>
         <div id="jg-reg-view" class="hidden">
           <div style="font-size:12px; color:#81c784; margin-bottom:10px;">* Campos Obrigatórios</div>
@@ -112,20 +102,19 @@
             <input type="password" id="jg-reg-pass2" placeholder="* Confirmar" />
           </div>
           <button style="width:100%; padding:14px;" onclick="doRegisterJG()">CONCLUIR REGISTO</button>
+          <button class="btn-link" style="width:100%; margin-top:15px;" onclick="switchJGView('LOG')">Voltar ao Login</button>
         </div>
       </div>
       
-      <!-- ÁREA DA EMPRESA (PR) -->
       <div id="area-pr" class="hidden">
         <div id="pr-login-view">
           <div style="font-size:12px; color:#a7fca7; margin-bottom:15px; text-align:center;">Entrar no Painel de Administração</div>
           <input type="text" id="pr-log-nif" placeholder="* NIF da Empresa" />
           <input type="password" id="pr-log-senha" placeholder="* Senha" />
           <button style="width:100%; padding:14px; margin-top:10px;" onclick="doLoginPR()">ENTRAR NA GESTÃO</button>
-          <div style="text-align:center; margin-top:15px;"><button class="btn-link" onclick="switchPRView('REG')">Ainda não tem conta? Registar Empresa</button></div>
+          <button class="btn-link" style="width:100%; margin-top:15px;" onclick="switchPRView('REG')">Não tem conta? Registar Empresa</button>
         </div>
 
-        <!-- NOVO: REGISTO PR COM LOGO, GPS E ATIVIDADE -->
         <div id="pr-reg-view" class="hidden">
           <div style="font-size:12px; color:#81c784; margin-bottom:10px;">Perfil Completo da Empresa e Faturação</div>
           <input type="text" id="pr-reg-nome" placeholder="* Nome Legal da Empresa" />
@@ -134,29 +123,20 @@
             <input type="text" id="pr-reg-nif" placeholder="* NIF" />
             <input type="text" id="pr-reg-tel" placeholder="* Telemóvel" />
           </div>
-          <input type="text" id="pr-reg-logo" placeholder="URL do Logótipo ou Foto da Loja" />
+          <input type="text" id="pr-reg-logo" placeholder="URL do Logótipo (ex: https://logo.com/img.png)" />
           <input type="email" id="pr-reg-email" placeholder="* E-mail do Responsável" />
-          <input type="text" id="pr-reg-morada" placeholder="* Morada Fiscal Completa" />
-          
-          <div style="font-size:12px; color:#81c784; margin-bottom:5px;">Coordenadas GPS da Loja Física:</div>
-          <div class="form-grid">
-            <input type="text" id="pr-reg-lat" placeholder="Latitude (Ex: 41.1496)" />
-            <input type="text" id="pr-reg-lng" placeholder="Longitude (Ex: -8.6109)" />
-          </div>
-
           <div class="form-grid">
             <input type="password" id="pr-reg-pass1" placeholder="* Senha" />
             <input type="password" id="pr-reg-pass2" placeholder="* Confirmar Senha" />
           </div>
           <button style="width:100%; padding:14px; margin-top:10px;" onclick="doRegisterPR()">REGISTAR EMPRESA</button>
-          <button class="btn-link" style="width:100%; text-align:center; margin-top:10px;" onclick="switchPRView('LOG')">Voltar ao Login</button>
+          <button class="btn-link" style="width:100%; margin-top:15px;" onclick="switchPRView('LOG')">Voltar ao Login</button>
         </div>
-
       </div>
     </div>
   </div>
 
-  <!-- ================= FASE 2: DASHBOARD DA EMPRESA ================= -->
+  <!-- DASHBOARD DA EMPRESA -->
   <div id="pr-dashboard-screen" class="hidden">
     <div class="dash-box">
       <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #0f0; padding-bottom:15px; margin-bottom:20px;">
@@ -175,45 +155,32 @@
         </div>
       </div>
 
-      <!-- NOVO: SEPARAÇÃO DE STOCK LIVRE E PAGO -->
       <div style="display:flex; gap:10px; margin-bottom:30px;">
         <div style="flex:1; background:#111; border:1px solid #0f0; padding:15px; border-radius:8px; text-align:center;">
           <h3 style="margin:0; color:#0f0;">OFERTA LIVRE</h3>
-          <p style="font-size:11px; color:#aaa;">Sem prémios. Dá Skill e mostra publicidade da loja.</p>
+          <p style="font-size:11px; color:#aaa;">Sem prémios. Só Publicidade e Skill.</p>
           <div style="font-size:24px; font-weight:bold; color:#fff;" id="dash-stock-livre">0</div>
         </div>
         <div style="flex:1; background:#111; border:1px solid #ff9800; padding:15px; border-radius:8px; text-align:center;">
           <h3 style="margin:0; color:#ff9800;">STOCK PAGO</h3>
-          <p style="font-size:11px; color:#aaa;">Inclui Lotes Premiados, QR e Bingos.</p>
+          <p style="font-size:11px; color:#aaa;">Inclui Lotes Premiados e QRs.</p>
           <div style="font-size:24px; font-weight:bold; color:#fff;" id="dash-stock-pago">0</div>
         </div>
       </div>
 
-      <h3 style="color:#0f0;">📦 Comprar Pacotes Pagos (Com Prémios)</h3>
-      
-      <div class="pack-card">
-        <div class="pack-info"><div class="pack-title">Pacote Médio</div>2.500 Bandeiras • Raio 15km • 125 Lotes • 2 Bingos</div>
-        <div><button onclick="buyPackage('Médio', 2500, 15)">Comprar 15€</button></div>
-      </div>
-      <div class="pack-card">
-        <div class="pack-info"><div class="pack-title">Pacote Grande</div>10.000 Bandeiras • Raio 50km • 500 Lotes • 3 Bingos</div>
-        <div><button onclick="buyPackage('Grande', 10000, 25)">Comprar 25€</button></div>
-      </div>
-      <div class="pack-card">
-        <div class="pack-info"><div class="pack-title">Pacote Enorme</div>25.000 Bandeiras • Raio Ilimitado • 1.250 Lotes • 5 Bingos</div>
-        <div><button onclick="buyPackage('Enorme', 25000, 50)">Comprar 50€</button></div>
-      </div>
+      <h3 style="color:#0f0;">📦 Comprar Pacotes Pagos</h3>
+      <div class="pack-card"><div class="pack-info"><div class="pack-title">Pacote Médio</div>2.500 Bandeiras • 15km • 125 Lotes</div><div><button onclick="buyPackage('Médio', 2500, 15)">Comprar 15€</button></div></div>
+      <div class="pack-card"><div class="pack-info"><div class="pack-title">Pacote Grande</div>10.000 Bandeiras • 50km • 500 Lotes</div><div><button onclick="buyPackage('Grande', 10000, 25)">Comprar 25€</button></div></div>
 
-      <h3 style="color:#0f0; margin-top:30px;">🔑 Gerir Filiais Locais</h3>
+      <h3 style="color:#0f0; margin-top:30px;">🔑 Gerir Filiais</h3>
       <div style="background:#111; padding:15px; border-radius:8px; border:1px dashed #0f0; text-align:center;">
         <button style="padding:15px; font-size:16px;" onclick="generateBranchCode()">GERAR CÓDIGO PARA FILIAL</button>
         <div id="branch-code-result" style="margin-top:15px; font-size:24px; font-weight:bold; color:#fff; letter-spacing:2px;"></div>
       </div>
-
     </div>
   </div>
 
-  <!-- ================= FASE 1: ECRÃ DO JOGO (JOGADOR) ================= -->
+  <!-- ECRÃ DO JOGO (JOGADOR) -->
   <div id="game-screen" class="hidden">
     <div id="map"></div>
 
@@ -224,12 +191,7 @@
       <button class="btn-dark" style="padding:6px; font-size:12px;" onclick="location.reload()">🚪 SAIR</button>
     </div>
 
-    <div id="right-toolbar" class="drag-window">
-      <div class="drag-handle" style="text-align:center;">☰ Menu</div>
-      <button class="tool-btn btn-dark" onclick="centerPlayer()">📍</button>
-    </div>
-
-    <div id="offline-controls" class="drag-window" style="bottom: 90px; left: 20px;">
+    <div id="offline-controls" class="drag-window">
       <div class="drag-handle">☰ Mover</div>
       <div class="dpad">
         <div></div><button onclick="movePlayer(0, 1)">▲</button><div></div>
@@ -239,7 +201,7 @@
     </div>
   </div>
 
-  <!-- NOVO: MODAL DA BANDEIRA APANHADA -->
+  <!-- MODAL DA BANDEIRA APANHADA -->
   <div id="modal-overlay" class="hidden">
     <div class="modal-box">
       <h2 style="color:#0f0; margin-top:0;" id="modal-title">Bandeira Apanhada!</h2>
@@ -249,21 +211,20 @@
       
       <div id="modal-prize-box" style="background:#222; padding:10px; border-radius:5px; margin-bottom:15px; border:1px dashed #ff9800; display:none;">
         <span style="color:#ff9800; font-weight:bold;">Sorteio Lote Ativo!</span><br>
-        <span style="font-size:12px;">Esta bandeira pertence a um pacote pago e habilita-o a ganhar um QR ou Bingo.</span>
+        <span style="font-size:12px;">Bandeira de Pacote Pago. Podes ganhar QRs.</span>
       </div>
 
       <div id="modal-free-box" style="background:#222; padding:10px; border-radius:5px; margin-bottom:15px; border:1px dashed #0f0; display:none;">
         <span style="color:#0f0; font-weight:bold;">Bandeira Informativa</span><br>
-        <span style="font-size:12px;">Oferta da Empresa. Ganhaste +Skill! Visite a nossa loja.</span>
+        <span style="font-size:12px;">Oferta da Empresa. Ganhaste +Skill!</span>
       </div>
 
-      <button style="width:100%;" onclick="document.getElementById('modal-overlay').classList.add('hidden')">FECHAR E CONTINUAR</button>
+      <button style="width:100%;" onclick="closeFlagModal()">FECHAR E CONTINUAR</button>
     </div>
   </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
-    // ================= CONFIGURAÇÕES E TESTE =================
     const isTestMode = true; 
     const moveDist = isTestMode ? 4 : 0.5;   
     const energyCost = isTestMode ? 4 : 0.5; 
@@ -271,13 +232,14 @@
     let player = { name: "", energy: 1000, maxEnergy: 1000, skill: 1, vision: 5, flags: 0, lat: 41.1496, lng: -8.6109 };
     let map = null, playerMarker = null, visionCircle = null, catchCircle = null;  
     let allFlags = [];
-
-    // Empresa Atual no Dashboard
-    let comp = { name: "", nif: "", activity: "", logo: "", stockLivre: 0, stockPago: 0 };
+    
+    let activeCompany = null; // A empresa que vamos carregar no mapa
 
     window.onload = () => {
       const savedName = localStorage.getItem("zap_player_name");
       if (savedName) document.getElementById("jg-log-nome").value = savedName;
+      const savedNif = localStorage.getItem("zap_pr_nif");
+      if (savedNif) document.getElementById("pr-log-nif").value = savedNif;
     };
 
     function switchMainTab(mode) {
@@ -285,25 +247,37 @@
       document.getElementById('area-pr').classList.toggle('hidden', mode !== 'PR');
       document.getElementById('btn-tab-jg').className = mode === 'JG' ? 'tab-btn active' : 'tab-btn btn-dark';
       document.getElementById('btn-tab-pr').className = mode === 'PR' ? 'tab-btn active' : 'tab-btn btn-dark';
-      if (mode === 'PR') switchPRView('LOG');
+      if(mode === 'JG') switchJGView('LOG');
+      if(mode === 'PR') switchPRView('LOG');
     }
 
-    // ================= FASE 1: JOGADOR =================
-    function doLoginJG() {
-      const name = document.getElementById("jg-log-nome").value.trim();
-      if (!name) return alert("Preenche o Nome!");
-      localStorage.setItem("zap_player_name", name);
-      player.name = name;
-      startGame();
+    function switchJGView(view) {
+      document.getElementById('jg-login-view').classList.toggle('hidden', view !== 'LOG');
+      document.getElementById('jg-reg-view').classList.toggle('hidden', view !== 'REG');
     }
-    function doRegisterJG() { doLoginJG(); }
 
-    // ================= FASE 2: EMPRESA =================
     function switchPRView(view) {
       document.getElementById('pr-login-view').classList.toggle('hidden', view !== 'LOG');
       document.getElementById('pr-reg-view').classList.toggle('hidden', view !== 'REG');
     }
 
+    // ================= JOGADOR (FASE 1) =================
+    function doLoginJG() {
+      const name = document.getElementById("jg-log-nome").value.trim();
+      if (!name) return alert("Preenche o Nome!");
+      localStorage.setItem("zap_player_name", name);
+      player.name = name;
+      
+      // Procura se alguma empresa foi registada no telemovel para injetar as bandeiras dela
+      const lastNif = localStorage.getItem("zap_pr_nif");
+      if(lastNif) activeCompany = JSON.parse(localStorage.getItem("zap_pr_data_" + lastNif));
+
+      startGame();
+    }
+
+    function doRegisterJG() { doLoginJG(); }
+
+    // ================= EMPRESA (FASE 2) =================
     function doRegisterPR() {
       const name = document.getElementById("pr-reg-nome").value.trim();
       const nif = document.getElementById("pr-reg-nif").value.trim();
@@ -312,9 +286,9 @@
       
       if (!name || !nif || !atividade) { alert("Preenche Nome, NIF e Atividade!"); return; }
 
-      // Guarda Dados da Empresa
       const data = { name, nif, atividade, logo, stockLivre: 1000, stockPago: 0 };
       localStorage.setItem("zap_pr_data_" + nif, JSON.stringify(data));
+      localStorage.setItem("zap_pr_nif", nif);
       
       alert("Empresa Registada! Recebeu 1.000 Bandeiras Livres de Oferta!");
       loadCompanyDashboard(nif);
@@ -331,20 +305,21 @@
         document.getElementById("pr-reg-nif").value = nif;
         return;
       }
+      localStorage.setItem("zap_pr_nif", nif);
       loadCompanyDashboard(nif);
     }
 
     function loadCompanyDashboard(nif) {
-      comp = JSON.parse(localStorage.getItem("zap_pr_data_" + nif));
+      activeCompany = JSON.parse(localStorage.getItem("zap_pr_data_" + nif));
       document.getElementById("login-screen").classList.add("hidden");
       document.getElementById("pr-dashboard-screen").classList.remove("hidden");
       
-      document.getElementById("dash-pr-name").innerText = comp.name;
-      document.getElementById("dash-pr-nif").innerText = comp.nif;
-      document.getElementById("dash-pr-atividade").innerText = comp.atividade;
+      document.getElementById("dash-pr-name").innerText = activeCompany.name;
+      document.getElementById("dash-pr-nif").innerText = activeCompany.nif;
+      document.getElementById("dash-pr-atividade").innerText = activeCompany.atividade;
       
-      if(comp.logo) {
-        document.getElementById("dash-pr-logo").src = comp.logo;
+      if(activeCompany.logo) {
+        document.getElementById("dash-pr-logo").src = activeCompany.logo;
         document.getElementById("dash-pr-logo").style.display = "block";
       }
 
@@ -352,27 +327,26 @@
     }
 
     function updateCompanyStock() {
-      document.getElementById("dash-stock-livre").innerText = comp.stockLivre.toLocaleString();
-      document.getElementById("dash-stock-pago").innerText = comp.stockPago.toLocaleString();
-      // Atualiza a memória
-      localStorage.setItem("zap_pr_data_" + comp.nif, JSON.stringify(comp));
+      document.getElementById("dash-stock-livre").innerText = activeCompany.stockLivre.toLocaleString();
+      document.getElementById("dash-stock-pago").innerText = activeCompany.stockPago.toLocaleString();
+      localStorage.setItem("zap_pr_data_" + activeCompany.nif, JSON.stringify(activeCompany));
     }
 
     function buyPackage(nome, bandeiras, preco) {
       if (confirm(`Comprar Pacote Pago ${nome} (${bandeiras} band.) por ${preco}€?`)) {
-        comp.stockPago += bandeiras;
+        activeCompany.stockPago += bandeiras;
         updateCompanyStock();
-        alert(`Sucesso! Comprou ${bandeiras} bandeiras pagas. Os Lotes e Bingos estão agora ativos.`);
+        alert(`Sucesso! Comprou ${bandeiras} bandeiras pagas.`);
       }
     }
 
     function generateBranchCode() {
-      if (comp.stockLivre <= 0 && comp.stockPago <= 0) return alert("Não tem bandeiras em stock!");
-      const code = `${comp.name.substring(0, 4).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+      if (activeCompany.stockLivre <= 0 && activeCompany.stockPago <= 0) return alert("Não tem bandeiras em stock!");
+      const code = `${activeCompany.name.substring(0, 4).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
       document.getElementById("branch-code-result").innerText = code;
     }
 
-    // ================= FASE 1: MAPA =================
+    // ================= MAPA E JOGO =================
     function startGame() {
       document.getElementById("login-screen").classList.add("hidden");
       document.getElementById("game-screen").classList.remove("hidden");
@@ -402,7 +376,6 @@
     function movePlayer(dx, dy) {
       if (player.energy < energyCost) return;
       player.energy -= energyCost; 
-      
       const ava = document.getElementById("avatar-anim");
       if (ava) {
         ava.classList.add("walking");
@@ -424,7 +397,6 @@
       }
     }
 
-    // ================= APANHAR E VER O PERFIL DA EMPRESA =================
     function catchFlag() {
       let closest = null; let minDist = Infinity;
       allFlags.forEach(f => { 
@@ -439,18 +411,17 @@
       player.flags += 1; map.removeLayer(closest.marker); allFlags = allFlags.filter(f => f !== closest); 
       updateUI(); spawnRandomFlags(1); 
       
-      // Simula abrir a janela com os dados da empresa registada no Dashboard!
-      showFlagModal();
+      showFlagModal(); // Mostra o Modal da Empresa!
     }
 
     function showFlagModal() {
       document.getElementById('modal-overlay').classList.remove('hidden');
       
-      // Se houver uma empresa registada na memória, usamos os dados dela! Senão usamos default.
-      let mockName = comp.name || "ZAP Central";
-      let mockAtiv = comp.atividade || "Plataforma de Jogo";
-      let mockLogo = comp.logo || "";
-      let mockPago = comp.stockPago > 0; // Se a empresa comprou um pacote pago
+      // Lê os dados Reais da Empresa (ou usa dados mockados se não houver empresa registada)
+      let mockName = activeCompany ? activeCompany.name : "Restaurante Central";
+      let mockAtiv = activeCompany ? activeCompany.atividade : "Restauração";
+      let mockLogo = activeCompany ? activeCompany.logo : "";
+      let mockPago = activeCompany ? (activeCompany.stockPago > 0) : false; 
 
       document.getElementById('modal-comp-name').innerText = mockName;
       document.getElementById('modal-comp-activity').innerText = mockAtiv;
@@ -465,19 +436,22 @@
       if(mockPago) {
         document.getElementById('modal-prize-box').style.display = 'block';
         document.getElementById('modal-free-box').style.display = 'none';
+        if(activeCompany) { activeCompany.stockPago -= 1; updateCompanyStock(); }
       } else {
         document.getElementById('modal-prize-box').style.display = 'none';
         document.getElementById('modal-free-box').style.display = 'block';
+        if(activeCompany) { activeCompany.stockLivre -= 1; updateCompanyStock(); }
       }
     }
+
+    function closeFlagModal() { document.getElementById('modal-overlay').classList.add('hidden'); }
 
     function updateUI() {
       document.getElementById('val-ener').innerText = Math.floor(player.energy);
       document.getElementById('bar-ener').style.width = (player.energy / player.maxEnergy) * 100 + "%";
-      document.getElementById('val-flags').innerText = player.flags;
     }
-    
-    // Movimentação de Janelas Drag
+
+    // Drag
     document.querySelectorAll('.drag-window').forEach(el => {
       const handle = el.querySelector('.drag-handle');
       if(!handle) return;
