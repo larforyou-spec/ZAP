@@ -1,21 +1,386 @@
- <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>ZAP FLAGS | Larforyou&reg;</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    /* DESIGN GERAL COMPACTADO */
+    *{box-sizing:border-box;user-select:none;font-family:'Courier New',Courier,monospace;}
+    html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#222;color:#0f0;}
+    .hidden{display:none !important;}
+    button{background:#0f0;color:#000;border:none;padding:10px 12px;border-radius:6px;font-weight:bold;cursor:pointer;font-size:14px;}
+    button:hover{filter:brightness(1.2);} button:disabled{background:#555;color:#888;cursor:not-allowed;}
+    .btn-dark{background:#111;color:#0f0;border:1px solid #0f0;} .btn-danger{background:#d32f2f;color:#fff;border:1px solid #ff0000;}
+    .btn-link{background:none;border:none;color:#a7fca7;text-decoration:underline;padding:0;font-size:12px;}
+    input,select{width:100%;padding:10px;margin-bottom:10px;border-radius:4px;border:1px solid #0f0;background:#111;color:#0f0;}
+    
+    /* LOGIN E REGISTO */
+    #login-screen{position:absolute;inset:0;background:radial-gradient(circle,#002200 0%,#000000 100%);display:flex;align-items:center;justify-content:center;z-index:10000;padding:15px;overflow-y:auto;}
+    .login-box{width:100%;max-width:500px;background:rgba(0,0,0,0.9);border:2px solid #0f0;border-radius:8px;padding:25px;margin:auto;}
+    .tab-container{display:flex;margin-bottom:15px;border-radius:4px;overflow:hidden;border:1px solid #0f0;}
+    .tab-btn{flex:1;padding:12px;background:#111;color:#0f0;border-radius:0;} .tab-btn.active{background:#0f0;color:#000;}
+    .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+    
+    /* MAPA E AVATAR */
+    #game-screen,#pr-map-screen{position:absolute;inset:0;width:100%;height:100%;z-index:1;} #map,#map-empresa{width:100%;height:100%;}
+    .catch-circle{stroke-dasharray:6,6;}
+    .avatar-wrapper{position:relative;width:40px;height:50px;transition:transform 0.2s linear;}
+    .ava-head{position:absolute;top:0;left:10px;width:20px;height:20px;background:#ffeb3b;border-radius:50%;border:2px solid #000;z-index:3;}
+    .ava-body{position:absolute;top:18px;left:10px;width:20px;height:18px;background:#2196f3;border-radius:4px;border:2px solid #000;z-index:2;}
+    .ava-arm-l,.ava-arm-r{position:absolute;top:20px;width:8px;height:16px;background:#ffeb3b;border-radius:4px;border:2px solid #000;transition:transform 0.3s;z-index:3;}
+    .ava-arm-l{left:0px;} .ava-arm-r{right:0px;}
+    .ava-leg-l,.ava-leg-r{position:absolute;top:34px;width:8px;height:16px;background:#333;border-radius:4px;border:2px solid #000;z-index:1;transition:transform 0.1s;}
+    .ava-leg-l{left:10px;} .ava-leg-r{right:10px;}
+    .walking .ava-leg-l{transform:translateY(-4px);} .walking .ava-leg-r{transform:translateY(4px);}
+    .catching .ava-arm-r{transform:rotate(-90deg) translateY(10px) translateX(-5px);}
+    .flag-marker{width:24px;height:24px;background:#FF0000;border:2px solid white;border-radius:50%;box-shadow:0 0 10px #FF0000;}
+    .yellow-flag{background:#FFD700 !important;box-shadow:0 0 10px #FFD700 !important;}
+
+    /* UI TOP E CONTROLOS (COM MENUS MAIS LIMPOS PARA MOBILE) */
+    #top-bar{position:absolute;top:10px;left:10px;right:10px;background:rgba(0,0,0,0.85);border:1px solid #0f0;border-radius:6px;padding:10px;z-index:2000;display:flex;justify-content:space-between;gap:10px;}
+    .stat{flex:1;text-align:center;font-size:12px;font-weight:bold;color:#0f0;}
+    .stat-bar{height:6px;background:#222;border-radius:3px;margin-top:4px;border:1px solid rgba(0,255,0,0.3);overflow:hidden;}
+    .stat-fill{height:100%;background:#0f0;transition:width 0.3s;}
+    
+    .drag-window { background: rgba(0,0,0,0.85); border: 1px solid #0f0; border-radius: 6px; box-shadow: 0 0 15px rgba(0,255,0,0.2) inset; }
+    .drag-handle { background: #003300; cursor: move; padding: 5px; font-size: 11px; color: #0f0; font-weight: bold; border-bottom: 1px solid #0f0; border-radius: 5px 5px 0 0; text-align: center; }
+    
+    #offline-controls{position:absolute;bottom:90px;left:20px;z-index:3000;padding:5px;}
+    .dpad{display:grid;grid-template-columns:50px 50px 50px;gap:5px;padding:5px;} .dpad button{width:50px;height:50px;font-size:20px;padding:0;}
+    #right-toolbar{position:absolute;top:80px;right:10px;z-index:3000;display:flex;flex-direction:column;gap:8px;padding:5px;}
+    .tool-btn{width:45px;height:45px;border-radius:50%;font-size:18px;padding:0;box-shadow:0 0 10px rgba(0,255,0,0.3);margin:auto;}
+
+    /* JANELAS SOCIAIS (ARRÁSTAVEIS) */
+    .game-window { position: absolute; top: 100px; left: 10px; width: 340px; max-width: 95vw; max-height: 60vh; z-index: 4000; display: flex; flex-direction: column; resize: both; overflow: auto; }
+    .win-close { background: red; color: white; border: none; padding: 2px 8px; font-weight: bold; cursor: pointer; border-radius: 4px; float: right; margin-top:-2px;}
+    .win-content { padding: 10px; font-size: 13px; color: #a7fca7; overflow-y: auto; }
+    .social-tabs { display: flex; border-bottom: 1px solid #0f0; margin-bottom: 10px; }
+    .soc-btn { flex: 1; background: #111; color: #0f0; padding: 5px; font-size: 12px; border: none; border-radius: 0; }
+    .soc-btn.active { background: #0f0; color: #000; }
+    .player-list-item { display: flex; justify-content: space-between; align-items: center; background: #111; padding: 8px; margin-bottom: 5px; border-radius: 4px; }
+    .status-dot { height: 10px; width: 10px; background: #0f0; border-radius: 50%; display: inline-block; margin-right: 5px;}
+    .qr-inventory { width: 50%; background: #111; padding: 5px; border-radius: 5px; max-height: 150px; overflow-y: auto; display: flex; flex-direction: column; gap: 5px; }
+    .drop-zone { width: 50%; border: 2px dashed #0f0; background: rgba(0,255,0,0.1); min-height: 100px; padding: 5px; text-align: center; border-radius: 8px; display: flex; flex-direction: column; gap: 5px; }
+    .draggable-qr { background: #fff; color: #000; padding: 8px; text-align: center; border-radius: 5px; font-weight: bold; cursor: grab; box-shadow: 0 0 5px rgba(255,255,255,0.5); width: 100%; font-size: 11px;}
+
+    /* JANELAS MODAIS E ALERTAS */
+    .modal-overlay { position: fixed; inset:0; background:rgba(0,0,0,0.85); z-index: 6000; display:flex; align-items:center; justify-content:center;}
+    .modal-box { background:#111; border: 2px solid #0f0; padding:20px; border-radius:10px; max-width:400px; width: 90%; text-align:center; color:#fff; }
+    .comp-logo { width: 80px; height: 80px; object-fit: cover; border-radius: 50%; border: 2px solid #0f0; margin-bottom:10px; background:#fff;}
+
+    /* PAINEL EMPRESA (DASHBOARD) */
+    #pr-dashboard-screen { position: absolute; inset: 0; background: radial-gradient(circle, #001122 0%, #000000 100%); z-index: 5000; padding: 20px; overflow-y: auto; }
+    .dash-box { max-width: 900px; margin: 0 auto; background: rgba(0,0,0,0.8); border: 2px solid #0f0; border-radius: 10px; padding: 20px; }
+    .pr-menu { display: flex; border-bottom: 2px solid #0f0; margin-bottom: 20px; flex-wrap: wrap;}
+    .pr-menu-btn { flex: 1; background: #111; color: #0f0; padding: 15px; border-radius: 8px 8px 0 0; font-size: 14px; border: none; margin-right: 5px; min-width:120px;}
+    .pr-menu-btn.active { background: #0f0; color: #000; }
+    .pack-card { background: #111; border: 1px solid #0f0; padding: 15px; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+    .pack-info { font-size: 13px; color: #a7fca7; } .pack-title { font-size: 16px; font-weight: bold; color: #0f0; margin-bottom: 5px; }
+    .camp-card { background: #000; border: 1px solid #4CAF50; padding: 15px; border-radius: 5px; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0,255,0,0.1); }
+    .camp-pending { border-color: #ff9800; box-shadow: 0 4px 10px rgba(255,152,0,0.2); }
+    .camp-expired { border-color: #d32f2f; opacity: 0.6; }
+    .winner-item { background: #222; border: 1px dashed #0f0; padding: 10px; border-radius: 5px; margin-top: 5px; font-size: 12px; display: flex; justify-content: space-between; align-items: center; }
+
+    /* TICKER NOTÍCIAS */
+    #ticker-wrap { position: fixed; bottom: 25px; left: 0; width: 100%; background: rgba(0, 50, 0, 0.9); border-top: 1px solid #0f0; border-bottom: 1px solid #0f0; color: #fff; z-index: 8000; padding: 5px 0; overflow: hidden; white-space: nowrap; font-size: 13px; font-weight: bold;}
+    #ticker { display: inline-block; animation: ticker 25s linear infinite; }
+    @keyframes ticker { 0% { transform: translateX(100vw); } 100% { transform: translateX(-100%); } }
+
+    /* MARCAS LARFORYOU */
+    .watermark { position: fixed; bottom: 60px; left: 15px; font-size: 32px; font-weight: 900; color: rgba(0, 255, 0, 0.5); text-shadow: 2px 2px 5px #000; z-index: 9999; pointer-events: none; letter-spacing: 2px; }
+    .copyright { position: fixed; bottom: 5px; width: 100%; text-align: center; font-size: 11px; color: rgba(0, 255, 0, 0.4); z-index: 9999; pointer-events: none; }
+  </style>
+</head>
+<body>
+
+  <!-- MARCAS -->
+  <div class="watermark">Larforyou&reg;</div>
+  <div class="copyright">&copy; 2024 Larforyou&reg; - Marca Registada. Todos os direitos reservados.</div>
+  <div id="ticker-wrap"><div id="ticker">⚡ Bem-vindo ao ZAP FLAGS! 🏆 O jogo está prestes a começar! 🎁 Explora o mapa para encontrares prémios! 🤝 Convida amigos e troca QRs!</div></div>
+
+  <!-- ================= MODAL: ESCOLHA DO MODO DE JOGO ================= -->
+  <div id="mode-modal" class="modal-overlay hidden">
+    <div class="modal-box" style="border-color:#0f0;">
+      <h2 style="color:#0f0; margin-top:0;">Como queres jogar?</h2>
+      <p style="font-size:13px; color:#a7fca7;">Escolhe o teu modo de movimento no mapa:</p>
+      
+      <div style="background:#111; padding:15px; border-radius:8px; border:1px dashed #0f0; margin-bottom:15px; text-align:left;">
+        <b style="color:#fff;">📍 MODO GPS (Rua)</b><br>
+        <span style="font-size:11px;">Joga a caminhar fisicamente na tua cidade. O avatar acompanha os teus passos reais!</span>
+      </div>
+      <button style="width:100%; margin-bottom:15px;" onclick="requestGPSMode()">ATIVAR GPS E ENTRAR</button>
+
+      <div style="background:#111; padding:15px; border-radius:8px; border:1px dashed #ff9800; text-align:left;">
+        <b style="color:#ff9800;">🏠 MODO OFFLINE (Casa)</b><br>
+        <span style="font-size:11px;">Joga sentado no sofá, utilizando os botões direcionais no ecrã para mover o teu avatar.</span>
+      </div>
+      <button class="btn-warning" style="width:100%; margin-top:15px;" onclick="activateOfflineMode()">JOGAR EM MODO OFFLINE</button>
+    </div>
+  </div>
+
+  <!-- ================= LOGIN E REGISTO ================= -->
+  <div id="login-screen">
+    <div class="login-box">
+      <h1 style="text-align: center; color: #0f0; margin-top:0; text-shadow: 0 0 15px #0f0; font-size: 32px;">Larforyou&reg;<br><span style="font-size: 16px; color: #fff; letter-spacing: 3px; text-shadow: none;">ZAP FLAGS</span></h1>
+
+      <div style="display:flex; gap:10px; margin-bottom:15px;">
+        <button id="btn-tab-jg" class="tab-btn active" onclick="switchMainTab('JG')">JOGADOR</button>
+        <button id="btn-tab-pr" class="tab-btn btn-dark" onclick="switchMainTab('PR')">EMPRESA / FILIAL</button>
+      </div>
+
+      <div id="area-jg">
+        <div id="jg-login-view">
+          <input type="text" id="jg-log-nome" placeholder="* Nome do Jogador" />
+          <input type="password" id="jg-log-senha" placeholder="* Senha (>4 char)" />
+          <button style="width:100%; padding:14px; margin-top:10px;" onclick="doLoginJG()">ENTRAR NO JOGO</button>
+          <button class="btn-link" style="width:100%; margin-top:15px;" onclick="switchJGView('REG')">Não tem conta? Registar Jogador</button>
+          <button class="btn-link" style="width:100%;" onclick="recoverPass()">Esqueci a Senha</button>
+        </div>
+        <div id="jg-reg-view" class="hidden">
+          <div style="font-size:12px; color:#81c784; margin-bottom:10px;">* E-mail válido e Senha > 4 carateres</div>
+          <input type="text" id="jg-reg-name" placeholder="* Nome de Jogador" />
+          <input type="email" id="jg-reg-email" placeholder="* E-mail (ex: jg@mail.com)" />
+          <div class="form-grid"><input type="password" id="jg-reg-pass1" placeholder="* Senha" /><input type="password" id="jg-reg-pass2" placeholder="* Confirmar" /></div>
+          <button style="width:100%; padding:14px;" onclick="doRegisterJG()">CONCLUIR REGISTO</button>
+          <button class="btn-link" style="width:100%; margin-top:15px;" onclick="switchJGView('LOG')">Voltar ao Login</button>
+        </div>
+      </div>
+      
+      <div id="area-pr" class="hidden">
+        <div id="pr-login-view">
+          <div style="font-size:12px; color:#a7fca7; margin-bottom:15px; text-align:center;">Painel de Sede e Filiais</div>
+          <input type="text" id="pr-log-nif" placeholder="* NIF (9 Dígitos)" maxlength="9" />
+          <input type="password" id="pr-log-senha" placeholder="* Senha" />
+          <button style="width:100%; padding:14px; margin-top:10px;" onclick="doLoginPR()">ENTRAR NA GESTÃO</button>
+          <button class="btn-link" style="width:100%; margin-top:15px;" onclick="switchPRView('REG')">Registar Nova Empresa/Filial</button>
+        </div>
+
+        <div id="pr-reg-view" class="hidden">
+          <div style="font-size:12px; color:#81c784; margin-bottom:10px;">Registo Profissional</div>
+          <label style="color:#0f0; font-size:12px;"><input type="checkbox" id="pr-is-filial" onchange="toggleFilialFields()" /> Esta loja é uma Filial</label>
+          <input type="text" id="pr-reg-nome" placeholder="* Nome da Loja/Sede" style="margin-top:10px;"/>
+          <input type="text" id="pr-reg-atividade" placeholder="* Atividade (Ex: Restauração)" />
+          <div class="form-grid"><input type="text" id="pr-reg-nif" placeholder="* NIF (9 Números)" maxlength="9" /><input type="text" id="pr-reg-tel" placeholder="* Telemóvel" /></div>
+          <input type="email" id="pr-reg-email" placeholder="* E-mail Profissional" />
+          <input type="text" id="pr-reg-morada" placeholder="* Morada Exata" />
+          
+          <div class="form-grid"><input type="text" id="pr-reg-lat" placeholder="Latitude GPS" /><input type="text" id="pr-reg-lng" placeholder="Longitude GPS" /></div>
+          <div class="form-grid"><input type="password" id="pr-reg-pass1" placeholder="* Senha (>4 char)" /><input type="password" id="pr-reg-pass2" placeholder="* Confirmar Senha" /></div>
+
+          <div id="filial-extras" class="hidden" style="background:#111; padding:10px; border:1px dashed #0f0; margin-bottom:10px;">
+            <label style="color:#a7fca7; font-size:11px;"><input type="checkbox" id="filial-fatura-propria" /> Faturação Própria</label><br>
+            <input type="text" id="pr-reg-codigo-sede" placeholder="Código da Sede" style="margin-top:5px;"/>
+          </div>
+          <button style="width:100%; padding:14px; margin-top:10px;" onclick="doRegisterPR()">REGISTAR EMPRESA / LOJA</button>
+          <button class="btn-link" style="width:100%; text-align:center; margin-top:10px;" onclick="switchPRView('LOG')">Voltar ao Login</button>
+        </div>
+      </div>
+      
+      <!-- BOTÃO SECRETO ADMIN -->
+      <button class="btn-link" style="width:100%; margin-top:20px; color:#555;" onclick="openAdminLogin()">[Acesso BackOffice]</button>
+    </div>
+  </div>
+
+  <!-- LOGIN E DASHBOARD BACKOFFICE -->
+  <div id="bo-login-screen" class="hidden" style="position:absolute; inset:0; background:#000; z-index:11000; display:flex; align-items:center; justify-content:center;">
+    <div style="background:#111; padding:20px; border:2px solid red; border-radius:8px; text-align:center;">
+      <h2 style="color:red; margin-top:0;">ADMINISTRAÇÃO ZAP</h2>
+      <input type="password" id="bo-pass" placeholder="Senha de Admin" style="border-color:red;" />
+      <button class="btn-danger" style="width:100%; padding:10px;" onclick="doLoginBO()">ENTRAR NO BACKOFFICE</button>
+      <button class="btn-link" style="margin-top:10px; color:#fff;" onclick="closeAdminLogin()">Cancelar</button>
+    </div>
+  </div>
+
+  <div id="backoffice-screen" class="hidden">
+    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid red; padding-bottom:10px; margin-bottom:20px;">
+      <h1 style="color:red; margin:0;">🚨 BACKOFFICE DE GESTÃO</h1>
+      <div><button class="btn-danger" onclick="factoryReset()">⚠️ FORMATAR SISTEMA TOTAL</button><button class="btn-dark" onclick="location.reload()">Sair Admin</button></div>
+    </div>
+    <h2 style="color:#0f0;">🎮 Jogadores Registados</h2>
+    <table class="bo-table"><thead><tr><th>Nome</th><th>Ação</th></tr></thead><tbody id="bo-players-list"></tbody></table>
+    <h2 style="color:#0f0; margin-top:30px;">🏢 Empresas e Filiais</h2>
+    <table class="bo-table"><thead><tr><th>Nome</th><th>NIF</th><th>Tipo</th><th>Ação</th></tr></thead><tbody id="bo-comps-list"></tbody></table>
+  </div>
+
+  <!-- DASHBOARD DA EMPRESA E FILIAIS -->
+  <div id="pr-dashboard-screen" class="hidden">
+    <div class="dash-box">
+      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #0f0; padding-bottom:15px; margin-bottom:20px;">
+        <h1 style="margin:0; color:#0f0;">🏢 PAINEL DE GESTÃO</h1>
+        <button class="btn-dark" onclick="location.reload()">Sair</button>
+      </div>
+
+      <div style="margin-bottom:20px;">
+        <h2 style="color:#fff; margin:0;"><span id="dash-pr-name">Empresa</span> <span id="dash-pr-badge" style="font-size:12px; background:#2196f3; padding:2px 5px; border-radius:3px;">SEDE</span></h2>
+        <p style="color:#a7fca7; font-size:12px; margin:5px 0;">NIF: <span id="dash-pr-nif"></span> | Morada: <span id="dash-pr-address"></span></p>
+        <p id="dash-filial-warning" style="color:red; font-size:11px; font-weight:bold; display:none;">⚠️ FATURAÇÃO CENTRALIZADA: Precisa do Código da Sede para ativar campanhas e comprar pacotes.</p>
+      </div>
+
+      <div class="pr-menu">
+        <button id="menu-loja" class="pr-menu-btn active" onclick="switchDashView('loja')">🛒 Comprar Pacotes</button>
+        <button id="menu-agendar" class="pr-menu-btn" onclick="switchDashView('agendar')">📅 Gerir Campanhas</button>
+        <button id="menu-stats" class="pr-menu-btn" onclick="switchDashView('stats')">📈 Estatísticas</button>
+        <button id="menu-filiais" class="pr-menu-btn" onclick="switchDashView('filiais')">🔑 Filiais</button>
+      </div>
+
+      <!-- VISTA: LOJA COM OPÇÕES DE PAGAMENTO -->
+      <div id="view-loja">
+        <h3 style="color:#0f0; margin-top:0;">🛒 Loja de Pacotes (Stock Guardado)</h3>
+        
+        <div style="background:#111; padding:15px; border-radius:8px; border:1px dashed #0f0; margin-bottom:20px;">
+          <h4 style="color:#0f0; margin:0 0 10px 0;">💳 Método de Pagamento</h4>
+          <div style="display:flex; gap:15px; font-size:13px; color:#fff; flex-wrap:wrap;">
+            <label><input type="radio" name="pay_method" value="Multibanco" checked> Entidade/Ref.</label>
+            <label><input type="radio" name="pay_method" value="MBWay"> MB WAY</label>
+            <label><input type="radio" name="pay_method" value="QR Code (ZAP)"> QR Code (Larforyou)</label>
+            <label><input type="radio" name="pay_method" value="Transferência"> Transferência</label>
+          </div>
+        </div>
+
+        <div class="pack-card"><div class="pack-info"><b>Pacote Médio</b> (15€)<br>2.500 Bandeiras • Raio 5km • Val. 60 Dias</div><button onclick="buyPackage('Médio', 2500, 15, 60)">Comprar</button></div>
+        <div class="pack-card"><div class="pack-info"><b>Pacote Mais</b> (20€)<br>5.000 Bandeiras • Raio 10km • Val. 90 Dias</div><button onclick="buyPackage('Mais', 5000, 20, 90)">Comprar</button></div>
+        <div class="pack-card"><div class="pack-info"><b>Pacote Grande</b> (25€)<br>10.000 Bandeiras • Raio 15km • Val. 120 Dias</div><button onclick="buyPackage('Grande', 10000, 25, 120)">Comprar</button></div>
+        <div class="pack-card"><div class="pack-info"><b>Pacote Super</b> (30€)<br>20.000 Bandeiras • Raio 100km • Val. 180 Dias</div><button onclick="buyPackage('Super', 20000, 30, 180)">Comprar</button></div>
+        <div class="pack-card"><div class="pack-info"><b>Pacote Nacional</b> (50€)<br>50.000 Bandeiras • Todo o País • Val. 180 Dias</div><button onclick="buyPackage('Nacional', 50000, 50, 180)">Comprar</button></div>
+      </div>
+
+      <!-- VISTA: CAMPANHAS E LOTES -->
+      <div id="view-agendar" class="hidden">
+        <div id="dash-lock-overlay" class="hidden" style="background:rgba(255,0,0,0.1); border:1px solid red; padding:15px; margin-bottom:15px;">
+          <h4 style="color:red; margin:0;">🔒 GESTÃO BLOQUEADA</h4>
+          <input type="text" id="dash-insert-code" placeholder="Código da Sede" />
+          <button onclick="activateFilialCode()">VALIDAR CÓDIGO</button>
+        </div>
+
+        <div style="background:#1a1a1a; border:2px dashed #ff9800; padding:15px; border-radius:8px; margin-bottom:30px;">
+          <h3 style="margin-top:0; color:#ff9800;">🎯 Ativar Nova Campanha</h3>
+          <p style="font-size:12px; color:#ccc;">Escolha um pacote do seu Cofre. (1 Lote = 20 Bandeiras = 1 Prémio Garantido).</p>
+          <select id="agenda-pack-select"></select>
+          <div class="form-grid" style="margin-bottom:10px;">
+            <div><label style="font-size:12px; color:#0f0;">Lotes (Deixe 0 p/ sem prémios)</label><input type="number" id="agenda-lots" value="0" /></div>
+            <div><label style="font-size:12px; color:#0f0;">Dias p/ Levantamento</label><input type="number" id="agenda-days" value="5" /></div>
+          </div>
+          <input type="text" id="agenda-prize" placeholder="Descrição do Prémio" />
+          <button style="width:100%; background:#ff9800;" onclick="scheduleCampaign()">ATIVAR CAMPANHA</button>
+        </div>
+
+        <h3 style="color:#0f0;">⏳ As Suas Campanhas</h3>
+        <div id="campanhas-ativas-lista"></div>
+      </div>
+
+      <!-- VISTA: ESTATÍSTICAS E ROI -->
+      <div id="view-stats" class="hidden">
+        <h3 style="color:#0f0; margin-top:0;">📊 Relatórios Analíticos e QRs</h3>
+        <div id="stats-content"></div>
+      </div>
+
+      <!-- VISTA: FILIAIS -->
+      <div id="view-filiais" class="hidden">
+        <h3 style="color:#0f0; margin-top:0;">🔑 Código de Acesso para Filiais</h3>
+        <div style="background:#111; padding:15px; border:1px dashed #0f0; text-align:center; margin-bottom:20px;">
+          <button onclick="generateBranchCode()">GERAR CÓDIGO DA SEDE</button>
+          <div id="branch-code-result" style="margin-top:10px; font-size:20px; font-weight:bold; color:#fff;"></div>
+        </div>
+        <h3 style="color:#0f0;">🏢 Lojas da Mesma Rede (NIF)</h3>
+        <div id="filiais-lista" style="background:#111; border:1px solid #555; padding:10px; min-height:100px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ECRÃ DO JOGO (JOGADOR) COM ARRASTÁVEIS E MOBILE FIX -->
+  <div id="game-screen" class="hidden">
+    <div id="map"></div>
+    
+    <div id="top-bar">
+      <div class="stat">Energia <span id="val-ener">1000</span>m<div class="stat-bar"><div id="bar-ener" class="stat-fill"></div></div></div>
+      <div class="stat">Nível <span id="val-skill">1</span> (<span id="val-visao">5</span>m)<div class="stat-bar"><div id="bar-skill" class="stat-fill" style="background:#00f0ff;"></div></div></div>
+      <button class="btn-dark" style="padding:6px; font-size:12px;" onclick="catchFlag()">✋ APANHAR</button>
+      <button class="btn-dark" style="padding:6px; font-size:12px;" onclick="location.reload()">🚪 SAIR</button>
+    </div>
+
+    <!-- MENU LATERAL DIREITO -->
+    <div id="right-toolbar" class="drag-window">
+      <div class="drag-handle">☰ Menu</div>
+      <button class="tool-btn btn-dark" onclick="centerPlayer()" title="Localização Atual">📍</button>
+      <button class="tool-btn btn-dark" onclick="openWindow('win-flags')" title="Bandeiras">🏴</button>
+      <button class="tool-btn btn-dark" onclick="openWindow('win-qrs')" title="QRs">🎫</button>
+      <button class="tool-btn btn-dark" onclick="openWindow('win-social')" title="Social">👥</button>
+    </div>
+
+    <div id="offline-controls" class="drag-window hidden">
+      <div class="drag-handle">☰ Mover</div>
+      <div class="dpad">
+        <div></div><button onclick="movePlayer(0, 1)">▲</button><div></div>
+        <button onclick="movePlayer(-1, 0)">◀</button><button onclick="centerPlayer()">🎯</button><button onclick="movePlayer(1, 0)">▶</button>
+        <div></div><button onclick="movePlayer(0, -1)">▼</button><div></div>
+      </div>
+    </div>
+
+    <!-- JANELAS INTERATIVAS DO JOGADOR -->
+    <div id="win-flags" class="game-window drag-window hidden"><div class="win-header"><span class="drag-handle" style="flex:1;">🏴 Bandeiras da Sede</span><button class="win-close" onclick="closeWindow('win-flags')">X</button></div><div class="win-content">Total Apanhadas: <span id="val-flags">0</span></div></div>
+    <div id="win-qrs" class="game-window drag-window hidden"><div class="win-header"><span class="drag-handle" style="flex:1;">🎫 A tua Carteira QRs</span><button class="win-close" onclick="closeWindow('win-qrs')">X</button></div><div class="win-content" id="qr-wallet-list">Ainda não tens QRs gerados.</div></div>
+    
+    <div id="win-social" class="game-window drag-window hidden">
+      <div class="win-header"><span class="drag-handle" style="flex:1;">👥 Social e Trocas</span><button class="win-close" onclick="closeWindow('win-social')">X</button></div>
+      <div class="social-tabs"><button id="tab-lista" class="soc-btn active" onclick="switchSoc('lista')">Lista</button><button id="tab-chat" class="soc-btn" onclick="switchSoc('chat')">Mercado</button><button id="tab-troca" class="soc-btn" onclick="switchSoc('troca')">Troca</button></div>
+      <div class="win-content" style="padding:10px;">
+        <div id="view-lista"><div style="font-size:12px; color:#aaa; text-align:center; padding:20px;">Ainda não tens amigos.</div></div>
+        <div id="view-chat" class="hidden"><p style="font-size:11px; color:#a7fca7;">Publica um pedido no Mercado Público!</p><select id="trade-offer-select" style="padding:8px; font-size:12px;"></select><input type="text" id="trade-want-input" placeholder="Procuro QR..." style="padding:8px; font-size:12px;" /><button style="width:100%; margin-top:5px;" onclick="alert('Pedido publicado no mercado!')">PUBLICAR</button></div>
+        <div id="view-troca" class="hidden"><p style="font-size:11px;">Arrasta o QR para a caixa de troca.</p><div style="display:flex; gap:10px;"><div id="qr-inventory" class="qr-inventory" ondrop="drop(event)" ondragover="allowDrop(event)"></div><div id="caixa-troca" class="drop-zone" ondrop="drop(event)" ondragover="allowDrop(event)"><span style="color:#aaa; font-size:11px; pointer-events:none;">Largar QR aqui!</span></div></div><button style="width:100%; margin-top:15px;">CONFIRMAR TROCA</button></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL DA BANDEIRA APANHADA -->
+  <div id="modal-overlay" class="hidden">
+    <div class="modal-box">
+      <h2 style="color:#0f0; margin-top:0;">Bandeira Apanhada!</h2>
+      <img id="modal-logo" class="comp-logo hidden" src="" />
+      <h3 id="modal-comp-name" style="margin:5px 0;"></h3>
+      <p id="modal-comp-activity" style="color:#a7fca7; font-size:14px; margin:0 0 15px 0;"></p>
+      <div id="modal-result-box" style="background:#222; padding:10px; border-radius:5px; margin-bottom:15px; border:1px dashed #fff;"></div>
+      <button style="width:100%;" onclick="document.getElementById('modal-overlay').classList.add('hidden');">CONTINUAR</button>
+    </div>
+  </div>
+    <!-- MAPA DE RADAR DA EMPRESA (Oculto até chamar a função) -->
+  <div id="pr-map-screen" class="hidden">
+    <div style="position:absolute; top:10px; left:10px; z-index:2000; background:rgba(0,0,0,0.8); padding:10px; border:2px solid #ff9800; border-radius:8px;">
+      <h3 style="color:#ff9800; margin:0 0 5px 0;">📍 RADAR DE ATIVIDADE</h3>
+      <button onclick="closeCompanyMap()">FECHAR MAPA</button>
+    </div>
+    <div id="map-empresa"></div>
+  </div>
+
+  <div id="mode-modal" class="modal-overlay hidden">
+    <div class="modal-box" style="border-color:#0f0;">
+      <h2 style="color:#0f0; margin-top:0;">Como queres jogar?</h2>
+      <p style="font-size:13px; color:#a7fca7;">Escolhe o teu modo de movimento no mapa:</p>
+      <div style="background:#111; padding:15px; border-radius:8px; border:1px dashed #0f0; margin-bottom:15px; text-align:left;">
+        <b style="color:#fff;">📍 MODO GPS (Rua)</b><br><span style="font-size:11px;">O avatar acompanha os teus passos reais!</span>
+      </div>
+      <button style="width:100%; margin-bottom:15px;" onclick="requestGPSMode()">ATIVAR GPS E ENTRAR</button>
+      <div style="background:#111; padding:15px; border-radius:8px; border:1px dashed #ff9800; text-align:left;">
+        <b style="color:#ff9800;">🏠 MODO OFFLINE (Casa)</b><br><span style="font-size:11px;">Joga com os botões direcionais no ecrã.</span>
+      </div>
+      <button class="btn-warning" style="width:100%; margin-top:15px;" onclick="activateOfflineMode()">JOGAR EM MODO OFFLINE</button>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
-    // ================= CONFIGURAÇÕES REAIS (SEM TESTE) =================
-    const isTestMode = false; // MODO PRODUÇÃO
-    const moveDist = isTestMode ? 4 : 0.5;   // 0.50 metros
-    const energyCost = isTestMode ? 4 : 0.5; // Gasta 0.50 de energia
-    const idleTime = isTestMode ? 15000 : 900000; // Descanso aos 15 minutos (900000ms)
-    const delayCampanha = isTestMode ? 60000 : 3600000; // 60 Minutos Reais para carência
+    // ================= CONFIGURAÇÕES REAIS (PRODUÇÃO) =================
+    const isTestMode = false; // MODO TESTE DESLIGADO! 
+    const moveDist = isTestMode ? 4 : 0.5;   
+    const energyCost = isTestMode ? 4 : 0.5; 
+    const idleTime = isTestMode ? 15000 : 900000; 
 
     let player = { name: "", energy: 1000, maxEnergy: 1000, skill: 1, vision: 5, flags: 0, lat: 41.1496, lng: -8.6109, progressPR: {}, qrs: [] };
     let map = null, prMap = null, playerMarker = null, visionCircle = null, catchCircle = null, allFlags = [];
     let activeCompany = null; 
     let allCompaniesDB = {}; 
     let allPlayersDB = [];
-    let playerFriends = {}; 
-    let currentChatFriend = ""; 
-    let currentTrade = { myQR: null, friendQR: null };
-    
     let lastMoveTime = Date.now();
     let nextSkillTarget = 100;
     let dashInterval = null;
@@ -24,13 +389,15 @@
     
     // ================= INICIALIZAÇÃO =================
     window.onload = () => {
-      const savedName = localStorage.getItem("zap_player_name"); if (savedName) document.getElementById("jg-log-nome").value = savedName;
-      const db = localStorage.getItem("zap_all_companies"); if (db) allCompaniesDB = JSON.parse(db);
-      const playersDb = localStorage.getItem("zap_all_players"); if (playersDb) allPlayersDB = JSON.parse(playersDb);
-      const friendsDb = localStorage.getItem("zap_player_friends"); if (friendsDb) playerFriends = JSON.parse(friendsDb);
+      const savedName = localStorage.getItem("zap_player_name");
+      if (savedName) document.getElementById("jg-log-nome").value = savedName;
+      const db = localStorage.getItem("zap_all_companies");
+      if (db) allCompaniesDB = JSON.parse(db);
+      const playersDb = localStorage.getItem("zap_all_players");
+      if (playersDb) allPlayersDB = JSON.parse(playersDb);
     };
 
-    // ================= BACKOFFICE E GERADOR =================
+    // ================= BACKOFFICE ADMIN =================
     function openAdminLogin() { document.getElementById('bo-login-screen').classList.remove('hidden'); }
     function closeAdminLogin() { document.getElementById('bo-login-screen').classList.add('hidden'); }
     
@@ -43,55 +410,19 @@
       } else alert("Acesso Negado!");
     }
 
-    function generateSimulation() {
-      const pCount = parseInt(document.getElementById('sim-players').value || 0);
-      const cCount = parseInt(document.getElementById('sim-comps').value || 0);
-
-      if(pCount > 0) {
-        for(let i=0; i<pCount; i++) { allPlayersDB.push("Jogador_" + Math.random().toString(36).substr(2,4).toUpperCase()); }
-        localStorage.setItem("zap_all_players", JSON.stringify(allPlayersDB));
-      }
-
-      if(cCount > 0) {
-        for(let i=0; i<cCount; i++) {
-          let id = "COMP-SIM-" + Math.random().toString(36).substr(2,6).toUpperCase();
-          allCompaniesDB[id] = {
-            id: id, type: "SEDE", name: "Empresa Sim " + i,
-            nif: "999000" + String(i).padStart(3, '0'),
-            email: "sim"+i+"@teste.com", pass: "123123", morada: "Rua Virtual " + i, codeSede: "", isLocked: false,
-            lat: 41.1496 + (Math.random()-0.5)*0.1, lng: -8.6109 + (Math.random()-0.5)*0.1,
-            atividade: "Simulação", pacotesDisponiveis: [], stockLivre: 0, stockPago: 0, validade: Date.now() + 864000000,
-            campanhas: [{
-               id: "CAMP-SIM-" + i, nome: "Campanha Sim", premio: "Prémio Fictício", lotesIniciais: 5, flagsTotais: 100, flagsRestantes: 100,
-               flagsPremioRestantes: 100, flagsEnergiaRestantes: 0, diasLevantamento: 30, raioKm: 15, status: "active",
-               activationTime: Date.now(), expiraEm: Date.now() + 864000000, vencedores: []
-            }]
-          };
-        }
-        localStorage.setItem("zap_all_companies", JSON.stringify(allCompaniesDB));
-      }
-      alert(`Simulação de Carga concluída!\nForam gerados ${pCount} Jogadores e ${cCount} Empresas ativas!`);
-      renderBackoffice();
-    }
-
     function renderBackoffice() {
-      document.getElementById("bo-total-players").innerText = allPlayersDB.length;
-      document.getElementById("bo-total-comps").innerText = Object.keys(allCompaniesDB).length;
-
-      // PREVENÇÃO DE DESEMPENHO: Renderiza apenas os primeiros 50
-      const pList = document.getElementById("bo-players-list"); pList.innerHTML = "";
-      allPlayersDB.slice(0, 50).forEach(p => { pList.innerHTML += `<tr><td>${p}</td><td><button class="btn-danger" style="padding:5px;" onclick="deletePlayer('${p}')">Apagar</button></td></tr>`; });
-      if(allPlayersDB.length > 50) pList.innerHTML += `<tr><td colspan='2' style='text-align:center; color:#aaa;'>... e mais ${allPlayersDB.length - 50} ocultos por performance.</td></tr>`;
+      const pList = document.getElementById("bo-players-list");
+      pList.innerHTML = "";
+      allPlayersDB.forEach(p => { pList.innerHTML += `<tr><td>${p}</td><td><button class="btn-danger" style="padding:5px;" onclick="deletePlayer('${p}')">Apagar</button></td></tr>`; });
       if(allPlayersDB.length === 0) pList.innerHTML = "<tr><td colspan='2'>Sem jogadores registados.</td></tr>";
 
-      const cList = document.getElementById("bo-comps-list"); cList.innerHTML = "";
-      const compKeys = Object.keys(allCompaniesDB);
-      compKeys.slice(0, 50).forEach(key => {
+      const cList = document.getElementById("bo-comps-list");
+      cList.innerHTML = "";
+      for(let key in allCompaniesDB) {
         let c = allCompaniesDB[key];
         cList.innerHTML += `<tr><td>${c.name}</td><td>${c.nif}</td><td>${c.type.replace('_',' ')}</td><td><button class="btn-danger" style="padding:5px;" onclick="deleteCompany('${key}')">Apagar</button></td></tr>`;
-      });
-      if(compKeys.length > 50) cList.innerHTML += `<tr><td colspan='4' style='text-align:center; color:#aaa;'>... e mais ${compKeys.length - 50} ocultas.</td></tr>`;
-      if(compKeys.length === 0) cList.innerHTML = "<tr><td colspan='4'>Sem empresas registadas.</td></tr>";
+      }
+      if(Object.keys(allCompaniesDB).length === 0) cList.innerHTML = "<tr><td colspan='4'>Sem empresas registadas.</td></tr>";
     }
 
     function deletePlayer(name) {
@@ -125,8 +456,10 @@
     function recoverPass() { const val = prompt("Insira E-mail ou Telemóvel:"); if(val) alert("Foi enviado um link de recuperação da sua senha."); }
 
     function switchMainTab(mode) {
-      document.getElementById('area-jg').classList.toggle('hidden', mode !== 'JG'); document.getElementById('area-pr').classList.toggle('hidden', mode !== 'PR');
-      document.getElementById('btn-tab-jg').className = mode === 'JG' ? 'tab-btn active' : 'tab-btn btn-dark'; document.getElementById('btn-tab-pr').className = mode === 'PR' ? 'tab-btn active' : 'tab-btn btn-dark';
+      document.getElementById('area-jg').classList.toggle('hidden', mode !== 'JG');
+      document.getElementById('area-pr').classList.toggle('hidden', mode !== 'PR');
+      document.getElementById('btn-tab-jg').className = mode === 'JG' ? 'tab-btn active' : 'tab-btn btn-dark';
+      document.getElementById('btn-tab-pr').className = mode === 'PR' ? 'tab-btn active' : 'tab-btn btn-dark';
       if(mode === 'JG') switchJGView('LOG'); if(mode === 'PR') switchPRView('LOG');
     }
     
@@ -138,7 +471,7 @@
     function doLoginJG() {
       const name = document.getElementById("jg-log-nome").value.trim();
       const pass = document.getElementById("jg-log-senha").value;
-      if (!name || pass.length < 5) return alert("Preencha o Nome e a Senha (>4 letras)!");
+      if (!name || pass.length < 5) return alert("Preencha o Nome e a Senha (mais de 4 caracteres)!");
       const isReg = localStorage.getItem("zap_reg_" + name.toLowerCase());
       if (!isReg) { alert("Jogador não encontrado. Reencaminhado para registo!"); switchJGView('REG'); document.getElementById("jg-reg-name").value = name; return; }
       
@@ -163,18 +496,15 @@
 
       localStorage.setItem("zap_reg_" + name.toLowerCase(), "true");
       localStorage.setItem("zap_player_name", name);
-      player.name = name; 
-      
-      // Injeta QRs falsos só para ter o que trocar na Fase 1 para efeitos de demonstração
-      player.qrs = [
-        { id: "QR-" + Math.random().toString(36).substr(2,4).toUpperCase(), brand: "ZARA", offer: "50% Desconto", expires: Date.now() + 864000000 },
-        { id: "QR-" + Math.random().toString(36).substr(2,4).toUpperCase(), brand: "FNAC", offer: "Vale 10€", expires: Date.now() + 864000000 }
-      ];
+      player.name = name;
+      player.qrs = []; 
       
       if(!allPlayersDB.includes(name)) allPlayersDB.push(name);
       localStorage.setItem("zap_all_players", JSON.stringify(allPlayersDB));
       
-      savePlayer(); alert(`Registo concluído! Bem-vindo(a) ${name}!`); preStartGame();
+      savePlayer();
+      alert(`Registo concluído! Bem-vindo(a) ${name}!`);
+      preStartGame();
     }
 
     function savePlayer() { localStorage.setItem("zap_player_data", JSON.stringify(player)); }
@@ -186,15 +516,17 @@
 
     // ================= MODOS DE JOGO (GPS E OFFLINE) =================
     function requestGPSMode() {
-      document.getElementById("mode-modal").classList.add("hidden"); document.getElementById("game-screen").classList.remove("hidden");
-      isOfflineMode = false; initMap();
-
+      document.getElementById("mode-modal").classList.add("hidden");
+      document.getElementById("game-screen").classList.remove("hidden");
+      isOfflineMode = false;
+      
+      initMap();
       if (!navigator.geolocation) { alert("O seu telemóvel não suporta GPS. A iniciar Modo Casa."); activateOfflineMode(); return; }
       if (gpsWatchId !== null) navigator.geolocation.clearWatch(gpsWatchId);
 
       navigator.geolocation.getCurrentPosition(
         pos => { player.lat = pos.coords.latitude; player.lng = pos.coords.longitude; renderAvatar(); },
-        err => { alert("Erro de GPS. A usar Modo Offline."); activateOfflineMode(); },
+        err => { alert("Sem sinal de GPS. A iniciar Modo Casa."); activateOfflineMode(); },
         { enableHighAccuracy: true, maximumAge: 5000, timeout: 20000 }
       );
 
@@ -202,25 +534,35 @@
         p => {
           const m = getDist(player.lat, player.lng, p.coords.latitude, p.coords.longitude);
           if (m > moveDist) { player.energy -= energyCost; updateUI(); }
-          player.lat = p.coords.latitude; player.lng = p.coords.longitude; renderAvatar();
+          player.lat = p.coords.latitude; player.lng = p.coords.longitude;
+          renderAvatar();
         },
-        e => { console.warn("GPS fraco."); }, { enableHighAccuracy: true, maximumAge: 5000, timeout: 20000 }
+        e => { console.warn("GPS fraco."); },
+        { enableHighAccuracy: true, maximumAge: 5000, timeout: 20000 }
       );
       
-      spawnRandomFlags(15); updateQRWallet(); populateSocialList();
+      spawnRandomFlags(15); updateQRWallet();
     }
 
     function activateOfflineMode() {
-      document.getElementById("mode-modal").classList.add("hidden"); document.getElementById("game-screen").classList.remove("hidden"); document.getElementById("offline-controls").classList.remove("hidden");
-      isOfflineMode = true; initMap(); spawnRandomFlags(15); renderAvatar(); populateSocialList(); updateQRWallet();
+      document.getElementById("mode-modal").classList.add("hidden");
+      document.getElementById("game-screen").classList.remove("hidden");
+      document.getElementById("offline-controls").classList.remove("hidden");
+      isOfflineMode = true;
+      initMap(); spawnRandomFlags(15); renderAvatar(); updateQRWallet();
     }
 
-    // MAPA GOOGLE SATELLITE 
+    // MAPA GOOGLE SATELLITE (IMAGENS REAIS / STREET VIEW)
     function initMap() {
       if (map) return;
       map = L.map('map', { zoomControl: false }).setView([player.lat, player.lng], 19);
-      L.tileLayer('http://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}', { maxZoom: 20, subdomains:['mt0','mt1','mt2','mt3'] }).addTo(map);
-      setTimeout(() => { map.invalidateSize(); }, 500); 
+      // Link do Satélite Híbrido da Google (Fotos + Nomes de Ruas)
+      L.tileLayer('http://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}', {
+        maxZoom: 20,
+        subdomains:['mt0','mt1','mt2','mt3']
+      }).addTo(map);
+      
+      setTimeout(() => { map.invalidateSize(); }, 500); // Força carregamento no telemóvel
     }
 
     function renderAvatar() {
@@ -236,13 +578,14 @@
       if (!catchCircle) catchCircle = L.circle([player.lat, player.lng], { radius: 2.5, color: "#00ff00", className: "catch-circle", fillOpacity: 0.2, weight: 2 }).addTo(map);
       else catchCircle.setLatLng([player.lat, player.lng]);
 
-      map.setView([player.lat, player.lng], 19); checkVisibleFlags();
+      map.setView([player.lat, player.lng], 19);
+      checkVisibleFlags();
     }
 
     function centerPlayer() { map.setView([player.lat, player.lng], 19); }
 
     function movePlayer(dx, dy) {
-      if (!isOfflineMode) { alert("Modo GPS Ativo! Caminha na vida real."); return; }
+      if (!isOfflineMode) { alert("Modo GPS Ativo! Tens de caminhar na vida real para te moveres."); return; }
       if (player.energy < energyCost) { alert("Estás sem energia! Aguarda o descanso."); return; }
       player.energy -= energyCost; lastMoveTime = Date.now(); 
       
@@ -309,59 +652,53 @@
       document.getElementById('modal-overlay').classList.remove('hidden');
       let mockName = activeCompany ? activeCompany.name : "ZAP Central";
       let mockAtiv = activeCompany ? activeCompany.atividade : "Oferta Livre";
-      document.getElementById('modal-comp-name').innerText = mockName; document.getElementById('modal-comp-activity').innerText = mockAtiv;
+      
+      document.getElementById('modal-comp-name').innerText = mockName;
+      document.getElementById('modal-comp-activity').innerText = mockAtiv;
 
       const resBox = document.getElementById('modal-result-box');
       
-      let empresaSorteada = null; let campSorteada = null; let globaisAtivas = [];
-      for(let key in allCompaniesDB) {
-        let c = allCompaniesDB[key];
-        if(c.campanhas && c.campanhas.length > 0) {
-          c.campanhas.filter(cmp => cmp.status === 'active' && cmp.flagsRestantes > 0).forEach(cmp => { globaisAtivas.push({ empresa: c, campanha: cmp }); });
-        }
-      }
-
-      if (globaisAtivas.length === 0) {
+      if (!activeCompany || !activeCompany.campanhas) {
         resBox.innerHTML = `<span style="color:#0f0; font-weight:bold;">Bandeira Livre ZAP</span><br><span style="font-size:12px; color:#fff;">Ganhaste +Skill e 5% de Energia.</span>`;
         player.energy = Math.min(player.maxEnergy, player.energy + 50); updateUI(); savePlayer(); return;
       }
 
-      let totalSaco = globaisAtivas.reduce((sum, item) => sum + item.campanha.flagsRestantes, 0);
+      const ativas = activeCompany.campanhas.filter(c => c.status === 'active' && c.flagsRestantes > 0);
+      if (ativas.length === 0) { resBox.innerHTML = `As campanhas desta empresa esgotaram ou expiraram!`; return; }
+
+      let totalSaco = ativas.reduce((sum, p) => sum + p.flagsRestantes, 0);
       let sorteio = Math.random() * totalSaco;
 
-      for (let item of globaisAtivas) { 
-        if (sorteio < item.campanha.flagsRestantes) { empresaSorteada = item.empresa; campSorteada = item.campanha; break; } 
-        sorteio -= item.campanha.flagsRestantes; 
-      }
+      let pck = null;
+      for (let p of ativas) { if (sorteio < p.flagsRestantes) { pck = p; break; } sorteio -= p.flagsRestantes; }
 
-      campSorteada.flagsRestantes--;
+      pck.flagsRestantes--;
 
-      if (campSorteada.lotesIniciais > 0) {
-        let isPremio = Math.random() < (campSorteada.flagsPremioRestantes / (campSorteada.flagsPremioRestantes + campSorteada.flagsEnergiaRestantes));
+      if (pck.lotesIniciais > 0) {
+        let isPremio = Math.random() < (pck.flagsPremioRestantes / (pck.flagsPremioRestantes + pck.flagsEnergiaRestantes));
         
-        if (isPremio && campSorteada.flagsPremioRestantes > 0) {
-          campSorteada.flagsPremioRestantes--;
-          if (!player.progressPR[campSorteada.id]) player.progressPR[campSorteada.id] = 0;
-          player.progressPR[campSorteada.id]++;
+        if (isPremio && pck.flagsPremioRestantes > 0) {
+          pck.flagsPremioRestantes--;
+          if (!player.progressPR[pck.id]) player.progressPR[pck.id] = 0;
+          player.progressPR[pck.id]++;
           
-          if (player.progressPR[campSorteada.id] >= 20) {
+          if (player.progressPR[pck.id] >= 20) {
             const qrCode = "ZAP-" + Math.random().toString(36).substring(2,6).toUpperCase();
-            const expTime = Date.now() + (campSorteada.diasLevantamento * 24 * 60 * 60 * 1000);
+            const expTime = Date.now() + (pck.diasLevantamento * 24 * 60 * 60 * 1000);
+            pck.vencedores.push({ jogador: player.name || "Tu", codigo: qrCode, expiraEm: expTime });
             
-            campSorteada.vencedores.push({ jogador: player.name || "Tu", codigo: qrCode, expiraEm: expTime });
-            allCompaniesDB[empresaSorteada.id] = empresaSorteada; localStorage.setItem("zap_all_companies", JSON.stringify(allCompaniesDB));
-
-            player.qrs.push({ id: qrCode, brand: empresaSorteada.name, offer: campSorteada.premio, expires: expTime });
+            if(!player.qrs) player.qrs = [];
+            player.qrs.push({ id: qrCode, brand: activeCompany.name, offer: pck.premio, expires: expTime });
             
             resBox.style.borderColor = "#ff0000";
-            resBox.innerHTML = `<span style="color:#ff0000; font-weight:bold; font-size:18px;">🎉 PARABÉNS! GANHASTE! 🎉</span><br><span style="font-size:13px; color:#fff;">Prémio: <b style="color:#ff9800;">${campSorteada.premio}</b> da empresa ${empresaSorteada.name}<br>QR na tua carteira.</span>`;
-            player.progressPR[campSorteada.id] = 0; updateQRWallet();
+            resBox.innerHTML = `<span style="color:#ff0000; font-weight:bold; font-size:18px;">🎉 PARABÉNS! GANHASTE! 🎉</span><br><span style="font-size:13px; color:#fff;">Prémio: <b style="color:#ff9800;">${pck.premio}</b><br>QR gerado na tua carteira.</span>`;
+            player.progressPR[pck.id] = 0; updateQRWallet();
           } else {
             resBox.style.borderColor = "#ff9800";
-            resBox.innerHTML = `<span style="color:#ff9800; font-weight:bold;">Bandeira de Lote (${campSorteada.premio})!</span><br><span style="font-size:12px; color:#fff;">Faltam: <b>${20 - player.progressPR[campSorteada.id]}</b></span>`;
+            resBox.innerHTML = `<span style="color:#ff9800; font-weight:bold;">Bandeira de Lote (${pck.premio})!</span><br><span style="font-size:12px; color:#fff;">Faltam: <b>${20 - player.progressPR[pck.id]}</b></span>`;
           }
         } else {
-          campSorteada.flagsEnergiaRestantes--;
+          pck.flagsEnergiaRestantes--;
           let randEnergy = Math.random() * 100;
           let gain = 0; let msg = "";
           if (randEnergy < 1) { gain = 1000; msg = "JACKPOT! Energia Cheia (+100%)!"; }
@@ -373,436 +710,36 @@
           resBox.innerHTML = `<span style="color:#00f0ff; font-weight:bold;">Bandeira de Energia</span><br><span style="font-size:12px; color:#fff;">${msg}</span>`;
         }
       } else {
-        campSorteada.flagsEnergiaRestantes--;
+        pck.flagsEnergiaRestantes--;
         player.energy = Math.min(player.maxEnergy, player.energy + 50);
         resBox.innerHTML = `<span style="color:#0f0; font-weight:bold;">Bandeira de Publicidade</span><br><span style="font-size:12px; color:#fff;">Ganhaste +Skill e Energia.</span>`;
       }
 
-      allCompaniesDB[empresaSorteada.id] = empresaSorteada; localStorage.setItem("zap_all_companies", JSON.stringify(allCompaniesDB));
-      savePlayer(); recalcSkill(); updateUI();
+      localStorage.setItem("zap_player_progress", JSON.stringify(player.progressPR));
+      saveCompanyDB(); savePlayer(); recalcSkill(); updateUI();
     }
 
     function closeFlagModal() { document.getElementById('modal-overlay').classList.add('hidden'); }
-    function recalcSkill() { nextSkillTarget = 100 * Math.pow(2, player.skill - 1); if (player.flags >= nextSkillTarget) { player.skill++; player.vision = Math.min(50, 5 + (player.skill - 1) * 0.25); nextSkillTarget = 100 * Math.pow(2, player.skill - 1); } }
-    function updateUI() { document.getElementById('val-ener').innerText = Math.floor(player.energy); document.getElementById('bar-ener').style.width = (player.energy / player.maxEnergy) * 100 + "%"; }
-
-    function updateQRWallet() {
-      const list = document.getElementById("qr-wallet-list");
-      if(!list) return; list.innerHTML = "";
-      if (!player.qrs || player.qrs.length === 0) { list.innerHTML = "Não tens prémios ganhos."; return; }
-      player.qrs.forEach(qr => {
-        let dias = Math.ceil((qr.expires - Date.now()) / (24*60*60*1000));
-        list.innerHTML += `<div style="background:#111; padding:10px; margin-bottom:5px; border:1px dashed #0f0; border-radius:5px;"><b>${qr.brand}</b><br><span style="color:#ff9800;">${qr.offer}</span><br>Código: <b>${qr.id}</b><br><span style="color:${dias<0?'red':'#a7fca7'}; font-size:10px;">${dias<0?'Expirou':'Válido: '+dias+' dias'}</span></div>`;
-      });
-    }
-
-    // ================= LÓGICA DA ABA SOCIAL (CHATS E TROCAS) =================
-    function openWindow(id) { document.getElementById(id).classList.remove('hidden'); }
-    function closeWindow(id) { document.getElementById(id).classList.add('hidden'); }
-
-    function switchSoc(tab) {
-      document.getElementById('tab-global').classList.remove('active'); document.getElementById('tab-amigos').classList.remove('active');
-      document.getElementById('view-global').classList.add('hidden'); document.getElementById('view-amigos').classList.add('hidden'); 
-      document.getElementById('tab-' + tab).classList.add('active');
-      
-      if(tab === 'global') { document.getElementById('view-global').classList.remove('hidden'); populateSocialList(); }
-      if(tab === 'amigos') { document.getElementById('view-amigos').classList.remove('hidden'); document.getElementById('friends-list-view').classList.remove('hidden'); document.getElementById('chat-view').classList.add('hidden'); populateSocialList(); }
-    }
-
-    function populateSocialList() {
-      // PROCURAR MUNDO
-      const globalList = document.getElementById("global-players-list"); globalList.innerHTML = "";
-      allPlayersDB.slice(0,50).forEach(pName => {
-        if(pName === player.name) return; 
-        let status = playerFriends[pName] || 'none';
-        if (status === 'none') { globalList.innerHTML += `<div class="player-list-item"><span><span class="status-dot"></span> <b>${pName}</b></span><button class="btn-dark" style="padding:4px; font-size:10px;" onclick="addFriend('${pName}')">Pedir Amizade</button></div>`; }
-      });
-      if(globalList.innerHTML === "") globalList.innerHTML = "<div style='font-size:12px; color:#aaa; text-align:center; padding:10px;'>Não há jogadores novos por perto.</div>";
-
-      // A TUA LISTA DE AMIGOS
-      const friendsList = document.getElementById("accepted-friends-list"); friendsList.innerHTML = "";
-      for (const [fName, fStatus] of Object.entries(playerFriends)) {
-        if (fStatus === 'pending') { friendsList.innerHTML += `<div class="player-list-item"><span><span class="status-dot pending"></span> <b>${fName}</b> <span style="font-size:10px; color:#ff9800;">(Pendente)</span></span><button class="btn-warning" style="padding:4px; font-size:10px;" onclick="acceptFriend('${fName}')">Aceitar</button></div>`; } 
-        else if (fStatus === 'accepted') { friendsList.innerHTML += `<div class="player-list-item"><span><span class="status-dot"></span> <b>${fName}</b></span><button style="padding:4px; font-size:10px;" onclick="openChatWith('${fName}')">💬 CHAT</button></div>`; }
-      }
-      if(friendsList.innerHTML === "") friendsList.innerHTML = "<div style='font-size:12px; color:#aaa; text-align:center; padding:10px;'>Ainda não tens amigos.</div>";
-    }
-
-    function addFriend(name) { playerFriends[name] = 'pending'; localStorage.setItem("zap_player_friends", JSON.stringify(playerFriends)); alert(`Pedido enviado para ${name}! O sistema simulou a resposta.`); populateSocialList(); }
-    function acceptFriend(name) { playerFriends[name] = 'accepted'; localStorage.setItem("zap_player_friends", JSON.stringify(playerFriends)); alert(`${name} foi adicionado aos teus amigos!`); populateSocialList(); }
-
-    function openChatWith(name) {
-      currentChatFriend = name;
-      document.getElementById('friends-list-view').classList.add('hidden'); document.getElementById('chat-view').classList.remove('hidden');
-      document.getElementById("chat-active-friend").innerText = name;
-      document.getElementById("chat-msgs-box").innerHTML = `<div style="font-size:11px; color:#888; text-align:center; margin-top:10px;">Início do chat privado com ${name}.</div>`;
-      
-      document.getElementById("trade-interface").classList.add("hidden"); document.getElementById("chat-msgs-box").style.height = "180px"; document.getElementById("chat-input-area").classList.remove("hidden");
-      currentTrade = { myQR: null, friendQR: null };
-    }
-
-    function closeChat() { currentChatFriend = ""; document.getElementById('chat-view').classList.add('hidden'); document.getElementById('friends-list-view').classList.remove('hidden'); }
-
-    function sendPlayerMsg() {
-      const input = document.getElementById("chat-player-input"); const msg = input.value.trim();
-      if(!msg || !currentChatFriend) return;
-      const box = document.getElementById("chat-msgs-box");
-      box.innerHTML += `<div class="chat-msg msg-mine"><b>Tu:</b> ${msg}</div>`;
-      setTimeout(() => { box.innerHTML += `<div class="chat-msg msg-other"><b>${currentChatFriend}:</b> Recebido! Clica em Trocar quando quiseres.</div>`; box.scrollTop = box.scrollHeight; }, 1500);
-      input.value = ""; box.scrollTop = box.scrollHeight;
-    }
-
-    // A MÁGICA DA TROCA (Caixa Aberta Sem Fechar o Chat)
-    function startTrade() {
-      const tradeInt = document.getElementById("trade-interface");
-      if(!tradeInt.classList.contains("hidden")) { tradeInt.classList.add("hidden"); document.getElementById("chat-msgs-box").style.height = "180px"; document.getElementById("chat-input-area").classList.remove("hidden"); return; }
-      
-      tradeInt.classList.remove("hidden"); document.getElementById("chat-msgs-box").style.height = "80px"; document.getElementById("chat-input-area").classList.add("hidden"); 
-      
-      const inv = document.getElementById('trade-qr-inventory');
-      inv.classList.add("hidden"); inv.innerHTML = "";
-      if(!player.qrs || player.qrs.length === 0) {
-        inv.innerHTML = "<span style='color:#aaa; font-size:10px;'>Sem QRs no Armazém.</span>";
-      } else {
-        player.qrs.forEach(qr => { inv.innerHTML += `<div id="drag-${qr.id}" class="draggable-qr" draggable="true" ondragstart="dragQR(event)" onclick="zoomQR('${qr.id}', '${qr.brand}', '${qr.offer}', true)">🎫 ${qr.brand}</div>`; });
-      }
-
-      document.getElementById('friend-trade-zone').innerHTML = '<span style="color:#00f0ff; font-size:10px;" id="friend-status-text">A aguardar oferta...</span>';
-      
-      setTimeout(() => {
-        document.getElementById('friend-trade-zone').innerHTML = `<div id="friend-fake-qr" class="draggable-qr" onclick="zoomQR('ZAP-SIM', 'A Oferta do Amigo', '1 Prémio Oculto', false)">🎫 QR Oculto (Clica p/ ver)</div>`;
-        currentTrade.friendQR = "McDonalds"; checkTradeStatus();
-      }, 3000);
-    }
-
-    function toggleQRVault() { const inv = document.getElementById('trade-qr-inventory'); if (inv.classList.contains("hidden")) inv.classList.remove("hidden"); else inv.classList.add("hidden"); }
-
-    function dragQR(ev) { ev.dataTransfer.setData("qr_id", ev.target.id); }
-    function allowDrop(ev) { ev.preventDefault(); }
     
-    function dropInTrade(ev) {
-      ev.preventDefault(); var data = ev.dataTransfer.getData("qr_id"); const element = document.getElementById(data);
-      if(element) {
-        if(ev.target.id === "my-trade-zone") {
-          document.getElementById("my-trade-zone").innerHTML = ""; document.getElementById("my-trade-zone").appendChild(element); 
-          currentTrade.myQR = data; checkTradeStatus();
-        } else if(ev.target.id === "trade-qr-inventory") {
-          document.getElementById("trade-qr-inventory").appendChild(element); currentTrade.myQR = null; checkTradeStatus();
-        }
+    function recalcSkill() {
+      nextSkillTarget = 100 * Math.pow(2, player.skill - 1);
+      if (player.flags >= nextSkillTarget) {
+        player.skill++; player.vision = Math.min(50, 5 + (player.skill - 1) * 0.25);
+        nextSkillTarget = 100 * Math.pow(2, player.skill - 1);
       }
-    }
-
-    function checkTradeStatus() {
-      const btn = document.getElementById("btn-accept-trade");
-      if (currentTrade.myQR && currentTrade.friendQR) { btn.disabled = false; btn.style.background = "#ff9800"; btn.innerText = "CONFIRMAR E ACEITAR TROCA"; } 
-      else { btn.disabled = true; btn.style.background = "#555"; btn.innerText = "A AGUARDAR OFERTAS..."; }
-    }
-
-    function cancelTrade() { startTrade(); currentTrade = { myQR: null, friendQR: null }; }
-
-    function acceptTrade() {
-      document.getElementById("btn-accept-trade").innerText = "A aguardar o " + currentChatFriend + "..."; document.getElementById("btn-accept-trade").disabled = true;
-      setTimeout(() => { alert(`A TUA TROCA FOI CONCLUÍDA!\nEntregaste o teu QR e recebeste o QR do ${currentChatFriend}! A Marca de Água de proteção foi retirada.`); closeChat(); }, 2000);
-    }
-
-    // ZOOM QR CODE COM PROTEÇÃO LARFORYOU (CADEADO)
-    // O parâmetro isMyQR diz se é o QR do próprio jogador (mostra nítido) ou o QR do amigo (mostra desfocado)
-    function zoomQR(id, brand, offer, isMyQR) {
-      document.getElementById('zoom-qr-title').innerText = brand;
-      document.getElementById('zoom-qr-desc').innerText = "Prémio: " + offer;
-      
-      if (isMyQR) {
-        // Se for o MEU QR, mostra sem proteção
-        document.getElementById('zoom-qr-code').innerText = id;
-        document.getElementById('zoom-qr-img').innerHTML = `<img src="https://quickchart.io/qr?text=${id}&size=200" style="width:100%; border-radius:10px;" />`;
-        document.querySelector('.qr-lock-icon').style.display = 'none';
-        document.querySelector('.qr-safe-watermark').style.display = 'none';
-      } else {
-        // Se for a oferta do AMIGO, mostra o cadeado para não ser roubado
-        document.getElementById('zoom-qr-code').innerText = "ZAP-****-**** (Protegido)";
-        document.getElementById('zoom-qr-img').innerHTML = `<img src="https://quickchart.io/qr?text=Protegido&size=200" style="width:100%; filter:blur(8px); opacity:0.5; border-radius:10px;" />`;
-        document.querySelector('.qr-lock-icon').style.display = 'block';
-        document.querySelector('.qr-safe-watermark').style.display = 'block';
-      }
-      
-      document.getElementById('qr-zoom-modal').classList.remove('hidden');
-    }
-    function closeQRZoom() { document.getElementById('qr-zoom-modal').classList.add('hidden'); }
-
-    // EVENTOS MOBILE (Drag and Drop nas Janelas)
-    document.querySelectorAll('.drag-window').forEach(el => {
-      const handle = el.querySelector('.drag-handle'); if(!handle) return;
-      let isDragging = false, startX, startY, startLeft, startTop;
-      handle.addEventListener('mousedown', e => { isDragging = true; startLeft = el.offsetLeft; startTop = el.offsetTop; startX = e.clientX; startY = e.clientY; });
-      window.addEventListener('mousemove', e => { if (!isDragging) return; el.style.left = (startLeft + e.clientX - startX) + 'px'; el.style.top = (startTop + e.clientY - startY) + 'px'; });
-      window.addEventListener('mouseup', () => isDragging = false);
-      handle.addEventListener('touchstart', e => { isDragging = true; startLeft = el.offsetLeft; startTop = el.offsetTop; startX = e.touches[0].clientX; startY = e.touches[0].clientY; }, {passive: true});
-      window.addEventListener('touchmove', e => { if (!isDragging) return; el.style.left = (startLeft + e.touches[0].clientX - startX) + 'px'; el.style.top = (startTop + e.touches[0].clientY - startY) + 'px'; e.preventDefault(); }, {passive: false});
-      window.addEventListener('touchend', () => isDragging = false);
-    });
-
-    // ================= FASE 2/3: EMPRESA =================
-    function doRegisterPR() {
-      const isFilial = document.getElementById("pr-is-filial").checked; const fPropria = document.getElementById("filial-fatura-propria").checked; const codeSede = document.getElementById("pr-reg-codigo-sede").value.trim();
-      const name = document.getElementById("pr-reg-nome").value.trim(); const nif = document.getElementById("pr-reg-nif").value.trim(); const email = document.getElementById("pr-reg-email").value.trim(); const pass = document.getElementById("pr-reg-pass1").value; const morada = document.getElementById("pr-reg-morada").value.trim();
-      const latV = parseFloat(document.getElementById("pr-reg-lat").value); const lngV = parseFloat(document.getElementById("pr-reg-lng").value);
-      
-      if (nif.length !== 9 || isNaN(nif)) return alert("O NIF tem de ter exatamente 9 números!"); if (!validateEmail(email)) return alert("E-mail inválido."); if (pass.length < 5) return alert("Senha > 4 caracteres."); if (!name || !morada) return alert("Nome Legal e Morada obrigatórios.");
-      let type = isFilial ? (fPropria ? "FILIAL_AUTONOMA" : "FILIAL_SUBORDINADA") : "SEDE"; let isLocked = (type === "FILIAL_SUBORDINADA" && !codeSede);
-      const id = "COMP-" + Math.random().toString(36).substr(2,6).toUpperCase();
-      const data = { id, type, name, nif, email, pass, morada, codeSede, isLocked, lat: isNaN(latV) ? 41.1496 : latV, lng: isNaN(lngV) ? -8.6109 : lngV, atividade: document.getElementById("pr-reg-atividade").value.trim(), pacotesDisponiveis: [], campanhas: [], stockPago: 0 };
-      allCompaniesDB[id] = data; localStorage.setItem("zap_all_companies", JSON.stringify(allCompaniesDB)); localStorage.setItem("zap_pr_last_id", id);
-      alert(`Registado com sucesso como: ${type.replace('_',' ')}`); loadCompanyDashboard(id);
-    }
-
-    function doLoginPR() {
-      const nif = document.getElementById("pr-log-nif").value.trim(); const pass = document.getElementById("pr-log-senha").value;
-      if (nif.length !== 9 || pass.length < 5) return alert("NIF (9 num) e Senha obrigatórios.");
-      let foundId = null; for (let key in allCompaniesDB) { if (allCompaniesDB[key].nif === nif && allCompaniesDB[key].pass === pass) { foundId = key; break; } }
-      if (!foundId) { alert("Conta não encontrada. Registe-se."); switchPRView('REG'); document.getElementById("pr-reg-nif").value = nif; return; }
-      localStorage.setItem("zap_pr_last_id", foundId); loadCompanyDashboard(foundId);
-    }
-
-    function switchDashView(tab) {
-      document.getElementById('menu-loja').classList.remove('active'); document.getElementById('menu-agendar').classList.remove('active'); document.getElementById('menu-filiais').classList.remove('active');
-      document.getElementById('view-loja').classList.add('hidden'); document.getElementById('view-agendar').classList.add('hidden'); document.getElementById('view-filiais').classList.add('hidden');
-      document.getElementById('menu-' + tab).classList.add('active'); document.getElementById('view-' + tab).classList.remove('hidden');
-      if (tab === 'agendar') renderAvailablePackages(); if (tab === 'filiais') renderFiliaisList();
-    }
-
-    function loadCompanyDashboard(id) {
-      activeCompany = allCompaniesDB[id]; document.getElementById("login-screen").classList.add("hidden"); document.getElementById("pr-dashboard-screen").classList.remove("hidden");
-      document.getElementById("dash-pr-name").innerText = activeCompany.name; document.getElementById("dash-pr-nif").innerText = activeCompany.nif; document.getElementById("dash-pr-address").innerText = activeCompany.morada;
-      if(activeCompany.type === "SEDE") document.getElementById("dash-pr-badge").innerText = "SEDE"; else if(activeCompany.type === "FILIAL_AUTONOMA") document.getElementById("dash-pr-badge").innerText = "FILIAL (Autónoma)"; else document.getElementById("dash-pr-badge").innerText = "FILIAL (Subordinada)";
-      if (activeCompany.isLocked) { document.getElementById("dash-filial-warning").style.display = "block"; document.getElementById("dash-lock-overlay").classList.remove("hidden"); document.getElementById("menu-loja").style.display = "none"; } else { document.getElementById("dash-filial-warning").style.display = "none"; document.getElementById("dash-lock-overlay").classList.add("hidden"); document.getElementById("menu-loja").style.display = "block"; }
-      switchDashView('loja'); updateCompanyDashboard();
-    }
-
-    function activateFilialCode() {
-      const code = document.getElementById("dash-insert-code").value.trim(); if(code.length < 5) return alert("Código Inválido.");
-      activeCompany.isLocked = false; activeCompany.codeSede = code; saveCompanyDB(); alert("Código validado!"); loadCompanyDashboard(activeCompany.id);
-    }
-
-    function saveCompanyDB() { allCompaniesDB[activeCompany.id] = activeCompany; localStorage.setItem("zap_all_companies", JSON.stringify(allCompaniesDB)); }
-
-    function buyPackage(nome, bandeiras, preco, dias) {
-      if(activeCompany.isLocked) return alert("Gestão bloqueada.");
-      if (confirm(`Comprar Pacote ${nome} (${bandeiras.toLocaleString()}) por ${preco}€?`)) { activeCompany.pacotesDisponiveis.push({ id: "COFRE-" + Math.random().toString(36).substr(2,6).toUpperCase(), nome: "Pacote " + nome, flagsTotal: bandeiras, validadeDias: dias, raioKm: 15 }); saveCompanyDB(); alert("Pacote comprado!"); }
-    }
-
-    function renderAvailablePackages() {
-      const sel = document.getElementById("agenda-pack-select"); sel.innerHTML = "";
-      if (!activeCompany.pacotesDisponiveis || activeCompany.pacotesDisponiveis.length === 0) { sel.innerHTML = "<option value=''>Cofre Vazio</option>"; return; }
-      activeCompany.pacotesDisponiveis.forEach(p => { sel.innerHTML += `<option value='${p.id}'>${p.nome} (${p.flagsTotal.toLocaleString()} band.)</option>`; });
-    }
-
-    function scheduleCampaign() {
-      const packId = document.getElementById("agenda-pack-select").value; if (!packId) return alert("Sem pacotes.");
-      const lotesPedidos = parseInt(document.getElementById("agenda-lots").value || "0"); const diasPremio = parseInt(document.getElementById("agenda-days").value || "5"); const premioTxt = document.getElementById("agenda-prize").value.trim();
-      const packIdx = activeCompany.pacotesDisponiveis.findIndex(p => p.id === packId); const chosenPack = activeCompany.pacotesDisponiveis[packIdx]; const maxLotes = Math.floor(chosenPack.flagsTotal / 20);
-      if(lotesPedidos > maxLotes) return alert(`Máximo de ${maxLotes} lotes.`); if(lotesPedidos > 0 && diasPremio > chosenPack.validadeDias) return alert(`Erro: Excede validade do pacote (${chosenPack.validadeDias} dias).`);
-      activeCompany.pacotesDisponiveis.splice(packIdx, 1);
-      
-      activeCompany.campanhas.push({
-        id: "CAMP-" + Math.random().toString(36).substr(2, 6).toUpperCase(), nome: chosenPack.nome, premio: lotesPedidos > 0 ? premioTxt : "Sem Prémio",
-        lotesIniciais: lotesPedidos, flagsTotais: chosenPack.flagsTotal, flagsRestantes: chosenPack.flagsTotal, flagsPremioRestantes: lotesPedidos * 20, flagsEnergiaRestantes: chosenPack.flagsTotal - (lotesPedidos * 20),
-        diasLevantamento: lotesPedidos > 0 ? diasPremio : 0, raioKm: chosenPack.raioKm, status: "active", activationTime: Date.now(), expiraEm: Date.now() + (chosenPack.validadeDias * 24 * 60 * 60 * 1000), vencedores: []
-      });
-      saveCompanyDB(); renderAvailablePackages(); updateCompanyDashboard(); alert(`Campanha ativada no mapa!`);
-    }
-
-    function updateCompanyDashboard() {
-      if(!activeCompany.campanhas) activeCompany.campanhas = []; const listaDiv = document.getElementById("campanhas-ativas-lista"); if(!listaDiv) return; listaDiv.innerHTML = "";
-      activeCompany.campanhas.forEach(camp => {
-        let cardHtml = `<div class="camp-card"><div class="pack-title">${camp.nome}</div>`; const consumido = camp.flagsTotais - camp.flagsRestantes; const pct = (consumido / camp.flagsTotais) * 100;
-        cardHtml += `<div style="font-size:12px; color:#a7fca7;"><b>Raio:</b> ${camp.raioKm}km | <b>Prémio:</b> ${camp.premio}</div><div class="stat-bar" style="width:100%; height:8px; border-radius:4px; margin-top:5px;"><div class="stat-fill" style="width:${pct}%; background:#0f0;"></div></div></div>`; listaDiv.innerHTML += cardHtml;
-      });
-    }
-
-    function renderFiliaisList() { const list = document.getElementById("filiais-lista"); list.innerHTML = ""; if (activeCompany.type !== "SEDE") { list.innerHTML = "<span style='color:#888; font-size:12px;'>Apenas a Sede acede à rede global.</span>"; return; } for (let key in allCompaniesDB) { let c = allCompaniesDB[key]; if (c.nif === activeCompany.nif && c.id !== activeCompany.id) { list.innerHTML += `<div style="background:#222; padding:10px; margin-bottom:5px; border-radius:5px; border:1px solid #4CAF50;"><b>${c.name}</b><br><span style="font-size:11px;">${c.morada} | ${c.type.replace('_',' ')}</span></div>`; } } }
-    function generateBranchCode() { document.getElementById("branch-code-result").innerText = `${activeCompany.name.substring(0, 4).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`; }
-    function openCompanyMap() { document.getElementById("pr-dashboard-screen").classList.add("hidden"); document.getElementById("pr-map-screen").classList.remove("hidden"); if (!prMap) { prMap = L.map('map-empresa', { zoomControl: false }).setView([41.1496, -8.6109], 15); L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(prMap); } for(let i=0; i<10; i++) { let icon = L.divIcon({ className: '', html: `<div class="flag-marker yellow-flag"></div>`, iconSize: [20,20] }); L.marker([41.1496 + (Math.random()-0.5)*0.01, -8.6109 + (Math.random()-0.5)*0.01], { icon: icon }).addTo(prMap); } }
-    function closeCompanyMap() { document.getElementById("pr-map-screen").classList.add("hidden"); document.getElementById("pr-dashboard-screen").classList.remove("hidden"); }
-
-  </script>
-</body>
-</html>
- <!-- ===================== PARTE 2: JAVASCRIPT COMPLETO ===================== -->
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script>
-    // ================= CONFIGURAÇÕES REAIS (PRODUÇÃO) =================
-    const isTestMode = false; // MODO REAL ATIVADO
-    const moveDist = isTestMode ? 4 : 0.5;   // Anda 0.50m
-    const energyCost = isTestMode ? 4 : 0.5; // Gasta 0.50m
-    const idleTime = isTestMode ? 15000 : 900000; // Descanso de 15 Minutos (900000ms)
-    const delayCampanha = isTestMode ? 60000 : 3600000; // 60 Minutos Reais para carência
-
-    let player = { name: "", energy: 1000, maxEnergy: 1000, skill: 1, vision: 5, flags: 0, lat: 41.1496, lng: -8.6109, progressPR: {}, qrs: [] };
-    let map = null, prMap = null, playerMarker = null, visionCircle = null, catchCircle = null, allFlags = [];
-    let activeCompany = null; 
-    let allCompaniesDB = {}; 
-    let allPlayersDB = [];
-    let playerFriends = {}; 
-    let currentChatFriend = ""; 
-    let currentTrade = { myQR: null, friendQR: null };
-    
-    let lastMoveTime = Date.now();
-    let nextSkillTarget = 100;
-    let dashInterval = null;
-    let gpsWatchId = null;
-    let isOfflineMode = true;
-    
-    // ================= INICIALIZAÇÃO =================
-    window.onload = () => {
-      const savedName = localStorage.getItem("zap_player_name"); if (savedName) document.getElementById("jg-log-nome").value = savedName;
-      const db = localStorage.getItem("zap_all_companies"); if (db) allCompaniesDB = JSON.parse(db);
-      const playersDb = localStorage.getItem("zap_all_players"); if (playersDb) allPlayersDB = JSON.parse(playersDb);
-      const friendsDb = localStorage.getItem("zap_player_friends"); if (friendsDb) playerFriends = JSON.parse(friendsDb);
-    };
-
-    // ================= BACKOFFICE =================
-    function openAdminLogin() { document.getElementById('bo-login-screen').classList.remove('hidden'); }
-    function closeAdminLogin() { document.getElementById('bo-login-screen').classList.add('hidden'); }
-    
-    function doLoginBO() {
-      if(document.getElementById('bo-pass').value === '123123') {
-        document.getElementById('bo-login-screen').classList.add('hidden');
-        document.getElementById('login-screen').classList.add('hidden');
-        document.getElementById('backoffice-screen').classList.remove('hidden');
-        renderBackoffice();
-      } else alert("Acesso Negado!");
-    }
-
-    function generateSimulation() {
-      const pCount = parseInt(document.getElementById('sim-players').value || 0);
-      const cCount = parseInt(document.getElementById('sim-comps').value || 0);
-
-      if(pCount > 0) {
-        for(let i=0; i<pCount; i++) { allPlayersDB.push("Jogador_" + Math.random().toString(36).substr(2,4).toUpperCase()); }
-        localStorage.setItem("zap_all_players", JSON.stringify(allPlayersDB));
-      }
-
-      if(cCount > 0) {
-        for(let i=0; i<cCount; i++) {
-          let id = "COMP-SIM-" + Math.random().toString(36).substr(2,6).toUpperCase();
-          allCompaniesDB[id] = {
-            id: id, type: "SEDE", name: "Empresa Sim " + i,
-            nif: "999000" + String(i).padStart(3, '0'),
-            email: "sim"+i+"@teste.com", pass: "123123", morada: "Rua Virtual " + i, codeSede: "", isLocked: false,
-            lat: 41.1496 + (Math.random()-0.5)*0.1, lng: -8.6109 + (Math.random()-0.5)*0.1,
-            atividade: "Simulação", pacotesDisponiveis: [], stockLivre: 0, stockPago: 0, validade: Date.now() + 864000000,
-            campanhas: [{
-               id: "CAMP-SIM-" + i, nome: "Campanha Sim", premio: "Prémio Fictício", lotesIniciais: 5, flagsTotais: 100, flagsRestantes: 100,
-               flagsPremioRestantes: 100, flagsEnergiaRestantes: 0, diasLevantamento: 30, raioKm: 15, status: "active",
-               activationTime: Date.now(), expiraEm: Date.now() + 864000000, vencedores: []
-            }]
-          };
-        }
-        localStorage.setItem("zap_all_companies", JSON.stringify(allCompaniesDB));
-      }
-      alert(`Simulação de Carga concluída!\nForam gerados ${pCount} Jogadores e ${cCount} Empresas.`);
-      renderBackoffice();
-    }
-
-    function renderBackoffice() {
-      document.getElementById("bo-total-players").innerText = allPlayersDB.length;
-      document.getElementById("bo-total-comps").innerText = Object.keys(allCompaniesDB).length;
-
-      const pList = document.getElementById("bo-players-list"); pList.innerHTML = "";
-      allPlayersDB.slice(0, 50).forEach(p => { pList.innerHTML += `<tr><td>${p}</td><td><button class="btn-danger" style="padding:5px;" onclick="deletePlayer('${p}')">Apagar</button></td></tr>`; });
-      if(allPlayersDB.length > 50) pList.innerHTML += `<tr><td colspan='2' style='text-align:center; color:#aaa;'>... e mais ${allPlayersDB.length - 50} ocultos.</td></tr>`;
-
-      const cList = document.getElementById("bo-comps-list"); cList.innerHTML = "";
-      const compKeys = Object.keys(allCompaniesDB);
-      compKeys.slice(0, 50).forEach(key => {
-        let c = allCompaniesDB[key];
-        cList.innerHTML += `<tr><td>${c.name}</td><td>${c.nif}</td><td>${c.type.replace('_',' ')}</td><td><button class="btn-danger" style="padding:5px;" onclick="deleteCompany('${key}')">Apagar</button></td></tr>`;
-      });
-      if(compKeys.length > 50) cList.innerHTML += `<tr><td colspan='4' style='text-align:center; color:#aaa;'>... e mais ${compKeys.length - 50} ocultas.</td></tr>`;
-    }
-
-    function deletePlayer(name) {
-      if(confirm("Apagar o jogador " + name + "?")) {
-        allPlayersDB = allPlayersDB.filter(p => p !== name);
-        localStorage.setItem("zap_all_players", JSON.stringify(allPlayersDB));
-        localStorage.removeItem("zap_reg_" + name.toLowerCase());
-        renderBackoffice();
-      }
-    }
-
-    function deleteCompany(id) {
-      if(confirm("Apagar empresa e as suas campanhas?")) {
-        delete allCompaniesDB[id];
-        localStorage.setItem("zap_all_companies", JSON.stringify(allCompaniesDB));
-        renderBackoffice();
-      }
-    }
-
-    function factoryReset() {
-      if(confirm("ATENÇÃO: Vai formatar TODO o sistema! Deseja prosseguir?")) {
-        localStorage.clear(); alert("Sistema limpo. A recarregar..."); location.reload();
-      }
-    }
-
-    // ================= MENUS =================
-    function validateEmail(email) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email); }
-    function recoverPass() { const val = prompt("Insira E-mail ou Telemóvel:"); if(val) alert("Foi enviado um link de recuperação da sua senha."); }
-
-    function switchMainTab(mode) {
-      document.getElementById('area-jg').classList.toggle('hidden', mode !== 'JG'); document.getElementById('area-pr').classList.toggle('hidden', mode !== 'PR');
-      document.getElementById('btn-tab-jg').className = mode === 'JG' ? 'tab-btn active' : 'tab-btn btn-dark'; document.getElementById('btn-tab-pr').className = mode === 'PR' ? 'tab-btn active' : 'tab-btn btn-dark';
-      if(mode === 'JG') switchJGView('LOG'); if(mode === 'PR') switchPRView('LOG');
     }
     
-    function switchJGView(view) { document.getElementById('jg-login-view').classList.toggle('hidden', view !== 'LOG'); document.getElementById('jg-reg-view').classList.toggle('hidden', view !== 'REG'); }
-    function switchPRView(view) { document.getElementById('pr-login-view').classList.toggle('hidden', view !== 'LOG'); document.getElementById('pr-reg-view').classList.toggle('hidden', view !== 'REG'); }
-    function toggleFilialFields() { document.getElementById("filial-extras").classList.toggle("hidden", !document.getElementById("pr-is-filial").checked); }
-
-    // ================= LOGIN JOGADOR =================
-    function doLoginJG() {
-      const name = document.getElementById("jg-log-nome").value.trim();
-      const pass = document.getElementById("jg-log-senha").value;
-      if (!name || pass.length < 5) return alert("Preencha o Nome e a Senha (>4 letras)!");
-      const isReg = localStorage.getItem("zap_reg_" + name.toLowerCase());
-      if (!isReg) { alert("Jogador não encontrado. Reencaminhado para registo!"); switchJGView('REG'); document.getElementById("jg-reg-name").value = name; return; }
-      
-      localStorage.setItem("zap_player_name", name); player.name = name;
-      const pData = localStorage.getItem("zap_player_data");
-      if(pData) { const parsed = JSON.parse(pData); if(parsed.name === name) player = parsed; }
-      
-      const lastNif = localStorage.getItem("zap_pr_nif");
-      if(lastNif) activeCompany = JSON.parse(localStorage.getItem("zap_pr_data_" + lastNif));
-
-      preStartGame();
+    function updateUI() {
+      document.getElementById('val-ener').innerText = Math.floor(player.energy);
+      document.getElementById('bar-ener').style.width = (player.energy / player.maxEnergy) * 100 + "%";
+      document.getElementById('val-skill').innerText = player.skill;
+      document.getElementById('val-visao').innerText = player.vision.toFixed(2);
+      let prevTarget = player.skill === 1 ? 0 : 100 * Math.pow(2, player.skill - 2);
+      let progress = ((player.flags - prevTarget) / (nextSkillTarget - prevTarget)) * 100;
+      document.getElementById('bar-skill').style.width = progress + "%";
     }
 
-    function doRegisterJG() {
-      const name = document.getElementById("jg-reg-name").value.trim();
-      const email = document.getElementById("jg-reg-email").value.trim();
-      const p1 = document.getElementById("jg-reg-pass1").value;
-      const p2 = document.getElementById("jg-reg-pass2").value;
-
-      if (!name || !validateEmail(email)) return alert("E-mail inválido ou Nome vazio.");
-      if (p1.length < 5 || p1 !== p2) return alert("A senha deve ter mais de 4 caracteres e coincidir.");
-
-      localStorage.setItem("zap_reg_" + name.toLowerCase(), "true");
-      localStorage.setItem("zap_player_name", name);
-      player.name = name; 
-      
-      // Injeta QRs para efeitos de demonstração de trocas
-      player.qrs = [
-        { id: "QR-" + Math.random().toString(36).substr(2,4).toUpperCase(), brand: "ZARA", offer: "50% Desconto", expires: Date.now() + 864000000 },
-        { id: "QR-" + Math.random().toString(36).substr(2,4).toUpperCase(), brand: "FNAC", offer: "Vale 10€", expires: Date.now() + 864000000 }
-      ];
-      
-      if(!allPlayersDB.includes(name)) allPlayersDB.push(name);
-      localStorage.setItem("zap_all_players", JSON.stringify(allPlayersDB));
-      
-      savePlayer(); alert(`Registo concluído! Bem-vindo(a) ${name}!`); preStartGame();
-    }
-    function savePlayer() { localStorage.setItem("zap_player_data", JSON.stringify(player)); }
-
-    // ================= FASE 2/3: EMPRESA =================
+    // ================= FASE 2: EMPRESA =================
     function doRegisterPR() {
       const isFilial = document.getElementById("pr-is-filial").checked;
       const fPropria = document.getElementById("filial-fatura-propria").checked;
@@ -831,23 +768,28 @@
         pacotesDisponiveis: [], campanhas: [], stockPago: 0
       };
       
-      allCompaniesDB[id] = data; localStorage.setItem("zap_all_companies", JSON.stringify(allCompaniesDB)); localStorage.setItem("zap_pr_last_id", id);
+      allCompaniesDB[id] = data; localStorage.setItem("zap_all_companies", JSON.stringify(allCompaniesDB));
       alert(`Registado com sucesso como: ${type.replace('_',' ')}`); loadCompanyDashboard(id);
     }
 
     function doLoginPR() {
-      const nif = document.getElementById("pr-log-nif").value.trim(); const pass = document.getElementById("pr-log-senha").value;
-      if (nif.length !== 9 || pass.length < 5) return alert("NIF (9 num) e Senha obrigatórios.");
-      let foundId = null; for (let key in allCompaniesDB) { if (allCompaniesDB[key].nif === nif && allCompaniesDB[key].pass === pass) { foundId = key; break; } }
-      if (!foundId) { alert("Conta Empresarial não encontrada. Registe-se."); switchPRView('REG'); document.getElementById("pr-reg-nif").value = nif; return; }
-      localStorage.setItem("zap_pr_last_id", foundId); loadCompanyDashboard(foundId);
+      const nif = document.getElementById("pr-log-nif").value.trim();
+      const pass = document.getElementById("pr-log-senha").value;
+      if (nif.length !== 9 || pass.length < 5) return alert("NIF de 9 números e Senha >4 caracteres.");
+      let foundId = null;
+      for (let key in allCompaniesDB) { if (allCompaniesDB[key].nif === nif && allCompaniesDB[key].pass === pass) { foundId = key; break; } }
+      if (!foundId) { switchPRView('REG'); document.getElementById("pr-reg-nif").value = nif; return alert("Conta não encontrada. Registe-se."); }
+      loadCompanyDashboard(foundId);
     }
 
     function switchDashView(tab) {
-      document.getElementById('menu-loja').classList.remove('active'); document.getElementById('menu-agendar').classList.remove('active'); document.getElementById('menu-filiais').classList.remove('active');
-      document.getElementById('view-loja').classList.add('hidden'); document.getElementById('view-agendar').classList.add('hidden'); document.getElementById('view-filiais').classList.add('hidden');
+      document.getElementById('menu-loja').classList.remove('active'); document.getElementById('menu-agendar').classList.remove('active'); document.getElementById('menu-filiais').classList.remove('active'); document.getElementById('menu-stats').classList.remove('active');
+      document.getElementById('view-loja').classList.add('hidden'); document.getElementById('view-agendar').classList.add('hidden'); document.getElementById('view-filiais').classList.add('hidden'); document.getElementById('view-stats').classList.add('hidden');
+      
       document.getElementById('menu-' + tab).classList.add('active'); document.getElementById('view-' + tab).classList.remove('hidden');
-      if (tab === 'agendar') renderAvailablePackages(); if (tab === 'filiais') renderFiliaisList();
+      if (tab === 'agendar') renderAvailablePackages();
+      if (tab === 'filiais') renderFiliaisList();
+      if (tab === 'stats') renderStats();
     }
 
     function loadCompanyDashboard(id) {
@@ -864,23 +806,26 @@
       } else {
         document.getElementById("dash-filial-warning").style.display = "none"; document.getElementById("dash-lock-overlay").classList.add("hidden"); document.getElementById("menu-loja").style.display = "block";
       }
+
       switchDashView('loja'); updateCompanyDashboard();
-      if(dashInterval) clearInterval(dashInterval); dashInterval = setInterval(updateCompanyDashboard, 1000);
     }
 
     function activateFilialCode() {
-      const code = document.getElementById("dash-insert-code").value.trim(); if(code.length < 5) return alert("Código Inválido.");
+      const code = document.getElementById("dash-insert-code").value.trim();
+      if(code.length < 5) return alert("Código Inválido.");
       activeCompany.isLocked = false; activeCompany.codeSede = code; saveCompanyDB();
-      alert("Código validado! Recebeu acesso aos pacotes da Sede."); loadCompanyDashboard(activeCompany.id);
+      alert("Código validado! Acedeu aos pacotes da Sede."); loadCompanyDashboard(activeCompany.id);
     }
 
     function saveCompanyDB() { allCompaniesDB[activeCompany.id] = activeCompany; localStorage.setItem("zap_all_companies", JSON.stringify(allCompaniesDB)); }
 
     function buyPackage(nome, bandeiras, preco, dias) {
-      if(activeCompany.isLocked) return alert("Gestão bloqueada. Insira o código da Sede.");
-      if (confirm(`Comprar Pacote ${nome} (${bandeiras.toLocaleString()}) por ${preco}€?`)) {
+      if(activeCompany.isLocked) return alert("Faturação Centralizada. Insira o código da Sede.");
+      // Obtém o método de pagamento selecionado na Loja
+      const payMethod = document.querySelector('input[name="payment_method"]:checked').value;
+      if (confirm(`Pagar por ${payMethod} a compra do Pacote ${nome} por ${preco}€?`)) {
         activeCompany.pacotesDisponiveis.push({ id: "COFRE-" + Math.random().toString(36).substr(2,6).toUpperCase(), nome: "Pacote " + nome, flagsTotal: bandeiras, validadeDias: dias, raioKm: 15 });
-        saveCompanyDB(); alert("Pacote comprado! Está guardado no seu cofre.");
+        saveCompanyDB(); alert("Pacote comprado e guardado no cofre!");
       }
     }
 
@@ -891,360 +836,139 @@
     }
 
     function scheduleCampaign() {
-      const packId = document.getElementById("agenda-pack-select").value; if (!packId) return alert("Sem pacotes.");
-      const lotesPedidos = parseInt(document.getElementById("agenda-lots").value || "0"); const diasPremio = parseInt(document.getElementById("agenda-days").value || "5"); const premioTxt = document.getElementById("agenda-prize").value.trim();
+      const packId = document.getElementById("agenda-pack-select").value;
+      if (!packId) return alert("Sem pacotes no cofre.");
+      const lotesPedidos = parseInt(document.getElementById("agenda-lots").value || "0");
+      const diasPremio = parseInt(document.getElementById("agenda-days").value || "5");
+      const premioTxt = document.getElementById("agenda-prize").value.trim();
 
-      const packIdx = activeCompany.pacotesDisponiveis.findIndex(p => p.id === packId); const chosenPack = activeCompany.pacotesDisponiveis[packIdx]; const maxLotes = Math.floor(chosenPack.flagsTotal / 20);
+      const packIdx = activeCompany.pacotesDisponiveis.findIndex(p => p.id === packId);
+      const chosenPack = activeCompany.pacotesDisponiveis[packIdx];
+      const maxLotes = Math.floor(chosenPack.flagsTotal / 20);
 
-      if(lotesPedidos > 0 && !premioTxt) return alert("Tem de descrever o prémio.");
-      if(lotesPedidos > maxLotes) return alert(`Matemática Inválida: Este pacote suporta no máximo ${maxLotes} lotes.`);
-      if(lotesPedidos > 0 && diasPremio > chosenPack.validadeDias) return alert(`Erro: Prazo excede a validade do pacote (${chosenPack.validadeDias} dias).`);
+      if(lotesPedidos > 0 && !premioTxt) return alert("Descreva o prémio.");
+      if(lotesPedidos > maxLotes) return alert(`Apenas suporta ${maxLotes} lotes.`);
+      if(lotesPedidos > 0 && diasPremio > chosenPack.validadeDias) return alert(`Erro: Prazo excede validade (${chosenPack.validadeDias} dias).`);
 
       activeCompany.pacotesDisponiveis.splice(packIdx, 1);
       
-      const novaCampanha = {
+      activeCompany.campanhas.push({
         id: "CAMP-" + Math.random().toString(36).substr(2, 6).toUpperCase(),
-        nome: chosenPack.nome, premio: lotesPedidos > 0 ? premioTxt : "Bandeiras de Publicidade",
+        nome: chosenPack.nome, premio: lotesPedidos > 0 ? premioTxt : "Bandeira de Publicidade",
         lotesIniciais: lotesPedidos, flagsTotais: chosenPack.flagsTotal, flagsRestantes: chosenPack.flagsTotal,
-        flagsPremioRestantes: lotesPedidos * 20, flagsEnergiaRestantes: chosenPack.flagsTotal - (lotesPedidos * 20),
+        flagsPremioRestantes: lotesPedidos * 20, flagsPremioIniciais: lotesPedidos * 20, flagsEnergiaRestantes: chosenPack.flagsTotal - (lotesPedidos * 20),
         diasLevantamento: lotesPedidos > 0 ? diasPremio : 0, raioKm: chosenPack.raioKm,
         status: "pending", activationTime: Date.now() + delayCampanha, expiraEm: Date.now() + (chosenPack.validadeDias * 24 * 60 * 60 * 1000), vencedores: []
-      };
+      });
 
-      activeCompany.campanhas.push(novaCampanha);
-      saveCompanyDB(); renderAvailablePackages(); updateCompanyDashboard(); alert(`Campanha agendada. Proteção de ${delayCampanha/60000} minutos ativada.`);
+      saveCompanyDB(); renderAvailablePackages(); updateCompanyDashboard(); alert(`Campanha agendada. Proteção de ${delayCampanha/60000} minutos ativa.`);
+    }
+
+    function changeCampStatus(campId, newStatus) {
+      const camp = activeCompany.campanhas.find(c => c.id === campId);
+      if (camp) {
+        if (newStatus === 'suspended' && camp.flagsPremioRestantes < camp.flagsPremioIniciais) { return alert("Não pode suspender. Os jogadores já começaram a descobrir os prémios do saco!"); }
+        if (newStatus === 'eliminated') { if(!confirm("A Empresa assume responsabilidade legal por prémios apanhados. Eliminar pacote para sempre?")) return; }
+        camp.status = newStatus; updateCompanyDashboard();
+      }
     }
 
     function updateCompanyDashboard() {
-      if(!activeCompany.campanhas) activeCompany.campanhas = []; const listaDiv = document.getElementById("campanhas-ativas-lista"); if(!listaDiv) return; listaDiv.innerHTML = ""; const now = Date.now();
+      if(!activeCompany.campanhas) activeCompany.campanhas = [];
+      const listaDiv = document.getElementById("campanhas-ativas-lista");
+      if(!listaDiv) return;
+      listaDiv.innerHTML = ""; const now = Date.now();
 
       activeCompany.campanhas.forEach(camp => {
         if (camp.status === 'pending' && now >= camp.activationTime) { camp.status = 'active'; }
-        let pacoteExpirado = false; let diasVal = Math.ceil((camp.expiraEm - now) / (24*60*60*1000));
+        
+        let pacoteExpirado = false;
+        let diasVal = Math.ceil((camp.expiraEm - now) / (24*60*60*1000));
         if (diasVal <= 0 && camp.status === 'active') { pacoteExpirado = true; camp.status = 'expired'; }
+        if (camp.status === 'eliminated') { listaDiv.innerHTML += `<div class="camp-card camp-expired"><div class="pack-title">${camp.nome} (ELIMINADO)</div></div>`; return; }
 
-        let cardHtml = `<div class="camp-card ${camp.status === 'pending' ? 'camp-pending' : ''} ${pacoteExpirado ? 'camp-expired' : ''}">`;
-        cardHtml += `<div class="pack-title">${camp.nome} ${pacoteExpirado ? '(EXPIROU)' : ''}</div>`;
+        let cardHtml = `<div class="camp-card ${camp.status === 'pending' ? 'camp-pending' : ''}">`;
+        cardHtml += `<div class="pack-title">${camp.nome} ${pacoteExpirado ? '(EXPIRADO)' : ''}</div>`;
         
         if (camp.status === 'pending') {
-          const diff = Math.max(0, camp.activationTime - now); const m = Math.floor((diff/1000)/60).toString().padStart(2, '0'); const s = Math.floor((diff/1000)%60).toString().padStart(2, '0');
-          cardHtml += `<p style="font-size:12px; color:#aaa; margin:5px 0;">Em carência de 60m.</p><div class="camp-timer">⏱️ Arranque: ${m}:${s}</div>`;
+          const diff = Math.max(0, camp.activationTime - now);
+          const m = Math.floor((diff/1000)/60).toString().padStart(2, '0');
+          const s = Math.floor((diff/1000)%60).toString().padStart(2, '0');
+          cardHtml += `<div class="camp-timer">⏱️ Arranque em: ${m}:${s}</div><div style="display:flex;gap:5px;margin-top:10px;"><button class="btn-warning" style="flex:1;" onclick="changeCampStatus('${camp.id}', 'suspended')">⏸️ SUSPENDER</button><button class="btn-danger" style="flex:1;" onclick="changeCampStatus('${camp.id}', 'eliminated')">❌ ELIMINAR</button></div>`;
         } else {
           const consumido = camp.flagsTotais - camp.flagsRestantes; const pct = (consumido / camp.flagsTotais) * 100;
-          let statusTxt = camp.status === 'active' ? `<span style="color:#0f0;">🟢 ATIVA NO MAPA</span>` : `<span style="color:red;">🔴 TERMINADA</span>`;
+          let statusTxt = camp.status === 'active' ? `<span style="color:#0f0;">🟢 ATIVA NO MAPA</span>` : (pacoteExpirado ? `<span style="color:red;">🔴 EXPIRADA</span>` : `<span style="color:#ff9800;">⏸️ SUSPENSA</span>`);
+          
+          let btnAct = "";
+          if (!pacoteExpirado) { let canSuspend = camp.flagsPremioRestantes >= camp.flagsPremioIniciais; btnAct = `<button class="btn-dark" style="font-size:10px; padding:5px;" ${canSuspend ? '' : 'disabled'} onclick="changeCampStatus('${camp.id}', '${camp.status === 'active' ? 'suspended' : 'active'}')">${camp.status === 'active' ? '⏸️ SUSPENDER' : '▶️ RETOMAR'}</button>`; }
+          btnAct += `<button class="btn-danger" style="font-size:10px; padding:5px; margin-left:5px;" onclick="changeCampStatus('${camp.id}', 'eliminated')">❌ ELIMINAR</button>`;
 
-          cardHtml += `
-            <div style="display:flex; justify-content:space-between; align-items:center;">${statusTxt}</div>
-            <div style="font-size:12px; color:#a7fca7; margin-top:5px;"><b>Raio:</b> ${camp.raioKm}km | <b>Prémio:</b> ${camp.premio} | <b>Validade:</b> ${pacoteExpirado ? 'Terminou' : diasVal + ' dias'}</div>
-            <div class="stat-bar" style="width:100%; height:8px; border-radius:4px; margin-top:5px;"><div class="stat-fill" style="width:${pct}%; background:${pacoteExpirado ? 'red' : '#0f0'};"></div></div>
-          `;
-          if (camp.vencedores.length > 0) { cardHtml += `<h4 style="margin:10px 0 5px 0; color:#4CAF50;">🏆 QRs Gerados</h4>`; camp.vencedores.forEach(v => { const dFaltam = Math.ceil((v.expiraEm - Date.now()) / (24*60*60*1000)); cardHtml += `<div class="winner-item"><span>🎫 <b>${v.codigo}</b></span><span>Detentor: <b style="color:#0f0;">${v.jogador}</b></span><span style="color:${dFaltam<0 ? '#ff0000' : '#0f0'}">${dFaltam<0 ? 'Expirou' : dFaltam+'d'}</span></div>`; }); }
+          cardHtml += `<div style="display:flex; justify-content:space-between; align-items:center;">${statusTxt} <div>${btnAct}</div></div><div style="font-size:12px; color:#a7fca7; margin-top:5px;"><b>Raio:</b> ${camp.raioKm}km | <b>Prémio:</b> ${camp.premio} | <b>Validade Restante:</b> ${pacoteExpirado ? 'Terminou' : diasVal + ' dias'}</div>`;
+          cardHtml += `<div style="display:flex; justify-content:space-between; font-size:12px; margin-top:10px; color:#fff; background:#111; padding:5px; border-radius:4px;"><span>📦 Lotes: ${camp.lotesIniciais}</span><span>🚩 Consumo: ${consumido}/${camp.flagsTotais}</span><span>🎫 QRs: ${camp.vencedores.length}</span></div><div class="stat-bar" style="width:100%; height:8px; border-radius:4px; margin-top:5px;"><div class="stat-fill" style="width:${pct}%; background:${pacoteExpirado ? 'red' : '#0f0'};"></div></div>`;
         }
         cardHtml += `</div>`; listaDiv.innerHTML += cardHtml;
       });
       saveCompanyDB();
     }
 
+    function renderStats() {
+      const content = document.getElementById("stats-content");
+      let totalCompradas = 0; let totalApanhadas = 0; let totalQRs = 0; let diasEmJogo = 1; let htmlQrs = "";
+      if(!activeCompany.campanhas) return;
+      activeCompany.campanhas.forEach(c => {
+        if(c.status === 'active' || c.status === 'expired') {
+          totalCompradas += c.flagsTotais; totalApanhadas += (c.flagsTotais - c.flagsRestantes); totalQRs += c.vencedores.length;
+          let dias = Math.ceil((Date.now() - c.activationTime) / (24*60*60*1000)); if(dias > diasEmJogo) diasEmJogo = dias;
+          c.vencedores.forEach(v => { htmlQrs += `<div class="winner-item"><span>🎫 <b>${v.codigo}</b></span><span><b style="color:#0f0;">${v.jogador}</b></span></div>`; });
+        }
+      });
+      let mediaDia = Math.floor(totalApanhadas / diasEmJogo);
+      content.innerHTML = `<div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:20px;"><div style="background:#111; padding:15px; border-radius:8px; text-align:center; border:1px solid #4CAF50;"><div style="color:#a7fca7; font-size:12px;">Bandeiras Apanhadas</div><div style="font-size:24px; color:#fff; font-weight:bold;">${totalApanhadas}</div></div><div style="background:#111; padding:15px; border-radius:8px; text-align:center; border:1px solid #00f0ff;"><div style="color:#a7fca7; font-size:12px;">Desempenho Geral</div><div style="font-size:14px; color:#fff; font-weight:bold;">${mediaDia} <span style="font-size:10px; color:#aaa;">band/dia</span></div></div></div><div style="background:#1a1a1a; padding:15px; border-radius:8px; border:1px dashed #ff9800;"><h4 style="margin:0 0 10px 0; color:#ff9800;">🏆 QRs Emitidos (${totalQRs})</h4>${htmlQrs || "<div style='font-size:12px; color:#aaa;'>Ainda não foram gerados QRs.</div>"}</div>`;
+    }
+
     function renderFiliaisList() {
-      const list = document.getElementById("filiais-lista"); list.innerHTML = ""; if (activeCompany.type !== "SEDE") { list.innerHTML = "<span style='color:#888; font-size:12px;'>Apenas a Sede acede à rede global.</span>"; return; }
-      for (let key in allCompaniesDB) { let c = allCompaniesDB[key]; if (c.nif === activeCompany.nif && c.id !== activeCompany.id) { list.innerHTML += `<div style="background:#222; padding:10px; margin-bottom:5px; border-radius:5px; border:1px solid #4CAF50;"><b>${c.name}</b><br><span style="font-size:11px; color:#aaa;">${c.morada} | ${c.type.replace('_',' ')}</span></div>`; } }
+      const list = document.getElementById("filiais-lista"); list.innerHTML = "";
+      if (activeCompany.type !== "SEDE") { list.innerHTML = "<span style='color:#888; font-size:12px;'>Apenas a Sede acede à rede de filiais.</span>"; return; }
+      for (let key in allCompaniesDB) {
+        let c = allCompaniesDB[key];
+        if (c.nif === activeCompany.nif && c.id !== activeCompany.id) { list.innerHTML += `<div style="background:#222; padding:10px; margin-bottom:5px; border-radius:5px; border:1px solid #4CAF50;"><b>${c.name}</b><br><span style="font-size:11px; color:#aaa;">${c.morada} | ${c.type.replace('_',' ')}</span></div>`; }
+      }
     }
 
     function generateBranchCode() { document.getElementById("branch-code-result").innerText = `${activeCompany.name.substring(0, 4).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`; }
-
-    // MAPA EMPRESA
     function openCompanyMap() {
       document.getElementById("pr-dashboard-screen").classList.add("hidden"); document.getElementById("pr-map-screen").classList.remove("hidden");
-      if (!prMap) { prMap = L.map('map-empresa', { zoomControl: false }).setView([activeCompany.lat || 38.7223, activeCompany.lng || -9.1393], 15); L.tileLayer('http://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}', { maxZoom: 20, subdomains:['mt0','mt1','mt2','mt3'] }).addTo(prMap); }
+      if (!prMap) { prMap = L.map('map-empresa', { zoomControl: false }).setView([activeCompany.lat, activeCompany.lng], 15); L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(prMap); }
       for(let i=0; i<10; i++) { let icon = L.divIcon({ className: '', html: `<div class="flag-marker yellow-flag"></div>`, iconSize: [20,20] }); L.marker([activeCompany.lat + (Math.random()-0.5)*0.01, activeCompany.lng + (Math.random()-0.5)*0.01], { icon: icon }).addTo(prMap); }
     }
     function closeCompanyMap() { document.getElementById("pr-map-screen").classList.add("hidden"); document.getElementById("pr-dashboard-screen").classList.remove("hidden"); }
 
-    // ================= MODOS DE JOGO (GPS / OFFLINE) =================
-    function preStartGame() { document.getElementById("login-screen").classList.add("hidden"); document.getElementById("mode-modal").classList.remove("hidden"); }
-
-    function requestGPSMode() {
-      document.getElementById("mode-modal").classList.add("hidden"); document.getElementById("game-screen").classList.remove("hidden");
-      isOfflineMode = false; initMap();
-      if (!navigator.geolocation) { alert("Sem GPS. A usar Offline."); activateOfflineMode(); return; }
-      if (gpsWatchId !== null) navigator.geolocation.clearWatch(gpsWatchId);
-      navigator.geolocation.watchPosition(
-        p => { const m = getDist(player.lat, player.lng, p.coords.latitude, p.coords.longitude); if (m > moveDist) { player.energy -= energyCost; updateUI(); } player.lat = p.coords.latitude; player.lng = p.coords.longitude; renderAvatar(); }, 
-        e => {}, { enableHighAccuracy: true, maximumAge: 5000, timeout: 20000 }
-      );
-      spawnRandomFlags(15); updateQRWallet(); populateSocialList();
+    // ================= JANELAS UI =================
+    function openWindow(id) { document.getElementById(id).classList.remove('hidden'); }
+    function closeWindow(id) { document.getElementById(id).classList.add('hidden'); }
+    function switchSoc(tab) {
+      document.getElementById('tab-lista').classList.remove('active'); document.getElementById('tab-chat').classList.remove('active'); document.getElementById('tab-troca').classList.remove('active');
+      document.getElementById('view-lista').classList.add('hidden'); document.getElementById('view-chat').classList.add('hidden'); document.getElementById('view-troca').classList.add('hidden');
+      document.getElementById('tab-' + tab).classList.add('active'); document.getElementById('view-' + tab).classList.remove('hidden');
+      if (tab === 'chat') { const sel = document.getElementById('trade-offer-select'); if(sel) { sel.innerHTML = '<option value="">-- O teu QR a oferecer --</option>'; if(player.qrs) player.qrs.forEach(qr => { sel.innerHTML += `<option value="${qr.id}">${qr.brand} (${qr.offer})</option>`; }); } }
     }
-
-    function activateOfflineMode() {
-      document.getElementById("mode-modal").classList.add("hidden"); document.getElementById("game-screen").classList.remove("hidden"); document.getElementById("offline-controls").classList.remove("hidden");
-      isOfflineMode = true; initMap(); spawnRandomFlags(15); renderAvatar(); populateSocialList(); updateQRWallet();
-    }
-
-    // ================= MAPA DO JOGADOR =================
-    function initMap() {
-      if (map) return;
-      map = L.map('map', { zoomControl: false }).setView([player.lat, player.lng], 19);
-      L.tileLayer('http://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}', { maxZoom: 20, subdomains:['mt0','mt1','mt2','mt3'] }).addTo(map);
-      setTimeout(() => { map.invalidateSize(); }, 500); 
-    }
-
-    function renderAvatar() {
-      if (!playerMarker) {
-        const avatarHTML = `<div id="avatar-anim" class="avatar-wrapper"><div class="ava-head"></div><div class="ava-arm-l"></div><div class="ava-arm-r" id="ava-arm-right"></div><div class="ava-body"></div><div class="ava-leg-l"></div><div class="ava-leg-r"></div></div>`;
-        const icon = L.divIcon({ className: '', html: avatarHTML, iconSize: [40, 50], iconAnchor: [20, 50] });
-        playerMarker = L.marker([player.lat, player.lng], { icon: icon, zIndexOffset: 1000 }).addTo(map);
-      } else { playerMarker.setLatLng([player.lat, player.lng]); }
-
-      if (!visionCircle) visionCircle = L.circle([player.lat, player.lng], { radius: player.vision, color: "#0066ff", fillOpacity: 0.1, weight: 1 }).addTo(map);
-      else { visionCircle.setLatLng([player.lat, player.lng]); visionCircle.setRadius(player.vision); }
-
-      if (!catchCircle) catchCircle = L.circle([player.lat, player.lng], { radius: 2.5, color: "#00ff00", className: "catch-circle", fillOpacity: 0.2, weight: 2 }).addTo(map);
-      else catchCircle.setLatLng([player.lat, player.lng]);
-
-      map.setView([player.lat, player.lng], 19); checkVisibleFlags();
-    }
-
-    function centerPlayer() { map.setView([player.lat, player.lng], 19); }
-
-    function movePlayer(dx, dy) {
-      if (!isOfflineMode) { alert("Modo GPS Ativo! Caminha na vida real."); return; }
-      if (player.energy < energyCost) { alert("Estás sem energia!"); return; }
-      player.energy -= energyCost; lastMoveTime = Date.now(); 
-      const ava = document.getElementById("avatar-anim");
-      if (ava) { ava.classList.add("walking"); if (dx > 0) ava.style.transform = "scaleX(1)"; if (dx < 0) ava.style.transform = "scaleX(-1)"; setTimeout(() => ava.classList.remove("walking"), 250); }
-
-      player.lat += (dy * moveDist) / 111320; player.lng += (dx * moveDist) / (111320 * Math.cos(player.lat * Math.PI / 180));
-      renderAvatar(); updateUI();
-    }
-
-    setInterval(() => { const timeIdle = Date.now() - lastMoveTime; if (timeIdle >= idleTime && player.energy < player.maxEnergy) { player.energy = Math.min(player.maxEnergy, player.energy + (player.maxEnergy * 0.10)); updateUI(); lastMoveTime = Date.now(); } }, 1000);
-
-    // ================= BANDEIRAS =================
-    function getDist(lat1, lng1, lat2, lng2) { const R = 6371e3; const dPhi = (lat2 - lat1) * Math.PI / 180; const dLam = (lng2 - lng1) * Math.PI / 180; const a = Math.sin(dPhi/2)*Math.sin(dPhi/2) + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLam/2)*Math.sin(dLam/2); return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)); }
-    function spawnRandomFlags(amount) { for(let i=0; i<amount; i++) { let rLat = player.lat + ((Math.random() - 0.5) * 0.0001); let rLng = player.lng + ((Math.random() - 0.5) * 0.0001); let icon = L.divIcon({ className: '', html: `<div class="flag-marker"></div>`, iconSize: [24,24] }); allFlags.push({ lat: rLat, lng: rLng, marker: L.marker([rLat, rLng], { icon: icon }), isVisible: false }); } }
-    function checkVisibleFlags() { allFlags.forEach(f => { let dist = getDist(player.lat, player.lng, f.lat, f.lng); if (dist <= player.vision && !f.isVisible) { f.marker.addTo(map); f.isVisible = true; } else if (dist > player.vision && f.isVisible) { map.removeLayer(f.marker); f.isVisible = false; } }); }
-
-    function catchFlag() {
-      let closest = null; let minDist = Infinity;
-      allFlags.forEach(f => { let d = getDist(player.lat, player.lng, f.lat, f.lng); if(d < minDist) { minDist = d; closest = f; } });
-      if (!closest) { alert("Não vês bandeiras!"); return; }
-      if (minDist > 2.5) { alert(`Aproxima-te! Bandeira a ${Math.floor(minDist)}m. (Círculo Tracejado)`); return; }
-
-      const ava = document.getElementById("avatar-anim");
-      if (ava) { ava.classList.add("catching"); setTimeout(() => ava.classList.remove("catching"), 400); }
-
-      player.flags += 1; map.removeLayer(closest.marker); allFlags = allFlags.filter(f => f !== closest); 
-      spawnRandomFlags(1); processCaughtFlag(); 
-    }
-
-    function processCaughtFlag() {
-      document.getElementById('modal-overlay').classList.remove('hidden');
-      let mockName = activeCompany ? activeCompany.name : "ZAP Central";
-      let mockAtiv = activeCompany ? activeCompany.atividade : "Oferta Livre";
-      document.getElementById('modal-comp-name').innerText = mockName; document.getElementById('modal-comp-activity').innerText = mockAtiv;
-
-      const resBox = document.getElementById('modal-result-box');
-      
-      let empresaSorteada = null; let campSorteada = null; let globaisAtivas = [];
-      for(let key in allCompaniesDB) {
-        let c = allCompaniesDB[key];
-        if(c.campanhas && c.campanhas.length > 0) { c.campanhas.filter(cmp => cmp.status === 'active' && cmp.flagsRestantes > 0).forEach(cmp => { globaisAtivas.push({ empresa: c, campanha: cmp }); }); }
-      }
-
-      if (globaisAtivas.length === 0) {
-        resBox.innerHTML = `<span style="color:#0f0; font-weight:bold;">Bandeira Livre ZAP</span><br><span style="font-size:12px; color:#fff;">Ganhaste +Skill e 5% de Energia.</span>`;
-        player.energy = Math.min(player.maxEnergy, player.energy + 50); updateUI(); savePlayer(); return;
-      }
-
-      let totalSaco = globaisAtivas.reduce((sum, item) => sum + item.campanha.flagsRestantes, 0);
-      let sorteio = Math.random() * totalSaco;
-
-      for (let item of globaisAtivas) { 
-        if (sorteio < item.campanha.flagsRestantes) { empresaSorteada = item.empresa; campSorteada = item.campanha; break; } 
-        sorteio -= item.campanha.flagsRestantes; 
-      }
-
-      campSorteada.flagsRestantes--;
-
-      if (campSorteada.lotesIniciais > 0) {
-        let isPremio = Math.random() < (campSorteada.flagsPremioRestantes / (campSorteada.flagsPremioRestantes + campSorteada.flagsEnergiaRestantes));
-        
-        if (isPremio && campSorteada.flagsPremioRestantes > 0) {
-          campSorteada.flagsPremioRestantes--;
-          if (!player.progressPR[campSorteada.id]) player.progressPR[campSorteada.id] = 0;
-          player.progressPR[campSorteada.id]++;
-          
-          if (player.progressPR[campSorteada.id] >= 20) {
-            const qrCode = "ZAP-" + Math.random().toString(36).substring(2,6).toUpperCase();
-            const expTime = Date.now() + (campSorteada.diasLevantamento * 24 * 60 * 60 * 1000);
-            campSorteada.vencedores.push({ jogador: player.name || "Tu", codigo: qrCode, expiraEm: expTime });
-            
-            if(!player.qrs) player.qrs = [];
-            player.qrs.push({ id: qrCode, brand: empresaSorteada.name, offer: campSorteada.premio, expires: expTime });
-            
-            resBox.style.borderColor = "#ff0000";
-            resBox.innerHTML = `<span style="color:#ff0000; font-weight:bold; font-size:18px;">🎉 PARABÉNS! GANHASTE! 🎉</span><br><span style="font-size:13px; color:#fff;">Prémio: <b style="color:#ff9800;">${campSorteada.premio}</b> da empresa ${empresaSorteada.name}<br>QR na tua carteira.</span>`;
-            player.progressPR[campSorteada.id] = 0; updateQRWallet();
-          } else {
-            resBox.style.borderColor = "#ff9800";
-            resBox.innerHTML = `<span style="color:#ff9800; font-weight:bold;">Bandeira de Lote (${campSorteada.premio})!</span><br><span style="font-size:12px; color:#fff;">Faltam: <b>${20 - player.progressPR[campSorteada.id]}</b></span>`;
-          }
-        } else {
-          campSorteada.flagsEnergiaRestantes--;
-          let randEnergy = Math.random() * 100; let gain = 0; let msg = "";
-          if (randEnergy < 1) { gain = 1000; msg = "JACKPOT! Energia Cheia (+100%)!"; } else if (randEnergy < 6) { gain = 500; msg = "Sorte! +50% Energia!"; } else if (randEnergy < 46) { gain = 100; msg = "Muito Bom! +10% Energia!"; } else { gain = 50; msg = "Bom! +5% Energia."; }
-          player.energy = Math.min(player.maxEnergy, player.energy + gain);
-          resBox.style.borderColor = "#00f0ff"; resBox.innerHTML = `<span style="color:#00f0ff; font-weight:bold;">Bandeira de Energia</span><br><span style="font-size:12px; color:#fff;">${msg}</span>`;
-        }
-      } else {
-        campSorteada.flagsEnergiaRestantes--;
-        player.energy = Math.min(player.maxEnergy, player.energy + 50);
-        resBox.innerHTML = `<span style="color:#0f0; font-weight:bold;">Bandeira de Publicidade</span><br><span style="font-size:12px; color:#fff;">Ganhaste +Skill e Energia.</span>`;
-      }
-
-      allCompaniesDB[empresaSorteada.id] = empresaSorteada; localStorage.setItem("zap_all_companies", JSON.stringify(allCompaniesDB));
-      savePlayer(); recalcSkill(); updateUI();
-    }
-
-    function closeFlagModal() { document.getElementById('modal-overlay').classList.add('hidden'); }
-    function recalcSkill() { nextSkillTarget = 100 * Math.pow(2, player.skill - 1); if (player.flags >= nextSkillTarget) { player.skill++; player.vision = Math.min(50, 5 + (player.skill - 1) * 0.25); nextSkillTarget = 100 * Math.pow(2, player.skill - 1); } }
-    function updateUI() { document.getElementById('val-ener').innerText = Math.floor(player.energy); document.getElementById('bar-ener').style.width = (player.energy / player.maxEnergy) * 100 + "%"; document.getElementById('val-skill').innerText = player.skill; document.getElementById('val-visao').innerText = player.vision.toFixed(2); document.getElementById('val-flags').innerText = player.flags; }
-
+    
     function updateQRWallet() {
-      const list = document.getElementById("qr-wallet-list");
-      if(!list) return; list.innerHTML = "";
+      const list = document.getElementById("qr-wallet-list"); const inv = document.getElementById('qr-inventory');
+      if(!list) return; list.innerHTML = ""; if(inv) inv.innerHTML = '<span style="color:#aaa; font-size:11px; margin-bottom:5px;">Os Teus QRs:</span>';
       if (!player.qrs || player.qrs.length === 0) { list.innerHTML = "Não tens prémios ganhos."; return; }
       player.qrs.forEach(qr => {
         let dias = Math.ceil((qr.expires - Date.now()) / (24*60*60*1000));
         list.innerHTML += `<div style="background:#111; padding:10px; margin-bottom:5px; border:1px dashed #0f0; border-radius:5px;"><b>${qr.brand}</b><br><span style="color:#ff9800;">${qr.offer}</span><br>Código: <b>${qr.id}</b><br><span style="color:${dias<0?'red':'#a7fca7'}; font-size:10px;">${dias<0?'Expirou':'Válido: '+dias+' dias'}</span></div>`;
+        if(inv) inv.innerHTML += `<div id="${qr.id}" class="draggable-qr" draggable="true" ondragstart="drag(event)">🎫 ${qr.brand}<br>(${qr.offer})</div>`;
       });
     }
 
-    // ================= LÓGICA DA ABA SOCIAL E TROCAS =================
-    function openWindow(id) { document.getElementById(id).classList.remove('hidden'); }
-    function closeWindow(id) { document.getElementById(id).classList.add('hidden'); }
-
-    function switchSoc(tab) {
-      document.getElementById('tab-global').classList.remove('active'); document.getElementById('tab-amigos').classList.remove('active');
-      document.getElementById('view-global').classList.add('hidden'); document.getElementById('view-amigos').classList.add('hidden'); 
-      document.getElementById('tab-' + tab).classList.add('active');
-      if(tab === 'global') { document.getElementById('view-global').classList.remove('hidden'); populateSocialList(); }
-      if(tab === 'amigos') { document.getElementById('view-amigos').classList.remove('hidden'); document.getElementById('friends-list-view').classList.remove('hidden'); document.getElementById('chat-view').classList.add('hidden'); populateSocialList(); }
-    }
-
-    function populateSocialList() {
-      const globalList = document.getElementById("global-players-list"); globalList.innerHTML = "";
-      allPlayersDB.slice(0,50).forEach(pName => {
-        if(pName === player.name) return; 
-        let status = playerFriends[pName] || 'none';
-        if (status === 'none') { globalList.innerHTML += `<div class="player-list-item"><span><span class="status-dot"></span> <b>${pName}</b></span><button class="btn-dark" style="padding:4px; font-size:10px;" onclick="addFriend('${pName}')">Pedir Amizade</button></div>`; }
-      });
-      if(globalList.innerHTML === "") globalList.innerHTML = "<div style='font-size:12px; color:#aaa; text-align:center; padding:10px;'>Sem jogadores na zona. Usa o Simulador no Backoffice!</div>";
-
-      const friendsList = document.getElementById("accepted-friends-list"); friendsList.innerHTML = "";
-      for (const [fName, fStatus] of Object.entries(playerFriends)) {
-        if (fStatus === 'pending') { friendsList.innerHTML += `<div class="player-list-item"><span><span class="status-dot pending"></span> <b>${fName}</b></span><button class="btn-warning" style="padding:4px; font-size:10px;" onclick="acceptFriend('${fName}')">Aceitar</button></div>`; } 
-        else if (fStatus === 'accepted') { friendsList.innerHTML += `<div class="player-list-item"><span><span class="status-dot"></span> <b>${fName}</b></span><button style="padding:4px; font-size:10px;" onclick="openChatWith('${fName}')">💬 CHAT</button></div>`; }
-      }
-      if(friendsList.innerHTML === "") friendsList.innerHTML = "<div style='font-size:12px; color:#aaa; text-align:center; padding:10px;'>Ainda não tens amigos.</div>";
-    }
-
-    function addFriend(name) { playerFriends[name] = 'pending'; localStorage.setItem("zap_player_friends", JSON.stringify(playerFriends)); alert(`Pedido enviado para ${name}! (Simulado)`); populateSocialList(); }
-    function acceptFriend(name) { playerFriends[name] = 'accepted'; localStorage.setItem("zap_player_friends", JSON.stringify(playerFriends)); alert(`${name} foi adicionado aos teus amigos!`); populateSocialList(); }
-
-    function openChatWith(name) {
-      currentChatFriend = name;
-      document.getElementById('friends-list-view').classList.add('hidden'); document.getElementById('chat-view').classList.remove('hidden');
-      document.getElementById("chat-active-friend").innerText = name;
-      document.getElementById("chat-msgs-box").innerHTML = `<div style="font-size:11px; color:#888; text-align:center; margin-top:10px;">Início do chat privado com ${name}.</div>`;
-      document.getElementById("trade-interface").classList.add("hidden"); document.getElementById("chat-msgs-box").style.height = "180px"; document.getElementById("chat-input-area").classList.remove("hidden");
-      currentTrade = { myQR: null, friendQR: null };
-    }
-
-    function closeChat() { currentChatFriend = ""; document.getElementById('chat-view').classList.add('hidden'); document.getElementById('friends-list-view').classList.remove('hidden'); }
-
-    function sendPlayerMsg() {
-      const input = document.getElementById("chat-player-input"); const msg = input.value.trim();
-      if(!msg || !currentChatFriend) return;
-      const box = document.getElementById("chat-msgs-box");
-      box.innerHTML += `<div class="chat-msg msg-mine"><b>Tu:</b> ${msg}</div>`;
-      setTimeout(() => { box.innerHTML += `<div class="chat-msg msg-other"><b>${currentChatFriend}:</b> Recebido! Quando quiseres podes abrir a aba de Trocar!</div>`; box.scrollTop = box.scrollHeight; }, 1500);
-      input.value = ""; box.scrollTop = box.scrollHeight;
-    }
-
-    // ================= TROCAS =================
-    function startTrade() {
-      const tradeInt = document.getElementById("trade-interface");
-      if(!tradeInt.classList.contains("hidden")) { tradeInt.classList.add("hidden"); document.getElementById("chat-msgs-box").style.height = "180px"; document.getElementById("chat-input-area").classList.remove("hidden"); return; }
-      
-      tradeInt.classList.remove("hidden"); document.getElementById("chat-msgs-box").style.height = "80px"; document.getElementById("chat-input-area").classList.add("hidden"); 
-      
-      const inv = document.getElementById('trade-qr-inventory');
-      inv.classList.add("hidden"); inv.innerHTML = "";
-      if(!player.qrs || player.qrs.length === 0) {
-        inv.innerHTML = "<span style='color:#aaa; font-size:10px;'>Sem QRs no Armazém.</span>";
-      } else {
-        player.qrs.forEach(qr => { inv.innerHTML += `<div id="drag-${qr.id}" class="draggable-qr" draggable="true" ondragstart="dragQR(event)" onclick="zoomQR('${qr.id}', '${qr.brand}', '${qr.offer}', true)">🎫 ${qr.brand}</div>`; });
-      }
-
-      document.getElementById('friend-trade-zone').innerHTML = '<span style="color:#00f0ff; font-size:10px;" id="friend-status-text">A aguardar oferta...</span>';
-      
-      setTimeout(() => {
-        document.getElementById('friend-trade-zone').innerHTML = `<div id="friend-fake-qr" class="draggable-qr" onclick="zoomQR('ZAP-SIM', 'A Oferta do Amigo', '1 Prémio Oculto', false)">🎫 QR Oculto (Clica p/ ver)</div>`;
-        currentTrade.friendQR = "McDonalds"; checkTradeStatus();
-      }, 3000);
-    }
-
-    function toggleQRVault() { const inv = document.getElementById('trade-qr-inventory'); if (inv.classList.contains("hidden")) inv.classList.remove("hidden"); else inv.classList.add("hidden"); }
-    function dragQR(ev) { ev.dataTransfer.setData("qr_id", ev.target.id); }
     function allowDrop(ev) { ev.preventDefault(); }
-    
-    function dropInTrade(ev) {
-      ev.preventDefault(); var data = ev.dataTransfer.getData("qr_id"); const element = document.getElementById(data);
-      if(element) {
-        if(ev.target.id === "my-trade-zone") {
-          document.getElementById("my-trade-zone").innerHTML = ""; document.getElementById("my-trade-zone").appendChild(element); 
-          element.onclick = function() { zoomQR(this.id, "A Tua Oferta", "Prémio Oculto", true); }; currentTrade.myQR = data; checkTradeStatus();
-        } else if(ev.target.id === "trade-qr-inventory") {
-          document.getElementById("trade-qr-inventory").appendChild(element); currentTrade.myQR = null; checkTradeStatus();
-        }
-      }
-    }
+    function drag(ev) { ev.dataTransfer.setData("text", ev.target.id); }
+    function drop(ev) { ev.preventDefault(); var data = ev.dataTransfer.getData("text"); if (ev.target.id === "caixa-troca" || ev.target.id === "qr-inventory") { ev.target.appendChild(document.getElementById(data)); } }
 
-    function checkTradeStatus() {
-      const btn = document.getElementById("btn-accept-trade");
-      if (currentTrade.myQR && currentTrade.friendQR) { btn.disabled = false; btn.style.background = "#ff9800"; btn.innerText = "CONFIRMAR E ACEITAR TROCA"; } 
-      else { btn.disabled = true; btn.style.background = "#555"; btn.innerText = "A AGUARDAR OFERTAS..."; }
-    }
-
-    function cancelTrade() { startTrade(); currentTrade = { myQR: null, friendQR: null }; }
-
-    function acceptTrade() {
-      document.getElementById("btn-accept-trade").innerText = "A aguardar o " + currentChatFriend + "..."; document.getElementById("btn-accept-trade").disabled = true;
-      setTimeout(() => { alert(`A TUA TROCA FOI CONCLUÍDA!\nEntregaste o teu QR e recebeste o QR do ${currentChatFriend}! A Marca de Água de proteção foi retirada.`); closeChat(); }, 2000);
-    }
-
-    // ZOOM QR CODE (PROTEÇÃO)
-    function zoomQR(id, brand, offer, isMyQR) {
-      document.getElementById('zoom-qr-title').innerText = brand;
-      document.getElementById('zoom-qr-desc').innerText = "Vais receber: " + offer;
-      
-      if (isMyQR) {
-        document.getElementById('zoom-qr-code').innerText = id;
-        document.getElementById('zoom-qr-img').innerHTML = `<img src="https://quickchart.io/qr?text=${id}&size=200" style="width:100%; border-radius:10px;" />`;
-        document.querySelector('.qr-lock-icon').style.display = 'none';
-        document.querySelector('.qr-safe-watermark').style.display = 'none';
-      } else {
-        document.getElementById('zoom-qr-code').innerText = "ZAP-****-**** (Protegido)";
-        document.getElementById('zoom-qr-img').innerHTML = `<img src="https://quickchart.io/qr?text=Protegido&size=200" style="width:100%; filter:blur(8px); opacity:0.5; border-radius:10px;" />`;
-        document.querySelector('.qr-lock-icon').style.display = 'block';
-        document.querySelector('.qr-safe-watermark').style.display = 'block';
-      }
-      document.getElementById('qr-zoom-modal').classList.remove('hidden');
-    }
-    function closeQRZoom() { document.getElementById('qr-zoom-modal').classList.add('hidden'); }
-
-    // ================= EVENTOS MOBILE E DRAG =================
+    // ================= EVENTOS MOBILE & DRAG =================
     document.querySelectorAll('.drag-window').forEach(el => {
       const handle = el.querySelector('.drag-handle'); if(!handle) return;
       let isDragging = false, startX, startY, startLeft, startTop;
@@ -1255,6 +979,7 @@
       window.addEventListener('touchmove', e => { if (!isDragging) return; el.style.left = (startLeft + e.touches[0].clientX - startX) + 'px'; el.style.top = (startTop + e.touches[0].clientY - startY) + 'px'; e.preventDefault(); }, {passive: false});
       window.addEventListener('touchend', () => isDragging = false);
     });
+
   </script>
 </body>
 </html>
