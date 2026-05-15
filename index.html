@@ -2,67 +2,50 @@
 <html lang="pt">
 <head>
   <meta charset="UTF-8" />
-  <!-- A tag abaixo impede o telemóvel de fazer zoom acidental -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>ZAP FLAGS | Larforyou&reg;</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <style>
-    /* DESIGN GERAL */
-    * { box-sizing: border-box; user-select: none; font-family: 'Courier New', Courier, monospace; }
-    html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #222; color: #0f0; }
-    .hidden { display: none !important; }
-    button { background: #0f0; color: #000; border: none; padding: 10px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 14px; }
-    button:hover { filter: brightness(1.2); }
-    button:disabled { background: #555; color: #888; cursor: not-allowed; }
-    .btn-dark { background: #111; color: #0f0; border: 1px solid #0f0; }
-    .btn-danger { background: #d32f2f; color: #fff; border: 1px solid #ff0000; }
-    .btn-warning { background: #ff9800; color: #fff; border: 1px solid #ff9800; }
-    .btn-link { background: none; border: none; color: #a7fca7; text-decoration: underline; padding: 0; font-size: 12px; }
-    input, select { width: 100%; padding: 10px; margin-bottom: 10px; border-radius: 4px; border: 1px solid #0f0; background: #111; color: #0f0; }
+    /* DESIGN GERAL COMPACTADO */
+    *{box-sizing:border-box;user-select:none;font-family:'Courier New',Courier,monospace;}
+    html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#222;color:#0f0;}
+    .hidden{display:none !important;}
+    button{background:#0f0;color:#000;border:none;padding:10px 12px;border-radius:6px;font-weight:bold;cursor:pointer;font-size:14px;}
+    button:hover{filter:brightness(1.2);} button:disabled{background:#555;color:#888;cursor:not-allowed;}
+    .btn-dark{background:#111;color:#0f0;border:1px solid #0f0;} .btn-danger{background:#d32f2f;color:#fff;border:1px solid #ff0000;}
+    .btn-link{background:none;border:none;color:#a7fca7;text-decoration:underline;padding:0;font-size:12px;}
+    input,select{width:100%;padding:10px;margin-bottom:10px;border-radius:4px;border:1px solid #0f0;background:#111;color:#0f0;}
+    #login-screen{position:absolute;inset:0;background:radial-gradient(circle,#002200 0%,#000000 100%);display:flex;align-items:center;justify-content:center;z-index:10000;padding:15px;overflow-y:auto;}
+    .login-box{width:100%;max-width:500px;background:rgba(0,0,0,0.9);border:2px solid #0f0;border-radius:8px;padding:25px;margin:auto;}
+    .tab-container{display:flex;margin-bottom:15px;border-radius:4px;overflow:hidden;border:1px solid #0f0;}
+    .tab-btn{flex:1;padding:12px;background:#111;color:#0f0;border-radius:0;} .tab-btn.active{background:#0f0;color:#000;}
+    .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+    #game-screen,#pr-map-screen{position:absolute;inset:0;width:100%;height:100%;z-index:1;} #map,#map-empresa{width:100%;height:100%;}
+    .catch-circle{stroke-dasharray:6,6;}
+    .avatar-wrapper{position:relative;width:40px;height:50px;transition:transform 0.2s linear;}
+    .ava-head{position:absolute;top:0;left:10px;width:20px;height:20px;background:#ffeb3b;border-radius:50%;border:2px solid #000;z-index:3;}
+    .ava-body{position:absolute;top:18px;left:10px;width:20px;height:18px;background:#2196f3;border-radius:4px;border:2px solid #000;z-index:2;}
+    .ava-arm-l,.ava-arm-r{position:absolute;top:20px;width:8px;height:16px;background:#ffeb3b;border-radius:4px;border:2px solid #000;transition:transform 0.3s;z-index:3;}
+    .ava-arm-l{left:0px;} .ava-arm-r{right:0px;}
+    .ava-leg-l,.ava-leg-r{position:absolute;top:34px;width:8px;height:16px;background:#333;border-radius:4px;border:2px solid #000;z-index:1;transition:transform 0.1s;}
+    .ava-leg-l{left:10px;} .ava-leg-r{right:10px;}
+    .walking .ava-leg-l{transform:translateY(-4px);} .walking .ava-leg-r{transform:translateY(4px);}
+    .catching .ava-arm-r{transform:rotate(-90deg) translateY(10px) translateX(-5px);}
+    .flag-marker{width:24px;height:24px;background:#FF0000;border:2px solid white;border-radius:50%;box-shadow:0 0 10px #FF0000;}
+    .yellow-flag{background:#FFD700 !important;box-shadow:0 0 10px #FFD700 !important;}
+    #top-bar{position:absolute;top:10px;left:10px;right:10px;background:rgba(0,0,0,0.85);border:1px solid #0f0;border-radius:6px;padding:10px;z-index:2000;display:flex;justify-content:space-between;gap:10px;}
+    .stat{flex:1;text-align:center;font-size:12px;font-weight:bold;color:#0f0;}
+    .stat-bar{height:6px;background:#222;border-radius:3px;margin-top:4px;border:1px solid rgba(0,255,0,0.3);overflow:hidden;}
+    .stat-fill{height:100%;background:#0f0;transition:width 0.3s;}
+    #offline-controls{position:absolute;bottom:90px;left:20px;z-index:3000;background:rgba(0,0,0,0.85);border:1px solid #0f0;border-radius:6px;padding:10px;text-align:center;}
+    .drag-handle{background:rgba(0,255,0,0.2);cursor:move;padding:3px;margin-bottom:5px;font-size:10px;color:#fff;}
+    .dpad{display:grid;grid-template-columns:50px 50px 50px;gap:5px;} .dpad button{width:50px;height:50px;font-size:20px;padding:0;}
     
-    /* LOGIN E REGISTO */
-    #login-screen, #bo-login-screen { position: absolute; inset: 0; background: radial-gradient(circle, #002200 0%, #000000 100%); display: flex; align-items: center; justify-content: center; z-index: 10000; padding: 15px; overflow-y: auto; }
-    .login-box { width: 100%; max-width: 500px; background: rgba(0, 0, 0, 0.9); border: 2px solid #0f0; border-radius: 8px; padding: 25px; margin: auto; }
-    .tab-container { display: flex; margin-bottom: 15px; border-radius: 4px; overflow: hidden; border: 1px solid #0f0; }
-    .tab-btn { flex: 1; padding: 12px; background: #111; color: #0f0; border-radius: 0; }
-    .tab-btn.active { background: #0f0; color: #000; }
-    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-
-    /* MAPAS E AVATAR */
-    #game-screen, #pr-map-screen { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; }
-    #map, #map-empresa { width: 100%; height: 100%; }
-    .catch-circle { stroke-dasharray: 6, 6; } 
-    .avatar-wrapper { position: relative; width: 40px; height: 50px; transition: transform 0.2s linear; }
-    .ava-head { position: absolute; top: 0; left: 10px; width: 20px; height: 20px; background: #ffeb3b; border-radius: 50%; border: 2px solid #000; z-index: 3; }
-    .ava-body { position: absolute; top: 18px; left: 10px; width: 20px; height: 18px; background: #2196f3; border-radius: 4px; border: 2px solid #000; z-index: 2; }
-    .ava-arm-l, .ava-arm-r { position: absolute; top: 20px; width: 8px; height: 16px; background: #ffeb3b; border-radius: 4px; border: 2px solid #000; transition: transform 0.3s; z-index: 3; }
-    .ava-arm-l { left: 0px; } .ava-arm-r { right: 0px; }
-    .ava-leg-l, .ava-leg-r { position: absolute; top: 34px; width: 8px; height: 16px; background: #333; border-radius: 4px; border: 2px solid #000; z-index: 1; transition: transform 0.1s; }
-    .ava-leg-l { left: 10px; } .ava-leg-r { right: 10px; }
-    .walking .ava-leg-l { transform: translateY(-4px); } .walking .ava-leg-r { transform: translateY(4px); }
-    .catching .ava-arm-r { transform: rotate(-90deg) translateY(10px) translateX(-5px); }
-    .flag-marker { width: 24px; height: 24px; background: #FF0000; border: 2px solid white; border-radius: 50%; box-shadow: 0 0 10px #FF0000; }
-    .yellow-flag { background: #FFD700 !important; box-shadow: 0 0 10px #FFD700 !important; }
-
-    /* UI TOP E CONTROLOS */
-    #top-bar { position: absolute; top: 10px; left: 10px; right: 10px; background: rgba(0, 0, 0, 0.85); border: 1px solid #0f0; border-radius: 6px; padding: 10px; z-index: 2000; display: flex; justify-content: space-between; gap: 10px; }
-    .stat { flex: 1; text-align: center; font-size: 12px; font-weight: bold; color: #0f0; }
-    .stat-bar { height: 6px; background: #222; border-radius: 3px; margin-top: 4px; border: 1px solid rgba(0,255,0,0.3); overflow:hidden;}
-    .stat-fill { height: 100%; background: #0f0; transition: width 0.3s; }
-    
-    #right-toolbar { position: absolute; top: 80px; right: 10px; z-index: 3000; display: flex; flex-direction: column; gap: 8px; background: rgba(0,0,0,0.7); padding: 5px; border-radius: 8px; border: 1px solid #0f0; }
-    .tool-btn { width: 45px; height: 45px; border-radius: 50%; font-size: 18px; padding: 0; box-shadow: 0 0 10px rgba(0,255,0,0.3); }
-
-    #offline-controls { position: absolute; bottom: 90px; left: 20px; z-index: 3000; background: rgba(0,0,0,0.85); border: 1px solid #0f0; border-radius: 6px; padding: 10px; text-align: center; }
-    .drag-handle { background: rgba(0,255,0,0.2); cursor: move; padding: 3px; margin-bottom: 5px; font-size: 10px; color: #fff; }
-    .dpad { display: grid; grid-template-columns: 50px 50px 50px; gap: 5px; } .dpad button { width: 50px; height: 50px; font-size: 20px; padding: 0; }
-
-    /* JANELAS ARRASTÁVEIS (Mobile e PC) */
+    /* JANELAS DO JOGADOR (ARRASTAVEIS) */
     .game-window { position: absolute; top: 100px; left: 10px; width: 340px; max-width: 95vw; max-height: 60vh; background: rgba(0,0,0,0.95); border: 2px solid #0f0; z-index: 4000; display: flex; flex-direction: column; resize: both; overflow: auto; box-shadow: 0 0 20px rgba(0,255,0,0.3); }
     .win-header { background: #003300; padding: 8px; font-weight: bold; display: flex; justify-content: space-between; cursor: move; border-bottom: 1px solid #0f0; }
     .win-close { background: red; color: white; border: none; padding: 2px 8px; font-weight: bold; cursor: pointer; border-radius: 4px; }
     .win-content { padding: 15px; font-size: 13px; color: #a7fca7; overflow-y: auto; }
-
     .social-tabs { display: flex; border-bottom: 1px solid #0f0; margin-bottom: 10px; }
     .soc-btn { flex: 1; background: #111; color: #0f0; padding: 5px; font-size: 12px; border: none; border-radius: 0; }
     .soc-btn.active { background: #0f0; color: #000; }
@@ -71,36 +54,34 @@
     .qr-inventory { width: 50%; background: #111; padding: 5px; border-radius: 5px; max-height: 150px; overflow-y: auto; display: flex; flex-direction: column; gap: 5px; }
     .drop-zone { width: 50%; border: 2px dashed #0f0; background: rgba(0,255,0,0.1); min-height: 100px; padding: 5px; text-align: center; border-radius: 8px; display: flex; flex-direction: column; gap: 5px; }
     .draggable-qr { background: #fff; color: #000; padding: 8px; text-align: center; border-radius: 5px; font-weight: bold; cursor: grab; box-shadow: 0 0 5px rgba(255,255,255,0.5); width: 100%; font-size: 11px;}
+    #right-toolbar { position: absolute; top: 80px; right: 10px; z-index: 3000; display: flex; flex-direction: column; gap: 8px; background: rgba(0,0,0,0.7); padding: 5px; border-radius: 8px; border: 1px solid #0f0; }
+    .tool-btn { width: 45px; height: 45px; border-radius: 50%; font-size: 18px; padding: 0; box-shadow: 0 0 10px rgba(0,255,0,0.3); }
 
     /* JANELAS MODAIS */
-    .modal-overlay { position: fixed; inset:0; background:rgba(0,0,0,0.85); z-index: 6000; display:flex; align-items:center; justify-content:center;}
-    .modal-box { background:#111; border: 2px solid #0f0; padding:20px; border-radius:10px; max-width:400px; width: 90%; text-align:center; color:#fff; }
-    .comp-logo { width: 80px; height: 80px; object-fit: cover; border-radius: 50%; border: 2px solid #0f0; margin-bottom:10px; background:#fff;}
+    #modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:6000;display:flex;align-items:center;justify-content:center;}
+    .modal-box{background:#111;border:2px solid #0f0;padding:20px;border-radius:10px;max-width:400px;width:90%;text-align:center;color:#fff;}
+    .comp-logo{width:80px;height:80px;object-fit:cover;border-radius:50%;border:2px solid #0f0;margin-bottom:10px;background:#fff;}
+    
+    /* PAINEL EMPRESA (DASHBOARD) E BACKOFFICE */
+    #pr-dashboard-screen{position:absolute;inset:0;background:radial-gradient(circle,#001122 0%,#000000 100%);z-index:5000;padding:20px;overflow-y:auto;}
+    .dash-box{max-width:900px;margin:0 auto;background:rgba(0,0,0,0.8);border:2px solid #0f0;border-radius:10px;padding:20px;}
+    .pr-menu{display:flex;border-bottom:2px solid #0f0;margin-bottom:20px;flex-wrap:wrap;}
+    .pr-menu-btn{flex:1;background:#111;color:#0f0;padding:15px;border-radius:8px 8px 0 0;font-size:14px;border:none;margin-right:5px;min-width:120px;}
+    .pr-menu-btn.active{background:#0f0;color:#000;}
+    .pack-card{background:#111;border:1px solid #0f0;padding:15px;border-radius:8px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;}
+    .pack-info{font-size:13px;color:#a7fca7;} .pack-title{font-size:16px;font-weight:bold;color:#0f0;margin-bottom:5px;}
+    .camp-card{background:#000;border:1px solid #4CAF50;padding:15px;border-radius:5px;margin-bottom:15px;}
+    .camp-pending{border-color:#ff9800;} .camp-suspended{border-color:#ff9800;opacity:0.8;} .camp-expired{border-color:#d32f2f;opacity:0.6;}
+    .winner-item{background:#222;border:1px dashed #0f0;padding:10px;border-radius:5px;margin-top:5px;font-size:12px;display:flex;justify-content:space-between;align-items:center;}
+    #backoffice-screen{position:absolute;inset:0;background:#111;z-index:90000;padding:20px;overflow-y:auto;}
+    .bo-table{width:100%;border-collapse:collapse;margin-top:10px;font-size:12px;} .bo-table th,.bo-table td{border:1px solid #0f0;padding:8px;text-align:left;}
 
-    /* DASHBOARD DA EMPRESA */
-    #pr-dashboard-screen { position: absolute; inset: 0; background: radial-gradient(circle, #001122 0%, #000000 100%); z-index: 5000; padding: 20px; overflow-y: auto; }
-    .dash-box { max-width: 900px; margin: 0 auto; background: rgba(0,0,0,0.8); border: 2px solid #0f0; border-radius: 10px; padding: 20px; }
-    .pr-menu { display: flex; border-bottom: 2px solid #0f0; margin-bottom: 20px; flex-wrap: wrap;}
-    .pr-menu-btn { flex: 1; background: #111; color: #0f0; padding: 15px; border-radius: 8px 8px 0 0; font-size: 14px; border: none; margin-right: 5px; min-width:120px;}
-    .pr-menu-btn.active { background: #0f0; color: #000; }
-    .pack-card { background: #111; border: 1px solid #0f0; padding: 15px; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
-    .pack-info { font-size: 13px; color: #a7fca7; } .pack-title { font-size: 16px; font-weight: bold; color: #0f0; margin-bottom: 5px; }
-    .camp-card { background: #000; border: 1px solid #4CAF50; padding: 15px; border-radius: 5px; margin-bottom: 15px; }
-    .camp-pending { border-color: #ff9800; } .camp-suspended { border-color: #ff9800; opacity: 0.8; } .camp-expired { border-color: #d32f2f; opacity: 0.6; }
-    .winner-item { background: #222; border: 1px dashed #0f0; padding: 10px; border-radius: 5px; margin-top: 5px; font-size: 12px; display: flex; justify-content: space-between; align-items: center; }
-
-    /* BACKOFFICE */
-    #backoffice-screen { position: absolute; inset: 0; background: #111; z-index: 90000; padding: 20px; overflow-y: auto; }
-    .bo-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 12px; } .bo-table th, .bo-table td { border: 1px solid #0f0; padding: 8px; text-align: left; }
-
-    /* TICKER NOTÍCIAS */
+    /* TICKER NOTÍCIAS E MARCAS */
     #ticker-wrap { position: fixed; bottom: 25px; left: 0; width: 100%; background: rgba(0, 50, 0, 0.9); border-top: 1px solid #0f0; border-bottom: 1px solid #0f0; color: #fff; z-index: 8000; padding: 5px 0; overflow: hidden; white-space: nowrap; font-size: 13px; font-weight: bold;}
     #ticker { display: inline-block; animation: ticker 25s linear infinite; }
     @keyframes ticker { 0% { transform: translateX(100vw); } 100% { transform: translateX(-100%); } }
-
-    /* MARCA LARFORYOU */
     .watermark { position: fixed; bottom: 60px; left: 15px; font-size: 32px; font-weight: 900; color: rgba(0, 255, 0, 0.5); text-shadow: 2px 2px 5px #000; z-index: 9999; pointer-events: none; letter-spacing: 2px; }
-    .copyright { position: fixed; bottom: 5px; width: 100%; text-align: center; font-size: 11px; color: rgba(0, 255, 0, 0.5); z-index: 9999; pointer-events: none; }
+    .copyright { position: fixed; bottom: 5px; width: 100%; text-align: center; font-size: 11px; color: rgba(0, 255, 0, 0.4); z-index: 9999; pointer-events: none; }
   </style>
 </head>
 <body>
@@ -109,8 +90,8 @@
   <div class="watermark">Larforyou&reg;</div>
   <div class="copyright">&copy; 2024 Larforyou&reg; - Marca Registada. Todos os direitos reservados.</div>
 
-  <!-- RODAPÉ TICKER (JOGADOR) -->
-  <div id="ticker-wrap"><div id="ticker">⚡ Bem-vindo ao ZAP FLAGS! 🏆 'Miguel' ganhou BINGO na ZARA! 🎁 50% de Desconto na EDP termina amanhã! 🤝 Adiciona amigos na aba Social e troca QRs!</div></div>
+  <!-- RODAPÉ TICKER (SEM NOMES FALSOS) -->
+  <div id="ticker-wrap"><div id="ticker">⚡ Bem-vindo ao ZAP FLAGS! 🏆 O jogo está prestes a começar! 🎁 Explora o mapa para encontrares prémios! 🤝 Convida amigos e troca QRs!</div></div>
 
   <!-- ================= LOGIN E REGISTO ================= -->
   <div id="login-screen">
@@ -150,7 +131,6 @@
           <input type="password" id="pr-log-senha" placeholder="* Senha" />
           <button style="width:100%; padding:14px; margin-top:10px;" onclick="doLoginPR()">ENTRAR NA GESTÃO</button>
           <button class="btn-link" style="width:100%; margin-top:15px;" onclick="switchPRView('REG')">Registar Nova Empresa/Filial</button>
-          <button class="btn-link" style="width:100%;" onclick="recoverPass()">Esqueci a Senha</button>
         </div>
 
         <div id="pr-reg-view" class="hidden">
@@ -162,7 +142,7 @@
           <input type="email" id="pr-reg-email" placeholder="* E-mail Profissional" />
           <input type="text" id="pr-reg-morada" placeholder="* Morada Exata" />
           <div class="form-grid"><input type="text" id="pr-reg-lat" placeholder="Latitude GPS" /><input type="text" id="pr-reg-lng" placeholder="Longitude GPS" /></div>
-          <div class="form-grid"><input type="password" id="pr-reg-pass1" placeholder="* Senha" /><input type="password" id="pr-reg-pass2" placeholder="* Confirmar Senha" /></div>
+          <div class="form-grid"><input type="password" id="pr-reg-pass1" placeholder="* Senha (>4 char)" /><input type="password" id="pr-reg-pass2" placeholder="* Confirmar Senha" /></div>
 
           <div id="filial-extras" class="hidden" style="background:#111; padding:10px; border:1px dashed #0f0; margin-bottom:10px;">
             <label style="color:#a7fca7; font-size:11px;"><input type="checkbox" id="filial-fatura-propria" /> Faturação Própria</label><br>
@@ -193,7 +173,10 @@
   <div id="backoffice-screen" class="hidden">
     <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid red; padding-bottom:10px; margin-bottom:20px;">
       <h1 style="color:red; margin:0;">🚨 BACKOFFICE DE GESTÃO</h1>
-      <div><button class="btn-danger" onclick="factoryReset()">⚠️ FORMATAR SISTEMA TOTAL</button><button class="btn-dark" onclick="location.reload()">Sair Admin</button></div>
+      <div>
+        <button class="btn-danger" onclick="factoryReset()">⚠️ FORMATAR SISTEMA TOTAL</button>
+        <button class="btn-dark" onclick="location.reload()">Sair Admin</button>
+      </div>
     </div>
     <h2 style="color:#0f0;">🎮 Jogadores Registados</h2>
     <table class="bo-table"><thead><tr><th>Nome</th><th>Ação</th></tr></thead><tbody id="bo-players-list"></tbody></table>
@@ -222,12 +205,14 @@
         <button id="menu-mapa" class="pr-menu-btn" style="background:#ff9800; color:#000;" onclick="openCompanyMap()">📍 VER MAPA GPS</button>
       </div>
 
+      <!-- VISTA: LOJA -->
       <div id="view-loja">
         <h3 style="color:#0f0; margin-top:0;">🛒 Loja de Pacotes</h3>
         <div class="pack-card"><div class="pack-info"><b>Pacote Médio</b><br>2.500 Bandeiras • Val. 60 Dias</div><button onclick="buyPackage('Médio', 2500, 15, 60)">Comprar 15€</button></div>
         <div class="pack-card"><div class="pack-info"><b>Pacote Grande</b><br>10.000 Bandeiras • Val. 120 Dias</div><button onclick="buyPackage('Grande', 10000, 25, 120)">Comprar 25€</button></div>
       </div>
 
+      <!-- VISTA: CAMPANHAS -->
       <div id="view-agendar" class="hidden">
         <div id="dash-lock-overlay" class="hidden" style="background:rgba(255,0,0,0.1); border:1px solid red; padding:15px; margin-bottom:15px;">
           <h4 style="color:red; margin:0;">🔒 GESTÃO BLOQUEADA</h4>
@@ -249,6 +234,7 @@
         <div id="campanhas-ativas-lista"></div>
       </div>
 
+      <!-- VISTA: FILIAIS -->
       <div id="view-filiais" class="hidden">
         <h3 style="color:#0f0; margin-top:0;">🔑 Código de Acesso para Filiais</h3>
         <div style="background:#111; padding:15px; border:1px dashed #0f0; text-align:center; margin-bottom:20px;">
@@ -270,17 +256,6 @@
     <div id="map-empresa"></div>
   </div>
 
-  <!-- AVISOS / MODOS E JOGO -->
-  <div id="mode-modal" class="modal-overlay hidden">
-    <div class="modal-box" style="border-color:#0f0;">
-      <h2 style="color:#0f0; margin-top:0;">Como queres jogar?</h2>
-      <p><strong>GPS / RUA:</strong> Joga a caminhar fisicamente.</p>
-      <p><strong>OFFLINE / CASA:</strong> Joga com as setas no ecrã.</p>
-      <button style="width:100%; margin-bottom:10px;" onclick="requestGPSMode()">ATIVAR GPS</button>
-      <button class="btn-dark" style="width:100%;" onclick="activateOfflineMode()">MODO CASA (OFFLINE)</button>
-    </div>
-  </div>
-
   <!-- ECRÃ DO JOGO (JOGADOR) -->
   <div id="game-screen" class="hidden">
     <div id="map"></div>
@@ -290,16 +265,16 @@
       <button class="btn-dark" style="padding:6px; font-size:12px;" onclick="catchFlag()">✋ APANHAR</button>
       <button class="btn-dark" style="padding:6px; font-size:12px;" onclick="location.reload()">🚪 SAIR</button>
     </div>
-
+    
     <div id="right-toolbar" class="drag-window">
       <div class="drag-handle" style="text-align:center;">☰ Menu</div>
-      <button class="tool-btn btn-dark" onclick="centerPlayer()">📍</button>
-      <button class="tool-btn btn-dark" onclick="openWindow('win-flags')">🏴</button>
-      <button class="tool-btn btn-dark" onclick="openWindow('win-qrs')">🎫</button>
-      <button class="tool-btn btn-dark" onclick="openWindow('win-social')">👥</button>
+      <button class="tool-btn btn-dark" onclick="centerPlayer()" title="Localização Atual">📍</button>
+      <button class="tool-btn btn-dark" onclick="openWindow('win-flags')" title="Bandeiras e Empresas">🏴</button>
+      <button class="tool-btn btn-dark" onclick="openWindow('win-qrs')" title="QRs Ganhos">🎫</button>
+      <button class="tool-btn btn-dark" onclick="openWindow('win-social')" title="Amigos e Trocas">👥</button>
     </div>
 
-    <div id="offline-controls" class="drag-window hidden" style="bottom: 90px; left: 20px;">
+    <div id="offline-controls" class="drag-window" style="bottom: 90px; left: 20px;">
       <div class="drag-handle">☰ Mover</div>
       <div class="dpad">
         <div></div><button onclick="movePlayer(0, 1)">▲</button><div></div>
@@ -308,22 +283,23 @@
       </div>
     </div>
 
-    <div id="win-flags" class="game-window drag-window hidden" style="top:120px; left:20px; width:300px;"><div class="win-header"><span class="drag-handle" style="flex:1;">🏴 Bandeiras por Empresa</span><button class="win-close" onclick="closeWindow('win-flags')">X</button></div><div class="win-content">Total: <span id="val-flags">0</span></div></div>
-    <div id="win-qrs" class="game-window drag-window hidden" style="top:150px; left:40px; width:300px;"><div class="win-header"><span class="drag-handle" style="flex:1;">🎫 QRs e Prémios</span><button class="win-close" onclick="closeWindow('win-qrs')">X</button></div><div class="win-content" id="qr-wallet-list">Ainda não tens QRs gerados.</div></div>
+    <!-- JANELAS DO JOGADOR -->
+    <div id="win-flags" class="game-window drag-window hidden" style="top:120px; left:20px; width:300px;"><div class="win-header"><span class="drag-handle" style="flex:1;">🏴 Bandeiras da Sede</span><button class="win-close" onclick="closeWindow('win-flags')">X</button></div><div class="win-content">Total: <span id="val-flags">0</span></div></div>
+    <div id="win-qrs" class="game-window drag-window hidden" style="top:150px; left:40px; width:300px;"><div class="win-header"><span class="drag-handle" style="flex:1;">🎫 A tua Carteira QRs</span><button class="win-close" onclick="closeWindow('win-qrs')">X</button></div><div class="win-content" id="qr-wallet-list">Ainda não tens QRs gerados.</div></div>
     
-    <div id="win-social" class="game-window drag-window hidden" style="top:180px; left:60px; width:380px;">
+    <div id="win-social" class="game-window drag-window hidden" style="top:180px; left:60px; width:360px;">
       <div class="win-header"><span class="drag-handle" style="flex:1;">👥 Social e Trocas</span><button class="win-close" onclick="closeWindow('win-social')">X</button></div>
-      <div class="social-tabs"><button id="tab-lista" class="soc-btn active" onclick="switchSoc('lista')">Amigos</button><button id="tab-chat" class="soc-btn" onclick="switchSoc('chat')">Mercado</button><button id="tab-troca" class="soc-btn" onclick="switchSoc('troca')">Troca</button></div>
+      <div class="social-tabs"><button id="tab-lista" class="soc-btn active" onclick="switchSoc('lista')">Lista/Amigos</button><button id="tab-chat" class="soc-btn" onclick="switchSoc('chat')">Mercado Público</button><button id="tab-troca" class="soc-btn" onclick="switchSoc('troca')">Troca Direta</button></div>
       <div class="win-content" style="padding:10px;">
-        <div id="view-lista"><div class="player-list-item"><span class="status-dot"></span> <b>Miguel88</b> <button class="btn-dark" style="padding:4px; font-size:10px;">Adicionar</button></div></div>
-        <div id="view-chat" class="hidden"><select id="trade-offer-select" style="padding:8px; font-size:12px;"></select><input type="text" id="trade-want-input" placeholder="Procuro QR..." style="padding:8px; font-size:12px;" /><button style="width:100%; margin-top:5px;" onclick="alert('Pedido publicado!')">PUBLICAR</button></div>
-        <div id="view-troca" class="hidden"><div style="display:flex; gap:10px;"><div id="qr-inventory" class="qr-inventory" ondrop="drop(event)" ondragover="allowDrop(event)"></div><div id="caixa-troca" class="drop-zone" ondrop="drop(event)" ondragover="allowDrop(event)"><span style="color:#aaa; font-size:11px; pointer-events:none;">Largar QR aqui!</span></div></div><button style="width:100%; margin-top:15px;">CONFIRMAR TROCA</button></div>
+        <div id="view-lista"><div style="font-size:12px; color:#aaa; text-align:center; padding:20px;">Ainda não tens amigos adicionados.</div></div>
+        <div id="view-chat" class="hidden"><p style="font-size:11px; color:#a7fca7;">Publica um pedido no Mercado para que todos vejam a tua oferta!</p><select id="trade-offer-select" style="padding:8px; font-size:12px;"></select><input type="text" id="trade-want-input" placeholder="Procuro QR..." style="padding:8px; font-size:12px;" /><button style="width:100%; margin-top:5px;" onclick="alert('Pedido publicado no mercado!')">PUBLICAR NO MERCADO</button></div>
+        <div id="view-troca" class="hidden"><p style="font-size:11px;">Arrasta o QR para a caixa de troca.</p><div style="display:flex; gap:10px;"><div id="qr-inventory" class="qr-inventory" ondrop="drop(event)" ondragover="allowDrop(event)"></div><div id="caixa-troca" class="drop-zone" ondrop="drop(event)" ondragover="allowDrop(event)"><span style="color:#aaa; font-size:11px; pointer-events:none;">Largar QR aqui!</span></div></div><button style="width:100%; margin-top:15px;">CONFIRMAR TROCA</button></div>
       </div>
     </div>
   </div>
 
   <!-- MODAL DA BANDEIRA APANHADA -->
-  <div id="modal-overlay" class="modal-overlay hidden">
+  <div id="modal-overlay" class="hidden">
     <div class="modal-box">
       <h2 style="color:#0f0; margin-top:0;">Bandeira Apanhada!</h2>
       <h3 id="modal-comp-name" style="margin:5px 0;"></h3>
@@ -333,13 +309,14 @@
   </div>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
-    // ================= CONFIGURAÇÕES REAIS (SEM TESTE) =================
-    const isTestMode = false; 
-    const moveDist = isTestMode ? 4 : 0.5;   // 0.50 metros
-    const energyCost = isTestMode ? 4 : 0.5; // 0.50 de energia gasta
-    const idleTime = isTestMode ? 15000 : 900000; // 15 Minutos de descanso
-    const delayCampanha = isTestMode ? 60000 : 3600000; // 60 Minutos de carência para empresas
+    // ================= CONFIGURAÇÕES REAIS (MODO PRODUÇÃO) =================
+    const isTestMode = false; // Fim dos testes rápidos
+    const moveDist = isTestMode ? 4 : 0.5;   // Anda 0.50m
+    const energyCost = isTestMode ? 4 : 0.5; // Gasta 0.50m
+    const idleTime = isTestMode ? 15000 : 900000; // Descanso de 15 minutos reais
+    const delayCampanha = isTestMode ? 60000 : 3600000; // 60 Minutos de carência
 
+    // ================= VARIÁVEIS GLOBAIS =================
     let player = { name: "", energy: 1000, maxEnergy: 1000, skill: 1, vision: 5, flags: 0, lat: 41.1496, lng: -8.6109, progressPR: {}, qrs: [] };
     let map = null, prMap = null, playerMarker = null, visionCircle = null, catchCircle = null, allFlags = [];
     let activeCompany = null; 
@@ -348,15 +325,15 @@
     let lastMoveTime = Date.now();
     let nextSkillTarget = 100;
     let dashInterval = null;
-    let gpsWatchId = null;
-    let isOfflineMode = true;
     
     // ================= INICIALIZAÇÃO =================
     window.onload = () => {
       const savedName = localStorage.getItem("zap_player_name");
       if (savedName) document.getElementById("jg-log-nome").value = savedName;
+      
       const db = localStorage.getItem("zap_all_companies");
       if (db) allCompaniesDB = JSON.parse(db);
+      
       const playersDb = localStorage.getItem("zap_all_players");
       if (playersDb) allPlayersDB = JSON.parse(playersDb);
     };
@@ -371,7 +348,7 @@
         document.getElementById('login-screen').classList.add('hidden');
         document.getElementById('backoffice-screen').classList.remove('hidden');
         renderBackoffice();
-      } else alert("Acesso Negado!");
+      } else { alert("Acesso Negado!"); }
     }
 
     function renderBackoffice() {
@@ -390,7 +367,7 @@
     }
 
     function deletePlayer(name) {
-      if(confirm("Apagar jogador " + name + "?")) {
+      if(confirm("Tem a certeza que quer apagar o jogador " + name + "?")) {
         allPlayersDB = allPlayersDB.filter(p => p !== name);
         localStorage.setItem("zap_all_players", JSON.stringify(allPlayersDB));
         localStorage.removeItem("zap_reg_" + name.toLowerCase());
@@ -400,7 +377,7 @@
     }
 
     function deleteCompany(id) {
-      if(confirm("Apagar empresa e as suas campanhas?")) {
+      if(confirm("Tem a certeza que quer apagar a empresa e todas as suas campanhas?")) {
         delete allCompaniesDB[id];
         localStorage.setItem("zap_all_companies", JSON.stringify(allCompaniesDB));
         renderBackoffice();
@@ -408,16 +385,16 @@
     }
 
     function factoryReset() {
-      if(confirm("ATENÇÃO: Vai apagar TUDO do jogo! Tem a certeza absoluta?")) {
+      if(confirm("ATENÇÃO: Vai formatar TODO o sistema (Jogadores, Empresas e Pacotes)! Deseja prosseguir?")) {
         localStorage.clear();
-        alert("Sistema limpo. A recarregar...");
+        alert("Sistema limpo com sucesso. A recarregar plataforma...");
         location.reload();
       }
     }
 
-    // ================= TABS E UI =================
+    // ================= UTILIDADES E UI =================
     function validateEmail(email) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email); }
-    function recoverPass() { const val = prompt("Insira E-mail ou Telemóvel:"); if(val) alert("Foi enviado um link de recuperação."); }
+    function recoverPass() { const val = prompt("Insira o seu E-mail ou Telemóvel:"); if(val) alert("Se a conta existir, foi enviado um link de recuperação via SMS/Email."); }
 
     function switchMainTab(mode) {
       document.getElementById('area-jg').classList.toggle('hidden', mode !== 'JG');
@@ -426,6 +403,7 @@
       document.getElementById('btn-tab-pr').className = mode === 'PR' ? 'tab-btn active' : 'tab-btn btn-dark';
       if(mode === 'JG') switchJGView('LOG'); if(mode === 'PR') switchPRView('LOG');
     }
+    
     function switchJGView(view) { document.getElementById('jg-login-view').classList.toggle('hidden', view !== 'LOG'); document.getElementById('jg-reg-view').classList.toggle('hidden', view !== 'REG'); }
     function switchPRView(view) { document.getElementById('pr-login-view').classList.toggle('hidden', view !== 'LOG'); document.getElementById('pr-reg-view').classList.toggle('hidden', view !== 'REG'); }
     function toggleFilialFields() { document.getElementById("filial-extras").classList.toggle("hidden", !document.getElementById("pr-is-filial").checked); }
@@ -434,18 +412,28 @@
     function doLoginJG() {
       const name = document.getElementById("jg-log-nome").value.trim();
       const pass = document.getElementById("jg-log-senha").value;
-      if (!name || pass.length < 5) return alert("Preenche o Nome e Senha (>4 letras)!");
-      const isReg = localStorage.getItem("zap_reg_" + name.toLowerCase());
-      if (!isReg) { switchJGView('REG'); document.getElementById("jg-reg-name").value = name; return alert("Regista-te primeiro!"); }
       
-      localStorage.setItem("zap_player_name", name); player.name = name;
+      if (!name || pass.length < 5) return alert("Preencha o Nome e a Senha (mais de 4 caracteres)!");
+      
+      const isReg = localStorage.getItem("zap_reg_" + name.toLowerCase());
+      if (!isReg) { 
+        alert("Jogador não encontrado. Reencaminhado para a página de registo!");
+        switchJGView('REG'); 
+        document.getElementById("jg-reg-name").value = name; 
+        return; 
+      }
+      
+      localStorage.setItem("zap_player_name", name); 
+      player.name = name;
+      
       const pData = localStorage.getItem("zap_player_data");
       if(pData) { const parsed = JSON.parse(pData); if(parsed.name === name) player = parsed; }
       
+      // Carrega empresa base para gerar bandeiras
       const lastNif = localStorage.getItem("zap_pr_nif");
       if(lastNif) activeCompany = JSON.parse(localStorage.getItem("zap_pr_data_" + lastNif));
 
-      preStartGame();
+      startGame();
     }
 
     function doRegisterJG() {
@@ -455,7 +443,7 @@
       const p2 = document.getElementById("jg-reg-pass2").value;
 
       if (!name || !validateEmail(email)) return alert("E-mail inválido ou Nome vazio.");
-      if (p1.length < 5 || p1 !== p2) return alert("Senha deve ter mais de 4 caracteres e coincidir.");
+      if (p1.length < 5 || p1 !== p2) return alert("A senha deve ter mais de 4 caracteres e coincidir com a confirmação.");
 
       localStorage.setItem("zap_reg_" + name.toLowerCase(), "true");
       localStorage.setItem("zap_player_name", name);
@@ -466,68 +454,282 @@
       localStorage.setItem("zap_all_players", JSON.stringify(allPlayersDB));
       
       savePlayer();
-      preStartGame();
+      alert(`Registo concluído! Bem-vindo(a) ${name}!`);
+      startGame();
     }
 
     function savePlayer() { localStorage.setItem("zap_player_data", JSON.stringify(player)); }
 
-    function preStartGame() {
-      document.getElementById("login-screen").classList.add("hidden");
-      document.getElementById("mode-modal").classList.remove("hidden");
+    // ================= FASE 2 e 3: EMPRESA E FILIAIS =================
+    function doRegisterPR() {
+      const isFilial = document.getElementById("pr-is-filial").checked;
+      const fPropria = document.getElementById("filial-fatura-propria").checked;
+      const codeSede = document.getElementById("pr-reg-codigo-sede").value.trim();
+      
+      const name = document.getElementById("pr-reg-nome").value.trim();
+      const nif = document.getElementById("pr-reg-nif").value.trim();
+      const email = document.getElementById("pr-reg-email").value.trim();
+      const pass = document.getElementById("pr-reg-pass1").value;
+      const morada = document.getElementById("pr-reg-morada").value.trim();
+      const latV = parseFloat(document.getElementById("pr-reg-lat").value);
+      const lngV = parseFloat(document.getElementById("pr-reg-lng").value);
+      
+      if (nif.length !== 9 || isNaN(nif)) return alert("O NIF tem de ter exatamente 9 algarismos numéricos!");
+      if (!validateEmail(email)) return alert("E-mail Profissional inválido.");
+      if (pass.length < 5) return alert("A Senha tem de ter mais de 4 caracteres.");
+      if (!name || !morada) return alert("Nome Legal e Morada são campos obrigatórios.");
+
+      let type = isFilial ? (fPropria ? "FILIAL_AUTONOMA" : "FILIAL_SUBORDINADA") : "SEDE";
+      let isLocked = (type === "FILIAL_SUBORDINADA" && !codeSede);
+
+      const id = "COMP-" + Math.random().toString(36).substr(2,6).toUpperCase();
+      const data = { 
+        id, type, name, nif, email, pass, morada, codeSede, isLocked,
+        lat: isNaN(latV) ? 41.1496 : latV,
+        lng: isNaN(lngV) ? -8.6109 : lngV,
+        atividade: document.getElementById("pr-reg-atividade").value.trim(),
+        pacotesDisponiveis: [], campanhas: [], stockPago: 0
+      };
+      
+      allCompaniesDB[id] = data;
+      localStorage.setItem("zap_all_companies", JSON.stringify(allCompaniesDB));
+      localStorage.setItem("zap_pr_last_id", id);
+      
+      alert(`Registado com sucesso como: ${type.replace('_',' ')}`);
+      loadCompanyDashboard(id);
     }
 
-    function requestGPSMode() {
-      document.getElementById("mode-modal").classList.add("hidden");
-      document.getElementById("game-screen").classList.remove("hidden");
-      isOfflineMode = false;
+    function doLoginPR() {
+      const nif = document.getElementById("pr-log-nif").value.trim();
+      const pass = document.getElementById("pr-log-senha").value;
+      if (nif.length !== 9 || pass.length < 5) return alert("O NIF tem de ter 9 números e a Senha >4 caracteres.");
       
-      initMap();
-
-      if (!navigator.geolocation) {
-        alert("Este dispositivo não suporta GPS. A entrar em Modo Offline.");
-        activateOfflineMode();
-        return;
+      let foundId = null;
+      for (let key in allCompaniesDB) {
+        if (allCompaniesDB[key].nif === nif && allCompaniesDB[key].pass === pass) { foundId = key; break; }
       }
-      if (gpsWatchId !== null) navigator.geolocation.clearWatch(gpsWatchId);
 
-      navigator.geolocation.getCurrentPosition(
-        pos => { player.lat = pos.coords.latitude; player.lng = pos.coords.longitude; renderAvatar(); },
-        err => { alert("Erro de GPS. A usar Modo Offline."); activateOfflineMode(); },
-        { enableHighAccuracy: true, maximumAge: 5000, timeout: 20000 }
-      );
-
-      gpsWatchId = navigator.geolocation.watchPosition(
-        p => {
-          const m = getDist(player.lat, player.lng, p.coords.latitude, p.coords.longitude);
-          if (m > 0.5) { player.energy -= energyCost; updateUI(); }
-          player.lat = p.coords.latitude; player.lng = p.coords.longitude;
-          renderAvatar();
-        },
-        e => { console.warn("Sinal de GPS fraco."); },
-        { enableHighAccuracy: true, maximumAge: 5000, timeout: 20000 }
-      );
+      if (!foundId) { 
+        alert("Conta Empresarial não encontrada. Verifique as credenciais ou faça o Registo.");
+        switchPRView('REG'); 
+        document.getElementById("pr-reg-nif").value = nif; 
+        return; 
+      }
       
-      spawnRandomFlags(15);
-      updateQRWallet();
+      localStorage.setItem("zap_pr_last_id", foundId);
+      loadCompanyDashboard(foundId);
     }
 
-    function activateOfflineMode() {
-      document.getElementById("mode-modal").classList.add("hidden");
+    function switchDashView(tab) {
+      document.getElementById('menu-loja').classList.remove('active'); document.getElementById('menu-agendar').classList.remove('active'); document.getElementById('menu-filiais').classList.remove('active');
+      document.getElementById('view-loja').classList.add('hidden'); document.getElementById('view-agendar').classList.add('hidden'); document.getElementById('view-filiais').classList.add('hidden');
+      
+      document.getElementById('menu-' + tab).classList.add('active'); document.getElementById('view-' + tab).classList.remove('hidden');
+      if (tab === 'agendar') renderAvailablePackages();
+      if (tab === 'filiais') renderFiliaisList();
+    }
+
+    function loadCompanyDashboard(id) {
+      activeCompany = allCompaniesDB[id];
+      document.getElementById("login-screen").classList.add("hidden");
+      document.getElementById("pr-dashboard-screen").classList.remove("hidden");
+      
+      document.getElementById("dash-pr-name").innerText = activeCompany.name;
+      document.getElementById("dash-pr-nif").innerText = activeCompany.nif;
+      document.getElementById("dash-pr-address").innerText = activeCompany.morada;
+      
+      if(activeCompany.type === "SEDE") document.getElementById("dash-pr-badge").innerText = "SEDE";
+      else if(activeCompany.type === "FILIAL_AUTONOMA") document.getElementById("dash-pr-badge").innerText = "FILIAL (Autónoma)";
+      else document.getElementById("dash-pr-badge").innerText = "FILIAL (Subordinada)";
+
+      // Lógica de Bloqueio Filial Subordinada (Só a Sede compra e agenda)
+      if (activeCompany.isLocked) {
+        document.getElementById("dash-filial-warning").style.display = "block";
+        document.getElementById("dash-lock-overlay").classList.remove("hidden");
+        document.getElementById("menu-loja").style.display = "none";
+      } else {
+        document.getElementById("dash-filial-warning").style.display = "none";
+        document.getElementById("dash-lock-overlay").classList.add("hidden");
+        document.getElementById("menu-loja").style.display = "block";
+      }
+
+      switchDashView('loja');
+      updateCompanyDashboard();
+    }
+
+    function activateFilialCode() {
+      const code = document.getElementById("dash-insert-code").value.trim();
+      if(code.length < 5) return alert("Código Inválido.");
+      activeCompany.isLocked = false;
+      activeCompany.codeSede = code;
+      saveCompanyDB();
+      alert("Código validado! Recebeu acesso de gestão local através da Sede.");
+      loadCompanyDashboard(activeCompany.id);
+    }
+
+    function saveCompanyDB() {
+      allCompaniesDB[activeCompany.id] = activeCompany;
+      localStorage.setItem("zap_all_companies", JSON.stringify(allCompaniesDB));
+    }
+
+    function buyPackage(nome, bandeiras, preco, dias) {
+      if(activeCompany.isLocked) return alert("A sua conta tem Faturação Centralizada. Insira o código da Sede para ter permissões.");
+      if (confirm(`A sua faturação será processada.\nConfirmar compra do Pacote ${nome} (${bandeiras.toLocaleString()}) por ${preco}€?`)) {
+        activeCompany.pacotesDisponiveis.push({ id: "COFRE-" + Math.random().toString(36).substr(2,6).toUpperCase(), nome: "Pacote " + nome, flagsTotal: bandeiras, validadeDias: dias, raioKm: 15 });
+        saveCompanyDB(); alert("Transação efetuada. Pacote guardado na sua conta.");
+      }
+    }
+
+    function renderAvailablePackages() {
+      const sel = document.getElementById("agenda-pack-select");
+      sel.innerHTML = "";
+      if (!activeCompany.pacotesDisponiveis || activeCompany.pacotesDisponiveis.length === 0) { sel.innerHTML = "<option value=''>A sua conta não tem pacotes disponíveis</option>"; return; }
+      activeCompany.pacotesDisponiveis.forEach(p => { sel.innerHTML += `<option value='${p.id}'>${p.nome} (${p.flagsTotal.toLocaleString()} band.)</option>`; });
+    }
+
+    function scheduleCampaign() {
+      const packId = document.getElementById("agenda-pack-select").value;
+      if (!packId) return alert("Selecione um pacote primeiro.");
+      const lotesPedidos = parseInt(document.getElementById("agenda-lots").value || "0");
+      const diasPremio = parseInt(document.getElementById("agenda-days").value || "5");
+      const premioTxt = document.getElementById("agenda-prize").value.trim();
+
+      const packIdx = activeCompany.pacotesDisponiveis.findIndex(p => p.id === packId);
+      const chosenPack = activeCompany.pacotesDisponiveis[packIdx];
+      const maxLotes = Math.floor(chosenPack.flagsTotal / 20);
+
+      if(lotesPedidos > 0 && !premioTxt) return alert("Se definiu Lotes, tem de descrever o prémio a entregar.");
+      if(lotesPedidos > maxLotes) return alert(`Matemática Inválida: Este pacote suporta um máximo de ${maxLotes} lotes de prémios.`);
+      if(lotesPedidos > 0 && diasPremio > chosenPack.validadeDias) return alert(`Erro: O prazo para levantamento do prémio excede a validade total do pacote (${chosenPack.validadeDias} dias). Reduza os dias.`);
+
+      activeCompany.pacotesDisponiveis.splice(packIdx, 1); // Retira da conta e lança na campanha
+      
+      const novaCampanha = {
+        id: "CAMP-" + Math.random().toString(36).substr(2, 6).toUpperCase(),
+        nome: chosenPack.nome, premio: lotesPedidos > 0 ? premioTxt : "Bandeiras de Publicidade",
+        lotesIniciais: lotesPedidos, flagsTotais: chosenPack.flagsTotal, flagsRestantes: chosenPack.flagsTotal,
+        flagsPremioRestantes: lotesPedidos * 20, flagsEnergiaRestantes: chosenPack.flagsTotal - (lotesPedidos * 20),
+        diasLevantamento: lotesPedidos > 0 ? diasPremio : 0, raioKm: chosenPack.raioKm,
+        status: "pending", activationTime: Date.now() + delayCampanha, expiraEm: Date.now() + (chosenPack.validadeDias * 24 * 60 * 60 * 1000), vencedores: []
+      };
+
+      activeCompany.campanhas.push(novaCampanha);
+      saveCompanyDB(); renderAvailablePackages(); updateCompanyDashboard(); 
+      alert(`Campanha agendada. A fase de carência (${delayCampanha/60000} minutos) foi iniciada.`);
+    }
+
+    function updateCompanyDashboard() {
+      if(!activeCompany.campanhas) activeCompany.campanhas = [];
+      const listaDiv = document.getElementById("campanhas-ativas-lista");
+      if(!listaDiv) return;
+      
+      listaDiv.innerHTML = "";
+      const now = Date.now();
+
+      activeCompany.campanhas.forEach(camp => {
+        if (camp.status === 'pending' && now >= camp.activationTime) { camp.status = 'active'; }
+        
+        let pacoteExpirado = false;
+        let diasVal = Math.ceil((camp.expiraEm - now) / (24*60*60*1000));
+        if (diasVal <= 0 && camp.status === 'active') { pacoteExpirado = true; camp.status = 'expired'; }
+
+        let cardHtml = `<div class="camp-card ${camp.status === 'pending' ? 'camp-pending' : ''} ${pacoteExpirado ? 'camp-expired' : ''}">`;
+        cardHtml += `<div class="pack-title">${camp.nome}</div>`;
+        
+        if (camp.status === 'pending') {
+          const diff = Math.max(0, camp.activationTime - now);
+          const m = Math.floor((diff/1000)/60).toString().padStart(2, '0');
+          const s = Math.floor((diff/1000)%60).toString().padStart(2, '0');
+          cardHtml += `
+            <p style="font-size:12px; color:#aaa; margin:5px 0;">Em período de carência. Vai para o mapa em:</p>
+            <div class="camp-timer">⏱️ ${m}:${s}</div>
+          `;
+        } else {
+          const consumido = camp.flagsTotais - camp.flagsRestantes;
+          const pct = (consumido / camp.flagsTotais) * 100;
+          let statusTxt = camp.status === 'active' ? `<span style="color:#0f0;">🟢 ATIVA NO MAPA</span>` : `<span style="color:red;">🔴 TERMINADA</span>`;
+
+          cardHtml += `
+            <div style="display:flex; justify-content:space-between; align-items:center;">${statusTxt}</div>
+            <div style="font-size:12px; color:#a7fca7; margin-top:5px;"><b>Raio:</b> ${camp.raioKm}km | <b>Prémio:</b> ${camp.premio} | <b>Validade Restante:</b> ${pacoteExpirado ? 'Expirou' : diasVal + ' dias'}</div>
+            <div style="display:flex; justify-content:space-between; font-size:12px; margin-top:10px; color:#fff; background:#111; padding:5px; border-radius:4px;">
+              <span>📦 Lotes: ${camp.lotesIniciais}</span><span>🚩 Consumo: ${consumido}/${camp.flagsTotais}</span>
+            </div>
+            <div class="stat-bar" style="width:100%; height:8px; border-radius:4px; margin-top:5px;"><div class="stat-fill" style="width:${pct}%; background:${pacoteExpirado ? 'red' : '#0f0'};"></div></div>
+          `;
+
+          if (camp.vencedores.length > 0) {
+            cardHtml += `<h4 style="margin:10px 0 5px 0; color:#4CAF50;">🏆 QRs Gerados e Vencedores</h4>`;
+            camp.vencedores.forEach(v => {
+              const diasFaltam = Math.ceil((v.expiraEm - Date.now()) / (24*60*60*1000));
+              cardHtml += `<div class="winner-item"><span>🎫 <b>${v.codigo}</b></span><span>Detentor: <b style="color:#0f0;">${v.jogador}</b></span><span style="color:${diasFaltam<0 ? '#ff0000' : '#0f0'}">${diasFaltam<0 ? 'Expirou' : diasFaltam+'d'}</span></div>`;
+            });
+          }
+        }
+        cardHtml += `</div>`;
+        listaDiv.innerHTML += cardHtml;
+      });
+      saveCompanyDB();
+    }
+
+    function renderFiliaisList() {
+      const list = document.getElementById("filiais-lista");
+      list.innerHTML = "";
+      if (activeCompany.type !== "SEDE") { list.innerHTML = "<span style='color:#888; font-size:12px;'>Apenas a Sede tem acesso à rede global de filiais.</span>"; return; }
+      
+      let count = 0;
+      for (let key in allCompaniesDB) {
+        let c = allCompaniesDB[key];
+        if (c.nif === activeCompany.nif && c.id !== activeCompany.id) {
+          count++;
+          list.innerHTML += `<div style="background:#222; padding:10px; margin-bottom:5px; border-radius:5px; border:1px solid #4CAF50;"><b>${c.name}</b><br><span style="font-size:11px; color:#aaa;">${c.morada} | ${c.type.replace('_',' ')}</span></div>`;
+        }
+      }
+      if(count === 0) list.innerHTML = "<span style='color:#888; font-size:12px;'>Nenhuma loja/filial registada neste NIF.</span>";
+    }
+
+    function generateBranchCode() {
+      const code = `${activeCompany.name.substring(0, 4).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+      document.getElementById("branch-code-result").innerText = code;
+    }
+
+    function openCompanyMap() {
+      document.getElementById("pr-dashboard-screen").classList.add("hidden");
+      document.getElementById("pr-map-screen").classList.remove("hidden");
+      
+      if (!prMap) {
+        prMap = L.map('map-empresa', { zoomControl: false }).setView([activeCompany.lat || 38.7223, activeCompany.lng || -9.1393], 15);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 22 }).addTo(prMap);
+      }
+      
+      // Simula algumas bandeiras amarelas na zona de atividade da loja
+      for(let i=0; i<5; i++) {
+        let rLat = (activeCompany.lat || 38.7223) + ((Math.random() - 0.5) * 0.01);
+        let rLng = (activeCompany.lng || -9.1393) + ((Math.random() - 0.5) * 0.01);
+        let icon = L.divIcon({ className: '', html: `<div class="flag-marker yellow-flag"></div>`, iconSize: [20,20] });
+        L.marker([rLat, rLng], { icon: icon }).addTo(prMap);
+      }
+    }
+    
+    function closeCompanyMap() {
+      document.getElementById("pr-map-screen").classList.add("hidden");
+      document.getElementById("pr-dashboard-screen").classList.remove("hidden");
+    }
+
+    // ================= FASE 1: MAPA E JOGADOR =================
+    function startGame() {
+      document.getElementById("login-screen").classList.add("hidden");
       document.getElementById("game-screen").classList.remove("hidden");
-      document.getElementById("offline-controls").classList.remove("hidden");
-      isOfflineMode = true;
-      initMap(); spawnRandomFlags(15); renderAvatar(); updateQRWallet();
-    }
-
-    function initMap() {
-      if (map) return;
-      map = L.map('map', { zoomControl: false }).setView([player.lat, player.lng], 19);
+      map = L.map('map', { zoomControl: false }).setView([player.lat, player.lng], 20);
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 22 }).addTo(map);
+      spawnRandomFlags(10); 
+      renderAvatar();
+      updateQRWallet(); 
     }
 
     function renderAvatar() {
       if (!playerMarker) {
-        const avatarHTML = `<div id="avatar-anim" class="avatar-wrapper"><div class="ava-head"></div><div class="ava-arm-l"></div><div class="ava-arm-r" id="ava-arm-right"></div><div class="ava-body"></div><div class="ava-leg-l"></div><div class="ava-leg-r"></div></div>`;
+        const avatarHTML = `<div id="avatar-anim" class="avatar-wrapper"><div class="ava-head"></div><div class="ava-arm-l"></div><div class="ava-arm-r"></div><div class="ava-body"></div><div class="ava-leg-l"></div><div class="ava-leg-r"></div></div>`;
         const icon = L.divIcon({ className: '', html: avatarHTML, iconSize: [40, 50], iconAnchor: [20, 50] });
         playerMarker = L.marker([player.lat, player.lng], { icon: icon, zIndexOffset: 1000 }).addTo(map);
       } else { playerMarker.setLatLng([player.lat, player.lng]); }
@@ -538,16 +740,23 @@
       if (!catchCircle) catchCircle = L.circle([player.lat, player.lng], { radius: 2.5, color: "#00ff00", className: "catch-circle", fillOpacity: 0.2, weight: 2 }).addTo(map);
       else catchCircle.setLatLng([player.lat, player.lng]);
 
-      map.setView([player.lat, player.lng], 19);
-      checkVisibleFlags();
+      map.setView([player.lat, player.lng], 20);
     }
 
-    function centerPlayer() { map.setView([player.lat, player.lng], 19); }
+    function centerPlayer() { map.setView([player.lat, player.lng], 20); }
+
+    window.addEventListener('keydown', (e) => {
+      if (document.getElementById("game-screen").classList.contains("hidden")) return;
+      if (e.key === 'ArrowUp' || e.key === 'w') movePlayer(0, 1);
+      if (e.key === 'ArrowDown' || e.key === 's') movePlayer(0, -1);
+      if (e.key === 'ArrowLeft' || e.key === 'a') movePlayer(-1, 0);
+      if (e.key === 'ArrowRight' || e.key === 'd') movePlayer(1, 0);
+    });
 
     function movePlayer(dx, dy) {
-      if (!isOfflineMode) { alert("Estás em Modo GPS. Caminha fisicamente!"); return; }
-      if (player.energy < energyCost) { alert("Sem energia!"); return; }
-      player.energy -= energyCost; lastMoveTime = Date.now(); 
+      if (player.energy < energyCost) return alert("Sem energia!");
+      player.energy -= energyCost; 
+      lastMoveTime = Date.now(); 
       
       const ava = document.getElementById("avatar-anim");
       if (ava) {
@@ -556,7 +765,6 @@
         if (dx < 0) ava.style.transform = "scaleX(-1)";
         setTimeout(() => ava.classList.remove("walking"), 250);
       }
-
       player.lat += (dy * moveDist) / 111320;
       player.lng += (dx * moveDist) / (111320 * Math.cos(player.lat * Math.PI / 180));
       
@@ -582,23 +790,14 @@
         let rLat = player.lat + ((Math.random() - 0.5) * 0.0001);
         let rLng = player.lng + ((Math.random() - 0.5) * 0.0001);
         let icon = L.divIcon({ className: '', html: `<div class="flag-marker"></div>`, iconSize: [24,24] });
-        allFlags.push({ lat: rLat, lng: rLng, marker: L.marker([rLat, rLng], { icon: icon }), isVisible: false });
+        allFlags.push({ lat: rLat, lng: rLng, marker: L.marker([rLat, rLng], { icon: icon }).addTo(map) });
       }
-    }
-
-    function checkVisibleFlags() {
-      allFlags.forEach(f => {
-        let dist = getDist(player.lat, player.lng, f.lat, f.lng);
-        if (dist <= player.vision && !f.isVisible) { f.marker.addTo(map); f.isVisible = true; }
-        else if (dist > player.vision && f.isVisible) { map.removeLayer(f.marker); f.isVisible = false; }
-      });
     }
 
     function catchFlag() {
       let closest = null; let minDist = Infinity;
       allFlags.forEach(f => { let d = getDist(player.lat, player.lng, f.lat, f.lng); if(d < minDist) { minDist = d; closest = f; } });
-      if (!closest) { alert("Não vês bandeiras!"); return; }
-      if (minDist > 2.5) { alert(`Aproxima-te! Bandeira a ${Math.floor(minDist)}m. Entra no círculo tracejado (2.5m)!`); return; }
+      if (!closest || minDist > 2.5) { alert(`Aproxima-te! A bandeira mais próxima está a ${Math.floor(minDist)}m.`); return; }
 
       const ava = document.getElementById("avatar-anim");
       if (ava) { ava.classList.add("catching"); setTimeout(() => ava.classList.remove("catching"), 400); }
@@ -609,65 +808,67 @@
 
     function processCaughtFlag() {
       document.getElementById('modal-overlay').classList.remove('hidden');
-      let mockName = activeCompany ? activeCompany.name : "ZAP Central";
-      let mockAtiv = activeCompany ? activeCompany.atividade : "Restauração";
-      
-      document.getElementById('modal-comp-name').innerText = mockName;
-      document.getElementById('modal-comp-activity').innerText = mockAtiv;
-
+      document.getElementById('modal-comp-name').innerText = activeCompany ? activeCompany.name : "Bandeira ZAP Central";
       const resBox = document.getElementById('modal-result-box');
       
-      if (!activeCompany || !activeCompany.campanhas) {
-        resBox.innerHTML = `<span style="color:#0f0; font-weight:bold;">Bandeira Livre ZAP</span><br><span style="font-size:12px; color:#fff;">Ganhaste +Skill e 5% de Energia.</span>`;
+      if (!activeCompany || !activeCompany.campanhas || activeCompany.campanhas.length === 0) {
+        resBox.style.borderColor = "#0f0";
+        resBox.innerHTML = `<span style="color:#0f0; font-weight:bold;">Bandeira de Publicidade Livre</span><br><span style="font-size:12px; color:#fff;">Ganhaste +Skill e 5% de Energia.</span>`;
         player.energy = Math.min(player.maxEnergy, player.energy + 50); updateUI(); savePlayer(); return;
       }
 
       const ativas = activeCompany.campanhas.filter(c => c.status === 'active' && c.flagsRestantes > 0);
-      if (ativas.length === 0) { resBox.innerHTML = `As campanhas desta empresa esgotaram!`; return; }
+      if (ativas.length === 0) { resBox.innerHTML = `As campanhas desta empresa esgotaram ou expiraram!`; return; }
 
       let totalSaco = ativas.reduce((sum, p) => sum + p.flagsRestantes, 0);
       let sorteio = Math.random() * totalSaco;
 
-      let pck = null;
-      for (let p of ativas) { if (sorteio < p.flagsRestantes) { pck = p; break; } sorteio -= p.flagsRestantes; }
+      let pacoteHit = null;
+      for (let p of ativas) { if (sorteio < p.flagsRestantes) { pacoteHit = p; break; } sorteio -= p.flagsRestantes; }
 
-      pck.flagsRestantes--;
+      pacoteHit.flagsRestantes--;
 
-      if (pck.lotesIniciais > 0) {
-        let isPremio = Math.random() < (pck.flagsPremioRestantes / (pck.flagsPremioRestantes + pck.flagsEnergiaRestantes));
+      if (pacoteHit.lotesIniciais > 0) {
+        let isPremio = Math.random() < (pacoteHit.flagsPremioRestantes / (pacoteHit.flagsPremioRestantes + pacoteHit.flagsEnergiaRestantes));
         
-        if (isPremio && pck.flagsPremioRestantes > 0) {
-          pck.flagsPremioRestantes--;
-          if (!player.progressPR[pck.id]) player.progressPR[pck.id] = 0;
-          player.progressPR[pck.id]++;
+        if (isPremio && pacoteHit.flagsPremioRestantes > 0) {
+          pacoteHit.flagsPremioRestantes--;
+          if (!player.progressPR[pacoteHit.id]) player.progressPR[pacoteHit.id] = 0;
+          player.progressPR[pacoteHit.id]++;
           
-          if (player.progressPR[pck.id] >= 20) {
+          if (player.progressPR[pacoteHit.id] >= 20) {
             const qrCode = "ZAP-" + Math.random().toString(36).substring(2,6).toUpperCase();
-            const expTime = Date.now() + (pck.diasLevantamento * 24 * 60 * 60 * 1000);
+            const expTime = Date.now() + (pacoteHit.diasLevantamento * 24 * 60 * 60 * 1000);
+            pacoteHit.vencedores.push({ jogador: player.name || "Tu", codigo: qrCode, expiraEm: expTime });
+            saveCompanyDB(); // Grava na Empresa
             
-            pck.vencedores.push({ jogador: player.name, codigo: qrCode, expiraEm: expTime });
             if(!player.qrs) player.qrs = [];
-            player.qrs.push({ id: qrCode, brand: activeCompany.name, offer: pck.premio, expires: expTime });
+            player.qrs.push({ id: qrCode, brand: activeCompany.name, offer: pacoteHit.premio, expires: expTime });
             
-            resBox.innerHTML = `<span style="color:#ff0000; font-weight:bold; font-size:18px;">🎉 PARABÉNS! GANHASTE! 🎉</span><br><span style="font-size:13px; color:#fff;">Prémio: <b style="color:#ff9800;">${pck.premio}</b><br>QR: <b>${qrCode}</b></span>`;
-            player.progressPR[pck.id] = 0; updateQRWallet();
+            resBox.style.borderColor = "#ff0000";
+            resBox.innerHTML = `<span style="color:#ff0000; font-weight:bold; font-size:18px;">🎉 PARABÉNS! GANHASTE! 🎉</span><br><span style="font-size:13px; color:#fff;">Prémio: <b style="color:#ff9800;">${pacoteHit.premio}</b><br>QR Code gerado na tua Aba Social.</span>`;
+            player.progressPR[pacoteHit.id] = 0; 
+            updateQRWallet();
           } else {
-            resBox.innerHTML = `<span style="color:#ff9800; font-weight:bold;">Bandeira de Lote (${pck.premio})!</span><br><span style="font-size:12px; color:#fff;">Faltam: <b>${20 - player.progressPR[pck.id]}</b></span>`;
+            resBox.style.borderColor = "#ff9800";
+            resBox.innerHTML = `<span style="color:#ff9800; font-weight:bold;">Bandeira de Lote (${pacoteHit.premio})!</span><br><span style="font-size:12px; color:#fff;">Faltam: <b>${20 - player.progressPR[pacoteHit.id]}</b></span>`;
           }
         } else {
-          pck.flagsEnergiaRestantes--;
+          pacoteHit.flagsEnergiaRestantes--;
           let randEnergy = Math.random() * 100;
           let gain = 0; let msg = "";
           if (randEnergy < 1) { gain = 1000; msg = "JACKPOT! Energia Cheia (+100%)!"; }
-          else if (randEnergy < 6) { gain = 500; msg = "Sorte! +50% Energia!"; }
-          else if (randEnergy < 46) { gain = 100; msg = "Muito Bom! +10% Energia!"; }
+          else if (randEnergy < 5) { gain = 500; msg = "Sorte! +50% Energia!"; }
+          else if (randEnergy < 45) { gain = 100; msg = "Muito Bom! +10% Energia!"; }
           else { gain = 50; msg = "Bom! +5% Energia."; }
           player.energy = Math.min(player.maxEnergy, player.energy + gain);
+          resBox.style.borderColor = "#00f0ff";
           resBox.innerHTML = `<span style="color:#00f0ff; font-weight:bold;">Bandeira de Energia</span><br><span style="font-size:12px; color:#fff;">${msg}</span>`;
         }
       } else {
-        pck.flagsEnergiaRestantes--;
+        pacoteHit.flagsEnergiaRestantes--;
         player.energy = Math.min(player.maxEnergy, player.energy + 50);
+        resBox.style.borderColor = "#0f0";
         resBox.innerHTML = `<span style="color:#0f0; font-weight:bold;">Bandeira de Publicidade</span><br><span style="font-size:12px; color:#fff;">Ganhaste +Skill e 5% de Energia.</span>`;
       }
 
@@ -675,14 +876,42 @@
       saveCompanyDB(); savePlayer(); recalcSkill(); updateUI();
     }
 
-    function closeFlagModal() { document.getElementById('modal-overlay').classList.add('hidden'); }
-    function recalcSkill() { nextSkillTarget = 100 * Math.pow(2, player.skill - 1); if (player.flags >= nextSkillTarget) { player.skill++; player.vision = Math.min(50, 5 + (player.skill - 1) * 0.25); nextSkillTarget = 100 * Math.pow(2, player.skill - 1); } }
-    function updateUI() { document.getElementById('val-ener').innerText = Math.floor(player.energy); document.getElementById('bar-ener').style.width = (player.energy / player.maxEnergy) * 100 + "%"; document.getElementById('val-skill').innerText = player.skill; document.getElementById('val-visao').innerText = player.vision.toFixed(2); document.getElementById('val-flags').innerText = player.flags; }
+    function updateUI() {
+      document.getElementById('val-ener').innerText = Math.floor(player.energy);
+      document.getElementById('bar-ener').style.width = (player.energy / player.maxEnergy) * 100 + "%";
+      document.getElementById('val-skill').innerText = player.skill;
+      document.getElementById('val-visao').innerText = player.vision.toFixed(2);
+      let prevTarget = player.skill === 1 ? 0 : 100 * Math.pow(2, player.skill - 2);
+      let progress = ((player.flags - prevTarget) / (nextSkillTarget - prevTarget)) * 100;
+      document.getElementById('bar-skill').style.width = progress + "%";
+    }
+
+    function recalcSkill() {
+      nextSkillTarget = 100 * Math.pow(2, player.skill - 1);
+      if (player.flags >= nextSkillTarget) {
+        player.skill++; player.vision = Math.min(50, 5 + (player.skill - 1) * 0.25);
+        nextSkillTarget = 100 * Math.pow(2, player.skill - 1);
+      }
+    }
+
+    // ================= JANELAS SOCIAIS =================
+    function openWindow(id) { document.getElementById(id).classList.remove('hidden'); }
+    function closeWindow(id) { document.getElementById(id).classList.add('hidden'); }
+    
+    function switchSoc(tab) {
+      document.getElementById('tab-lista').classList.remove('active'); document.getElementById('tab-chat').classList.remove('active'); document.getElementById('tab-troca').classList.remove('active');
+      document.getElementById('view-lista').classList.add('hidden'); document.getElementById('view-chat').classList.add('hidden'); document.getElementById('view-troca').classList.add('hidden');
+      document.getElementById('tab-' + tab).classList.add('active'); document.getElementById('view-' + tab).classList.remove('hidden');
+      if (tab === 'chat') { 
+        const sel = document.getElementById('trade-offer-select'); 
+        if(sel) { sel.innerHTML = '<option value="">-- O teu QR a oferecer --</option>'; if(player.qrs) player.qrs.forEach(qr => { sel.innerHTML += `<option value="${qr.id}">${qr.brand} (${qr.offer})</option>`; }); }
+      }
+    }
 
     function updateQRWallet() {
       const list = document.getElementById("qr-wallet-list"); const inv = document.getElementById('qr-inventory');
       if(!list) return; list.innerHTML = ""; if(inv) inv.innerHTML = '<span style="color:#aaa; font-size:11px; margin-bottom:5px;">Os Teus QRs:</span>';
-      if (!player.qrs || player.qrs.length === 0) { list.innerHTML = "Não tens prémios."; return; }
+      if (!player.qrs || player.qrs.length === 0) { list.innerHTML = "Não tens prémios ganhos."; return; }
       player.qrs.forEach(qr => {
         let dias = Math.ceil((qr.expires - Date.now()) / (24*60*60*1000));
         list.innerHTML += `<div style="background:#111; padding:10px; margin-bottom:5px; border:1px dashed #0f0; border-radius:5px;"><b>${qr.brand}</b><br><span style="color:#ff9800;">${qr.offer}</span><br>Código: <b>${qr.id}</b><br><span style="color:${dias<0?'red':'#a7fca7'}; font-size:10px;">${dias<0?'Expirou':'Válido: '+dias+' dias'}</span></div>`;
@@ -690,177 +919,23 @@
       });
     }
 
-    // ================= FASE 2/3: EMPRESAS E FILIAIS =================
-    function doRegisterPR() {
-      const isFilial = document.getElementById("pr-is-filial").checked;
-      const fPropria = document.getElementById("filial-fatura-propria").checked;
-      const codeSede = document.getElementById("pr-reg-codigo-sede").value.trim();
-      const name = document.getElementById("pr-reg-nome").value.trim();
-      const nif = document.getElementById("pr-reg-nif").value.trim();
-      const pass = document.getElementById("pr-reg-pass1").value;
-      const morada = document.getElementById("pr-reg-morada").value.trim();
-      
-      if (nif.length !== 9 || isNaN(nif)) return alert("O NIF tem de ter exatamente 9 números!");
-      if (pass.length < 5 || !name || !morada) return alert("Dados inválidos. Verifique Nome, Morada e Senha.");
-
-      let type = isFilial ? (fPropria ? "FILIAL_AUTONOMA" : "FILIAL_SUBORDINADA") : "SEDE";
-      let isLocked = (type === "FILIAL_SUBORDINADA" && !codeSede);
-
-      const id = "COMP-" + Math.random().toString(36).substr(2,6).toUpperCase();
-      const data = { id, type, name, nif, pass, morada, codeSede, isLocked, pacotesDisponiveis: [], campanhas: [], stockPago: 0 };
-      
-      allCompaniesDB[id] = data; localStorage.setItem("zap_all_companies", JSON.stringify(allCompaniesDB));
-      loadCompanyDashboard(id);
-    }
-
-    function doLoginPR() {
-      const nif = document.getElementById("pr-log-nif").value.trim();
-      const pass = document.getElementById("pr-log-senha").value;
-      let foundId = null;
-      for (let key in allCompaniesDB) { if (allCompaniesDB[key].nif === nif && allCompaniesDB[key].pass === pass) { foundId = key; break; } }
-      if (!foundId) { switchPRView('REG'); document.getElementById("pr-reg-nif").value = nif; return alert("Conta não encontrada. Registe-se."); }
-      loadCompanyDashboard(foundId);
-    }
-
-    function switchDashView(tab) {
-      document.getElementById('menu-loja').classList.remove('active'); document.getElementById('menu-agendar').classList.remove('active'); document.getElementById('menu-filiais').classList.remove('active');
-      document.getElementById('view-loja').classList.add('hidden'); document.getElementById('view-agendar').classList.add('hidden'); document.getElementById('view-filiais').classList.add('hidden');
-      document.getElementById('menu-' + tab).classList.add('active'); document.getElementById('view-' + tab).classList.remove('hidden');
-      if (tab === 'agendar') renderAvailablePackages();
-      if (tab === 'filiais') renderFiliaisList();
-    }
-
-    function loadCompanyDashboard(id) {
-      activeCompany = allCompaniesDB[id];
-      document.getElementById("login-screen").classList.add("hidden"); document.getElementById("pr-dashboard-screen").classList.remove("hidden");
-      document.getElementById("dash-pr-name").innerText = activeCompany.name; document.getElementById("dash-pr-nif").innerText = activeCompany.nif; document.getElementById("dash-pr-address").innerText = activeCompany.morada;
-      
-      if(activeCompany.type === "SEDE") document.getElementById("dash-pr-badge").innerText = "SEDE";
-      else if(activeCompany.type === "FILIAL_AUTONOMA") document.getElementById("dash-pr-badge").innerText = "FILIAL (Autónoma)";
-      else document.getElementById("dash-pr-badge").innerText = "FILIAL (Subordinada)";
-
-      if (activeCompany.isLocked) {
-        document.getElementById("dash-filial-warning").style.display = "block"; document.getElementById("dash-lock-overlay").classList.remove("hidden"); document.getElementById("menu-loja").style.display = "none";
-      } else {
-        document.getElementById("dash-filial-warning").style.display = "none"; document.getElementById("dash-lock-overlay").classList.add("hidden"); document.getElementById("menu-loja").style.display = "block";
-      }
-      switchDashView('loja'); updateCompanyDashboard();
-    }
-
-    function activateFilialCode() {
-      const code = document.getElementById("dash-insert-code").value.trim();
-      if(code.length < 5) return alert("Código Inválido.");
-      activeCompany.isLocked = false; activeCompany.codeSede = code; saveCompanyDB();
-      alert("Código validado! Recebeu permissões."); loadCompanyDashboard(activeCompany.id);
-    }
-
-    function saveCompanyDB() { allCompaniesDB[activeCompany.id] = activeCompany; localStorage.setItem("zap_all_companies", JSON.stringify(allCompaniesDB)); }
-
-    function buyPackage(nome, bandeiras, preco, dias) {
-      if(activeCompany.isLocked) return alert("Gestão bloqueada.");
-      if (confirm(`Comprar Pacote ${nome} (${bandeiras.toLocaleString()}) por ${preco}€?`)) {
-        activeCompany.pacotesDisponiveis.push({ id: "COFRE-" + Math.random().toString(36).substr(2,6).toUpperCase(), nome: "Pacote " + nome, flagsTotal: bandeiras, validadeDias: dias, raioKm: 15 });
-        saveCompanyDB(); alert("Pacote comprado! Está guardado no seu cofre.");
-      }
-    }
-
-    function renderAvailablePackages() {
-      const sel = document.getElementById("agenda-pack-select"); sel.innerHTML = "";
-      if (!activeCompany.pacotesDisponiveis || activeCompany.pacotesDisponiveis.length === 0) { sel.innerHTML = "<option value=''>Cofre Vazio</option>"; return; }
-      activeCompany.pacotesDisponiveis.forEach(p => { sel.innerHTML += `<option value='${p.id}'>${p.nome} (${p.flagsTotal.toLocaleString()} band.)</option>`; });
-    }
-
-    function scheduleCampaign() {
-      const packId = document.getElementById("agenda-pack-select").value;
-      if (!packId) return alert("Sem pacotes.");
-      const lotesPedidos = parseInt(document.getElementById("agenda-lots").value || "0");
-      const diasPremio = parseInt(document.getElementById("agenda-days").value || "5");
-      const premioTxt = document.getElementById("agenda-prize").value.trim();
-
-      const packIdx = activeCompany.pacotesDisponiveis.findIndex(p => p.id === packId);
-      const chosenPack = activeCompany.pacotesDisponiveis[packIdx];
-      const maxLotes = Math.floor(chosenPack.flagsTotal / 20);
-
-      if(lotesPedidos > maxLotes) return alert(`Máximo de ${maxLotes} lotes.`);
-      if(lotesPedidos > 0 && diasPremio > chosenPack.validadeDias) return alert(`Erro: Excede validade do pacote (${chosenPack.validadeDias} dias).`);
-
-      activeCompany.pacotesDisponiveis.splice(packIdx, 1);
-      const delayMs = delayCampanha; // Variável global configurada no topo
-      
-      activeCompany.campanhas.push({
-        id: "CAMP-" + Math.random().toString(36).substr(2, 6).toUpperCase(),
-        nome: chosenPack.nome, premio: lotesPedidos > 0 ? premioTxt : "Sem Prémio",
-        lotesIniciais: lotesPedidos, flagsTotais: chosenPack.flagsTotal, flagsRestantes: chosenPack.flagsTotal,
-        flagsPremioRestantes: lotesPedidos * 20, flagsEnergiaRestantes: chosenPack.flagsTotal - (lotesPedidos * 20),
-        diasLevantamento: lotesPedidos > 0 ? diasPremio : 0, raioKm: chosenPack.raioKm,
-        status: "active", activationTime: Date.now(), expiraEm: Date.now() + (chosenPack.validadeDias * 24 * 60 * 60 * 1000), vencedores: []
-      });
-
-      saveCompanyDB(); renderAvailablePackages(); updateCompanyDashboard(); alert(`Campanha ativada no mapa!`);
-    }
-
-    function updateCompanyDashboard() {
-      if(!activeCompany.campanhas) activeCompany.campanhas = [];
-      const listaDiv = document.getElementById("campanhas-ativas-lista");
-      if(!listaDiv) return;
-      listaDiv.innerHTML = "";
-      activeCompany.campanhas.forEach(camp => {
-        let cardHtml = `<div class="camp-card"><div class="pack-title">${camp.nome}</div>`;
-        const consumido = camp.flagsTotais - camp.flagsRestantes;
-        const pct = (consumido / camp.flagsTotais) * 100;
-        cardHtml += `
-          <div style="font-size:12px; color:#a7fca7;"><b>Raio:</b> ${camp.raioKm}km | <b>Prémio:</b> ${camp.premio}</div>
-          <div class="stat-bar" style="width:100%; height:8px; border-radius:4px; margin-top:5px;"><div class="stat-fill" style="width:${pct}%; background:#0f0;"></div></div>
-        </div>`;
-        listaDiv.innerHTML += cardHtml;
-      });
-    }
-
-    function renderFiliaisList() {
-      const list = document.getElementById("filiais-lista"); list.innerHTML = "";
-      if (activeCompany.type !== "SEDE") { list.innerHTML = "<span style='color:#888; font-size:12px;'>Apenas a Sede acede à rede global.</span>"; return; }
-      for (let key in allCompaniesDB) {
-        let c = allCompaniesDB[key];
-        if (c.nif === activeCompany.nif && c.id !== activeCompany.id) {
-          list.innerHTML += `<div style="background:#222; padding:10px; margin-bottom:5px; border-radius:5px; border:1px solid #0f0;"><b>${c.name}</b><br><span style="font-size:11px;">${c.morada} | ${c.type.replace('_',' ')}</span></div>`;
-        }
-      }
-    }
-
-    function generateBranchCode() { document.getElementById("branch-code-result").innerText = `${activeCompany.name.substring(0, 4).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`; }
-    function openCompanyMap() { document.getElementById("pr-dashboard-screen").classList.add("hidden"); document.getElementById("pr-map-screen").classList.remove("hidden"); if (!prMap) { prMap = L.map('map-empresa', { zoomControl: false }).setView([41.1496, -8.6109], 15); L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(prMap); } }
-    function closeCompanyMap() { document.getElementById("pr-map-screen").classList.add("hidden"); document.getElementById("pr-dashboard-screen").classList.remove("hidden"); }
-
-    // JANELAS SOCIAIS E ARRASTO
-    function openWindow(id) { document.getElementById(id).classList.remove('hidden'); }
-    function closeWindow(id) { document.getElementById(id).classList.add('hidden'); }
-    function switchSoc(tab) {
-      document.getElementById('tab-lista').classList.remove('active'); document.getElementById('tab-chat').classList.remove('active'); document.getElementById('tab-troca').classList.remove('active');
-      document.getElementById('view-lista').classList.add('hidden'); document.getElementById('view-chat').classList.add('hidden'); document.getElementById('view-troca').classList.add('hidden');
-      document.getElementById('tab-' + tab).classList.add('active'); document.getElementById('view-' + tab).classList.remove('hidden');
-      if (tab === 'chat') { const sel = document.getElementById('trade-offer-select'); if(sel) { sel.innerHTML = '<option value="">-- O teu QR a oferecer --</option>'; if(player.qrs) player.qrs.forEach(qr => { sel.innerHTML += `<option value="${qr.id}">${qr.brand} (${qr.offer})</option>`; }); } }
-    }
-    
-    // Drag/Drop e Toques em Mobile
     function allowDrop(ev) { ev.preventDefault(); }
     function drag(ev) { ev.dataTransfer.setData("text", ev.target.id); }
     function drop(ev) { ev.preventDefault(); var data = ev.dataTransfer.getData("text"); if (ev.target.id === "caixa-troca" || ev.target.id === "qr-inventory") { ev.target.appendChild(document.getElementById(data)); } }
 
+    // ================= EVENTOS MOBILE & DRAG =================
     document.querySelectorAll('.drag-window').forEach(el => {
       const handle = el.querySelector('.drag-handle'); if(!handle) return;
       let isDragging = false, startX, startY, startLeft, startTop;
       
-      // Computador
       handle.addEventListener('mousedown', e => { isDragging = true; startLeft = el.offsetLeft; startTop = el.offsetTop; startX = e.clientX; startY = e.clientY; });
       window.addEventListener('mousemove', e => { if (!isDragging) return; el.style.left = (startLeft + e.clientX - startX) + 'px'; el.style.top = (startTop + e.clientY - startY) + 'px'; });
       window.addEventListener('mouseup', () => isDragging = false);
       
-      // Telemóvel
       handle.addEventListener('touchstart', e => { isDragging = true; startLeft = el.offsetLeft; startTop = el.offsetTop; startX = e.touches[0].clientX; startY = e.touches[0].clientY; }, {passive: true});
       window.addEventListener('touchmove', e => { if (!isDragging) return; el.style.left = (startLeft + e.touches[0].clientX - startX) + 'px'; el.style.top = (startTop + e.touches[0].clientY - startY) + 'px'; e.preventDefault(); }, {passive: false});
       window.addEventListener('touchend', () => isDragging = false);
     });
-
   </script>
 </body>
 </html>
