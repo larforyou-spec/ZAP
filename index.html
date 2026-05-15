@@ -6,66 +6,108 @@
   <title>ZAP FLAGS | Larforyou&reg;</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <style>
-    /* DESIGN GERAL (COMPACTADO) */
-    *{box-sizing:border-box;user-select:none;font-family:'Courier New',Courier,monospace;}
-    html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#222;color:#0f0;}
-    .hidden{display:none !important;}
-    button{background:#0f0;color:#000;border:none;padding:10px 12px;border-radius:6px;font-weight:bold;cursor:pointer;font-size:14px;}
-    button:hover{filter:brightness(1.2);} button:disabled{background:#555;color:#888;cursor:not-allowed;}
-    .btn-dark{background:#111;color:#0f0;border:1px solid #0f0;} .btn-danger{background:#d32f2f;color:#fff;border:1px solid #ff0000;}
-    .btn-link{background:none;border:none;color:#a7fca7;text-decoration:underline;padding:0;font-size:12px;}
-    input,select{width:100%;padding:10px;margin-bottom:10px;border-radius:4px;border:1px solid #0f0;background:#111;color:#0f0;}
-    #login-screen{position:absolute;inset:0;background:radial-gradient(circle,#002200 0%,#000000 100%);display:flex;align-items:center;justify-content:center;z-index:10000;padding:15px;overflow-y:auto;}
-    .login-box{width:100%;max-width:500px;background:rgba(0,0,0,0.9);border:2px solid #0f0;border-radius:8px;padding:25px;margin:auto;}
-    .tab-container{display:flex;margin-bottom:15px;border-radius:4px;overflow:hidden;border:1px solid #0f0;}
-    .tab-btn{flex:1;padding:12px;background:#111;color:#0f0;border-radius:0;} .tab-btn.active{background:#0f0;color:#000;}
-    .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-    #game-screen,#pr-map-screen{position:absolute;inset:0;width:100%;height:100%;z-index:1;} #map,#map-empresa{width:100%;height:100%;}
-    .catch-circle{stroke-dasharray:6,6;}
-    .avatar-wrapper{position:relative;width:40px;height:50px;transition:transform 0.2s linear;}
-    .ava-head{position:absolute;top:0;left:10px;width:20px;height:20px;background:#ffeb3b;border-radius:50%;border:2px solid #000;z-index:3;}
-    .ava-body{position:absolute;top:18px;left:10px;width:20px;height:18px;background:#2196f3;border-radius:4px;border:2px solid #000;z-index:2;}
-    .ava-arm-l,.ava-arm-r{position:absolute;top:20px;width:8px;height:16px;background:#ffeb3b;border-radius:4px;border:2px solid #000;transition:transform 0.3s;z-index:3;}
-    .ava-arm-l{left:0px;} .ava-arm-r{right:0px;}
-    .ava-leg-l,.ava-leg-r{position:absolute;top:34px;width:8px;height:16px;background:#333;border-radius:4px;border:2px solid #000;z-index:1;transition:transform 0.1s;}
-    .ava-leg-l{left:10px;} .ava-leg-r{right:10px;}
-    .walking .ava-leg-l{transform:translateY(-4px);} .walking .ava-leg-r{transform:translateY(4px);}
-    .catching .ava-arm-r{transform:rotate(-90deg) translateY(10px) translateX(-5px);}
-    .flag-marker{width:24px;height:24px;background:#FF0000;border:2px solid white;border-radius:50%;box-shadow:0 0 10px #FF0000;}
-    .yellow-flag{background:#FFD700 !important;box-shadow:0 0 10px #FFD700 !important;}
-    #top-bar{position:absolute;top:10px;left:10px;right:10px;background:rgba(0,0,0,0.85);border:1px solid #0f0;border-radius:6px;padding:10px;z-index:2000;display:flex;justify-content:space-between;gap:10px;}
-    .stat{flex:1;text-align:center;font-size:12px;font-weight:bold;color:#0f0;}
-    .stat-bar{height:6px;background:#222;border-radius:3px;margin-top:4px;border:1px solid rgba(0,255,0,0.3);overflow:hidden;}
-    .stat-fill{height:100%;background:#0f0;transition:width 0.3s;}
-    #offline-controls{position:absolute;bottom:90px;left:20px;z-index:3000;background:rgba(0,0,0,0.85);border:1px solid #0f0;border-radius:6px;padding:10px;text-align:center;}
-    .drag-handle{background:rgba(0,255,0,0.2);cursor:move;padding:3px;margin-bottom:5px;font-size:10px;color:#fff;}
-    .dpad{display:grid;grid-template-columns:50px 50px 50px;gap:5px;} .dpad button{width:50px;height:50px;font-size:20px;padding:0;}
-    #modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:6000;display:flex;align-items:center;justify-content:center;}
-    .modal-box{background:#111;border:2px solid #0f0;padding:20px;border-radius:10px;max-width:400px;width:90%;text-align:center;color:#fff;}
-    .comp-logo{width:80px;height:80px;object-fit:cover;border-radius:50%;border:2px solid #0f0;margin-bottom:10px;background:#fff;}
-    #pr-dashboard-screen{position:absolute;inset:0;background:radial-gradient(circle,#001122 0%,#000000 100%);z-index:5000;padding:20px;overflow-y:auto;}
-    .dash-box{max-width:900px;margin:0 auto;background:rgba(0,0,0,0.8);border:2px solid #0f0;border-radius:10px;padding:20px;}
-    .pr-menu{display:flex;border-bottom:2px solid #0f0;margin-bottom:20px;flex-wrap:wrap;}
-    .pr-menu-btn{flex:1;background:#111;color:#0f0;padding:15px;border-radius:8px 8px 0 0;font-size:14px;border:none;margin-right:5px;min-width:120px;}
-    .pr-menu-btn.active{background:#0f0;color:#000;}
-    .pack-card{background:#111;border:1px solid #0f0;padding:15px;border-radius:8px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;}
-    .pack-info{font-size:13px;color:#a7fca7;} .pack-title{font-size:16px;font-weight:bold;color:#0f0;margin-bottom:5px;}
-    .camp-card{background:#000;border:1px solid #4CAF50;padding:15px;border-radius:5px;margin-bottom:15px;}
-    .camp-pending{border-color:#ff9800;} .camp-suspended{border-color:#ff9800;opacity:0.8;} .camp-expired{border-color:#d32f2f;opacity:0.6;}
-    .winner-item{background:#222;border:1px dashed #0f0;padding:10px;border-radius:5px;margin-top:5px;font-size:12px;display:flex;justify-content:space-between;align-items:center;}
-    .watermark{position:fixed;bottom:35px;left:15px;font-size:20px;font-weight:bold;color:rgba(0,255,0,0.4);text-shadow:2px 2px 4px #000;z-index:9999;pointer-events:none;}
-    .copyright{position:fixed;bottom:5px;width:100%;text-align:center;font-size:11px;color:rgba(0,255,0,0.4);z-index:9999;pointer-events:none;}
+    /* DESIGN GERAL */
+    * { box-sizing: border-box; user-select: none; font-family: 'Courier New', Courier, monospace; }
+    html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #222; color: #0f0; }
+    .hidden { display: none !important; }
+    button { background: #0f0; color: #000; border: none; padding: 10px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 14px; }
+    button:hover { filter: brightness(1.2); } button:disabled { background: #555; color: #888; cursor: not-allowed; }
+    .btn-dark { background: #111; color: #0f0; border: 1px solid #0f0; } .btn-danger { background: #d32f2f; color: #fff; border: 1px solid #ff0000; }
+    .btn-warning { background: #ff9800; color: #fff; border: 1px solid #ff9800; } .btn-link { background: none; border: none; color: #a7fca7; text-decoration: underline; padding: 0; font-size: 12px; }
+    input, select { width: 100%; padding: 10px; margin-bottom: 10px; border-radius: 4px; border: 1px solid #0f0; background: #111; color: #0f0; }
+    
+    /* LOGIN E REGISTO */
+    #login-screen, #bo-login-screen { position: absolute; inset: 0; background: radial-gradient(circle, #002200 0%, #000000 100%); display: flex; align-items: center; justify-content: center; z-index: 10000; padding: 15px; overflow-y: auto; }
+    .login-box { width: 100%; max-width: 500px; background: rgba(0, 0, 0, 0.9); border: 2px solid #0f0; border-radius: 8px; padding: 25px; margin: auto; }
+    .tab-container { display: flex; margin-bottom: 15px; border-radius: 4px; overflow: hidden; border: 1px solid #0f0; }
+    .tab-btn { flex: 1; padding: 12px; background: #111; color: #0f0; border-radius: 0; } .tab-btn.active { background: #0f0; color: #000; }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+    /* MAPA E AVATAR JOGADOR */
+    #game-screen, #pr-map-screen { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; }
+    #map, #map-empresa { width: 100%; height: 100%; }
+    .catch-circle { stroke-dasharray: 6, 6; }
+    .avatar-wrapper { position: relative; width: 40px; height: 50px; transition: transform 0.2s linear; }
+    .ava-head { position: absolute; top: 0; left: 10px; width: 20px; height: 20px; background: #ffeb3b; border-radius: 50%; border: 2px solid #000; z-index: 3; }
+    .ava-body { position: absolute; top: 18px; left: 10px; width: 20px; height: 18px; background: #2196f3; border-radius: 4px; border: 2px solid #000; z-index: 2; }
+    .ava-arm-l, .ava-arm-r { position: absolute; top: 20px; width: 8px; height: 16px; background: #ffeb3b; border-radius: 4px; border: 2px solid #000; transition: transform 0.3s; z-index: 3; }
+    .ava-arm-l { left: 0px; } .ava-arm-r { right: 0px; }
+    .ava-leg-l, .ava-leg-r { position: absolute; top: 34px; width: 8px; height: 16px; background: #333; border-radius: 4px; border: 2px solid #000; z-index: 1; transition: transform 0.1s; }
+    .ava-leg-l { left: 10px; } .ava-leg-r { right: 10px; }
+    .walking .ava-leg-l { transform: translateY(-4px); } .walking .ava-leg-r { transform: translateY(4px); }
+    .catching .ava-arm-r { transform: rotate(-90deg) translateY(10px) translateX(-5px); }
+    .flag-marker { width: 24px; height: 24px; background: #FF0000; border: 2px solid white; border-radius: 50%; box-shadow: 0 0 10px #FF0000; }
+    .yellow-flag { background: #FFD700 !important; box-shadow: 0 0 10px #FFD700 !important; }
+
+    /* UI TOP, TOOLBAR DIREITA E DPAD */
+    #top-bar { position: absolute; top: 10px; left: 10px; right: 10px; background: rgba(0, 0, 0, 0.85); border: 1px solid #0f0; border-radius: 6px; padding: 10px; z-index: 2000; display: flex; justify-content: space-between; gap: 10px; }
+    .stat { flex: 1; text-align: center; font-size: 12px; font-weight: bold; color: #0f0; }
+    .stat-bar { height: 6px; background: #222; border-radius: 3px; margin-top: 4px; border: 1px solid rgba(0,255,0,0.3); overflow:hidden;}
+    .stat-fill { height: 100%; background: #0f0; transition: width 0.3s; }
+    
+    #right-toolbar { position: absolute; top: 80px; right: 10px; z-index: 3000; display: flex; flex-direction: column; gap: 8px; background: rgba(0,0,0,0.7); padding: 5px; border-radius: 8px; border: 1px solid #0f0; }
+    .tool-btn { width: 45px; height: 45px; border-radius: 50%; font-size: 18px; padding: 0; box-shadow: 0 0 10px rgba(0,255,0,0.3); }
+
+    #offline-controls { position: absolute; bottom: 90px; left: 20px; z-index: 3000; background: rgba(0,0,0,0.85); border: 1px solid #0f0; border-radius: 6px; padding: 10px; text-align: center; }
+    .drag-handle { background: rgba(0,255,0,0.2); cursor: move; padding: 3px; margin-bottom: 5px; font-size: 10px; color: #fff; }
+    .dpad { display: grid; grid-template-columns: 50px 50px 50px; gap: 5px; } .dpad button { width: 50px; height: 50px; font-size: 20px; padding: 0; }
+
+    /* JANELAS ARRASTÁVEIS DO JOGADOR */
+    .game-window { position: absolute; top: 100px; left: 50px; width: 340px; max-height: 450px; background: rgba(0,0,0,0.95); border: 2px solid #0f0; z-index: 4000; display: flex; flex-direction: column; resize: both; overflow: auto; box-shadow: 0 0 20px rgba(0,255,0,0.3); }
+    .win-header { background: #003300; padding: 8px; font-weight: bold; display: flex; justify-content: space-between; cursor: move; border-bottom: 1px solid #0f0; }
+    .win-close { background: red; color: white; border: none; padding: 2px 8px; font-weight: bold; cursor: pointer; border-radius: 4px; }
+    .win-content { padding: 15px; font-size: 13px; color: #a7fca7; overflow-y: auto; }
+    
+    .social-tabs { display: flex; border-bottom: 1px solid #0f0; margin-bottom: 10px; }
+    .soc-btn { flex: 1; background: #111; color: #0f0; padding: 5px; font-size: 12px; border: none; border-radius: 0; }
+    .soc-btn.active { background: #0f0; color: #000; }
+    .player-list-item { display: flex; justify-content: space-between; align-items: center; background: #111; padding: 8px; margin-bottom: 5px; border-radius: 4px; }
+    .status-dot { height: 10px; width: 10px; background: #0f0; border-radius: 50%; display: inline-block; margin-right: 5px;}
+    .qr-inventory { width: 50%; background: #111; padding: 5px; border-radius: 5px; max-height: 150px; overflow-y: auto; display: flex; flex-direction: column; gap: 5px; }
+    .drop-zone { width: 50%; border: 2px dashed #0f0; background: rgba(0,255,0,0.1); min-height: 100px; padding: 5px; text-align: center; border-radius: 8px; display: flex; flex-direction: column; gap: 5px; }
+    .draggable-qr { background: #fff; color: #000; padding: 8px; text-align: center; border-radius: 5px; font-weight: bold; cursor: grab; box-shadow: 0 0 5px rgba(255,255,255,0.5); width: 100%; font-size: 11px;}
+
+    /* MODAL AVISOS / BANDEIRAS */
+    .modal-overlay { position: fixed; inset:0; background:rgba(0,0,0,0.85); z-index: 6000; display:flex; align-items:center; justify-content:center;}
+    .modal-box { background:#111; border: 2px solid #0f0; padding:20px; border-radius:10px; max-width:400px; width: 90%; text-align:center; color:#fff; }
+    .comp-logo { width: 80px; height: 80px; object-fit: cover; border-radius: 50%; border: 2px solid #0f0; margin-bottom:10px; background:#fff;}
+
+    /* DASHBOARD DA EMPRESA (FASE 2) */
+    #pr-dashboard-screen { position: absolute; inset: 0; background: radial-gradient(circle, #001122 0%, #000000 100%); z-index: 5000; padding: 20px; overflow-y: auto; }
+    .dash-box { max-width: 900px; margin: 0 auto; background: rgba(0,0,0,0.8); border: 2px solid #0f0; border-radius: 10px; padding: 20px; }
+    .pr-menu { display: flex; border-bottom: 2px solid #0f0; margin-bottom: 20px; flex-wrap: wrap;}
+    .pr-menu-btn { flex: 1; background: #111; color: #0f0; padding: 15px; border-radius: 8px 8px 0 0; font-size: 14px; border: none; margin-right: 5px; min-width:120px;}
+    .pr-menu-btn.active { background: #0f0; color: #000; }
+    .pack-card { background: #111; border: 1px solid #0f0; padding: 15px; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+    .pack-info { font-size: 13px; color: #a7fca7; } .pack-title { font-size: 16px; font-weight: bold; color: #0f0; margin-bottom: 5px; }
+    .camp-card { background: #000; border: 1px solid #4CAF50; padding: 15px; border-radius: 5px; margin-bottom: 15px; }
+    .camp-pending { border-color: #ff9800; } .camp-suspended { border-color: #ff9800; opacity: 0.8; } .camp-expired { border-color: #d32f2f; opacity: 0.6; }
+    .winner-item { background: #222; border: 1px dashed #0f0; padding: 10px; border-radius: 5px; margin-top: 5px; font-size: 12px; display: flex; justify-content: space-between; align-items: center; }
+
     /* BACKOFFICE */
-    #backoffice-screen{position:absolute;inset:0;background:#111;z-index:90000;padding:20px;overflow-y:auto;}
-    .bo-table{width:100%;border-collapse:collapse;margin-top:10px;font-size:12px;} .bo-table th,.bo-table td{border:1px solid #0f0;padding:8px;text-align:left;}
+    #backoffice-screen { position: absolute; inset: 0; background: #111; z-index: 90000; padding: 20px; overflow-y: auto; }
+    .bo-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 12px; } .bo-table th, .bo-table td { border: 1px solid #0f0; padding: 8px; text-align: left; }
+
+    /* TICKER NOTÍCIAS */
+    #ticker-wrap { position: fixed; bottom: 25px; left: 0; width: 100%; background: rgba(0, 50, 0, 0.9); border-top: 1px solid #0f0; border-bottom: 1px solid #0f0; color: #fff; z-index: 8000; padding: 5px 0; overflow: hidden; white-space: nowrap; font-size: 13px; font-weight: bold;}
+    #ticker { display: inline-block; animation: ticker 25s linear infinite; }
+    @keyframes ticker { 0% { transform: translateX(100vw); } 100% { transform: translateX(-100%); } }
+
+    /* MARCA LARFORYOU */
+    .watermark { position: fixed; bottom: 60px; left: 15px; font-size: 32px; font-weight: 900; color: rgba(0, 255, 0, 0.5); text-shadow: 2px 2px 5px #000; z-index: 9999; pointer-events: none; letter-spacing: 2px; }
+    .copyright { position: fixed; bottom: 5px; width: 100%; text-align: center; font-size: 11px; color: rgba(0, 255, 0, 0.5); z-index: 9999; pointer-events: none; }
   </style>
 </head>
 <body>
 
+  <!-- MARCA E DIREITOS DE AUTOR -->
   <div class="watermark">Larforyou&reg;</div>
   <div class="copyright">&copy; 2024 Larforyou&reg; - Marca Registada. Todos os direitos reservados.</div>
 
-  <!-- LOGIN E REGISTO -->
+  <!-- RODAPÉ TICKER (JOGADOR) -->
+  <div id="ticker-wrap"><div id="ticker">⚡ Bem-vindo ao ZAP FLAGS! 🏆 'Miguel' ganhou BINGO na ZARA! 🎁 50% de Desconto na EDP termina amanhã! 🤝 Adiciona amigos na aba Social e troca QRs!</div></div>
+
+  <!-- ================= LOGIN E REGISTO ================= -->
   <div id="login-screen">
     <div class="login-box">
       <h1 style="text-align: center; color: #0f0; margin-top:0; text-shadow: 0 0 15px #0f0; font-size: 32px;">Larforyou&reg;<br><span style="font-size: 16px; color: #fff; letter-spacing: 3px; text-shadow: none;">ZAP FLAGS</span></h1>
@@ -75,17 +117,19 @@
         <button id="btn-tab-pr" class="tab-btn btn-dark" onclick="switchMainTab('PR')">EMPRESA / FILIAL</button>
       </div>
 
+      <!-- JOGADOR LOGIN -->
       <div id="area-jg">
         <div id="jg-login-view">
           <input type="text" id="jg-log-nome" placeholder="* Nome do Jogador" />
-          <input type="password" id="jg-log-senha" placeholder="* Senha" />
+          <input type="password" id="jg-log-senha" placeholder="* Senha (>4 char)" />
           <button style="width:100%; padding:14px; margin-top:10px;" onclick="doLoginJG()">ENTRAR NO JOGO</button>
           <button class="btn-link" style="width:100%; margin-top:15px;" onclick="switchJGView('REG')">Não tem conta? Registar Jogador</button>
+          <button class="btn-link" style="width:100%;" onclick="recoverPass()">Esqueci a Senha</button>
         </div>
         <div id="jg-reg-view" class="hidden">
-          <div style="font-size:12px; color:#81c784; margin-bottom:10px;">* Campos Obrigatórios</div>
+          <div style="font-size:12px; color:#81c784; margin-bottom:10px;">* E-mail válido e Senha > 4 carateres</div>
           <input type="text" id="jg-reg-name" placeholder="* Nome de Jogador" />
-          <input type="email" id="jg-reg-email" placeholder="* E-mail" />
+          <input type="email" id="jg-reg-email" placeholder="* E-mail (ex: jg@mail.com)" />
           <div class="form-grid">
             <input type="password" id="jg-reg-pass1" placeholder="* Senha" />
             <input type="password" id="jg-reg-pass2" placeholder="* Confirmar" />
@@ -95,6 +139,7 @@
         </div>
       </div>
       
+      <!-- EMPRESA / FILIAL LOGIN -->
       <div id="area-pr" class="hidden">
         <div id="pr-login-view">
           <div style="font-size:12px; color:#a7fca7; margin-bottom:15px; text-align:center;">Painel de Sede e Filiais</div>
@@ -103,7 +148,6 @@
           <button style="width:100%; padding:14px; margin-top:10px;" onclick="doLoginPR()">ENTRAR NA GESTÃO</button>
           <button class="btn-link" style="width:100%; margin-top:15px;" onclick="switchPRView('REG')">Registar Nova Empresa/Filial</button>
         </div>
-
         <div id="pr-reg-view" class="hidden">
           <div style="font-size:12px; color:#81c784; margin-bottom:10px;">Registo Profissional</div>
           <label style="color:#0f0; font-size:12px;"><input type="checkbox" id="pr-is-filial" onchange="toggleFilialFields()" /> Esta loja é uma Filial</label>
@@ -114,115 +158,60 @@
           <input type="text" id="pr-reg-morada" placeholder="* Morada Exata" />
           <div class="form-grid"><input type="text" id="pr-reg-lat" placeholder="Latitude GPS" /><input type="text" id="pr-reg-lng" placeholder="Longitude GPS" /></div>
           <div class="form-grid"><input type="password" id="pr-reg-pass1" placeholder="* Senha" /><input type="password" id="pr-reg-pass2" placeholder="* Confirmar Senha" /></div>
-
           <div id="filial-extras" class="hidden" style="background:#111; padding:10px; border:1px dashed #0f0; margin-bottom:10px;">
             <label style="color:#a7fca7; font-size:11px;"><input type="checkbox" id="filial-fatura-propria" /> Faturação Própria</label><br>
-            <input type="text" id="pr-reg-codigo-sede" placeholder="Código da Sede (Se faturação centralizada)" style="margin-top:5px;"/>
+            <input type="text" id="pr-reg-codigo-sede" placeholder="Código da Sede" style="margin-top:5px;"/>
           </div>
-
           <button style="width:100%; padding:14px; margin-top:10px;" onclick="doRegisterPR()">REGISTAR EMPRESA / LOJA</button>
           <button class="btn-link" style="width:100%; text-align:center; margin-top:10px;" onclick="switchPRView('LOG')">Voltar ao Login</button>
         </div>
       </div>
       
       <!-- BOTÃO SECRETO ADMIN -->
-      <button class="btn-link" style="width:100%; margin-top:20px; color:#555;" onclick="openAdminLogin()">[Acesso BackOffice]</button>
+      <button class="btn-link" style="width:100%; margin-top:20px; color:#555;" onclick="document.getElementById('bo-login-screen').classList.remove('hidden')">[Acesso BackOffice]</button>
     </div>
   </div>
 
-  <!-- LOGIN BACKOFFICE -->
+  <!-- LOGIN E DASHBOARD BACKOFFICE -->
   <div id="bo-login-screen" class="hidden" style="position:absolute; inset:0; background:#000; z-index:11000; display:flex; align-items:center; justify-content:center;">
     <div style="background:#111; padding:20px; border:2px solid red; border-radius:8px; text-align:center;">
       <h2 style="color:red; margin-top:0;">ADMINISTRAÇÃO ZAP</h2>
       <input type="password" id="bo-pass" placeholder="Senha de Admin" style="border-color:red;" />
       <button class="btn-danger" style="width:100%; padding:10px;" onclick="doLoginBO()">ENTRAR NO BACKOFFICE</button>
-      <button class="btn-link" style="margin-top:10px; color:#fff;" onclick="closeAdminLogin()">Cancelar</button>
+      <button class="btn-link" style="margin-top:10px; color:#fff;" onclick="document.getElementById('bo-login-screen').classList.add('hidden')">Cancelar</button>
     </div>
   </div>
-
-  <!-- DASHBOARD BACKOFFICE -->
   <div id="backoffice-screen" class="hidden">
     <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid red; padding-bottom:10px; margin-bottom:20px;">
       <h1 style="color:red; margin:0;">🚨 BACKOFFICE DE GESTÃO</h1>
-      <div>
-        <button class="btn-danger" onclick="factoryReset()">⚠️ FORMATAR SISTEMA TOTAL</button>
-        <button class="btn-dark" onclick="location.reload()">Sair Admin</button>
-      </div>
+      <div><button class="btn-danger" onclick="factoryReset()">⚠️ FORMATAR SISTEMA TOTAL</button><button class="btn-dark" onclick="location.reload()">Sair Admin</button></div>
     </div>
-
     <h2 style="color:#0f0;">🎮 Jogadores Registados</h2>
-    <table class="bo-table">
-      <thead><tr><th>Nome</th><th>Ação</th></tr></thead>
-      <tbody id="bo-players-list"></tbody>
-    </ul>
-
+    <table class="bo-table"><thead><tr><th>Nome</th><th>Ação</th></tr></thead><tbody id="bo-players-list"></tbody></table>
     <h2 style="color:#0f0; margin-top:30px;">🏢 Empresas e Filiais</h2>
-    <table class="bo-table">
-      <thead><tr><th>Nome</th><th>NIF</th><th>Tipo</th><th>Ação</th></tr></thead>
-      <tbody id="bo-comps-list"></tbody>
-    </table>
+    <table class="bo-table"><thead><tr><th>Nome</th><th>NIF</th><th>Tipo</th><th>Ação</th></tr></thead><tbody id="bo-comps-list"></tbody></table>
   </div>
 
-  <!-- DASHBOARD DA EMPRESA (SEDE E FILIAL) -->
+  <!-- DASHBOARD DA EMPRESA E FILIAIS -->
   <div id="pr-dashboard-screen" class="hidden">
     <div class="dash-box">
       <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #0f0; padding-bottom:15px; margin-bottom:20px;">
         <h1 style="margin:0; color:#0f0;">🏢 PAINEL DE GESTÃO</h1>
         <button class="btn-dark" onclick="location.reload()">Sair</button>
       </div>
-
       <div style="margin-bottom:20px;">
         <h2 style="color:#fff; margin:0;"><span id="dash-pr-name">Empresa</span> <span id="dash-pr-badge" style="font-size:12px; background:#2196f3; padding:2px 5px; border-radius:3px;">SEDE</span></h2>
         <p style="color:#a7fca7; font-size:12px; margin:5px 0;">NIF: <span id="dash-pr-nif"></span> | Morada: <span id="dash-pr-address"></span></p>
-        <p id="dash-filial-warning" style="color:red; font-size:11px; font-weight:bold; display:none;">⚠️ FATURAÇÃO CENTRALIZADA: Precisa do Código da Sede para ativar campanhas.</p>
       </div>
-
       <div class="pr-menu">
         <button id="menu-loja" class="pr-menu-btn active" onclick="switchDashView('loja')">🛒 Comprar Pacotes</button>
         <button id="menu-agendar" class="pr-menu-btn" onclick="switchDashView('agendar')">📅 Campanhas</button>
         <button id="menu-filiais" class="pr-menu-btn" onclick="switchDashView('filiais')">🔑 Filiais</button>
         <button id="menu-mapa" class="pr-menu-btn" style="background:#ff9800; color:#000;" onclick="openCompanyMap()">📍 VER MAPA GPS</button>
       </div>
-
-      <!-- VISTA: LOJA -->
-      <div id="view-loja">
-        <h3 style="color:#0f0; margin-top:0;">🛒 Loja de Pacotes</h3>
-        <div class="pack-card"><div class="pack-info"><b>Pacote Médio</b><br>2.500 Bandeiras • Val. 60 Dias</div><button onclick="buyPackage('Médio', 2500, 15, 60)">Comprar 15€</button></div>
-        <div class="pack-card"><div class="pack-info"><b>Pacote Grande</b><br>10.000 Bandeiras • Val. 120 Dias</div><button onclick="buyPackage('Grande', 10000, 25, 120)">Comprar 25€</button></div>
-      </div>
-
-      <!-- VISTA: CAMPANHAS -->
-      <div id="view-agendar" class="hidden">
-        <div id="dash-lock-overlay" class="hidden" style="background:rgba(255,0,0,0.1); border:1px solid red; padding:15px; margin-bottom:15px;">
-          <h4 style="color:red; margin:0;">🔒 GESTÃO BLOQUEADA</h4>
-          <input type="text" id="dash-insert-code" placeholder="Código da Sede" />
-          <button onclick="activateFilialCode()">VALIDAR CÓDIGO</button>
-        </div>
-
-        <div style="background:#1a1a1a; border:2px dashed #ff9800; padding:15px; border-radius:8px; margin-bottom:30px;">
-          <h3 style="margin-top:0; color:#ff9800;">🎯 Nova Campanha</h3>
-          <select id="agenda-pack-select"></select>
-          <div class="form-grid" style="margin-bottom:10px;">
-            <div><label style="font-size:12px; color:#0f0;">Lotes (1=20Band)</label><input type="number" id="agenda-lots" value="0" /></div>
-            <div><label style="font-size:12px; color:#0f0;">Dias Levantar</label><input type="number" id="agenda-days" value="5" /></div>
-          </div>
-          <input type="text" id="agenda-prize" placeholder="Prémio (se Lotes > 0)" />
-          <button style="width:100%; background:#ff9800;" onclick="scheduleCampaign()">ATIVAR CAMPANHA</button>
-        </div>
-        <h3 style="color:#0f0;">⏳ Campanhas da Loja</h3>
-        <div id="campanhas-ativas-lista"></div>
-      </div>
-
-      <!-- VISTA: FILIAIS -->
-      <div id="view-filiais" class="hidden">
-        <h3 style="color:#0f0; margin-top:0;">🔑 Código de Acesso para Filiais</h3>
-        <div style="background:#111; padding:15px; border:1px dashed #0f0; text-align:center; margin-bottom:20px;">
-          <button onclick="generateBranchCode()">GERAR CÓDIGO DA SEDE</button>
-          <div id="branch-code-result" style="margin-top:10px; font-size:20px; font-weight:bold; color:#fff;"></div>
-        </div>
-        <h3 style="color:#0f0;">🏢 Lojas da Mesma Rede (NIF)</h3>
-        <div id="filiais-lista" style="background:#111; border:1px solid #555; padding:10px; min-height:100px;"></div>
-      </div>
+      <div id="view-loja"><h3 style="color:#0f0; margin-top:0;">🛒 Loja de Pacotes</h3><div class="pack-card"><div class="pack-info"><b>Pacote Médio</b><br>2.500 Bandeiras • Val. 60 Dias</div><button onclick="buyPackage('Médio', 2500, 15, 60)">Comprar 15€</button></div></div>
+      <div id="view-agendar" class="hidden"><div style="background:#1a1a1a; border:2px dashed #ff9800; padding:15px; border-radius:8px; margin-bottom:30px;"><h3 style="margin-top:0; color:#ff9800;">🎯 Nova Campanha</h3><select id="agenda-pack-select"></select><div class="form-grid" style="margin-bottom:10px;"><div><label style="font-size:12px; color:#0f0;">Lotes (1=20Band)</label><input type="number" id="agenda-lots" value="0" /></div><div><label style="font-size:12px; color:#0f0;">Dias Levantar</label><input type="number" id="agenda-days" value="5" /></div></div><input type="text" id="agenda-prize" placeholder="Prémio (se Lotes > 0)" /><button style="width:100%; background:#ff9800;" onclick="scheduleCampaign()">ATIVAR CAMPANHA</button></div><h3 style="color:#0f0;">⏳ Campanhas da Loja</h3><div id="campanhas-ativas-lista"></div></div>
+      <div id="view-filiais" class="hidden"><h3 style="color:#0f0; margin-top:0;">🔑 Código de Acesso para Filiais</h3><div style="background:#111; padding:15px; border:1px dashed #0f0; text-align:center; margin-bottom:20px;"><button onclick="generateBranchCode()">GERAR CÓDIGO DA SEDE</button><div id="branch-code-result" style="margin-top:10px; font-size:20px; font-weight:bold; color:#fff;"></div></div><h3 style="color:#0f0;">🏢 Lojas da Mesma Rede (NIF)</h3><div id="filiais-lista" style="background:#111; border:1px solid #555; padding:10px; min-height:100px;"></div></div>
     </div>
   </div>
 
@@ -235,7 +224,7 @@
     <div id="map-empresa"></div>
   </div>
 
-  <!-- ECRÃ DO JOGO (JOGADOR) -->
+  <!-- ================= ECRÃ DO JOGO (JOGADOR) COM OS ÍCONES TODOS! ================= -->
   <div id="game-screen" class="hidden">
     <div id="map"></div>
     <div id="top-bar">
@@ -244,6 +233,17 @@
       <button class="btn-dark" style="padding:6px; font-size:12px;" onclick="catchFlag()">✋ APANHAR</button>
       <button class="btn-dark" style="padding:6px; font-size:12px;" onclick="location.reload()">🚪 SAIR</button>
     </div>
+    
+    <!-- OS ÍCONES SOCIAIS E DE MENU DO JOGADOR AQUI -->
+    <div id="right-toolbar" class="drag-window">
+      <div class="drag-handle" style="text-align:center;">☰ Menu</div>
+      <button class="tool-btn btn-dark" onclick="centerPlayer()" title="Localização Atual">📍</button>
+      <button class="tool-btn btn-dark" onclick="openWindow('win-flags')" title="Bandeiras e Empresas">🏴</button>
+      <button class="tool-btn btn-dark" onclick="openWindow('win-qrs')" title="QRs Ganhos">🎫</button>
+      <button class="tool-btn btn-dark" onclick="openWindow('win-social')" title="Amigos e Trocas">👥</button>
+      <button class="tool-btn btn-dark" onclick="openWindow('win-trophies')" title="Troféus">🏆</button>
+    </div>
+
     <div id="offline-controls" class="drag-window" style="bottom: 90px; left: 20px;">
       <div class="drag-handle">☰ Mover</div>
       <div class="dpad">
@@ -252,8 +252,25 @@
         <div></div><button onclick="movePlayer(0, -1)">▼</button><div></div>
       </div>
     </div>
+
+    <!-- JANELAS DO JOGADOR -->
+    <div id="win-flags" class="game-window drag-window hidden" style="top:120px; left:20px; width:300px;"><div class="win-header"><span class="drag-handle" style="flex:1;">🏴 Bandeiras da Sede</span><button class="win-close" onclick="closeWindow('win-flags')">X</button></div><div class="win-content">Total: <span id="val-flags">0</span></div></div>
+    <div id="win-qrs" class="game-window drag-window hidden" style="top:150px; left:40px; width:300px;"><div class="win-header"><span class="drag-handle" style="flex:1;">🎫 A tua Carteira QRs</span><button class="win-close" onclick="closeWindow('win-qrs')">X</button></div><div class="win-content" id="qr-wallet-list">Ainda não tens QRs gerados.</div></div>
+    <div id="win-trophies" class="game-window drag-window hidden" style="top:160px; left:50px; width:300px;"><div class="win-header"><span class="drag-handle" style="flex:1;">🏆 Troféus</span><button class="win-close" onclick="closeWindow('win-trophies')">X</button></div><div class="win-content">Troféu de Iniciante 🥉</div></div>
+    
+    <!-- JANELA SOCIAL COM DRAG & DROP DO QR -->
+    <div id="win-social" class="game-window drag-window hidden" style="top:180px; left:80px; width:360px;">
+      <div class="win-header"><span class="drag-handle" style="flex:1;">👥 Social e Trocas</span><button class="win-close" onclick="closeWindow('win-social')">X</button></div>
+      <div class="social-tabs"><button id="tab-lista" class="soc-btn active" onclick="switchSoc('lista')">Lista/Amigos</button><button id="tab-chat" class="soc-btn" onclick="switchSoc('chat')">Chat / Pedidos</button><button id="tab-troca" class="soc-btn" onclick="switchSoc('troca')">Troca Direta</button></div>
+      <div class="win-content" style="padding:10px;">
+        <div id="view-lista"><div class="player-list-item"><span class="status-dot"></span> <b>Miguel88</b> <button class="btn-dark" style="padding:4px; font-size:10px;">Adicionar</button></div></div>
+        <div id="view-chat" class="hidden"><p style="font-size:11px; color:#a7fca7;">Publica um pedido no Mercado para que todos vejam a tua oferta!</p><select id="trade-offer-select" style="padding:8px; font-size:12px;"></select><input type="text" id="trade-want-input" placeholder="Procuro QR..." style="padding:8px; font-size:12px;" /><button style="width:100%; margin-top:5px;" onclick="alert('Pedido publicado no mercado!')">PUBLICAR NO MERCADO</button></div>
+        <div id="view-troca" class="hidden"><p style="font-size:11px;">Arrasta o QR para a caixa de troca.</p><div style="display:flex; gap:10px;"><div id="qr-inventory" class="qr-inventory" ondrop="drop(event)" ondragover="allowDrop(event)"></div><div id="caixa-troca" class="drop-zone" ondrop="drop(event)" ondragover="allowDrop(event)"><span style="color:#aaa; font-size:11px; pointer-events:none;">Largar QR aqui!</span></div></div><button style="width:100%; margin-top:15px;">CONFIRMAR TROCA</button></div>
+      </div>
+    </div>
   </div>
 
+  <!-- MODAL DA BANDEIRA APANHADA -->
   <div id="modal-overlay" class="hidden">
     <div class="modal-box">
       <h2 style="color:#0f0; margin-top:0;">Bandeira Apanhada!</h2>
@@ -262,20 +279,22 @@
       <button style="width:100%;" onclick="document.getElementById('modal-overlay').classList.add('hidden');">CONTINUAR</button>
     </div>
   </div>
-
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
-    // ================= REMOVIDO MODO TESTE (A PEDIDO) =================
-    const isTestMode = false; // AGORA É REAL E DEFINITIVO!
-    const moveDist = isTestMode ? 4 : 0.5;   // Anda 0.5 metros
+    // ================= MODO TESTE DESLIGADO (REGRAS REAIS ATIVAS) =================
+    const isTestMode = false; // Agora está no Modo Profissional
+    const moveDist = isTestMode ? 4 : 0.5;   // Anda 0.5 metros reais
     const energyCost = isTestMode ? 4 : 0.5; // Gasta 0.5 de energia
-    const idleTime = isTestMode ? 15000 : 900000; // Descanso aos 15 minutos (900000ms)
+    const idleTime = isTestMode ? 15000 : 900000; // Descanso de 15 minutos (900000ms)
 
-    let player = { name: "", energy: 1000, maxEnergy: 1000, skill: 1, vision: 5, flags: 0, lat: 41.1496, lng: -8.6109, progressPR: {} };
+    let player = { name: "", energy: 1000, maxEnergy: 1000, skill: 1, vision: 5, flags: 0, lat: 41.1496, lng: -8.6109, progressPR: {}, qrs: [] };
     let map = null, prMap = null, playerMarker = null, visionCircle = null, catchCircle = null, allFlags = [];
     let activeCompany = null; 
     let allCompaniesDB = {}; 
     let allPlayersDB = [];
+    let lastMoveTime = Date.now();
+    let nextSkillTarget = 100;
+    let dashInterval = null;
     
     window.onload = () => {
       const savedName = localStorage.getItem("zap_player_name");
@@ -302,9 +321,7 @@
     function renderBackoffice() {
       const pList = document.getElementById("bo-players-list");
       pList.innerHTML = "";
-      allPlayersDB.forEach(p => {
-        pList.innerHTML += `<tr><td>${p}</td><td><button class="btn-danger" style="padding:5px;" onclick="deletePlayer('${p}')">Apagar</button></td></tr>`;
-      });
+      allPlayersDB.forEach(p => { pList.innerHTML += `<tr><td>${p}</td><td><button class="btn-danger" style="padding:5px;" onclick="deletePlayer('${p}')">Apagar</button></td></tr>`; });
       if(allPlayersDB.length === 0) pList.innerHTML = "<tr><td colspan='2'>Sem jogadores.</td></tr>";
 
       const cList = document.getElementById("bo-comps-list");
@@ -342,7 +359,10 @@
       }
     }
 
-    // ================= TABS & UI BÁSICA =================
+    // ================= TABS E UI BÁSICA =================
+    function validateEmail(email) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email); }
+    function recoverPass() { const val = prompt("Insira E-mail ou Telemóvel:"); if(val) alert("Foi enviado um link de recuperação."); }
+
     function switchMainTab(mode) {
       document.getElementById('area-jg').classList.toggle('hidden', mode !== 'JG');
       document.getElementById('area-pr').classList.toggle('hidden', mode !== 'PR');
@@ -363,16 +383,25 @@
       if (!isReg) { switchJGView('REG'); document.getElementById("jg-reg-name").value = name; return alert("Regista-te primeiro!"); }
       
       localStorage.setItem("zap_player_name", name); player.name = name;
+      
+      const pData = localStorage.getItem("zap_player_data");
+      if(pData) { const parsed = JSON.parse(pData); if(parsed.name === name) player = parsed; }
+      
+      const lastNif = localStorage.getItem("zap_pr_nif");
+      if(lastNif) activeCompany = JSON.parse(localStorage.getItem("zap_pr_data_" + lastNif));
+
       startGame();
     }
 
     function doRegisterJG() {
       const name = document.getElementById("jg-reg-name").value.trim();
+      const email = document.getElementById("jg-reg-email").value.trim();
       const p1 = document.getElementById("jg-reg-pass1").value;
       const p2 = document.getElementById("jg-reg-pass2").value;
 
-      if (!name || p1.length < 5 || p1 !== p2) return alert("Nome vazio ou Senha fraca/diferente!");
-      
+      if (!name || !validateEmail(email)) return alert("E-mail inválido ou Nome vazio.");
+      if (p1.length < 5 || p1 !== p2) return alert("Senha deve ter mais de 4 caracteres e coincidir.");
+
       localStorage.setItem("zap_reg_" + name.toLowerCase(), "true");
       localStorage.setItem("zap_player_name", name);
       player.name = name;
@@ -380,10 +409,13 @@
       if(!allPlayersDB.includes(name)) allPlayersDB.push(name);
       localStorage.setItem("zap_all_players", JSON.stringify(allPlayersDB));
       
+      savePlayer();
       startGame();
     }
 
-    // ================= FASE 2/3: EMPRESA & FILIAIS =================
+    function savePlayer() { localStorage.setItem("zap_player_data", JSON.stringify(player)); }
+
+    // ================= FASE 2/3: EMPRESAS E FILIAIS =================
     function doRegisterPR() {
       const isFilial = document.getElementById("pr-is-filial").checked;
       const fPropria = document.getElementById("filial-fatura-propria").checked;
@@ -393,14 +425,17 @@
       const pass = document.getElementById("pr-reg-pass1").value;
       const morada = document.getElementById("pr-reg-morada").value.trim();
       
-      if (nif.length !== 9 || isNaN(nif)) return alert("O NIF tem de ter 9 números!");
+      if (nif.length !== 9 || isNaN(nif)) return alert("O NIF tem de ter exatamente 9 números!");
       if (pass.length < 5 || !name || !morada) return alert("Dados inválidos. Verifique Nome, Morada e Senha.");
 
       let type = isFilial ? (fPropria ? "FILIAL_AUTONOMA" : "FILIAL_SUBORDINADA") : "SEDE";
       let isLocked = (type === "FILIAL_SUBORDINADA" && !codeSede);
 
       const id = "COMP-" + Math.random().toString(36).substr(2,6).toUpperCase();
-      const data = { id, type, name, nif, pass, morada, codeSede, isLocked, pacotesDisponiveis: [], campanhas: [], stockPago: 0 };
+      const data = { 
+        id, type, name, nif, pass, morada, codeSede, isLocked, 
+        pacotesDisponiveis: [], campanhas: [], stockPago: 0 
+      };
       
       allCompaniesDB[id] = data; localStorage.setItem("zap_all_companies", JSON.stringify(allCompaniesDB));
       loadCompanyDashboard(id);
@@ -411,7 +446,7 @@
       const pass = document.getElementById("pr-log-senha").value;
       let foundId = null;
       for (let key in allCompaniesDB) { if (allCompaniesDB[key].nif === nif && allCompaniesDB[key].pass === pass) { foundId = key; break; } }
-      if (!foundId) return alert("Conta não encontrada. Verifique NIF e Senha.");
+      if (!foundId) { switchPRView('REG'); document.getElementById("pr-reg-nif").value = nif; return alert("Conta não encontrada."); }
       loadCompanyDashboard(foundId);
     }
 
@@ -438,6 +473,7 @@
         document.getElementById("dash-filial-warning").style.display = "none"; document.getElementById("dash-lock-overlay").classList.add("hidden"); document.getElementById("menu-loja").style.display = "block";
       }
       switchDashView('loja'); updateCompanyDashboard();
+      if(dashInterval) clearInterval(dashInterval); dashInterval = setInterval(updateCompanyDashboard, 1000);
     }
 
     function activateFilialCode() {
@@ -453,7 +489,7 @@
       if(activeCompany.isLocked) return alert("Gestão bloqueada.");
       if (confirm(`Comprar Pacote ${nome} (${bandeiras.toLocaleString()}) por ${preco}€?`)) {
         activeCompany.pacotesDisponiveis.push({ id: "COFRE-" + Math.random().toString(36).substr(2,6).toUpperCase(), nome: "Pacote " + nome, flagsTotal: bandeiras, validadeDias: dias, raioKm: 15 });
-        saveCompanyDB(); alert("Pacote comprado! Está no seu cofre.");
+        saveCompanyDB(); alert("Pacote comprado! Vá a Campanhas para o ativar.");
       }
     }
 
@@ -478,8 +514,7 @@
       if(lotesPedidos > 0 && diasPremio > chosenPack.validadeDias) return alert(`Erro: Excede validade do pacote (${chosenPack.validadeDias} dias).`);
 
       activeCompany.pacotesDisponiveis.splice(packIdx, 1);
-      
-      const delayMs = isTestMode ? 60000 : 3600000; // 60s ou 60m (Agora configurado para 60 Minutos reais pela variavel topo)
+      const delayMs = isTestMode ? 60000 : 3600000; 
       
       activeCompany.campanhas.push({
         id: "CAMP-" + Math.random().toString(36).substr(2, 6).toUpperCase(),
@@ -490,7 +525,7 @@
         status: "active", activationTime: Date.now(), expiraEm: Date.now() + (chosenPack.validadeDias * 24 * 60 * 60 * 1000), vencedores: []
       });
 
-      saveCompanyDB(); renderAvailablePackages(); updateCompanyDashboard(); alert(`Campanha ativada!`);
+      saveCompanyDB(); renderAvailablePackages(); updateCompanyDashboard(); alert(`Campanha ativada no mapa!`);
     }
 
     function updateCompanyDashboard() {
@@ -499,7 +534,13 @@
       if(!listaDiv) return;
       listaDiv.innerHTML = "";
       activeCompany.campanhas.forEach(camp => {
-        let cardHtml = `<div class="camp-card"><div class="pack-title">${camp.nome}</div><div style="font-size:12px; color:#a7fca7;"><b>Raio:</b> ${camp.raioKm}km | <b>Prémio:</b> ${camp.premio}</div></div>`;
+        let cardHtml = `<div class="camp-card"><div class="pack-title">${camp.nome}</div>`;
+        const consumido = camp.flagsTotais - camp.flagsRestantes;
+        const pct = (consumido / camp.flagsTotais) * 100;
+        cardHtml += `
+          <div style="font-size:12px; color:#a7fca7;"><b>Raio:</b> ${camp.raioKm}km | <b>Prémio:</b> ${camp.premio}</div>
+          <div class="stat-bar" style="width:100%; height:8px; border-radius:4px; margin-top:5px;"><div class="stat-fill" style="width:${pct}%; background:#0f0;"></div></div>
+        </div>`;
         listaDiv.innerHTML += cardHtml;
       });
     }
@@ -510,7 +551,7 @@
       for (let key in allCompaniesDB) {
         let c = allCompaniesDB[key];
         if (c.nif === activeCompany.nif && c.id !== activeCompany.id) {
-          list.innerHTML += `<div style="background:#222; padding:10px; margin-bottom:5px; border:1px solid #0f0;"><b>${c.name}</b><br><span style="font-size:11px;">${c.morada} | ${c.type.replace('_',' ')}</span></div>`;
+          list.innerHTML += `<div style="background:#222; padding:10px; margin-bottom:5px; border-radius:5px; border:1px solid #0f0;"><b>${c.name}</b><br><span style="font-size:11px;">${c.morada} | ${c.type.replace('_',' ')}</span></div>`;
         }
       }
     }
@@ -520,18 +561,116 @@
     function openCompanyMap() {
       document.getElementById("pr-dashboard-screen").classList.add("hidden"); document.getElementById("pr-map-screen").classList.remove("hidden");
       if (!prMap) { prMap = L.map('map-empresa', { zoomControl: false }).setView([41.1496, -8.6109], 15); L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(prMap); }
+      for(let i=0; i<5; i++) { let icon = L.divIcon({ className: '', html: `<div class="flag-marker yellow-flag"></div>`, iconSize: [20,20] }); L.marker([41.1496 + (Math.random()-0.5)*0.01, -8.6109 + (Math.random()-0.5)*0.01], { icon: icon }).addTo(prMap); }
     }
     function closeCompanyMap() { document.getElementById("pr-map-screen").classList.add("hidden"); document.getElementById("pr-dashboard-screen").classList.remove("hidden"); }
 
     // ================= FASE 1: JOGO =================
-    function startGame() { document.getElementById("login-screen").classList.add("hidden"); document.getElementById("game-screen").classList.remove("hidden"); map = L.map('map', { zoomControl: false }).setView([player.lat, player.lng], 20); L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 22 }).addTo(map); spawnRandomFlags(10); renderAvatar(); }
-    function renderAvatar() { if (!playerMarker) { const icon = L.divIcon({ className: '', html: `<div class="avatar-wrapper"><div class="ava-head"></div><div class="ava-body"></div></div>`, iconSize: [40, 50] }); playerMarker = L.marker([player.lat, player.lng], { icon }).addTo(map); } else { playerMarker.setLatLng([player.lat, player.lng]); } map.setView([player.lat, player.lng], 20); }
-    function movePlayer(dx, dy) { player.lat += (dy * moveDist) / 111320; player.lng += (dx * moveDist) / (111320 * Math.cos(player.lat * Math.PI / 180)); renderAvatar(); }
+    function startGame() { document.getElementById("login-screen").classList.add("hidden"); document.getElementById("game-screen").classList.remove("hidden"); map = L.map('map', { zoomControl: false }).setView([player.lat, player.lng], 20); L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 22 }).addTo(map); spawnRandomFlags(10); renderAvatar(); updateQRWallet(); }
+    
+    function renderAvatar() { if (!playerMarker) { const icon = L.divIcon({ className: '', html: `<div id="avatar-anim" class="avatar-wrapper"><div class="ava-head"></div><div class="ava-arm-l"></div><div class="ava-arm-r"></div><div class="ava-body"></div><div class="ava-leg-l"></div><div class="ava-leg-r"></div></div>`, iconSize: [40, 50] }); playerMarker = L.marker([player.lat, player.lng], { icon }).addTo(map); } else { playerMarker.setLatLng([player.lat, player.lng]); } map.setView([player.lat, player.lng], 20); }
+    
+    function movePlayer(dx, dy) { if(player.energy < energyCost) return alert("Sem energia!"); player.energy -= energyCost; lastMoveTime = Date.now(); const ava = document.getElementById("avatar-anim"); if(ava) { ava.classList.add("walking"); if (dx > 0) ava.style.transform = "scaleX(1)"; if (dx < 0) ava.style.transform = "scaleX(-1)"; setTimeout(() => ava.classList.remove("walking"), 250); } player.lat += (dy * moveDist) / 111320; player.lng += (dx * moveDist) / (111320 * Math.cos(player.lat * Math.PI / 180)); renderAvatar(); updateUI(); }
+    
+    setInterval(() => { const timeIdle = Date.now() - lastMoveTime; if (timeIdle >= idleTime && player.energy < player.maxEnergy) { player.energy = Math.min(player.maxEnergy, player.energy + (player.maxEnergy * 0.10)); updateUI(); lastMoveTime = Date.now(); } }, 1000);
+    
     function centerPlayer() { map.setView([player.lat, player.lng], 20); }
+    
     function spawnRandomFlags(amount) { for(let i=0; i<amount; i++) { let icon = L.divIcon({ className: '', html: `<div class="flag-marker"></div>`, iconSize: [24,24] }); allFlags.push({ lat: player.lat + ((Math.random() - 0.5) * 0.0001), lng: player.lng + ((Math.random() - 0.5) * 0.0001), marker: L.marker([player.lat, player.lng], { icon: icon }).addTo(map) }); } }
-    function catchFlag() { alert("Bandeira Apanhada!"); spawnRandomFlags(1); }
+    
+    function catchFlag() { 
+      const ava = document.getElementById("avatar-anim"); if (ava) { ava.classList.add("catching"); setTimeout(() => ava.classList.remove("catching"), 400); }
+      let closest = null; let minDist = Infinity; allFlags.forEach(f => { let d = Math.sqrt(Math.pow(player.lat - f.lat, 2) + Math.pow(player.lng - f.lng, 2)) * 111320; if(d < minDist) { minDist = d; closest = f; } });
+      if (!closest || minDist > 2.5) { return alert(`Aproxima-te! Bandeira a ${Math.floor(minDist)}m.`); }
+      player.flags += 1; map.removeLayer(closest.marker); allFlags = allFlags.filter(f => f !== closest); spawnRandomFlags(1); processCaughtFlag(); 
+    }
 
-    document.querySelectorAll('.drag-window').forEach(el => { const handle = el.querySelector('.drag-handle'); if(!handle) return; let isDragging = false, startX, startY, startLeft, startTop; handle.addEventListener('mousedown', e => { isDragging = true; startLeft = el.offsetLeft; startTop = el.offsetTop; startX = e.clientX; startY = e.clientY; }); window.addEventListener('mousemove', e => { if (!isDragging) return; el.style.left = (startLeft + e.clientX - startX) + 'px'; el.style.top = (startTop + e.clientY - startY) + 'px'; }); window.addEventListener('mouseup', () => isDragging = false); });
+    function processCaughtFlag() {
+      document.getElementById('modal-overlay').classList.remove('hidden');
+      document.getElementById('modal-comp-name').innerText = activeCompany ? activeCompany.name : "ZAP Central";
+      const resBox = document.getElementById('modal-result-box');
+      
+      if (!activeCompany || !activeCompany.campanhas || activeCompany.campanhas.length === 0) {
+        resBox.innerHTML = `<span style="color:#0f0; font-weight:bold;">Bandeira de Publicidade</span><br><span style="font-size:12px; color:#fff;">Ganhaste +Skill e Energia.</span>`;
+        player.energy = Math.min(player.maxEnergy, player.energy + 50); updateUI(); savePlayer(); return;
+      }
+
+      const ativas = activeCompany.campanhas.filter(c => c.status === 'active' && c.flagsRestantes > 0);
+      if (ativas.length === 0) { resBox.innerHTML = `As campanhas desta empresa esgotaram!`; return; }
+
+      let totalSaco = ativas.reduce((sum, p) => sum + p.flagsRestantes, 0);
+      let sorteio = Math.random() * totalSaco;
+      let pacoteHit = null;
+      for (let p of ativas) { if (sorteio < p.flagsRestantes) { pacoteHit = p; break; } sorteio -= p.flagsRestantes; }
+
+      pacoteHit.flagsRestantes--;
+
+      if (pacoteHit.lotesIniciais > 0) {
+        let isPremio = Math.random() < (pacoteHit.flagsPremioRestantes / (pacoteHit.flagsPremioRestantes + pacoteHit.flagsEnergiaRestantes));
+        if (isPremio && pacoteHit.flagsPremioRestantes > 0) {
+          pacoteHit.flagsPremioRestantes--;
+          if (!player.progressPR[pacoteHit.id]) player.progressPR[pacoteHit.id] = 0;
+          player.progressPR[pacoteHit.id]++;
+          if (player.progressPR[pacoteHit.id] >= 20) {
+            const qrCode = "ZAP-" + Math.random().toString(36).substring(2,6).toUpperCase();
+            const expTime = Date.now() + (pacoteHit.diasLevantamento * 24 * 60 * 60 * 1000);
+            pacoteHit.vencedores.push({ jogador: player.name || "Tu", codigo: qrCode, expiraEm: expTime });
+            if(!player.qrs) player.qrs = [];
+            player.qrs.push({ id: qrCode, brand: activeCompany.name, offer: pacoteHit.premio, expires: expTime });
+            resBox.style.borderColor = "#ff0000";
+            resBox.innerHTML = `<span style="color:#ff0000; font-weight:bold; font-size:18px;">🎉 PARABÉNS! GANHASTE! 🎉</span><br><span style="font-size:13px; color:#fff;">Prémio: <b style="color:#ff9800;">${pacoteHit.premio}</b><br>QR gerado!</span>`;
+            player.progressPR[pacoteHit.id] = 0; updateQRWallet();
+          } else {
+            resBox.style.borderColor = "#ff9800";
+            resBox.innerHTML = `<span style="color:#ff9800; font-weight:bold;">Bandeira de Lote (${pacoteHit.premio})!</span><br><span style="font-size:12px; color:#fff;">Faltam: <b>${20 - player.progressPR[pacoteHit.id]}</b></span>`;
+          }
+        } else {
+          pacoteHit.flagsEnergiaRestantes--;
+          let gain = Math.random() < 0.05 ? 500 : 50;
+          player.energy = Math.min(player.maxEnergy, player.energy + gain);
+          resBox.style.borderColor = "#00f0ff"; resBox.innerHTML = `<span style="color:#00f0ff; font-weight:bold;">Bandeira de Energia</span><br><span style="font-size:12px; color:#fff;">Recuperaste Energia!</span>`;
+        }
+      } else {
+        pacoteHit.flagsEnergiaRestantes--;
+        player.energy = Math.min(player.maxEnergy, player.energy + 50);
+        resBox.style.borderColor = "#0f0"; resBox.innerHTML = `<span style="color:#0f0; font-weight:bold;">Bandeira de Publicidade</span>`;
+      }
+      saveCompanyDB(); savePlayer(); recalcSkill(); updateUI();
+    }
+
+    function openWindow(id) { document.getElementById(id).classList.remove('hidden'); }
+    function closeWindow(id) { document.getElementById(id).classList.add('hidden'); }
+    function switchSoc(tab) {
+      document.getElementById('tab-lista').classList.remove('active'); document.getElementById('tab-chat').classList.remove('active'); document.getElementById('tab-troca').classList.remove('active');
+      document.getElementById('view-lista').classList.add('hidden'); document.getElementById('view-chat').classList.add('hidden'); document.getElementById('view-troca').classList.add('hidden');
+      document.getElementById('tab-' + tab).classList.add('active'); document.getElementById('view-' + tab).classList.remove('hidden');
+      if (tab === 'chat') { const sel = document.getElementById('trade-offer-select'); if(sel) { sel.innerHTML = '<option value="">-- O teu QR a oferecer --</option>'; if(player.qrs) player.qrs.forEach(qr => { sel.innerHTML += `<option value="${qr.id}">${qr.brand} (${qr.offer})</option>`; }); } }
+    }
+
+    function updateQRWallet() {
+      const list = document.getElementById("qr-wallet-list"); const inv = document.getElementById('qr-inventory');
+      if(!list) return; list.innerHTML = ""; if(inv) inv.innerHTML = '<span style="color:#aaa; font-size:11px; margin-bottom:5px;">Os Teus QRs:</span>';
+      if (!player.qrs || player.qrs.length === 0) { list.innerHTML = "Não tens prémios."; return; }
+      player.qrs.forEach(qr => {
+        let dias = Math.ceil((qr.expires - Date.now()) / (24*60*60*1000));
+        list.innerHTML += `<div style="background:#111; padding:10px; margin-bottom:5px; border:1px dashed #0f0; border-radius:5px;"><b>${qr.brand}</b><br><span style="color:#ff9800;">${qr.offer}</span><br>Código: <b>${qr.id}</b><br><span style="color:${dias<0?'red':'#a7fca7'}; font-size:10px;">${dias<0?'Expirou':'Válido: '+dias+' dias'}</span></div>`;
+        if(inv) inv.innerHTML += `<div id="${qr.id}" class="draggable-qr" draggable="true" ondragstart="drag(event)">🎫 ${qr.brand}<br>(${qr.offer})</div>`;
+      });
+    }
+
+    function allowDrop(ev) { ev.preventDefault(); }
+    function drag(ev) { ev.dataTransfer.setData("text", ev.target.id); }
+    function drop(ev) { ev.preventDefault(); var data = ev.dataTransfer.getData("text"); if (ev.target.id === "caixa-troca" || ev.target.id === "qr-inventory") { ev.target.appendChild(document.getElementById(data)); } }
+    function recalcSkill() { nextSkillTarget = 100 * Math.pow(2, player.skill - 1); if (player.flags >= nextSkillTarget) { player.skill++; player.vision = Math.min(50, 5 + (player.skill - 1) * 0.25); nextSkillTarget = 100 * Math.pow(2, player.skill - 1); document.getElementById('val-skill').innerText = player.skill; document.getElementById('val-visao').innerText = player.vision.toFixed(2); } }
+    function updateUI() { document.getElementById('val-ener').innerText = Math.floor(player.energy); document.getElementById('bar-ener').style.width = (player.energy / player.maxEnergy) * 100 + "%"; document.getElementById('val-flags').innerText = player.flags; }
+    
+    document.querySelectorAll('.drag-window').forEach(el => {
+      const handle = el.querySelector('.drag-handle'); if(!handle) return;
+      let isDragging = false, startX, startY, startLeft, startTop;
+      handle.addEventListener('mousedown', e => { isDragging = true; startLeft = el.offsetLeft; startTop = el.offsetTop; startX = e.clientX; startY = e.clientY; });
+      window.addEventListener('mousemove', e => { if (!isDragging) return; el.style.left = (startLeft + e.clientX - startX) + 'px'; el.style.top = (startTop + e.clientY - startY) + 'px'; });
+      window.addEventListener('mouseup', () => isDragging = false);
+    });
   </script>
 </body>
 </html>
