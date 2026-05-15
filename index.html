@@ -6,64 +6,56 @@
   <title>ZAP FLAGS | Larforyou&reg;</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <style>
-    * { box-sizing: border-box; user-select: none; font-family: 'Courier New', Courier, monospace; }
-    html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #222; color: #0f0; }
-    .hidden { display: none !important; }
-    
-    button { background: #0f0; color: #000; border: none; padding: 10px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 14px; transition: 0.2s; }
-    button:hover { filter: brightness(1.2); }
-    button:disabled { background: #555; color: #888; cursor: not-allowed; }
-    
-    .btn-dark { background: #111; color: #0f0; border: 1px solid #0f0; }
-    .btn-danger { background: #d32f2f; color: #fff; border: 1px solid #ff0000; }
-    .btn-warning { background: #ff9800; color: #fff; border: 1px solid #ff9800; }
-    .btn-edit { background: #2196f3; color: #fff; border: 1px solid #2196f3; }
-    .btn-link { background: none; border: none; color: #a7fca7; text-decoration: underline; padding: 0; font-size: 12px; }
-    
-    input, select { width: 100%; padding: 10px; margin-bottom: 10px; border-radius: 4px; border: 1px solid #0f0; background: #111; color: #0f0; }
+    /* DESIGN GERAL COMPACTADO */
+    *{box-sizing:border-box;user-select:none;font-family:'Courier New',Courier,monospace;}
+    html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#222;color:#0f0;}
+    .hidden{display:none !important;}
+    button{background:#0f0;color:#000;border:none;padding:10px 12px;border-radius:6px;font-weight:bold;cursor:pointer;font-size:14px;}
+    button:hover{filter:brightness(1.2);} button:disabled{background:#555;color:#888;cursor:not-allowed;}
+    .btn-dark{background:#111;color:#0f0;border:1px solid #0f0;} .btn-danger{background:#d32f2f;color:#fff;border:1px solid #ff0000;}
+    .btn-link{background:none;border:none;color:#a7fca7;text-decoration:underline;padding:0;font-size:12px;}
+    input,select{width:100%;padding:10px;margin-bottom:10px;border-radius:4px;border:1px solid #0f0;background:#111;color:#0f0;}
     
     /* LOGIN E REGISTO */
-    #login-screen { position: absolute; inset: 0; background: radial-gradient(circle, #002200 0%, #000000 100%); display: flex; align-items: center; justify-content: center; z-index: 10000; padding: 15px; overflow-y: auto; }
-    .login-box { width: 100%; max-width: 500px; background: rgba(0, 0, 0, 0.9); border: 2px solid #0f0; border-radius: 8px; padding: 25px; margin: auto; }
-    .tab-container { display: flex; margin-bottom: 15px; border-radius: 4px; overflow: hidden; border: 1px solid #0f0; }
-    .tab-btn { flex: 1; padding: 12px; background: #111; color: #0f0; border-radius: 0; }
-    .tab-btn.active { background: #0f0; color: #000; }
-    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-
-    /* MAPA E AVATAR */
-    #game-screen { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; }
-    #map { width: 100%; height: 100%; }
-    .catch-circle { stroke-dasharray: 6, 6; } 
-
-    .avatar-wrapper { position: relative; width: 40px; height: 50px; transition: transform 0.2s linear; }
-    .ava-head { position: absolute; top: 0; left: 10px; width: 20px; height: 20px; background: #ffeb3b; border-radius: 50%; border: 2px solid #000; z-index: 3; }
-    .ava-body { position: absolute; top: 18px; left: 10px; width: 20px; height: 18px; background: #2196f3; border-radius: 4px; border: 2px solid #000; z-index: 2; }
-    .ava-arm-l, .ava-arm-r { position: absolute; top: 20px; width: 8px; height: 16px; background: #ffeb3b; border-radius: 4px; border: 2px solid #000; transition: transform 0.3s; z-index: 3; }
-    .ava-arm-l { left: 0px; } .ava-arm-r { right: 0px; }
-    .ava-leg-l, .ava-leg-r { position: absolute; top: 34px; width: 8px; height: 16px; background: #333; border-radius: 4px; border: 2px solid #000; z-index: 1; transition: transform 0.1s; }
-    .ava-leg-l { left: 10px; } .ava-leg-r { right: 10px; }
-    .walking .ava-leg-l { transform: translateY(-4px); }
-    .walking .ava-leg-r { transform: translateY(4px); }
-    .catching .ava-arm-r { transform: rotate(-90deg) translateY(10px) translateX(-5px); }
-    .flag-marker { width: 24px; height: 24px; background: #FF0000; border: 2px solid white; border-radius: 50%; box-shadow: 0 0 10px #FF0000; }
-
-    /* UI TOP E CONTROLOS DO JOGADOR */
-    #top-bar { position: absolute; top: 10px; left: 10px; right: 10px; background: rgba(0, 0, 0, 0.85); border: 1px solid #0f0; border-radius: 6px; padding: 10px; z-index: 2000; display: flex; justify-content: space-between; gap: 10px; }
-    .stat { flex: 1; text-align: center; font-size: 12px; font-weight: bold; color: #0f0; }
-    .stat-bar { height: 6px; background: #222; border-radius: 3px; margin-top: 4px; border: 1px solid rgba(0,255,0,0.3); overflow:hidden;}
-    .stat-fill { height: 100%; background: #0f0; transition: width 0.3s; }
+    #login-screen{position:absolute;inset:0;background:radial-gradient(circle,#002200 0%,#000000 100%);display:flex;align-items:center;justify-content:center;z-index:10000;padding:15px;overflow-y:auto;}
+    .login-box{width:100%;max-width:500px;background:rgba(0,0,0,0.9);border:2px solid #0f0;border-radius:8px;padding:25px;margin:auto;}
+    .tab-container{display:flex;margin-bottom:15px;border-radius:4px;overflow:hidden;border:1px solid #0f0;}
+    .tab-btn{flex:1;padding:12px;background:#111;color:#0f0;border-radius:0;} .tab-btn.active{background:#0f0;color:#000;}
+    .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
     
-    #offline-controls { position: absolute; bottom: 90px; left: 20px; z-index: 3000; background: rgba(0,0,0,0.85); border: 1px solid #0f0; border-radius: 6px; padding: 10px; text-align: center; }
-    .drag-handle { background: rgba(0,255,0,0.2); cursor: move; padding: 3px; margin-bottom: 5px; font-size: 10px; color: #fff; }
-    .dpad { display: grid; grid-template-columns: 50px 50px 50px; gap: 5px; }
-    .dpad button { width: 50px; height: 50px; font-size: 20px; padding: 0; }
+    /* MAPA E AVATAR */
+    #game-screen,#pr-map-screen{position:absolute;inset:0;width:100%;height:100%;z-index:1;} #map,#map-empresa{width:100%;height:100%;}
+    .catch-circle{stroke-dasharray:6,6;}
+    .avatar-wrapper{position:relative;width:40px;height:50px;transition:transform 0.2s linear;}
+    .ava-head{position:absolute;top:0;left:10px;width:20px;height:20px;background:#ffeb3b;border-radius:50%;border:2px solid #000;z-index:3;}
+    .ava-body{position:absolute;top:18px;left:10px;width:20px;height:18px;background:#2196f3;border-radius:4px;border:2px solid #000;z-index:2;}
+    .ava-arm-l,.ava-arm-r{position:absolute;top:20px;width:8px;height:16px;background:#ffeb3b;border-radius:4px;border:2px solid #000;transition:transform 0.3s;z-index:3;}
+    .ava-arm-l{left:0px;} .ava-arm-r{right:0px;}
+    .ava-leg-l,.ava-leg-r{position:absolute;top:34px;width:8px;height:16px;background:#333;border-radius:4px;border:2px solid #000;z-index:1;transition:transform 0.1s;}
+    .ava-leg-l{left:10px;} .ava-leg-r{right:10px;}
+    .walking .ava-leg-l{transform:translateY(-4px);} .walking .ava-leg-r{transform:translateY(4px);}
+    .catching .ava-arm-r{transform:rotate(-90deg) translateY(10px) translateX(-5px);}
+    .flag-marker{width:24px;height:24px;background:#FF0000;border:2px solid white;border-radius:50%;box-shadow:0 0 10px #FF0000;}
+    .yellow-flag{background:#FFD700 !important;box-shadow:0 0 10px #FFD700 !important;}
+
+    /* UI TOP E CONTROLOS (COM MENUS MAIS LIMPOS PARA MOBILE) */
+    #top-bar{position:absolute;top:10px;left:10px;right:10px;background:rgba(0,0,0,0.85);border:1px solid #0f0;border-radius:6px;padding:10px;z-index:2000;display:flex;justify-content:space-between;gap:10px;}
+    .stat{flex:1;text-align:center;font-size:12px;font-weight:bold;color:#0f0;}
+    .stat-bar{height:6px;background:#222;border-radius:3px;margin-top:4px;border:1px solid rgba(0,255,0,0.3);overflow:hidden;}
+    .stat-fill{height:100%;background:#0f0;transition:width 0.3s;}
+    
+    .drag-window { background: rgba(0,0,0,0.85); border: 1px solid #0f0; border-radius: 6px; box-shadow: 0 0 15px rgba(0,255,0,0.2) inset; }
+    .drag-handle { background: #003300; cursor: move; padding: 5px; font-size: 11px; color: #0f0; font-weight: bold; border-bottom: 1px solid #0f0; border-radius: 5px 5px 0 0; text-align: center; }
+    
+    #offline-controls{position:absolute;bottom:90px;left:20px;z-index:3000;padding:5px;}
+    .dpad{display:grid;grid-template-columns:50px 50px 50px;gap:5px;padding:5px;} .dpad button{width:50px;height:50px;font-size:20px;padding:0;}
+    #right-toolbar{position:absolute;top:80px;right:10px;z-index:3000;display:flex;flex-direction:column;gap:8px;padding:5px;}
+    .tool-btn{width:45px;height:45px;border-radius:50%;font-size:18px;padding:0;box-shadow:0 0 10px rgba(0,255,0,0.3);margin:auto;}
 
     /* JANELAS SOCIAIS (ARRÁSTAVEIS) */
-    .game-window { position: absolute; top: 100px; left: 10px; width: 340px; max-width: 95vw; max-height: 60vh; background: rgba(0,0,0,0.95); border: 2px solid #0f0; z-index: 4000; display: flex; flex-direction: column; resize: both; overflow: auto; box-shadow: 0 0 20px rgba(0,255,0,0.3); }
-    .win-header { background: #003300; padding: 8px; font-weight: bold; display: flex; justify-content: space-between; cursor: move; border-bottom: 1px solid #0f0; }
-    .win-close { background: red; color: white; border: none; padding: 2px 8px; font-weight: bold; cursor: pointer; border-radius: 4px; }
-    .win-content { padding: 15px; font-size: 13px; color: #a7fca7; overflow-y: auto; }
-
+    .game-window { position: absolute; top: 100px; left: 10px; width: 340px; max-width: 95vw; max-height: 60vh; z-index: 4000; display: flex; flex-direction: column; resize: both; overflow: auto; }
+    .win-close { background: red; color: white; border: none; padding: 2px 8px; font-weight: bold; cursor: pointer; border-radius: 4px; float: right; margin-top:-2px;}
+    .win-content { padding: 10px; font-size: 13px; color: #a7fca7; overflow-y: auto; }
     .social-tabs { display: flex; border-bottom: 1px solid #0f0; margin-bottom: 10px; }
     .soc-btn { flex: 1; background: #111; color: #0f0; padding: 5px; font-size: 12px; border: none; border-radius: 0; }
     .soc-btn.active { background: #0f0; color: #000; }
@@ -72,56 +64,61 @@
     .qr-inventory { width: 50%; background: #111; padding: 5px; border-radius: 5px; max-height: 150px; overflow-y: auto; display: flex; flex-direction: column; gap: 5px; }
     .drop-zone { width: 50%; border: 2px dashed #0f0; background: rgba(0,255,0,0.1); min-height: 100px; padding: 5px; text-align: center; border-radius: 8px; display: flex; flex-direction: column; gap: 5px; }
     .draggable-qr { background: #fff; color: #000; padding: 8px; text-align: center; border-radius: 5px; font-weight: bold; cursor: grab; box-shadow: 0 0 5px rgba(255,255,255,0.5); width: 100%; font-size: 11px;}
-    
-    #right-toolbar { position: absolute; top: 80px; right: 10px; z-index: 3000; display: flex; flex-direction: column; gap: 8px; background: rgba(0,0,0,0.7); padding: 5px; border-radius: 8px; border: 1px solid #0f0; }
-    .tool-btn { width: 45px; height: 45px; border-radius: 50%; font-size: 18px; padding: 0; box-shadow: 0 0 10px rgba(0,255,0,0.3); }
 
-    /* JANELA MODAL DA BANDEIRA APANHADA */
+    /* JANELAS MODAIS E ALERTAS */
     .modal-overlay { position: fixed; inset:0; background:rgba(0,0,0,0.85); z-index: 6000; display:flex; align-items:center; justify-content:center;}
     .modal-box { background:#111; border: 2px solid #0f0; padding:20px; border-radius:10px; max-width:400px; width: 90%; text-align:center; color:#fff; }
     .comp-logo { width: 80px; height: 80px; object-fit: cover; border-radius: 50%; border: 2px solid #0f0; margin-bottom:10px; background:#fff;}
 
-    /* PAINEL EMPRESA E FILIAIS (DASHBOARD COMPLETO) */
+    /* PAINEL EMPRESA (DASHBOARD) */
     #pr-dashboard-screen { position: absolute; inset: 0; background: radial-gradient(circle, #001122 0%, #000000 100%); z-index: 5000; padding: 20px; overflow-y: auto; }
     .dash-box { max-width: 900px; margin: 0 auto; background: rgba(0,0,0,0.8); border: 2px solid #0f0; border-radius: 10px; padding: 20px; }
-    
     .pr-menu { display: flex; border-bottom: 2px solid #0f0; margin-bottom: 20px; flex-wrap: wrap;}
     .pr-menu-btn { flex: 1; background: #111; color: #0f0; padding: 15px; border-radius: 8px 8px 0 0; font-size: 14px; border: none; margin-right: 5px; min-width:120px;}
     .pr-menu-btn.active { background: #0f0; color: #000; }
-
     .pack-card { background: #111; border: 1px solid #0f0; padding: 15px; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
     .pack-info { font-size: 13px; color: #a7fca7; } .pack-title { font-size: 16px; font-weight: bold; color: #0f0; margin-bottom: 5px; }
-
     .camp-card { background: #000; border: 1px solid #4CAF50; padding: 15px; border-radius: 5px; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0,255,0,0.1); }
     .camp-pending { border-color: #ff9800; box-shadow: 0 4px 10px rgba(255,152,0,0.2); }
-    .camp-eliminated { border-color: #d32f2f; opacity: 0.6; }
-    .camp-timer { font-size: 20px; font-weight: bold; color: #ff9800; margin: 5px 0; }
-    
+    .camp-expired { border-color: #d32f2f; opacity: 0.6; }
     .winner-item { background: #222; border: 1px dashed #0f0; padding: 10px; border-radius: 5px; margin-top: 5px; font-size: 12px; display: flex; justify-content: space-between; align-items: center; }
-
-    /* BACKOFFICE ADMIN */
-    #backoffice-screen { position: absolute; inset: 0; background: #111; z-index: 90000; padding: 20px; overflow-y: auto; }
-    .bo-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 12px; } 
-    .bo-table th, .bo-table td { border: 1px solid #0f0; padding: 8px; text-align: left; }
 
     /* TICKER NOTÍCIAS */
     #ticker-wrap { position: fixed; bottom: 25px; left: 0; width: 100%; background: rgba(0, 50, 0, 0.9); border-top: 1px solid #0f0; border-bottom: 1px solid #0f0; color: #fff; z-index: 8000; padding: 5px 0; overflow: hidden; white-space: nowrap; font-size: 13px; font-weight: bold;}
     #ticker { display: inline-block; animation: ticker 25s linear infinite; }
     @keyframes ticker { 0% { transform: translateX(100vw); } 100% { transform: translateX(-100%); } }
 
-    /* MARCA LARFORYOU */
+    /* MARCAS LARFORYOU */
     .watermark { position: fixed; bottom: 60px; left: 15px; font-size: 32px; font-weight: 900; color: rgba(0, 255, 0, 0.5); text-shadow: 2px 2px 5px #000; z-index: 9999; pointer-events: none; letter-spacing: 2px; }
-    .copyright { position: fixed; bottom: 5px; width: 100%; text-align: center; font-size: 11px; color: rgba(0, 255, 0, 0.5); z-index: 9999; pointer-events: none; }
+    .copyright { position: fixed; bottom: 5px; width: 100%; text-align: center; font-size: 11px; color: rgba(0, 255, 0, 0.4); z-index: 9999; pointer-events: none; }
   </style>
 </head>
 <body>
 
-  <!-- MARCA E DIREITOS DE AUTOR -->
+  <!-- MARCAS -->
   <div class="watermark">Larforyou&reg;</div>
   <div class="copyright">&copy; 2024 Larforyou&reg; - Marca Registada. Todos os direitos reservados.</div>
-
-  <!-- RODAPÉ TICKER -->
   <div id="ticker-wrap"><div id="ticker">⚡ Bem-vindo ao ZAP FLAGS! 🏆 O jogo está prestes a começar! 🎁 Explora o mapa para encontrares prémios! 🤝 Convida amigos e troca QRs!</div></div>
+
+  <!-- ================= MODAL: ESCOLHA DO MODO DE JOGO ================= -->
+  <div id="mode-modal" class="modal-overlay hidden">
+    <div class="modal-box" style="border-color:#0f0;">
+      <h2 style="color:#0f0; margin-top:0;">Como queres jogar?</h2>
+      <p style="font-size:13px; color:#a7fca7;">Escolhe o teu modo de movimento no mapa:</p>
+      
+      <div style="background:#111; padding:15px; border-radius:8px; border:1px dashed #0f0; margin-bottom:15px; text-align:left;">
+        <b style="color:#fff;">📍 MODO GPS (Rua)</b><br>
+        <span style="font-size:11px;">Joga a caminhar fisicamente na tua cidade. O avatar acompanha os teus passos reais!</span>
+      </div>
+      <button style="width:100%; margin-bottom:15px;" onclick="requestGPSMode()">ATIVAR GPS E ENTRAR</button>
+
+      <div style="background:#111; padding:15px; border-radius:8px; border:1px dashed #ff9800; text-align:left;">
+        <b style="color:#ff9800;">🏠 MODO OFFLINE (Casa)</b><br>
+        <span style="font-size:11px;">Joga sentado no sofá, utilizando os botões direcionais no ecrã para mover o teu avatar.</span>
+      </div>
+      <button class="btn-warning" style="width:100%; margin-top:15px;" onclick="activateOfflineMode()">JOGAR EM MODO OFFLINE</button>
+    </div>
+  </div>
 
   <!-- ================= LOGIN E REGISTO ================= -->
   <div id="login-screen">
@@ -133,7 +130,6 @@
         <button id="btn-tab-pr" class="tab-btn btn-dark" onclick="switchMainTab('PR')">EMPRESA / FILIAL</button>
       </div>
 
-      <!-- ÁREA JOGADOR -->
       <div id="area-jg">
         <div id="jg-login-view">
           <input type="text" id="jg-log-nome" placeholder="* Nome do Jogador" />
@@ -146,16 +142,12 @@
           <div style="font-size:12px; color:#81c784; margin-bottom:10px;">* E-mail válido e Senha > 4 carateres</div>
           <input type="text" id="jg-reg-name" placeholder="* Nome de Jogador" />
           <input type="email" id="jg-reg-email" placeholder="* E-mail (ex: jg@mail.com)" />
-          <div class="form-grid">
-            <input type="password" id="jg-reg-pass1" placeholder="* Senha" />
-            <input type="password" id="jg-reg-pass2" placeholder="* Confirmar" />
-          </div>
+          <div class="form-grid"><input type="password" id="jg-reg-pass1" placeholder="* Senha" /><input type="password" id="jg-reg-pass2" placeholder="* Confirmar" /></div>
           <button style="width:100%; padding:14px;" onclick="doRegisterJG()">CONCLUIR REGISTO</button>
           <button class="btn-link" style="width:100%; margin-top:15px;" onclick="switchJGView('LOG')">Voltar ao Login</button>
         </div>
       </div>
       
-      <!-- ÁREA EMPRESA / FILIAL -->
       <div id="area-pr" class="hidden">
         <div id="pr-login-view">
           <div style="font-size:12px; color:#a7fca7; margin-bottom:15px; text-align:center;">Painel de Sede e Filiais</div>
@@ -170,41 +162,28 @@
           <label style="color:#0f0; font-size:12px;"><input type="checkbox" id="pr-is-filial" onchange="toggleFilialFields()" /> Esta loja é uma Filial</label>
           <input type="text" id="pr-reg-nome" placeholder="* Nome da Loja/Sede" style="margin-top:10px;"/>
           <input type="text" id="pr-reg-atividade" placeholder="* Atividade (Ex: Restauração)" />
-          <div class="form-grid">
-            <input type="text" id="pr-reg-nif" placeholder="* NIF (9 Números)" maxlength="9" />
-            <input type="text" id="pr-reg-tel" placeholder="* Telemóvel" />
-          </div>
+          <div class="form-grid"><input type="text" id="pr-reg-nif" placeholder="* NIF (9 Números)" maxlength="9" /><input type="text" id="pr-reg-tel" placeholder="* Telemóvel" /></div>
           <input type="email" id="pr-reg-email" placeholder="* E-mail Profissional" />
           <input type="text" id="pr-reg-morada" placeholder="* Morada Exata" />
           
-          <div class="form-grid">
-            <input type="text" id="pr-reg-lat" placeholder="Latitude GPS" />
-            <input type="text" id="pr-reg-lng" placeholder="Longitude GPS" />
-          </div>
+          <div class="form-grid"><input type="text" id="pr-reg-lat" placeholder="Latitude GPS" /><input type="text" id="pr-reg-lng" placeholder="Longitude GPS" /></div>
+          <div class="form-grid"><input type="password" id="pr-reg-pass1" placeholder="* Senha (>4 char)" /><input type="password" id="pr-reg-pass2" placeholder="* Confirmar Senha" /></div>
 
-          <div class="form-grid">
-            <input type="password" id="pr-reg-pass1" placeholder="* Senha (>4 char)" />
-            <input type="password" id="pr-reg-pass2" placeholder="* Confirmar Senha" />
-          </div>
-
-          <!-- Lógica Filial -->
           <div id="filial-extras" class="hidden" style="background:#111; padding:10px; border:1px dashed #0f0; margin-bottom:10px;">
-            <label style="color:#a7fca7; font-size:11px;"><input type="checkbox" id="filial-fatura-propria" /> Tenho Faturação Própria (Autónoma)</label><br><br>
-            <p style="font-size:11px; color:#ccc; margin-top:0;">Se a faturação for centralizada, insira o Código da Sede.</p>
-            <input type="text" id="pr-reg-codigo-sede" placeholder="Código da Sede (Opcional)" />
+            <label style="color:#a7fca7; font-size:11px;"><input type="checkbox" id="filial-fatura-propria" /> Faturação Própria</label><br>
+            <input type="text" id="pr-reg-codigo-sede" placeholder="Código da Sede" style="margin-top:5px;"/>
           </div>
-
           <button style="width:100%; padding:14px; margin-top:10px;" onclick="doRegisterPR()">REGISTAR EMPRESA / LOJA</button>
           <button class="btn-link" style="width:100%; text-align:center; margin-top:10px;" onclick="switchPRView('LOG')">Voltar ao Login</button>
         </div>
       </div>
       
-      <!-- ACESSO ADMIN -->
+      <!-- BOTÃO SECRETO ADMIN -->
       <button class="btn-link" style="width:100%; margin-top:20px; color:#555;" onclick="openAdminLogin()">[Acesso BackOffice]</button>
     </div>
   </div>
 
-  <!-- ================= BACKOFFICE ADMIN ================= -->
+  <!-- LOGIN E DASHBOARD BACKOFFICE -->
   <div id="bo-login-screen" class="hidden" style="position:absolute; inset:0; background:#000; z-index:11000; display:flex; align-items:center; justify-content:center;">
     <div style="background:#111; padding:20px; border:2px solid red; border-radius:8px; text-align:center;">
       <h2 style="color:red; margin-top:0;">ADMINISTRAÇÃO ZAP</h2>
@@ -225,7 +204,7 @@
     <table class="bo-table"><thead><tr><th>Nome</th><th>NIF</th><th>Tipo</th><th>Ação</th></tr></thead><tbody id="bo-comps-list"></tbody></table>
   </div>
 
-  <!-- ================= DASHBOARD EMPRESA E FILIAIS (FASE 2 E 3) ================= -->
+  <!-- DASHBOARD DA EMPRESA E FILIAIS -->
   <div id="pr-dashboard-screen" class="hidden">
     <div class="dash-box">
       <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #0f0; padding-bottom:15px; margin-bottom:20px;">
@@ -240,21 +219,23 @@
       </div>
 
       <div class="pr-menu">
-        <button id="menu-loja" class="pr-menu-btn active" onclick="switchDashView('loja')">🛒 Loja e Pagamentos</button>
+        <button id="menu-loja" class="pr-menu-btn active" onclick="switchDashView('loja')">🛒 Comprar Pacotes</button>
         <button id="menu-agendar" class="pr-menu-btn" onclick="switchDashView('agendar')">📅 Gerir Campanhas</button>
         <button id="menu-stats" class="pr-menu-btn" onclick="switchDashView('stats')">📈 Estatísticas</button>
         <button id="menu-filiais" class="pr-menu-btn" onclick="switchDashView('filiais')">🔑 Filiais</button>
       </div>
 
-      <!-- VISTA: LOJA (PACOTES COMPLETOS + METODOS DE PAGAMENTO) -->
+      <!-- VISTA: LOJA COM OPÇÕES DE PAGAMENTO -->
       <div id="view-loja">
         <h3 style="color:#0f0; margin-top:0;">🛒 Loja de Pacotes (Stock Guardado)</h3>
-        <div style="background:#111; padding:15px; border-radius:8px; border:1px solid #4CAF50; margin-bottom:20px;">
-          <label style="font-size:12px; color:#0f0;">💳 Escolha o Método de Pagamento</label>
-          <div style="display:flex; gap:10px; margin-top:5px; margin-bottom:15px;">
-            <label style="color:#fff; font-size:12px;"><input type="radio" name="payment_method" value="QR" checked /> QR Code</label>
-            <label style="color:#fff; font-size:12px;"><input type="radio" name="payment_method" value="MBWay" /> MB Way</label>
-            <label style="color:#fff; font-size:12px;"><input type="radio" name="payment_method" value="Transferência" /> Transferência Bancária</label>
+        
+        <div style="background:#111; padding:15px; border-radius:8px; border:1px dashed #0f0; margin-bottom:20px;">
+          <h4 style="color:#0f0; margin:0 0 10px 0;">💳 Método de Pagamento</h4>
+          <div style="display:flex; gap:15px; font-size:13px; color:#fff; flex-wrap:wrap;">
+            <label><input type="radio" name="pay_method" value="Multibanco" checked> Entidade/Ref.</label>
+            <label><input type="radio" name="pay_method" value="MBWay"> MB WAY</label>
+            <label><input type="radio" name="pay_method" value="QR Code (ZAP)"> QR Code (Larforyou)</label>
+            <label><input type="radio" name="pay_method" value="Transferência"> Transferência</label>
           </div>
         </div>
 
@@ -277,10 +258,9 @@
           <h3 style="margin-top:0; color:#ff9800;">🎯 Ativar Nova Campanha</h3>
           <p style="font-size:12px; color:#ccc;">Escolha um pacote do seu Cofre. (1 Lote = 20 Bandeiras = 1 Prémio Garantido).</p>
           <select id="agenda-pack-select"></select>
-          
           <div class="form-grid" style="margin-bottom:10px;">
             <div><label style="font-size:12px; color:#0f0;">Lotes (Deixe 0 p/ sem prémios)</label><input type="number" id="agenda-lots" value="0" /></div>
-            <div><label style="font-size:12px; color:#0f0;">Dias p/ Levantamento (Mín. 5)</label><input type="number" id="agenda-days" value="5" /></div>
+            <div><label style="font-size:12px; color:#0f0;">Dias p/ Levantamento</label><input type="number" id="agenda-days" value="5" /></div>
           </div>
           <input type="text" id="agenda-prize" placeholder="Descrição do Prémio" />
           <button style="width:100%; background:#ff9800;" onclick="scheduleCampaign()">ATIVAR CAMPANHA</button>
@@ -309,7 +289,7 @@
     </div>
   </div>
 
-  <!-- ================= ECRÃ DO JOGO (JOGADOR) COM ARRASTÁVEIS E MOBILE FIX ================= -->
+  <!-- ECRÃ DO JOGO (JOGADOR) COM ARRASTÁVEIS E MOBILE FIX -->
   <div id="game-screen" class="hidden">
     <div id="map"></div>
     
@@ -322,14 +302,14 @@
 
     <!-- MENU LATERAL DIREITO -->
     <div id="right-toolbar" class="drag-window">
-      <div class="drag-handle" style="text-align:center;">☰ Menu</div>
+      <div class="drag-handle">☰ Menu</div>
       <button class="tool-btn btn-dark" onclick="centerPlayer()" title="Localização Atual">📍</button>
       <button class="tool-btn btn-dark" onclick="openWindow('win-flags')" title="Bandeiras">🏴</button>
       <button class="tool-btn btn-dark" onclick="openWindow('win-qrs')" title="QRs">🎫</button>
       <button class="tool-btn btn-dark" onclick="openWindow('win-social')" title="Social">👥</button>
     </div>
 
-    <div id="offline-controls" class="drag-window" style="bottom: 90px; left: 20px;">
+    <div id="offline-controls" class="drag-window hidden">
       <div class="drag-handle">☰ Mover</div>
       <div class="dpad">
         <div></div><button onclick="movePlayer(0, 1)">▲</button><div></div>
@@ -339,11 +319,10 @@
     </div>
 
     <!-- JANELAS INTERATIVAS DO JOGADOR -->
-    <div id="win-flags" class="game-window drag-window hidden" style="top:120px; left:20px; width:300px;"><div class="win-header"><span class="drag-handle" style="flex:1;">🏴 Bandeiras da Sede</span><button class="win-close" onclick="closeWindow('win-flags')">X</button></div><div class="win-content">Total Apanhadas: <span id="val-flags">0</span></div></div>
+    <div id="win-flags" class="game-window drag-window hidden"><div class="win-header"><span class="drag-handle" style="flex:1;">🏴 Bandeiras da Sede</span><button class="win-close" onclick="closeWindow('win-flags')">X</button></div><div class="win-content">Total Apanhadas: <span id="val-flags">0</span></div></div>
+    <div id="win-qrs" class="game-window drag-window hidden"><div class="win-header"><span class="drag-handle" style="flex:1;">🎫 A tua Carteira QRs</span><button class="win-close" onclick="closeWindow('win-qrs')">X</button></div><div class="win-content" id="qr-wallet-list">Ainda não tens QRs gerados.</div></div>
     
-    <div id="win-qrs" class="game-window drag-window hidden" style="top:150px; left:40px; width:300px;"><div class="win-header"><span class="drag-handle" style="flex:1;">🎫 A tua Carteira QRs</span><button class="win-close" onclick="closeWindow('win-qrs')">X</button></div><div class="win-content" id="qr-wallet-list">Ainda não tens QRs gerados.</div></div>
-    
-    <div id="win-social" class="game-window drag-window hidden" style="top:180px; left:60px; width:380px;">
+    <div id="win-social" class="game-window drag-window hidden">
       <div class="win-header"><span class="drag-handle" style="flex:1;">👥 Social e Trocas</span><button class="win-close" onclick="closeWindow('win-social')">X</button></div>
       <div class="social-tabs"><button id="tab-lista" class="soc-btn active" onclick="switchSoc('lista')">Lista</button><button id="tab-chat" class="soc-btn" onclick="switchSoc('chat')">Mercado</button><button id="tab-troca" class="soc-btn" onclick="switchSoc('troca')">Troca</button></div>
       <div class="win-content" style="padding:10px;">
@@ -365,14 +344,37 @@
       <button style="width:100%;" onclick="document.getElementById('modal-overlay').classList.add('hidden');">CONTINUAR</button>
     </div>
   </div>
-    <!-- ===================== PARTE 2: JAVASCRIPT (CÉREBRO) ===================== -->
+    <!-- MAPA DE RADAR DA EMPRESA (Oculto até chamar a função) -->
+  <div id="pr-map-screen" class="hidden">
+    <div style="position:absolute; top:10px; left:10px; z-index:2000; background:rgba(0,0,0,0.8); padding:10px; border:2px solid #ff9800; border-radius:8px;">
+      <h3 style="color:#ff9800; margin:0 0 5px 0;">📍 RADAR DE ATIVIDADE</h3>
+      <button onclick="closeCompanyMap()">FECHAR MAPA</button>
+    </div>
+    <div id="map-empresa"></div>
+  </div>
+
+  <div id="mode-modal" class="modal-overlay hidden">
+    <div class="modal-box" style="border-color:#0f0;">
+      <h2 style="color:#0f0; margin-top:0;">Como queres jogar?</h2>
+      <p style="font-size:13px; color:#a7fca7;">Escolhe o teu modo de movimento no mapa:</p>
+      <div style="background:#111; padding:15px; border-radius:8px; border:1px dashed #0f0; margin-bottom:15px; text-align:left;">
+        <b style="color:#fff;">📍 MODO GPS (Rua)</b><br><span style="font-size:11px;">O avatar acompanha os teus passos reais!</span>
+      </div>
+      <button style="width:100%; margin-bottom:15px;" onclick="requestGPSMode()">ATIVAR GPS E ENTRAR</button>
+      <div style="background:#111; padding:15px; border-radius:8px; border:1px dashed #ff9800; text-align:left;">
+        <b style="color:#ff9800;">🏠 MODO OFFLINE (Casa)</b><br><span style="font-size:11px;">Joga com os botões direcionais no ecrã.</span>
+      </div>
+      <button class="btn-warning" style="width:100%; margin-top:15px;" onclick="activateOfflineMode()">JOGAR EM MODO OFFLINE</button>
+    </div>
+  </div>
+
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
-    // ================= CONFIGURAÇÕES REAIS (SEM TESTE) =================
-    const isTestMode = false; // AGORA É REAL E DEFINITIVO!
-    const moveDist = isTestMode ? 4 : 0.5;   // Anda 0.5 metros
-    const energyCost = isTestMode ? 4 : 0.5; // Gasta 0.5 de energia
-    const idleTime = isTestMode ? 15000 : 900000; // Descanso aos 15 minutos (900000ms)
+    // ================= CONFIGURAÇÕES REAIS (PRODUÇÃO) =================
+    const isTestMode = false; // MODO TESTE DESLIGADO! 
+    const moveDist = isTestMode ? 4 : 0.5;   
+    const energyCost = isTestMode ? 4 : 0.5; 
+    const idleTime = isTestMode ? 15000 : 900000; 
 
     let player = { name: "", energy: 1000, maxEnergy: 1000, skill: 1, vision: 5, flags: 0, lat: 41.1496, lng: -8.6109, progressPR: {}, qrs: [] };
     let map = null, prMap = null, playerMarker = null, visionCircle = null, catchCircle = null, allFlags = [];
@@ -405,7 +407,7 @@
         document.getElementById('login-screen').classList.add('hidden');
         document.getElementById('backoffice-screen').classList.remove('hidden');
         renderBackoffice();
-      } else { alert("Acesso Negado!"); }
+      } else alert("Acesso Negado!");
     }
 
     function renderBackoffice() {
@@ -434,7 +436,7 @@
     }
 
     function deleteCompany(id) {
-      if(confirm("Tem a certeza que quer apagar a empresa e todas as suas campanhas e pacotes?")) {
+      if(confirm("Tem a certeza que quer apagar a empresa e todas as suas campanhas?")) {
         delete allCompaniesDB[id];
         localStorage.setItem("zap_all_companies", JSON.stringify(allCompaniesDB));
         renderBackoffice();
@@ -442,7 +444,7 @@
     }
 
     function factoryReset() {
-      if(confirm("ATENÇÃO: Vai formatar TODO o sistema (Jogadores, Empresas, Campanhas, Stock)! Deseja prosseguir?")) {
+      if(confirm("ATENÇÃO: Vai formatar TODO o sistema! Deseja prosseguir?")) {
         localStorage.clear();
         alert("Sistema limpo com sucesso. A recarregar plataforma...");
         location.reload();
@@ -507,7 +509,237 @@
 
     function savePlayer() { localStorage.setItem("zap_player_data", JSON.stringify(player)); }
 
-    // ================= FASE 2 e 3: EMPRESA E FILIAIS =================
+    function preStartGame() {
+      document.getElementById("login-screen").classList.add("hidden");
+      document.getElementById("mode-modal").classList.remove("hidden");
+    }
+
+    // ================= MODOS DE JOGO (GPS E OFFLINE) =================
+    function requestGPSMode() {
+      document.getElementById("mode-modal").classList.add("hidden");
+      document.getElementById("game-screen").classList.remove("hidden");
+      isOfflineMode = false;
+      
+      initMap();
+      if (!navigator.geolocation) { alert("O seu telemóvel não suporta GPS. A iniciar Modo Casa."); activateOfflineMode(); return; }
+      if (gpsWatchId !== null) navigator.geolocation.clearWatch(gpsWatchId);
+
+      navigator.geolocation.getCurrentPosition(
+        pos => { player.lat = pos.coords.latitude; player.lng = pos.coords.longitude; renderAvatar(); },
+        err => { alert("Sem sinal de GPS. A iniciar Modo Casa."); activateOfflineMode(); },
+        { enableHighAccuracy: true, maximumAge: 5000, timeout: 20000 }
+      );
+
+      gpsWatchId = navigator.geolocation.watchPosition(
+        p => {
+          const m = getDist(player.lat, player.lng, p.coords.latitude, p.coords.longitude);
+          if (m > moveDist) { player.energy -= energyCost; updateUI(); }
+          player.lat = p.coords.latitude; player.lng = p.coords.longitude;
+          renderAvatar();
+        },
+        e => { console.warn("GPS fraco."); },
+        { enableHighAccuracy: true, maximumAge: 5000, timeout: 20000 }
+      );
+      
+      spawnRandomFlags(15); updateQRWallet();
+    }
+
+    function activateOfflineMode() {
+      document.getElementById("mode-modal").classList.add("hidden");
+      document.getElementById("game-screen").classList.remove("hidden");
+      document.getElementById("offline-controls").classList.remove("hidden");
+      isOfflineMode = true;
+      initMap(); spawnRandomFlags(15); renderAvatar(); updateQRWallet();
+    }
+
+    // MAPA GOOGLE SATELLITE (IMAGENS REAIS / STREET VIEW)
+    function initMap() {
+      if (map) return;
+      map = L.map('map', { zoomControl: false }).setView([player.lat, player.lng], 19);
+      // Link do Satélite Híbrido da Google (Fotos + Nomes de Ruas)
+      L.tileLayer('http://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}', {
+        maxZoom: 20,
+        subdomains:['mt0','mt1','mt2','mt3']
+      }).addTo(map);
+      
+      setTimeout(() => { map.invalidateSize(); }, 500); // Força carregamento no telemóvel
+    }
+
+    function renderAvatar() {
+      if (!playerMarker) {
+        const avatarHTML = `<div id="avatar-anim" class="avatar-wrapper"><div class="ava-head"></div><div class="ava-arm-l"></div><div class="ava-arm-r" id="ava-arm-right"></div><div class="ava-body"></div><div class="ava-leg-l"></div><div class="ava-leg-r"></div></div>`;
+        const icon = L.divIcon({ className: '', html: avatarHTML, iconSize: [40, 50], iconAnchor: [20, 50] });
+        playerMarker = L.marker([player.lat, player.lng], { icon: icon, zIndexOffset: 1000 }).addTo(map);
+      } else { playerMarker.setLatLng([player.lat, player.lng]); }
+
+      if (!visionCircle) visionCircle = L.circle([player.lat, player.lng], { radius: player.vision, color: "#0066ff", fillOpacity: 0.1, weight: 1 }).addTo(map);
+      else { visionCircle.setLatLng([player.lat, player.lng]); visionCircle.setRadius(player.vision); }
+
+      if (!catchCircle) catchCircle = L.circle([player.lat, player.lng], { radius: 2.5, color: "#00ff00", className: "catch-circle", fillOpacity: 0.2, weight: 2 }).addTo(map);
+      else catchCircle.setLatLng([player.lat, player.lng]);
+
+      map.setView([player.lat, player.lng], 19);
+      checkVisibleFlags();
+    }
+
+    function centerPlayer() { map.setView([player.lat, player.lng], 19); }
+
+    function movePlayer(dx, dy) {
+      if (!isOfflineMode) { alert("Modo GPS Ativo! Tens de caminhar na vida real para te moveres."); return; }
+      if (player.energy < energyCost) { alert("Estás sem energia! Aguarda o descanso."); return; }
+      player.energy -= energyCost; lastMoveTime = Date.now(); 
+      
+      const ava = document.getElementById("avatar-anim");
+      if (ava) {
+        ava.classList.add("walking");
+        if (dx > 0) ava.style.transform = "scaleX(1)";
+        if (dx < 0) ava.style.transform = "scaleX(-1)";
+        setTimeout(() => ava.classList.remove("walking"), 250);
+      }
+
+      player.lat += (dy * moveDist) / 111320;
+      player.lng += (dx * moveDist) / (111320 * Math.cos(player.lat * Math.PI / 180));
+      
+      renderAvatar(); updateUI();
+    }
+
+    setInterval(() => {
+      const timeIdle = Date.now() - lastMoveTime;
+      if (timeIdle >= idleTime && player.energy < player.maxEnergy) {
+        player.energy = Math.min(player.maxEnergy, player.energy + (player.maxEnergy * 0.10));
+        updateUI(); lastMoveTime = Date.now(); 
+      }
+    }, 1000);
+
+    // ================= LÓGICA DE BANDEIRAS =================
+    function getDist(lat1, lng1, lat2, lng2) {
+      const R = 6371e3; const dPhi = (lat2 - lat1) * Math.PI / 180; const dLam = (lng2 - lng1) * Math.PI / 180;
+      const a = Math.sin(dPhi/2)*Math.sin(dPhi/2) + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLam/2)*Math.sin(dLam/2);
+      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    }
+
+    function spawnRandomFlags(amount) {
+      for(let i=0; i<amount; i++) {
+        let rLat = player.lat + ((Math.random() - 0.5) * 0.0001);
+        let rLng = player.lng + ((Math.random() - 0.5) * 0.0001);
+        let icon = L.divIcon({ className: '', html: `<div class="flag-marker"></div>`, iconSize: [24,24] });
+        allFlags.push({ lat: rLat, lng: rLng, marker: L.marker([rLat, rLng], { icon: icon }), isVisible: false });
+      }
+    }
+
+    function checkVisibleFlags() {
+      allFlags.forEach(f => {
+        let dist = getDist(player.lat, player.lng, f.lat, f.lng);
+        if (dist <= player.vision && !f.isVisible) { f.marker.addTo(map); f.isVisible = true; }
+        else if (dist > player.vision && f.isVisible) { map.removeLayer(f.marker); f.isVisible = false; }
+      });
+    }
+
+    function catchFlag() {
+      let closest = null; let minDist = Infinity;
+      allFlags.forEach(f => { let d = getDist(player.lat, player.lng, f.lat, f.lng); if(d < minDist) { minDist = d; closest = f; } });
+      if (!closest) { alert("Não vês bandeiras!"); return; }
+      if (minDist > 2.5) { alert(`Aproxima-te! Bandeira a ${Math.floor(minDist)}m. (Círculo Tracejado)`); return; }
+
+      const ava = document.getElementById("avatar-anim");
+      if (ava) { ava.classList.add("catching"); setTimeout(() => ava.classList.remove("catching"), 400); }
+
+      player.flags += 1; map.removeLayer(closest.marker); allFlags = allFlags.filter(f => f !== closest); 
+      spawnRandomFlags(1); processCaughtFlag(); 
+    }
+
+    function processCaughtFlag() {
+      document.getElementById('modal-overlay').classList.remove('hidden');
+      let mockName = activeCompany ? activeCompany.name : "ZAP Central";
+      let mockAtiv = activeCompany ? activeCompany.atividade : "Oferta Livre";
+      
+      document.getElementById('modal-comp-name').innerText = mockName;
+      document.getElementById('modal-comp-activity').innerText = mockAtiv;
+
+      const resBox = document.getElementById('modal-result-box');
+      
+      if (!activeCompany || !activeCompany.campanhas) {
+        resBox.innerHTML = `<span style="color:#0f0; font-weight:bold;">Bandeira Livre ZAP</span><br><span style="font-size:12px; color:#fff;">Ganhaste +Skill e 5% de Energia.</span>`;
+        player.energy = Math.min(player.maxEnergy, player.energy + 50); updateUI(); savePlayer(); return;
+      }
+
+      const ativas = activeCompany.campanhas.filter(c => c.status === 'active' && c.flagsRestantes > 0);
+      if (ativas.length === 0) { resBox.innerHTML = `As campanhas desta empresa esgotaram ou expiraram!`; return; }
+
+      let totalSaco = ativas.reduce((sum, p) => sum + p.flagsRestantes, 0);
+      let sorteio = Math.random() * totalSaco;
+
+      let pck = null;
+      for (let p of ativas) { if (sorteio < p.flagsRestantes) { pck = p; break; } sorteio -= p.flagsRestantes; }
+
+      pck.flagsRestantes--;
+
+      if (pck.lotesIniciais > 0) {
+        let isPremio = Math.random() < (pck.flagsPremioRestantes / (pck.flagsPremioRestantes + pck.flagsEnergiaRestantes));
+        
+        if (isPremio && pck.flagsPremioRestantes > 0) {
+          pck.flagsPremioRestantes--;
+          if (!player.progressPR[pck.id]) player.progressPR[pck.id] = 0;
+          player.progressPR[pck.id]++;
+          
+          if (player.progressPR[pck.id] >= 20) {
+            const qrCode = "ZAP-" + Math.random().toString(36).substring(2,6).toUpperCase();
+            const expTime = Date.now() + (pck.diasLevantamento * 24 * 60 * 60 * 1000);
+            pck.vencedores.push({ jogador: player.name || "Tu", codigo: qrCode, expiraEm: expTime });
+            
+            if(!player.qrs) player.qrs = [];
+            player.qrs.push({ id: qrCode, brand: activeCompany.name, offer: pck.premio, expires: expTime });
+            
+            resBox.style.borderColor = "#ff0000";
+            resBox.innerHTML = `<span style="color:#ff0000; font-weight:bold; font-size:18px;">🎉 PARABÉNS! GANHASTE! 🎉</span><br><span style="font-size:13px; color:#fff;">Prémio: <b style="color:#ff9800;">${pck.premio}</b><br>QR gerado na tua carteira.</span>`;
+            player.progressPR[pck.id] = 0; updateQRWallet();
+          } else {
+            resBox.style.borderColor = "#ff9800";
+            resBox.innerHTML = `<span style="color:#ff9800; font-weight:bold;">Bandeira de Lote (${pck.premio})!</span><br><span style="font-size:12px; color:#fff;">Faltam: <b>${20 - player.progressPR[pck.id]}</b></span>`;
+          }
+        } else {
+          pck.flagsEnergiaRestantes--;
+          let randEnergy = Math.random() * 100;
+          let gain = 0; let msg = "";
+          if (randEnergy < 1) { gain = 1000; msg = "JACKPOT! Energia Cheia (+100%)!"; }
+          else if (randEnergy < 6) { gain = 500; msg = "Sorte! +50% Energia!"; }
+          else if (randEnergy < 46) { gain = 100; msg = "Muito Bom! +10% Energia!"; }
+          else { gain = 50; msg = "Bom! +5% Energia."; }
+          player.energy = Math.min(player.maxEnergy, player.energy + gain);
+          resBox.style.borderColor = "#00f0ff";
+          resBox.innerHTML = `<span style="color:#00f0ff; font-weight:bold;">Bandeira de Energia</span><br><span style="font-size:12px; color:#fff;">${msg}</span>`;
+        }
+      } else {
+        pck.flagsEnergiaRestantes--;
+        player.energy = Math.min(player.maxEnergy, player.energy + 50);
+        resBox.innerHTML = `<span style="color:#0f0; font-weight:bold;">Bandeira de Publicidade</span><br><span style="font-size:12px; color:#fff;">Ganhaste +Skill e Energia.</span>`;
+      }
+
+      localStorage.setItem("zap_player_progress", JSON.stringify(player.progressPR));
+      saveCompanyDB(); savePlayer(); recalcSkill(); updateUI();
+    }
+
+    function closeFlagModal() { document.getElementById('modal-overlay').classList.add('hidden'); }
+    
+    function recalcSkill() {
+      nextSkillTarget = 100 * Math.pow(2, player.skill - 1);
+      if (player.flags >= nextSkillTarget) {
+        player.skill++; player.vision = Math.min(50, 5 + (player.skill - 1) * 0.25);
+        nextSkillTarget = 100 * Math.pow(2, player.skill - 1);
+      }
+    }
+    
+    function updateUI() {
+      document.getElementById('val-ener').innerText = Math.floor(player.energy);
+      document.getElementById('bar-ener').style.width = (player.energy / player.maxEnergy) * 100 + "%";
+      document.getElementById('val-skill').innerText = player.skill;
+      document.getElementById('val-visao').innerText = player.vision.toFixed(2);
+      let prevTarget = player.skill === 1 ? 0 : 100 * Math.pow(2, player.skill - 2);
+      let progress = ((player.flags - prevTarget) / (nextSkillTarget - prevTarget)) * 100;
+      document.getElementById('bar-skill').style.width = progress + "%";
+    }
+
+    // ================= FASE 2: EMPRESA =================
     function doRegisterPR() {
       const isFilial = document.getElementById("pr-is-filial").checked;
       const fPropria = document.getElementById("filial-fatura-propria").checked;
@@ -520,7 +752,7 @@
       const latV = parseFloat(document.getElementById("pr-reg-lat").value);
       const lngV = parseFloat(document.getElementById("pr-reg-lng").value);
       
-      if (nif.length !== 9 || isNaN(nif)) return alert("O NIF tem de ter exatamente 9 algarismos numéricos!");
+      if (nif.length !== 9 || isNaN(nif)) return alert("O NIF tem de ter exatamente 9 números!");
       if (!validateEmail(email)) return alert("E-mail Profissional inválido.");
       if (pass.length < 5) return alert("A Senha tem de ter mais de 4 caracteres.");
       if (!name || !morada) return alert("Nome Legal e Morada são obrigatórios.");
@@ -531,110 +763,81 @@
       const id = "COMP-" + Math.random().toString(36).substr(2,6).toUpperCase();
       const data = { 
         id, type, name, nif, email, pass, morada, codeSede, isLocked,
-        lat: isNaN(latV) ? 41.1496 : latV,
-        lng: isNaN(lngV) ? -8.6109 : lngV,
+        lat: isNaN(latV) ? 41.1496 : latV, lng: isNaN(lngV) ? -8.6109 : lngV,
         atividade: document.getElementById("pr-reg-atividade").value.trim(),
         pacotesDisponiveis: [], campanhas: [], stockPago: 0
       };
       
-      allCompaniesDB[id] = data;
-      localStorage.setItem("zap_all_companies", JSON.stringify(allCompaniesDB));
-      localStorage.setItem("zap_pr_last_id", id);
-      
-      alert(`Registado com sucesso como: ${type.replace('_',' ')}`);
-      loadCompanyDashboard(id);
+      allCompaniesDB[id] = data; localStorage.setItem("zap_all_companies", JSON.stringify(allCompaniesDB));
+      alert(`Registado com sucesso como: ${type.replace('_',' ')}`); loadCompanyDashboard(id);
     }
 
     function doLoginPR() {
       const nif = document.getElementById("pr-log-nif").value.trim();
       const pass = document.getElementById("pr-log-senha").value;
-      if (nif.length !== 9 || pass.length < 5) return alert("O NIF tem de ter 9 números e a Senha >4 caracteres.");
-      
+      if (nif.length !== 9 || pass.length < 5) return alert("NIF de 9 números e Senha >4 caracteres.");
       let foundId = null;
-      for (let key in allCompaniesDB) {
-        if (allCompaniesDB[key].nif === nif && allCompaniesDB[key].pass === pass) { foundId = key; break; }
-      }
-
-      if (!foundId) { 
-        alert("Conta Empresarial não encontrada. Reencaminhado para o Registo.");
-        switchPRView('REG'); 
-        document.getElementById("pr-reg-nif").value = nif; 
-        return; 
-      }
-      
-      localStorage.setItem("zap_pr_last_id", foundId);
+      for (let key in allCompaniesDB) { if (allCompaniesDB[key].nif === nif && allCompaniesDB[key].pass === pass) { foundId = key; break; } }
+      if (!foundId) { switchPRView('REG'); document.getElementById("pr-reg-nif").value = nif; return alert("Conta não encontrada. Registe-se."); }
       loadCompanyDashboard(foundId);
     }
 
     function switchDashView(tab) {
-      document.getElementById('menu-loja').classList.remove('active'); document.getElementById('menu-agendar').classList.remove('active'); document.getElementById('menu-filiais').classList.remove('active');
-      document.getElementById('view-loja').classList.add('hidden'); document.getElementById('view-agendar').classList.add('hidden'); document.getElementById('view-filiais').classList.add('hidden');
+      document.getElementById('menu-loja').classList.remove('active'); document.getElementById('menu-agendar').classList.remove('active'); document.getElementById('menu-filiais').classList.remove('active'); document.getElementById('menu-stats').classList.remove('active');
+      document.getElementById('view-loja').classList.add('hidden'); document.getElementById('view-agendar').classList.add('hidden'); document.getElementById('view-filiais').classList.add('hidden'); document.getElementById('view-stats').classList.add('hidden');
       
       document.getElementById('menu-' + tab).classList.add('active'); document.getElementById('view-' + tab).classList.remove('hidden');
       if (tab === 'agendar') renderAvailablePackages();
       if (tab === 'filiais') renderFiliaisList();
+      if (tab === 'stats') renderStats();
     }
 
     function loadCompanyDashboard(id) {
       activeCompany = allCompaniesDB[id];
-      document.getElementById("login-screen").classList.add("hidden");
-      document.getElementById("pr-dashboard-screen").classList.remove("hidden");
-      
-      document.getElementById("dash-pr-name").innerText = activeCompany.name;
-      document.getElementById("dash-pr-nif").innerText = activeCompany.nif;
-      document.getElementById("dash-pr-address").innerText = activeCompany.morada;
+      document.getElementById("login-screen").classList.add("hidden"); document.getElementById("pr-dashboard-screen").classList.remove("hidden");
+      document.getElementById("dash-pr-name").innerText = activeCompany.name; document.getElementById("dash-pr-nif").innerText = activeCompany.nif; document.getElementById("dash-pr-address").innerText = activeCompany.morada;
       
       if(activeCompany.type === "SEDE") document.getElementById("dash-pr-badge").innerText = "SEDE";
       else if(activeCompany.type === "FILIAL_AUTONOMA") document.getElementById("dash-pr-badge").innerText = "FILIAL (Autónoma)";
       else document.getElementById("dash-pr-badge").innerText = "FILIAL (Subordinada)";
 
       if (activeCompany.isLocked) {
-        document.getElementById("dash-filial-warning").style.display = "block";
-        document.getElementById("dash-lock-overlay").classList.remove("hidden");
-        document.getElementById("menu-loja").style.display = "none";
+        document.getElementById("dash-filial-warning").style.display = "block"; document.getElementById("dash-lock-overlay").classList.remove("hidden"); document.getElementById("menu-loja").style.display = "none";
       } else {
-        document.getElementById("dash-filial-warning").style.display = "none";
-        document.getElementById("dash-lock-overlay").classList.add("hidden");
-        document.getElementById("menu-loja").style.display = "block";
+        document.getElementById("dash-filial-warning").style.display = "none"; document.getElementById("dash-lock-overlay").classList.add("hidden"); document.getElementById("menu-loja").style.display = "block";
       }
 
-      switchDashView('loja');
-      updateCompanyDashboard();
+      switchDashView('loja'); updateCompanyDashboard();
     }
 
     function activateFilialCode() {
       const code = document.getElementById("dash-insert-code").value.trim();
       if(code.length < 5) return alert("Código Inválido.");
-      activeCompany.isLocked = false;
-      activeCompany.codeSede = code;
-      saveCompanyDB();
-      alert("Código validado! Tem agora acesso à gestão dos pacotes atribuídos pela Sede.");
-      loadCompanyDashboard(activeCompany.id);
+      activeCompany.isLocked = false; activeCompany.codeSede = code; saveCompanyDB();
+      alert("Código validado! Acedeu aos pacotes da Sede."); loadCompanyDashboard(activeCompany.id);
     }
 
-    function saveCompanyDB() {
-      allCompaniesDB[activeCompany.id] = activeCompany;
-      localStorage.setItem("zap_all_companies", JSON.stringify(allCompaniesDB));
-    }
+    function saveCompanyDB() { allCompaniesDB[activeCompany.id] = activeCompany; localStorage.setItem("zap_all_companies", JSON.stringify(allCompaniesDB)); }
 
     function buyPackage(nome, bandeiras, preco, dias) {
-      if(activeCompany.isLocked) return alert("A sua conta é Subordinada. Insira o código da Sede.");
-      if (confirm(`A fatura será processada no final do mês.\nConfirmar compra do Pacote ${nome} (${bandeiras.toLocaleString()}) por ${preco}€?`)) {
+      if(activeCompany.isLocked) return alert("Faturação Centralizada. Insira o código da Sede.");
+      // Obtém o método de pagamento selecionado na Loja
+      const payMethod = document.querySelector('input[name="payment_method"]:checked').value;
+      if (confirm(`Pagar por ${payMethod} a compra do Pacote ${nome} por ${preco}€?`)) {
         activeCompany.pacotesDisponiveis.push({ id: "COFRE-" + Math.random().toString(36).substr(2,6).toUpperCase(), nome: "Pacote " + nome, flagsTotal: bandeiras, validadeDias: dias, raioKm: 15 });
-        saveCompanyDB(); alert("Pacote comprado com sucesso e guardado no cofre. Aceda a 'Gerar Campanhas'.");
+        saveCompanyDB(); alert("Pacote comprado e guardado no cofre!");
       }
     }
 
     function renderAvailablePackages() {
-      const sel = document.getElementById("agenda-pack-select");
-      sel.innerHTML = "";
-      if (!activeCompany.pacotesDisponiveis || activeCompany.pacotesDisponiveis.length === 0) { sel.innerHTML = "<option value=''>A sua conta não tem pacotes disponíveis</option>"; return; }
+      const sel = document.getElementById("agenda-pack-select"); sel.innerHTML = "";
+      if (!activeCompany.pacotesDisponiveis || activeCompany.pacotesDisponiveis.length === 0) { sel.innerHTML = "<option value=''>Cofre Vazio</option>"; return; }
       activeCompany.pacotesDisponiveis.forEach(p => { sel.innerHTML += `<option value='${p.id}'>${p.nome} (${p.flagsTotal.toLocaleString()} band.)</option>`; });
     }
 
     function scheduleCampaign() {
       const packId = document.getElementById("agenda-pack-select").value;
-      if (!packId) return alert("Selecione um pacote primeiro.");
+      if (!packId) return alert("Sem pacotes no cofre.");
       const lotesPedidos = parseInt(document.getElementById("agenda-lots").value || "0");
       const diasPremio = parseInt(document.getElementById("agenda-days").value || "5");
       const premioTxt = document.getElementById("agenda-prize").value.trim();
@@ -643,40 +846,30 @@
       const chosenPack = activeCompany.pacotesDisponiveis[packIdx];
       const maxLotes = Math.floor(chosenPack.flagsTotal / 20);
 
-      if(lotesPedidos > 0 && !premioTxt) return alert("Tem de descrever o prémio a entregar.");
-      if(lotesPedidos > maxLotes) return alert(`Matemática Inválida: Este pacote suporta um máximo de ${maxLotes} lotes de prémios.`);
-      if(lotesPedidos > 0 && diasPremio < 5) return alert("O mínimo de dias para levantamento são 5.");
-      if(lotesPedidos > 0 && diasPremio > chosenPack.validadeDias) return alert(`O prazo para levantamento não pode exceder a validade do pacote (${chosenPack.validadeDias} dias).`);
+      if(lotesPedidos > 0 && !premioTxt) return alert("Descreva o prémio.");
+      if(lotesPedidos > maxLotes) return alert(`Apenas suporta ${maxLotes} lotes.`);
+      if(lotesPedidos > 0 && diasPremio > chosenPack.validadeDias) return alert(`Erro: Prazo excede validade (${chosenPack.validadeDias} dias).`);
 
-      activeCompany.pacotesDisponiveis.splice(packIdx, 1); 
+      activeCompany.pacotesDisponiveis.splice(packIdx, 1);
       
-      const novaCampanha = {
+      activeCompany.campanhas.push({
         id: "CAMP-" + Math.random().toString(36).substr(2, 6).toUpperCase(),
-        nome: chosenPack.nome, premio: lotesPedidos > 0 ? premioTxt : "Bandeiras de Publicidade",
+        nome: chosenPack.nome, premio: lotesPedidos > 0 ? premioTxt : "Bandeira de Publicidade",
         lotesIniciais: lotesPedidos, flagsTotais: chosenPack.flagsTotal, flagsRestantes: chosenPack.flagsTotal,
-        flagsPremioRestantes: lotesPedidos * 20, flagsEnergiaRestantes: chosenPack.flagsTotal - (lotesPedidos * 20),
-        flagsPremioIniciais: lotesPedidos * 20, // Guardado para bloquear suspensão
+        flagsPremioRestantes: lotesPedidos * 20, flagsPremioIniciais: lotesPedidos * 20, flagsEnergiaRestantes: chosenPack.flagsTotal - (lotesPedidos * 20),
         diasLevantamento: lotesPedidos > 0 ? diasPremio : 0, raioKm: chosenPack.raioKm,
-        status: "pending", activationTime: Date.now() + 3600000, expiraEm: Date.now() + (chosenPack.validadeDias * 24 * 60 * 60 * 1000), vencedores: []
-      };
+        status: "pending", activationTime: Date.now() + delayCampanha, expiraEm: Date.now() + (chosenPack.validadeDias * 24 * 60 * 60 * 1000), vencedores: []
+      });
 
-      activeCompany.campanhas.push(novaCampanha);
-      saveCompanyDB(); renderAvailablePackages(); updateCompanyDashboard(); 
-      alert(`Campanha agendada. A fase de carência de 60 minutos iniciou-se.`);
+      saveCompanyDB(); renderAvailablePackages(); updateCompanyDashboard(); alert(`Campanha agendada. Proteção de ${delayCampanha/60000} minutos ativa.`);
     }
 
     function changeCampStatus(campId, newStatus) {
       const camp = activeCompany.campanhas.find(c => c.id === campId);
       if (camp) {
-        if (newStatus === 'suspended' && camp.flagsPremioRestantes < camp.flagsPremioIniciais) {
-           alert("AVISO DE SISTEMA: Já há jogadores com bandeiras deste prémio na sua carteira. A campanha não pode ser suspensa para garantir jogo justo!");
-           return;
-        }
-        if (newStatus === 'eliminated') {
-           if(!confirm("AVISO LEGAL: Eliminar o pacote retira-o do jogo. A empresa assume responsabilidade por prémios já recolhidos. Continuar?")) return;
-        }
-        camp.status = newStatus;
-        updateCompanyDashboard();
+        if (newStatus === 'suspended' && camp.flagsPremioRestantes < camp.flagsPremioIniciais) { return alert("Não pode suspender. Os jogadores já começaram a descobrir os prémios do saco!"); }
+        if (newStatus === 'eliminated') { if(!confirm("A Empresa assume responsabilidade legal por prémios apanhados. Eliminar pacote para sempre?")) return; }
+        camp.status = newStatus; updateCompanyDashboard();
       }
     }
 
@@ -684,8 +877,7 @@
       if(!activeCompany.campanhas) activeCompany.campanhas = [];
       const listaDiv = document.getElementById("campanhas-ativas-lista");
       if(!listaDiv) return;
-      listaDiv.innerHTML = "";
-      const now = Date.now();
+      listaDiv.innerHTML = ""; const now = Date.now();
 
       activeCompany.campanhas.forEach(camp => {
         if (camp.status === 'pending' && now >= camp.activationTime) { camp.status = 'active'; }
@@ -693,60 +885,45 @@
         let pacoteExpirado = false;
         let diasVal = Math.ceil((camp.expiraEm - now) / (24*60*60*1000));
         if (diasVal <= 0 && camp.status === 'active') { pacoteExpirado = true; camp.status = 'expired'; }
+        if (camp.status === 'eliminated') { listaDiv.innerHTML += `<div class="camp-card camp-expired"><div class="pack-title">${camp.nome} (ELIMINADO)</div></div>`; return; }
 
-        if (camp.status === 'eliminated') {
-           listaDiv.innerHTML += `<div class="camp-card camp-expired"><div class="pack-title">${camp.nome} (ELIMINADO)</div><p style="font-size:12px; color:#aaa;">O pacote foi removido pela empresa.</p></div>`;
-           return;
-        }
-
-        let cardHtml = `<div class="camp-card ${camp.status === 'pending' ? 'camp-pending' : ''} ${pacoteExpirado ? 'camp-expired' : ''}">`;
-        cardHtml += `<div class="pack-title">${camp.nome} ${pacoteExpirado ? '(EXPIROU)' : ''}</div>`;
+        let cardHtml = `<div class="camp-card ${camp.status === 'pending' ? 'camp-pending' : ''}">`;
+        cardHtml += `<div class="pack-title">${camp.nome} ${pacoteExpirado ? '(EXPIRADO)' : ''}</div>`;
         
         if (camp.status === 'pending') {
           const diff = Math.max(0, camp.activationTime - now);
           const m = Math.floor((diff/1000)/60).toString().padStart(2, '0');
           const s = Math.floor((diff/1000)%60).toString().padStart(2, '0');
-          cardHtml += `
-            <p style="font-size:12px; color:#aaa; margin:5px 0;">Período de carência de 60 minutos (As bandeiras ainda não estão no mapa).</p>
-            <div class="camp-timer">⏱️ Arranque em: ${m}:${s}</div>
-            <div style="display:flex; gap:10px; margin-top:10px;">
-              <button class="btn-warning" style="flex:1;" onclick="changeCampStatus('${camp.id}', 'suspended')">⏸️ SUSPENDER</button>
-              <button class="btn-danger" style="flex:1;" onclick="changeCampStatus('${camp.id}', 'eliminated')">❌ ELIMINAR</button>
-            </div>
-          `;
+          cardHtml += `<div class="camp-timer">⏱️ Arranque em: ${m}:${s}</div><div style="display:flex;gap:5px;margin-top:10px;"><button class="btn-warning" style="flex:1;" onclick="changeCampStatus('${camp.id}', 'suspended')">⏸️ SUSPENDER</button><button class="btn-danger" style="flex:1;" onclick="changeCampStatus('${camp.id}', 'eliminated')">❌ ELIMINAR</button></div>`;
         } else {
-          const consumido = camp.flagsTotais - camp.flagsRestantes;
-          const pct = (consumido / camp.flagsTotais) * 100;
+          const consumido = camp.flagsTotais - camp.flagsRestantes; const pct = (consumido / camp.flagsTotais) * 100;
           let statusTxt = camp.status === 'active' ? `<span style="color:#0f0;">🟢 ATIVA NO MAPA</span>` : (pacoteExpirado ? `<span style="color:red;">🔴 EXPIRADA</span>` : `<span style="color:#ff9800;">⏸️ SUSPENSA</span>`);
+          
+          let btnAct = "";
+          if (!pacoteExpirado) { let canSuspend = camp.flagsPremioRestantes >= camp.flagsPremioIniciais; btnAct = `<button class="btn-dark" style="font-size:10px; padding:5px;" ${canSuspend ? '' : 'disabled'} onclick="changeCampStatus('${camp.id}', '${camp.status === 'active' ? 'suspended' : 'active'}')">${camp.status === 'active' ? '⏸️ SUSPENDER' : '▶️ RETOMAR'}</button>`; }
+          btnAct += `<button class="btn-danger" style="font-size:10px; padding:5px; margin-left:5px;" onclick="changeCampStatus('${camp.id}', 'eliminated')">❌ ELIMINAR</button>`;
 
-          let btnAction = "";
-          if (!pacoteExpirado) {
-             let canSuspend = camp.flagsPremioRestantes >= camp.flagsPremioIniciais;
-             btnAction = `<button class="btn-dark" style="font-size:10px; padding:5px;" ${canSuspend ? '' : 'disabled title="Jogadores já começaram a recolher!"'} onclick="changeCampStatus('${camp.id}', '${camp.status === 'active' ? 'suspended' : 'active'}')">${camp.status === 'active' ? '⏸️ SUSPENDER' : '▶️ RETOMAR'}</button>`;
-          }
-          btnAction += `<button class="btn-danger" style="font-size:10px; padding:5px; margin-left:5px;" onclick="changeCampStatus('${camp.id}', 'eliminated')">❌ ELIMINAR</button>`;
-
-          cardHtml += `
-            <div style="display:flex; justify-content:space-between; align-items:center;">${statusTxt} <div>${btnAction}</div></div>
-            <div style="font-size:12px; color:#a7fca7; margin-top:5px;"><b>Raio:</b> ${camp.raioKm}km | <b>Prémio:</b> ${camp.premio} | <b>Validade Restante:</b> ${pacoteExpirado ? 'Terminou' : diasVal + ' dias'}</div>
-            <div style="display:flex; justify-content:space-between; font-size:12px; margin-top:10px; color:#fff; background:#111; padding:5px; border-radius:4px;">
-              <span>📦 Lotes: ${camp.lotesIniciais}</span><span>🚩 Consumo: ${consumido}/${camp.flagsTotais}</span><span>🎫 QRs Gerados: ${camp.vencedores.length}</span>
-            </div>
-            <div class="stat-bar" style="width:100%; height:8px; border-radius:4px; margin-top:5px;"><div class="stat-fill" style="width:${pct}%; background:${pacoteExpirado ? 'red' : '#0f0'};"></div></div>
-          `;
-
-          if (camp.vencedores.length > 0) {
-            cardHtml += `<h4 style="margin:10px 0 5px 0; color:#4CAF50;">🏆 QRs Gerados e Vencedores</h4>`;
-            camp.vencedores.forEach(v => {
-              const diasFaltam = Math.ceil((v.expiraEm - Date.now()) / (24*60*60*1000));
-              cardHtml += `<div class="winner-item"><span>🎫 <b>${v.codigo}</b></span><span>Detentor: <b style="color:#0f0;">${v.jogador}</b></span><span style="color:${diasFaltam<0 ? '#ff0000' : '#0f0'}">${diasFaltam<0 ? 'Expirou' : diasFaltam+'d'}</span></div>`;
-            });
-          }
+          cardHtml += `<div style="display:flex; justify-content:space-between; align-items:center;">${statusTxt} <div>${btnAct}</div></div><div style="font-size:12px; color:#a7fca7; margin-top:5px;"><b>Raio:</b> ${camp.raioKm}km | <b>Prémio:</b> ${camp.premio} | <b>Validade Restante:</b> ${pacoteExpirado ? 'Terminou' : diasVal + ' dias'}</div>`;
+          cardHtml += `<div style="display:flex; justify-content:space-between; font-size:12px; margin-top:10px; color:#fff; background:#111; padding:5px; border-radius:4px;"><span>📦 Lotes: ${camp.lotesIniciais}</span><span>🚩 Consumo: ${consumido}/${camp.flagsTotais}</span><span>🎫 QRs: ${camp.vencedores.length}</span></div><div class="stat-bar" style="width:100%; height:8px; border-radius:4px; margin-top:5px;"><div class="stat-fill" style="width:${pct}%; background:${pacoteExpirado ? 'red' : '#0f0'};"></div></div>`;
         }
-        cardHtml += `</div>`;
-        listaDiv.innerHTML += cardHtml;
+        cardHtml += `</div>`; listaDiv.innerHTML += cardHtml;
       });
       saveCompanyDB();
+    }
+
+    function renderStats() {
+      const content = document.getElementById("stats-content");
+      let totalCompradas = 0; let totalApanhadas = 0; let totalQRs = 0; let diasEmJogo = 1; let htmlQrs = "";
+      if(!activeCompany.campanhas) return;
+      activeCompany.campanhas.forEach(c => {
+        if(c.status === 'active' || c.status === 'expired') {
+          totalCompradas += c.flagsTotais; totalApanhadas += (c.flagsTotais - c.flagsRestantes); totalQRs += c.vencedores.length;
+          let dias = Math.ceil((Date.now() - c.activationTime) / (24*60*60*1000)); if(dias > diasEmJogo) diasEmJogo = dias;
+          c.vencedores.forEach(v => { htmlQrs += `<div class="winner-item"><span>🎫 <b>${v.codigo}</b></span><span><b style="color:#0f0;">${v.jogador}</b></span></div>`; });
+        }
+      });
+      let mediaDia = Math.floor(totalApanhadas / diasEmJogo);
+      content.innerHTML = `<div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:20px;"><div style="background:#111; padding:15px; border-radius:8px; text-align:center; border:1px solid #4CAF50;"><div style="color:#a7fca7; font-size:12px;">Bandeiras Apanhadas</div><div style="font-size:24px; color:#fff; font-weight:bold;">${totalApanhadas}</div></div><div style="background:#111; padding:15px; border-radius:8px; text-align:center; border:1px solid #00f0ff;"><div style="color:#a7fca7; font-size:12px;">Desempenho Geral</div><div style="font-size:14px; color:#fff; font-weight:bold;">${mediaDia} <span style="font-size:10px; color:#aaa;">band/dia</span></div></div></div><div style="background:#1a1a1a; padding:15px; border-radius:8px; border:1px dashed #ff9800;"><h4 style="margin:0 0 10px 0; color:#ff9800;">🏆 QRs Emitidos (${totalQRs})</h4>${htmlQrs || "<div style='font-size:12px; color:#aaa;'>Ainda não foram gerados QRs.</div>"}</div>`;
     }
 
     function renderFiliaisList() {
@@ -754,163 +931,28 @@
       if (activeCompany.type !== "SEDE") { list.innerHTML = "<span style='color:#888; font-size:12px;'>Apenas a Sede acede à rede de filiais.</span>"; return; }
       for (let key in allCompaniesDB) {
         let c = allCompaniesDB[key];
-        if (c.nif === activeCompany.nif && c.id !== activeCompany.id) {
-          list.innerHTML += `<div style="background:#222; padding:10px; margin-bottom:5px; border-radius:5px; border:1px solid #4CAF50;"><b>${c.name}</b><br><span style="font-size:11px; color:#aaa;">${c.morada} | ${c.type.replace('_',' ')}</span></div>`;
-        }
+        if (c.nif === activeCompany.nif && c.id !== activeCompany.id) { list.innerHTML += `<div style="background:#222; padding:10px; margin-bottom:5px; border-radius:5px; border:1px solid #4CAF50;"><b>${c.name}</b><br><span style="font-size:11px; color:#aaa;">${c.morada} | ${c.type.replace('_',' ')}</span></div>`; }
       }
     }
 
     function generateBranchCode() { document.getElementById("branch-code-result").innerText = `${activeCompany.name.substring(0, 4).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`; }
-
-    // ================= FASE 1: JOGO DO JOGADOR =================
-    function preStartGame() {
-      document.getElementById("login-screen").classList.add("hidden");
-      document.getElementById("game-screen").classList.remove("hidden");
-      
-      // Criar mundo e ligar controlos
-      map = L.map('map', { zoomControl: false }).setView([player.lat, player.lng], 20);
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 22 }).addTo(map);
-      
-      document.getElementById("offline-controls").classList.remove("hidden");
-      spawnRandomFlags(10); 
-      renderAvatar();
-      updateQRWallet(); 
+    function openCompanyMap() {
+      document.getElementById("pr-dashboard-screen").classList.add("hidden"); document.getElementById("pr-map-screen").classList.remove("hidden");
+      if (!prMap) { prMap = L.map('map-empresa', { zoomControl: false }).setView([activeCompany.lat, activeCompany.lng], 15); L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(prMap); }
+      for(let i=0; i<10; i++) { let icon = L.divIcon({ className: '', html: `<div class="flag-marker yellow-flag"></div>`, iconSize: [20,20] }); L.marker([activeCompany.lat + (Math.random()-0.5)*0.01, activeCompany.lng + (Math.random()-0.5)*0.01], { icon: icon }).addTo(prMap); }
     }
+    function closeCompanyMap() { document.getElementById("pr-map-screen").classList.add("hidden"); document.getElementById("pr-dashboard-screen").classList.remove("hidden"); }
 
-    function renderAvatar() {
-      if (!playerMarker) {
-        const avatarHTML = `<div id="avatar-anim" class="avatar-wrapper"><div class="ava-head"></div><div class="ava-arm-l"></div><div class="ava-arm-r"></div><div class="ava-body"></div><div class="ava-leg-l"></div><div class="ava-leg-r"></div></div>`;
-        const icon = L.divIcon({ className: '', html: avatarHTML, iconSize: [40, 50], iconAnchor: [20, 50] });
-        playerMarker = L.marker([player.lat, player.lng], { icon: icon, zIndexOffset: 1000 }).addTo(map);
-      } else { playerMarker.setLatLng([player.lat, player.lng]); }
-
-      if (!visionCircle) visionCircle = L.circle([player.lat, player.lng], { radius: player.vision, color: "#0066ff", fillOpacity: 0.1, weight: 1 }).addTo(map);
-      else { visionCircle.setLatLng([player.lat, player.lng]); visionCircle.setRadius(player.vision); }
-
-      if (!catchCircle) catchCircle = L.circle([player.lat, player.lng], { radius: 2.5, color: "#00ff00", className: "catch-circle", fillOpacity: 0.2, weight: 2 }).addTo(map);
-      else catchCircle.setLatLng([player.lat, player.lng]);
-
-      map.setView([player.lat, player.lng], 20);
+    // ================= JANELAS UI =================
+    function openWindow(id) { document.getElementById(id).classList.remove('hidden'); }
+    function closeWindow(id) { document.getElementById(id).classList.add('hidden'); }
+    function switchSoc(tab) {
+      document.getElementById('tab-lista').classList.remove('active'); document.getElementById('tab-chat').classList.remove('active'); document.getElementById('tab-troca').classList.remove('active');
+      document.getElementById('view-lista').classList.add('hidden'); document.getElementById('view-chat').classList.add('hidden'); document.getElementById('view-troca').classList.add('hidden');
+      document.getElementById('tab-' + tab).classList.add('active'); document.getElementById('view-' + tab).classList.remove('hidden');
+      if (tab === 'chat') { const sel = document.getElementById('trade-offer-select'); if(sel) { sel.innerHTML = '<option value="">-- O teu QR a oferecer --</option>'; if(player.qrs) player.qrs.forEach(qr => { sel.innerHTML += `<option value="${qr.id}">${qr.brand} (${qr.offer})</option>`; }); } }
     }
-
-    function centerPlayer() { map.setView([player.lat, player.lng], 20); }
-
-    window.addEventListener('keydown', (e) => {
-      if (document.getElementById("game-screen").classList.contains("hidden")) return;
-      if (e.key === 'ArrowUp' || e.key === 'w') movePlayer(0, 1);
-      if (e.key === 'ArrowDown' || e.key === 's') movePlayer(0, -1);
-      if (e.key === 'ArrowLeft' || e.key === 'a') movePlayer(-1, 0);
-      if (e.key === 'ArrowRight' || e.key === 'd') movePlayer(1, 0);
-    });
-
-    function movePlayer(dx, dy) {
-      if (player.energy < energyCost) return alert("Sem energia!");
-      player.energy -= energyCost; 
-      lastMoveTime = Date.now(); 
-      
-      const ava = document.getElementById("avatar-anim");
-      if (ava) {
-        ava.classList.add("walking");
-        if (dx > 0) ava.style.transform = "scaleX(1)";
-        if (dx < 0) ava.style.transform = "scaleX(-1)";
-        setTimeout(() => ava.classList.remove("walking"), 250);
-      }
-
-      player.lat += (dy * moveDist) / 111320;
-      player.lng += (dx * moveDist) / (111320 * Math.cos(player.lat * Math.PI / 180));
-      renderAvatar(); updateUI();
-    }
-
-    setInterval(() => {
-      const timeIdle = Date.now() - lastMoveTime;
-      if (timeIdle >= idleTime && player.energy < player.maxEnergy) {
-        player.energy = Math.min(player.maxEnergy, player.energy + (player.maxEnergy * 0.10));
-        updateUI(); lastMoveTime = Date.now(); 
-      }
-    }, 1000);
-
-    function spawnRandomFlags(amount) {
-      for(let i=0; i<amount; i++) {
-        let icon = L.divIcon({ className: '', html: `<div class="flag-marker"></div>`, iconSize: [24,24] });
-        allFlags.push({ lat: player.lat + ((Math.random()-0.5)*0.0001), lng: player.lng + ((Math.random()-0.5)*0.0001), marker: L.marker([player.lat, player.lng], { icon: icon }).addTo(map) });
-      }
-    }
-
-    function catchFlag() {
-      let closest = null; let minDist = Infinity;
-      allFlags.forEach(f => { let d = Math.sqrt(Math.pow(player.lat - f.lat, 2) + Math.pow(player.lng - f.lng, 2)) * 111320; if(d < minDist) { minDist = d; closest = f; } });
-      if (!closest || minDist > 2.5) return alert(`Aproxima-te! Bandeira a ${Math.floor(minDist)}m.`);
-
-      const ava = document.getElementById("avatar-anim");
-      if (ava) { ava.classList.add("catching"); setTimeout(() => ava.classList.remove("catching"), 400); }
-
-      player.flags += 1; map.removeLayer(closest.marker); allFlags = allFlags.filter(f => f !== closest); 
-      spawnRandomFlags(1); processCaughtFlag(); 
-    }
-
-    function processCaughtFlag() {
-      document.getElementById('modal-overlay').classList.remove('hidden');
-      const resBox = document.getElementById('modal-result-box');
-      
-      // Procura a primeira empresa que tiver uma campanha Ativa com stock
-      let empresaSorteada = null; let campSorteada = null;
-      for(let key in allCompaniesDB) {
-        let c = allCompaniesDB[key];
-        if(c.campanhas && c.campanhas.length > 0) {
-          let ativas = c.campanhas.filter(cmp => cmp.status === 'active' && cmp.flagsRestantes > 0);
-          if(ativas.length > 0) { empresaSorteada = c; campSorteada = ativas[Math.floor(Math.random()*ativas.length)]; break; }
-        }
-      }
-
-      document.getElementById('modal-comp-name').innerText = empresaSorteada ? empresaSorteada.name : "ZAP Flags (Livre)";
-      
-      if (!empresaSorteada || !campSorteada) {
-        resBox.style.borderColor = "#0f0";
-        resBox.innerHTML = `<span style="color:#0f0; font-weight:bold;">Bandeira Livre</span><br><span style="font-size:12px; color:#fff;">Ganhaste +Skill e 5% de Energia.</span>`;
-        player.energy = Math.min(player.maxEnergy, player.energy + 50); updateUI(); return;
-      }
-
-      campSorteada.flagsRestantes--;
-
-      if (campSorteada.lotesIniciais > 0) {
-        let chancePremio = campSorteada.flagsPremioRestantes / (campSorteada.flagsPremioRestantes + campSorteada.flagsEnergiaRestantes);
-        if (Math.random() < chancePremio && campSorteada.flagsPremioRestantes > 0) {
-          campSorteada.flagsPremioRestantes--;
-          if (!player.progressPR[campSorteada.id]) player.progressPR[campSorteada.id] = 0;
-          player.progressPR[campSorteada.id]++;
-          
-          if (player.progressPR[campSorteada.id] >= 20) {
-            const qrCode = "ZAP-" + Math.random().toString(36).substring(2,6).toUpperCase();
-            const expTime = Date.now() + (campSorteada.diasLevantamento * 24 * 60 * 60 * 1000);
-            
-            campSorteada.vencedores.push({ jogador: player.name || "Convidado", codigo: qrCode, expiraEm: expTime });
-            allCompaniesDB[empresaSorteada.id] = empresaSorteada; localStorage.setItem("zap_all_companies", JSON.stringify(allCompaniesDB));
-
-            player.qrs.push({ id: qrCode, brand: empresaSorteada.name, offer: campSorteada.premio, expires: expTime });
-            
-            resBox.style.borderColor = "#ff0000";
-            resBox.innerHTML = `<span style="color:#ff0000; font-weight:bold; font-size:18px;">🎉 PARABÉNS! GANHASTE! 🎉</span><br><span style="font-size:13px; color:#fff;">Prémio: <b style="color:#ff9800;">${campSorteada.premio}</b><br>QR gerado na tua carteira.</span>`;
-            player.progressPR[campSorteada.id] = 0; updateQRWallet();
-          } else {
-            resBox.style.borderColor = "#ff9800";
-            resBox.innerHTML = `<span style="color:#ff9800; font-weight:bold;">Bandeira de Lote!</span><br><span style="font-size:12px; color:#fff;">Faltam: <b>${20 - player.progressPR[campSorteada.id]}</b> bandeiras para o prémio da ${empresaSorteada.name}!</span>`;
-          }
-        } else {
-          campSorteada.flagsEnergiaRestantes--;
-          player.energy = Math.min(player.maxEnergy, player.energy + 100);
-          resBox.style.borderColor = "#00f0ff";
-          resBox.innerHTML = `<span style="color:#00f0ff; font-weight:bold;">Bandeira de Energia</span><br><span style="font-size:12px; color:#fff;">Recuperaste Energia!</span>`;
-        }
-      } else {
-        campSorteada.flagsEnergiaRestantes--;
-        player.energy = Math.min(player.maxEnergy, player.energy + 50);
-        resBox.innerHTML = `<span style="color:#0f0; font-weight:bold;">Bandeira de Publicidade</span>`;
-      }
-
-      allCompaniesDB[empresaSorteada.id] = empresaSorteada; localStorage.setItem("zap_all_companies", JSON.stringify(allCompaniesDB));
-      savePlayer(); recalcSkill(); updateUI();
-    }
-
+    
     function updateQRWallet() {
       const list = document.getElementById("qr-wallet-list"); const inv = document.getElementById('qr-inventory');
       if(!list) return; list.innerHTML = ""; if(inv) inv.innerHTML = '<span style="color:#aaa; font-size:11px; margin-bottom:5px;">Os Teus QRs:</span>';
@@ -922,31 +964,22 @@
       });
     }
 
-    function openWindow(id) { document.getElementById(id).classList.remove('hidden'); }
-    function closeWindow(id) { document.getElementById(id).classList.add('hidden'); }
-    function switchSoc(tab) { document.getElementById('tab-lista').classList.remove('active'); document.getElementById('tab-chat').classList.remove('active'); document.getElementById('tab-troca').classList.remove('active'); document.getElementById('view-lista').classList.add('hidden'); document.getElementById('view-chat').classList.add('hidden'); document.getElementById('view-troca').classList.add('hidden'); document.getElementById('tab-' + tab).classList.add('active'); document.getElementById('view-' + tab).classList.remove('hidden'); }
-
-    // Drag / Drop Social
     function allowDrop(ev) { ev.preventDefault(); }
     function drag(ev) { ev.dataTransfer.setData("text", ev.target.id); }
     function drop(ev) { ev.preventDefault(); var data = ev.dataTransfer.getData("text"); if (ev.target.id === "caixa-troca" || ev.target.id === "qr-inventory") { ev.target.appendChild(document.getElementById(data)); } }
 
-    function updateUI() { document.getElementById('val-ener').innerText = Math.floor(player.energy); document.getElementById('bar-ener').style.width = (player.energy / player.maxEnergy) * 100 + "%"; document.getElementById('val-flags').innerText = player.flags; }
-    function recalcSkill() { nextSkillTarget = 100 * Math.pow(2, player.skill - 1); if (player.flags >= nextSkillTarget) { player.skill++; player.vision = Math.min(50, 5 + (player.skill - 1) * 0.25); nextSkillTarget = 100 * Math.pow(2, player.skill - 1); document.getElementById('val-skill').innerText = player.skill; document.getElementById('val-visao').innerText = player.vision.toFixed(2); } }
-
-    // JANELAS DRAG
+    // ================= EVENTOS MOBILE & DRAG =================
     document.querySelectorAll('.drag-window').forEach(el => {
       const handle = el.querySelector('.drag-handle'); if(!handle) return;
       let isDragging = false, startX, startY, startLeft, startTop;
-      
       handle.addEventListener('mousedown', e => { isDragging = true; startLeft = el.offsetLeft; startTop = el.offsetTop; startX = e.clientX; startY = e.clientY; });
       window.addEventListener('mousemove', e => { if (!isDragging) return; el.style.left = (startLeft + e.clientX - startX) + 'px'; el.style.top = (startTop + e.clientY - startY) + 'px'; });
       window.addEventListener('mouseup', () => isDragging = false);
-      
       handle.addEventListener('touchstart', e => { isDragging = true; startLeft = el.offsetLeft; startTop = el.offsetTop; startX = e.touches[0].clientX; startY = e.touches[0].clientY; }, {passive: true});
       window.addEventListener('touchmove', e => { if (!isDragging) return; el.style.left = (startLeft + e.touches[0].clientX - startX) + 'px'; el.style.top = (startTop + e.touches[0].clientY - startY) + 'px'; e.preventDefault(); }, {passive: false});
       window.addEventListener('touchend', () => isDragging = false);
     });
+
   </script>
 </body>
 </html>
