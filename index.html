@@ -55,14 +55,22 @@
     .game-window { position: absolute; top: 100px; left: 10px; width: 340px; max-width: 95vw; max-height: 60vh; z-index: 4000; display: flex; flex-direction: column; resize: both; overflow: auto; }
     .win-close { background: red; color: white; border: none; padding: 2px 8px; font-weight: bold; cursor: pointer; border-radius: 4px; float: right; margin-top:-2px;}
     .win-content { padding: 10px; font-size: 13px; color: #a7fca7; overflow-y: auto; }
+    
     .social-tabs { display: flex; border-bottom: 1px solid #0f0; margin-bottom: 10px; }
     .soc-btn { flex: 1; background: #111; color: #0f0; padding: 5px; font-size: 12px; border: none; border-radius: 0; }
     .soc-btn.active { background: #0f0; color: #000; }
+    
+    /* NOVO: LISTA DE AMIGOS E CHAT */
     .player-list-item { display: flex; justify-content: space-between; align-items: center; background: #111; padding: 8px; margin-bottom: 5px; border-radius: 4px; }
     .status-dot { height: 10px; width: 10px; background: #0f0; border-radius: 50%; display: inline-block; margin-right: 5px;}
+    .chat-box { background: #000; border: 1px solid #0f0; height: 180px; overflow-y: auto; padding: 10px; margin-bottom: 10px; border-radius: 5px; }
+    .chat-msg { margin: 5px 0; font-size: 13px; } 
+    .msg-mine { color: #0f0; text-align: right; } .msg-other { color: #00f0ff; text-align: left; }
+    
     .qr-inventory { width: 50%; background: #111; padding: 5px; border-radius: 5px; max-height: 150px; overflow-y: auto; display: flex; flex-direction: column; gap: 5px; }
     .drop-zone { width: 50%; border: 2px dashed #0f0; background: rgba(0,255,0,0.1); min-height: 100px; padding: 5px; text-align: center; border-radius: 8px; display: flex; flex-direction: column; gap: 5px; }
     .draggable-qr { background: #fff; color: #000; padding: 8px; text-align: center; border-radius: 5px; font-weight: bold; cursor: grab; box-shadow: 0 0 5px rgba(255,255,255,0.5); width: 100%; font-size: 11px;}
+    
     .modal-overlay { position: fixed; inset:0; background:rgba(0,0,0,0.85); z-index: 6000; display:flex; align-items:center; justify-content:center;}
     .modal-box { background:#111; border: 2px solid #0f0; padding:20px; border-radius:10px; max-width:400px; width: 90%; text-align:center; color:#fff; }
     .comp-logo { width: 80px; height: 80px; object-fit: cover; border-radius: 50%; border: 2px solid #0f0; margin-bottom:10px; background:#fff;}
@@ -86,17 +94,16 @@
     #ticker { display: inline-block; animation: ticker 25s linear infinite; }
     @keyframes ticker { 0% { transform: translateX(100vw); } 100% { transform: translateX(-100%); } }
     .watermark { position: fixed; bottom: 60px; left: 15px; font-size: 32px; font-weight: 900; color: rgba(0, 255, 0, 0.5); text-shadow: 2px 2px 5px #000; z-index: 9999; pointer-events: none; letter-spacing: 2px; }
-    .copyright { position: fixed; bottom: 5px; width: 100%; text-align: center; font-size: 11px; color: rgba(0, 255, 0, 0.4); z-index: 9999; pointer-events: none; }
+    .copyright { position: fixed; bottom: 5px; width: 100%; text-align: center; font-size: 11px; color: rgba(0, 255, 0, 0.5); z-index: 9999; pointer-events: none; }
   </style>
 </head>
 <body>
 
-  <!-- MARCAS -->
   <div class="watermark">Larforyou&reg;</div>
   <div class="copyright">&copy; 2024 Larforyou&reg; - Marca Registada. Todos os direitos reservados.</div>
   <div id="ticker-wrap"><div id="ticker">⚡ Bem-vindo ao ZAP FLAGS! 🏆 O jogo está prestes a começar! 🎁 Explora o mapa para encontrares prémios! 🤝 Convida amigos e troca QRs!</div></div>
 
-  <!-- MODAL MODO DE JOGO -->
+  <!-- MODAL: ESCOLHA DO MODO DE JOGO -->
   <div id="mode-modal" class="modal-overlay hidden">
     <div class="modal-box" style="border-color:#0f0;">
       <h2 style="color:#0f0; margin-top:0;">Como queres jogar?</h2>
@@ -151,7 +158,6 @@
           <button style="width:100%; padding:14px; margin-top:10px;" onclick="doLoginPR()">ENTRAR NA GESTÃO</button>
           <button class="btn-link" style="width:100%; margin-top:15px;" onclick="switchPRView('REG')">Registar Nova Empresa/Filial</button>
         </div>
-
         <div id="pr-reg-view" class="hidden">
           <div style="font-size:12px; color:#81c784; margin-bottom:10px;">Registo Profissional</div>
           <label style="color:#0f0; font-size:12px;"><input type="checkbox" id="pr-is-filial" onchange="toggleFilialFields()" /> Esta loja é uma Filial</label>
@@ -167,17 +173,17 @@
             <label style="color:#a7fca7; font-size:11px;"><input type="checkbox" id="filial-fatura-propria" /> Faturação Própria</label><br>
             <input type="text" id="pr-reg-codigo-sede" placeholder="Código da Sede" style="margin-top:5px;"/>
           </div>
+
           <button style="width:100%; padding:14px; margin-top:10px;" onclick="doRegisterPR()">REGISTAR EMPRESA / LOJA</button>
           <button class="btn-link" style="width:100%; text-align:center; margin-top:10px;" onclick="switchPRView('LOG')">Voltar ao Login</button>
         </div>
       </div>
       
-      <!-- BOTÃO SECRETO ADMIN -->
       <button class="btn-link" style="width:100%; margin-top:20px; color:#555;" onclick="openAdminLogin()">[Acesso BackOffice]</button>
     </div>
   </div>
 
-  <!-- LOGIN E DASHBOARD BACKOFFICE -->
+  <!-- LOGIN BACKOFFICE -->
   <div id="bo-login-screen" class="hidden" style="position:absolute; inset:0; background:#000; z-index:11000; display:flex; align-items:center; justify-content:center;">
     <div style="background:#111; padding:20px; border:2px solid red; border-radius:8px; text-align:center;">
       <h2 style="color:red; margin-top:0;">ADMINISTRAÇÃO ZAP</h2>
@@ -186,6 +192,7 @@
       <button class="btn-link" style="margin-top:10px; color:#fff;" onclick="closeAdminLogin()">Cancelar</button>
     </div>
   </div>
+
   <div id="backoffice-screen" class="hidden">
     <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid red; padding-bottom:10px; margin-bottom:20px;">
       <h1 style="color:red; margin:0;">🚨 BACKOFFICE DE GESTÃO</h1>
@@ -194,12 +201,12 @@
     
     <div style="background:#330000; border:2px dashed red; padding:15px; border-radius:8px; margin-bottom:20px;">
       <h3 style="color:red; margin-top:0;">🤖 Gerador de Simulação (Teste de Carga)</h3>
-      <p style="font-size:12px; color:#ccc;">Cria contas fictícias com pacotes ativados para encher o mapa de bandeiras e ver como o jogo se comporta!</p>
+      <p style="font-size:12px; color:#ccc;">Cria contas fictícias em massa no mapa.</p>
       <div class="form-grid">
-        <div><label style="color:#0f0; font-size:12px;">Nº Jogadores</label><input type="number" id="sim-players" value="10" /></div>
-        <div><label style="color:#0f0; font-size:12px;">Nº Empresas (c/ Bandeiras)</label><input type="number" id="sim-comps" value="5" /></div>
+        <div><label style="color:#0f0; font-size:12px;">Nº Jogadores a Criar</label><input type="number" id="sim-players" value="1000" /></div>
+        <div><label style="color:#0f0; font-size:12px;">Nº Empresas a Criar</label><input type="number" id="sim-comps" value="1000" /></div>
       </div>
-      <button style="width:100%; background:red; color:#fff;" onclick="generateSimulation()">EXECUTAR SIMULAÇÃO</button>
+      <button style="width:100%; background:red; color:#fff;" onclick="generateSimulation()">EXECUTAR SIMULAÇÃO DE MASSA</button>
     </div>
 
     <h2 style="color:#0f0;">🎮 Jogadores Registados (Total: <span id="bo-total-players">0</span>)</h2>
@@ -216,20 +223,55 @@
         <h1 style="margin:0; color:#0f0;">🏢 PAINEL DE GESTÃO</h1>
         <button class="btn-dark" onclick="location.reload()">Sair</button>
       </div>
+
       <div style="margin-bottom:20px;">
         <h2 style="color:#fff; margin:0;"><span id="dash-pr-name">Empresa</span> <span id="dash-pr-badge" style="font-size:12px; background:#2196f3; padding:2px 5px; border-radius:3px;">SEDE</span></h2>
         <p style="color:#a7fca7; font-size:12px; margin:5px 0;">NIF: <span id="dash-pr-nif"></span> | Morada: <span id="dash-pr-address"></span></p>
         <p id="dash-filial-warning" style="color:red; font-size:11px; font-weight:bold; display:none;">⚠️ FATURAÇÃO CENTRALIZADA: Precisa do Código da Sede para ativar campanhas.</p>
       </div>
+
       <div class="pr-menu">
         <button id="menu-loja" class="pr-menu-btn active" onclick="switchDashView('loja')">🛒 Comprar Pacotes</button>
         <button id="menu-agendar" class="pr-menu-btn" onclick="switchDashView('agendar')">📅 Campanhas</button>
         <button id="menu-filiais" class="pr-menu-btn" onclick="switchDashView('filiais')">🔑 Filiais</button>
         <button id="menu-mapa" class="pr-menu-btn" style="background:#ff9800; color:#000;" onclick="openCompanyMap()">📍 VER MAPA GPS</button>
       </div>
-      <div id="view-loja"><h3 style="color:#0f0; margin-top:0;">🛒 Loja de Pacotes</h3><div class="pack-card"><div class="pack-info"><b>Pacote Médio</b><br>2.500 Bandeiras • Val. 60 Dias</div><button onclick="buyPackage('Médio', 2500, 15, 60)">Comprar 15€</button></div><div class="pack-card"><div class="pack-info"><b>Pacote Grande</b><br>10.000 Bandeiras • Val. 120 Dias</div><button onclick="buyPackage('Grande', 10000, 25, 120)">Comprar 25€</button></div></div>
-      <div id="view-agendar" class="hidden"><div id="dash-lock-overlay" class="hidden" style="background:rgba(255,0,0,0.1); border:1px solid red; padding:15px; margin-bottom:15px;"><h4 style="color:red; margin:0;">🔒 GESTÃO BLOQUEADA</h4><input type="text" id="dash-insert-code" placeholder="Código da Sede" /><button onclick="activateFilialCode()">VALIDAR CÓDIGO</button></div><div style="background:#1a1a1a; border:2px dashed #ff9800; padding:15px; border-radius:8px; margin-bottom:30px;"><h3 style="margin-top:0; color:#ff9800;">🎯 Nova Campanha</h3><select id="agenda-pack-select"></select><div class="form-grid" style="margin-bottom:10px;"><div><label style="font-size:12px; color:#0f0;">Lotes (1=20Band)</label><input type="number" id="agenda-lots" value="0" /></div><div><label style="font-size:12px; color:#0f0;">Dias Levantar</label><input type="number" id="agenda-days" value="5" /></div></div><input type="text" id="agenda-prize" placeholder="Prémio (se Lotes > 0)" /><button style="width:100%; background:#ff9800;" onclick="scheduleCampaign()">ATIVAR CAMPANHA</button></div><h3 style="color:#0f0;">⏳ Campanhas da Loja</h3><div id="campanhas-ativas-lista"></div></div>
-      <div id="view-filiais" class="hidden"><h3 style="color:#0f0; margin-top:0;">🔑 Código de Acesso para Filiais</h3><div style="background:#111; padding:15px; border:1px dashed #0f0; text-align:center; margin-bottom:20px;"><button onclick="generateBranchCode()">GERAR CÓDIGO DA SEDE</button><div id="branch-code-result" style="margin-top:10px; font-size:20px; font-weight:bold; color:#fff;"></div></div><h3 style="color:#0f0;">🏢 Lojas da Mesma Rede (NIF)</h3><div id="filiais-lista" style="background:#111; border:1px solid #555; padding:10px; min-height:100px;"></div></div>
+
+      <div id="view-loja">
+        <h3 style="color:#0f0; margin-top:0;">🛒 Loja de Pacotes</h3>
+        <div class="pack-card"><div class="pack-info"><b>Pacote Médio</b><br>2.500 Bandeiras • Val. 60 Dias</div><button onclick="buyPackage('Médio', 2500, 15, 60)">Comprar 15€</button></div>
+        <div class="pack-card"><div class="pack-info"><b>Pacote Grande</b><br>10.000 Bandeiras • Val. 120 Dias</div><button onclick="buyPackage('Grande', 10000, 25, 120)">Comprar 25€</button></div>
+      </div>
+
+      <div id="view-agendar" class="hidden">
+        <div id="dash-lock-overlay" class="hidden" style="background:rgba(255,0,0,0.1); border:1px solid red; padding:15px; margin-bottom:15px;">
+          <h4 style="color:red; margin:0;">🔒 GESTÃO BLOQUEADA</h4>
+          <input type="text" id="dash-insert-code" placeholder="Código da Sede" />
+          <button onclick="activateFilialCode()">VALIDAR CÓDIGO</button>
+        </div>
+        <div style="background:#1a1a1a; border:2px dashed #ff9800; padding:15px; border-radius:8px; margin-bottom:30px;">
+          <h3 style="margin-top:0; color:#ff9800;">🎯 Nova Campanha</h3>
+          <select id="agenda-pack-select"></select>
+          <div class="form-grid" style="margin-bottom:10px;">
+            <div><label style="font-size:12px; color:#0f0;">Lotes (1=20Band)</label><input type="number" id="agenda-lots" value="0" /></div>
+            <div><label style="font-size:12px; color:#0f0;">Dias Levantar</label><input type="number" id="agenda-days" value="5" /></div>
+          </div>
+          <input type="text" id="agenda-prize" placeholder="Prémio (se Lotes > 0)" />
+          <button style="width:100%; background:#ff9800;" onclick="scheduleCampaign()">ATIVAR CAMPANHA</button>
+        </div>
+        <h3 style="color:#0f0;">⏳ Campanhas da Loja</h3>
+        <div id="campanhas-ativas-lista"></div>
+      </div>
+
+      <div id="view-filiais" class="hidden">
+        <h3 style="color:#0f0; margin-top:0;">🔑 Código de Acesso para Filiais</h3>
+        <div style="background:#111; padding:15px; border:1px dashed #0f0; text-align:center; margin-bottom:20px;">
+          <button onclick="generateBranchCode()">GERAR CÓDIGO DA SEDE</button>
+          <div id="branch-code-result" style="margin-top:10px; font-size:20px; font-weight:bold; color:#fff;"></div>
+        </div>
+        <h3 style="color:#0f0;">🏢 Lojas da Mesma Rede (NIF)</h3>
+        <div id="filiais-lista" style="background:#111; border:1px solid #555; padding:10px; min-height:100px;"></div>
+      </div>
     </div>
   </div>
 
@@ -242,7 +284,7 @@
     <div id="map-empresa"></div>
   </div>
 
-  <!-- ECRÃ DO JOGO (JOGADOR) COM OS ÍCONES TODOS E ARRASTO -->
+  <!-- ECRÃ DO JOGO (JOGADOR) -->
   <div id="game-screen" class="hidden">
     <div id="map"></div>
     <div id="top-bar">
@@ -251,16 +293,7 @@
       <button class="btn-dark" style="padding:6px; font-size:12px;" onclick="catchFlag()">✋ APANHAR</button>
       <button class="btn-dark" style="padding:6px; font-size:12px;" onclick="location.reload()">🚪 SAIR</button>
     </div>
-    
-    <div id="right-toolbar" class="drag-window">
-      <div class="drag-handle" style="text-align:center;">☰ Menu</div>
-      <button class="tool-btn btn-dark" onclick="centerPlayer()" title="Localização Atual">📍</button>
-      <button class="tool-btn btn-dark" onclick="openWindow('win-flags')" title="Bandeiras e Empresas">🏴</button>
-      <button class="tool-btn btn-dark" onclick="openWindow('win-qrs')" title="QRs Ganhos">🎫</button>
-      <button class="tool-btn btn-dark" onclick="openWindow('win-social')" title="Amigos e Trocas">👥</button>
-    </div>
-
-    <div id="offline-controls" class="drag-window hidden" style="bottom: 90px; left: 20px;">
+    <div id="offline-controls" class="drag-window" style="bottom: 90px; left: 20px;">
       <div class="drag-handle">☰ Mover</div>
       <div class="dpad">
         <div></div><button onclick="movePlayer(0, 1)">▲</button><div></div>
@@ -269,25 +302,62 @@
       </div>
     </div>
 
-    <!-- JANELAS DO JOGADOR -->
-    <div id="win-flags" class="game-window drag-window hidden" style="top:120px; left:20px; width:300px;"><div class="win-header"><span class="drag-handle" style="flex:1;">🏴 Bandeiras da Sede</span><button class="win-close" onclick="closeWindow('win-flags')">X</button></div><div class="win-content">Total: <span id="val-flags">0</span></div></div>
-    <div id="win-qrs" class="game-window drag-window hidden" style="top:150px; left:40px; width:300px;"><div class="win-header"><span class="drag-handle" style="flex:1;">🎫 A tua Carteira QRs</span><button class="win-close" onclick="closeWindow('win-qrs')">X</button></div><div class="win-content" id="qr-wallet-list">Ainda não tens QRs gerados.</div></div>
-    
+    <!-- TABS SOCIAIS NO JOGO -->
+    <div id="right-toolbar" class="drag-window">
+      <div class="drag-handle" style="text-align:center;">☰ Menu</div>
+      <button class="tool-btn btn-dark" onclick="centerPlayer()">📍</button>
+      <button class="tool-btn btn-dark" onclick="openWindow('win-flags')">🏴</button>
+      <button class="tool-btn btn-dark" onclick="openWindow('win-qrs')">🎫</button>
+      <button class="tool-btn btn-dark" onclick="openWindow('win-social')">👥</button>
+    </div>
+
+    <!-- JANELA SOCIAL COM LISTA E CHAT PRIVADO -->
     <div id="win-social" class="game-window drag-window hidden" style="top:180px; left:60px; width:380px;">
-      <div class="win-header"><span class="drag-handle" style="flex:1;">👥 Social e Trocas</span><button class="win-close" onclick="closeWindow('win-social')">X</button></div>
-      <div class="social-tabs"><button id="tab-lista" class="soc-btn active" onclick="switchSoc('lista')">Lista/Amigos</button><button id="tab-chat" class="soc-btn" onclick="switchSoc('chat')">Mercado</button><button id="tab-troca" class="soc-btn" onclick="switchSoc('troca')">Troca Direta</button></div>
+      <div class="win-header"><span class="drag-handle" style="flex:1;">👥 Social e Chat</span><button class="win-close" onclick="closeWindow('win-social')">X</button></div>
+      <div class="social-tabs">
+        <button id="tab-lista" class="soc-btn active" onclick="switchSoc('lista')">Lista/Amigos</button>
+        <button id="tab-chat" class="soc-btn" onclick="switchSoc('chat')">Chat Privado</button>
+        <button id="tab-troca" class="soc-btn" onclick="switchSoc('troca')">Mercado QRs</button>
+      </div>
       <div class="win-content" style="padding:10px;">
-        <div id="view-lista"></div>
-        <div id="view-chat" class="hidden"><select id="trade-offer-select" style="padding:8px; font-size:12px;"></select><input type="text" id="trade-want-input" placeholder="Procuro QR..." style="padding:8px; font-size:12px;" /><button style="width:100%; margin-top:5px;" onclick="alert('Pedido publicado no mercado!')">PUBLICAR NO MERCADO</button></div>
-        <div id="view-troca" class="hidden"><p style="font-size:11px;">Arrasta o QR para a caixa de troca.</p><div style="display:flex; gap:10px;"><div id="qr-inventory" class="qr-inventory" ondrop="drop(event)" ondragover="allowDrop(event)"></div><div id="caixa-troca" class="drop-zone" ondrop="drop(event)" ondragover="allowDrop(event)"><span style="color:#aaa; font-size:11px; pointer-events:none;">Largar QR aqui!</span></div></div><button style="width:100%; margin-top:15px;">CONFIRMAR TROCA</button></div>
+        <!-- LISTA DE AMIGOS -->
+        <div id="view-lista">
+          <p style="font-size:11px; margin-top:0;">Jogadores na tua zona. Clica para adicionar como amigo.</p>
+          <div id="social-players-list"></div>
+        </div>
+
+        <!-- CHAT PRIVADO -->
+        <div id="view-chat" class="hidden">
+          <div id="chat-active-friend" style="font-size:12px; color:#a7fca7; margin-bottom:5px;">A Falar com: <b>Nenhum amigo selecionado</b></div>
+          <div class="chat-box" id="social-chat-box">
+             <div style="font-size:11px; color:#888; text-align:center; margin-top:20px;">Adiciona um amigo na aba 'Lista' para iniciares o chat.</div>
+          </div>
+          <div style="display:flex; gap:5px;">
+            <input type="text" id="chat-player-input" placeholder="Mensagem..." style="margin:0;" />
+            <button onclick="sendPlayerMsg()">Enviar</button>
+          </div>
+        </div>
+
+        <!-- MERCADO DE QRS -->
+        <div id="view-troca" class="hidden">
+          <p style="font-size:11px; color:#a7fca7; margin-top:0;">Publica o QR que tens e o que queres em troca. Os amigos podem ver e aceitar.</p>
+          <label style="font-size:11px;">O que ofereces?</label>
+          <select id="trade-offer-select" style="padding:8px; font-size:12px;"></select>
+          <label style="font-size:11px;">O que queres em troca?</label>
+          <input type="text" id="trade-want-input" placeholder="Procuro QR da ZARA..." style="padding:8px; font-size:12px;" />
+          <button style="width:100%; margin-top:5px;" onclick="publishMarketQR()">PUBLICAR NO MERCADO</button>
+        </div>
       </div>
     </div>
+    
+    <div id="win-flags" class="game-window drag-window hidden" style="top:120px; left:20px; width:300px;"><div class="win-header"><span class="drag-handle" style="flex:1;">🏴 Bandeiras da Sede</span><button class="win-close" onclick="closeWindow('win-flags')">X</button></div><div class="win-content">Total Apanhadas: <span id="val-flags">0</span></div></div>
+    <div id="win-qrs" class="game-window drag-window hidden" style="top:150px; left:40px; width:300px;"><div class="win-header"><span class="drag-handle" style="flex:1;">🎫 A tua Carteira QRs</span><button class="win-close" onclick="closeWindow('win-qrs')">X</button></div><div class="win-content" id="qr-wallet-list">Ainda não tens QRs gerados.</div></div>
   </div>
 
-  <!-- MODAL DA BANDEIRA APANHADA -->
   <div id="modal-overlay" class="hidden">
     <div class="modal-box">
       <h2 style="color:#0f0; margin-top:0;">Bandeira Apanhada!</h2>
+      <img id="modal-logo" class="comp-logo hidden" src="" />
       <h3 id="modal-comp-name" style="margin:5px 0;"></h3>
       <p id="modal-comp-activity" style="color:#a7fca7; font-size:14px; margin:0 0 15px 0;"></p>
       <div id="modal-result-box" style="background:#222; padding:10px; border-radius:5px; margin-bottom:15px; border:1px dashed #fff;"></div>
@@ -296,18 +366,21 @@
   </div>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
-    // ================= CONFIGURAÇÕES REAIS (PRODUÇÃO) =================
-    const isTestMode = false; // MODO TESTE DESLIGADO! 
-    const moveDist = isTestMode ? 4 : 0.5;   // 0.50m por clique
-    const energyCost = isTestMode ? 4 : 0.5; // 0.50 de energia
-    const idleTime = isTestMode ? 15000 : 900000; // 15 Minutos de descanso reais
-    const delayCampanha = isTestMode ? 60000 : 3600000; // 60 Minutos reais de carência
+    // ================= CONFIGURAÇÕES REAIS (SEM TESTE) =================
+    const isTestMode = false; // AGORA É REAL E DEFINITIVO!
+    const moveDist = isTestMode ? 4 : 0.5;   // Anda 0.5 metros
+    const energyCost = isTestMode ? 4 : 0.5; // Gasta 0.5 de energia
+    const idleTime = isTestMode ? 15000 : 900000; // Descanso aos 15 minutos (900000ms)
+    const delayCampanha = isTestMode ? 60000 : 3600000; // 60 Minutos Reais para a campanha entrar
 
     let player = { name: "", energy: 1000, maxEnergy: 1000, skill: 1, vision: 5, flags: 0, lat: 41.1496, lng: -8.6109, progressPR: {}, qrs: [] };
     let map = null, prMap = null, playerMarker = null, visionCircle = null, catchCircle = null, allFlags = [];
     let activeCompany = null; 
     let allCompaniesDB = {}; 
     let allPlayersDB = [];
+    let playerFriends = {}; // Guarda o estado de amizade: { 'Miguel88': 'pending' / 'accepted' }
+    let currentChatFriend = ""; // Guarda o nome do amigo com quem estamos a falar no Chat
+    
     let lastMoveTime = Date.now();
     let nextSkillTarget = 100;
     let dashInterval = null;
@@ -322,9 +395,11 @@
       if (db) allCompaniesDB = JSON.parse(db);
       const playersDb = localStorage.getItem("zap_all_players");
       if (playersDb) allPlayersDB = JSON.parse(playersDb);
+      const friendsDb = localStorage.getItem("zap_player_friends");
+      if (friendsDb) playerFriends = JSON.parse(friendsDb);
     };
 
-    // ================= BACKOFFICE ADMIN E GERADOR DE TESTES =================
+    // ================= BACKOFFICE E GERADOR =================
     function openAdminLogin() { document.getElementById('bo-login-screen').classList.remove('hidden'); }
     function closeAdminLogin() { document.getElementById('bo-login-screen').classList.add('hidden'); }
     
@@ -364,7 +439,7 @@
         }
         localStorage.setItem("zap_all_companies", JSON.stringify(allCompaniesDB));
       }
-      alert(`Simulação de Carga concluída!\nForam gerados ${pCount} Jogadores e ${cCount} Empresas ativas!`);
+      alert(`Simulação concluída!\nForam gerados ${pCount} Jogadores e ${cCount} Empresas.`);
       renderBackoffice();
     }
 
@@ -372,7 +447,7 @@
       document.getElementById("bo-total-players").innerText = allPlayersDB.length;
       document.getElementById("bo-total-comps").innerText = Object.keys(allCompaniesDB).length;
 
-      // PREVENÇÃO DE BLOQUEIO DE PERFORMANCE
+      // PREVENÇÃO DE DESEMPENHO: Renderiza apenas os primeiros 50
       const pList = document.getElementById("bo-players-list"); pList.innerHTML = "";
       allPlayersDB.slice(0, 50).forEach(p => { pList.innerHTML += `<tr><td>${p}</td><td><button class="btn-danger" style="padding:5px;" onclick="deletePlayer('${p}')">Apagar</button></td></tr>`; });
       if(allPlayersDB.length > 50) pList.innerHTML += `<tr><td colspan='2' style='text-align:center; color:#aaa;'>... e mais ${allPlayersDB.length - 50} ocultos por performance.</td></tr>`;
@@ -408,15 +483,13 @@
 
     function factoryReset() {
       if(confirm("ATENÇÃO: Vai formatar TODO o sistema! Deseja prosseguir?")) {
-        localStorage.clear();
-        alert("Sistema limpo com sucesso. A recarregar plataforma...");
-        location.reload();
+        localStorage.clear(); alert("Sistema limpo com sucesso. A recarregar plataforma..."); location.reload();
       }
     }
 
     // ================= TABS E UI GERAIS =================
     function validateEmail(email) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email); }
-    function recoverPass() { const val = prompt("Insira E-mail ou Telemóvel:"); if(val) alert("Foi enviado um link de recuperação da sua senha."); }
+    function recoverPass() { const val = prompt("Insira E-mail ou Telemóvel:"); if(val) alert("Foi enviado um link de recuperação."); }
 
     function switchMainTab(mode) {
       document.getElementById('area-jg').classList.toggle('hidden', mode !== 'JG'); document.getElementById('area-pr').classList.toggle('hidden', mode !== 'PR');
@@ -425,13 +498,10 @@
     }
     
     function switchJGView(view) { document.getElementById('jg-login-view').classList.toggle('hidden', view !== 'LOG'); document.getElementById('jg-reg-view').classList.toggle('hidden', view !== 'REG'); }
-    
-    // CORREÇÃO: O Botão Registo do PR agora abre a janela certa!
     function switchPRView(view) { document.getElementById('pr-login-view').classList.toggle('hidden', view !== 'LOG'); document.getElementById('pr-reg-view').classList.toggle('hidden', view !== 'REG'); }
-    
     function toggleFilialFields() { document.getElementById("filial-extras").classList.toggle("hidden", !document.getElementById("pr-is-filial").checked); }
 
-    // ================= FASE 1: JOGADOR =================
+    // ================= FASE 1: JOGADOR E LISTA DE AMIGOS =================
     function doLoginJG() {
       const name = document.getElementById("jg-log-nome").value.trim();
       const pass = document.getElementById("jg-log-senha").value;
@@ -475,12 +545,105 @@
       document.getElementById("mode-modal").classList.remove("hidden");
     }
 
+    // ================= GESTÃO DA LISTA SOCIAL E CHAT =================
+    function populateSocialList() {
+      const listDiv = document.getElementById("view-lista");
+      listDiv.innerHTML = "<p style='font-size:11px; margin-top:0;'>Jogadores registados. Podes pedir amizade e abrir chat.</p>";
+      let count = 0;
+
+      allPlayersDB.forEach(pName => {
+        if(pName === player.name) return; // Não mostra o próprio
+        count++;
+        
+        let status = playerFriends[pName] || 'none';
+        let btnHtml = "";
+        let dotColor = "#888"; // Desconhecido
+        
+        if (status === 'none') {
+           btnHtml = `<button class="btn-dark" style="padding:4px; font-size:10px;" onclick="addFriend('${pName}')">Pedir Amizade</button>`;
+        } else if (status === 'pending') {
+           dotColor = "#ff9800";
+           btnHtml = `<button class="btn-warning" style="padding:4px; font-size:10px;" onclick="acceptFriend('${pName}')">Aceitar</button>`;
+        } else if (status === 'accepted') {
+           dotColor = "#0f0";
+           btnHtml = `<button style="padding:4px; font-size:10px;" onclick="openChatWith('${pName}')">💬 Chat</button>`;
+        }
+
+        listDiv.innerHTML += `
+          <div class="player-list-item">
+            <span><span class="status-dot" style="background:${dotColor};"></span> <b>${pName}</b></span>
+            ${btnHtml}
+          </div>
+        `;
+      });
+
+      if(count === 0) listDiv.innerHTML = "<div style='font-size:12px; color:#aaa; text-align:center; padding:20px;'>Ainda não existem outros jogadores registados. Usa o Backoffice para simular alguns!</div>";
+    }
+
+    function addFriend(name) {
+      playerFriends[name] = 'pending'; // Simula que ele recebeu o pedido e enviou de volta
+      localStorage.setItem("zap_player_friends", JSON.stringify(playerFriends));
+      alert(`Pedido enviado para ${name}!`);
+      populateSocialList();
+    }
+
+    function acceptFriend(name) {
+      playerFriends[name] = 'accepted';
+      localStorage.setItem("zap_player_friends", JSON.stringify(playerFriends));
+      alert(`Tu e ${name} agora são amigos! O Chat foi desbloqueado.`);
+      populateSocialList();
+    }
+
+    function openChatWith(name) {
+      currentChatFriend = name;
+      switchSoc('chat'); // Muda para a aba do chat
+      document.getElementById("chat-active-friend").innerHTML = `A falar com: <b style="color:#0f0;">${name}</b>`;
+      document.getElementById("social-chat-box").innerHTML = `
+        <div style="font-size:11px; color:#888; text-align:center; margin-top:20px;">Este é o início do teu chat privado com o ${name}. Podes partilhar os teus QRs para trocares ideias!</div>
+      `;
+    }
+
+    function sendPlayerMsg() {
+      const input = document.getElementById("chat-player-input");
+      const msg = input.value.trim();
+      if(!msg) return;
+      if(!currentChatFriend) { alert("Tens de selecionar um amigo na Lista primeiro!"); return; }
+
+      const box = document.getElementById("social-chat-box");
+      box.innerHTML += `<div class="chat-msg msg-mine"><b>Tu:</b> ${msg}</div>`;
+      
+      // Simula uma resposta do amigo passados 2 segundos
+      setTimeout(() => {
+        box.innerHTML += `<div class="chat-msg msg-other"><b>${currentChatFriend}:</b> Recebido! Quando quiseres abrir troca direta avisa.</div>`;
+        box.scrollTop = box.scrollHeight;
+      }, 2000);
+
+      input.value = "";
+      box.scrollTop = box.scrollHeight;
+    }
+
+    function publishMarketQR() {
+       const sel = document.getElementById('trade-offer-select');
+       const want = document.getElementById('trade-want-input').value.trim();
+       if(!sel.value || !want) { alert("Preenche a tua oferta de QR e o que procuras!"); return; }
+
+       const qrIndex = player.qrs.findIndex(q => q.id === sel.value);
+       const qr = player.qrs[qrIndex];
+
+       // Retira da carteira do jogador (fica trancado no mercado)
+       player.qrs.splice(qrIndex, 1);
+       savePlayer(); updateQRWallet();
+       
+       document.getElementById('trade-want-input').value = "";
+       alert(`O teu QR de "${qr.offer}" foi retirado da tua carteira e publicado no Mercado Geral para Troca!`);
+       switchSoc('chat');
+    }
+
     // ================= MODOS DE JOGO (GPS E OFFLINE) =================
     function requestGPSMode() {
       document.getElementById("mode-modal").classList.add("hidden"); document.getElementById("game-screen").classList.remove("hidden");
       isOfflineMode = false; initMap();
-
-      if (!navigator.geolocation) { alert("O seu telemóvel não suporta GPS. A iniciar Modo Casa."); activateOfflineMode(); return; }
+      if (!navigator.geolocation) { alert("Telemóvel não suporta GPS. A usar Modo Offline."); activateOfflineMode(); return; }
       if (gpsWatchId !== null) navigator.geolocation.clearWatch(gpsWatchId);
 
       navigator.geolocation.getCurrentPosition(
@@ -548,7 +711,6 @@
 
       player.lat += (dy * moveDist) / 111320;
       player.lng += (dx * moveDist) / (111320 * Math.cos(player.lat * Math.PI / 180));
-      
       renderAvatar(); updateUI();
     }
 
@@ -639,12 +801,17 @@
           if (player.progressPR[campSorteada.id] >= 20) {
             const qrCode = "ZAP-" + Math.random().toString(36).substring(2,6).toUpperCase();
             const expTime = Date.now() + (campSorteada.diasLevantamento * 24 * 60 * 60 * 1000);
+            
             campSorteada.vencedores.push({ jogador: player.name || "Tu", codigo: qrCode, expiraEm: expTime });
-            if(!player.qrs) player.qrs = [];
+            allCompaniesDB[empresaSorteada.id] = empresaSorteada; localStorage.setItem("zap_all_companies", JSON.stringify(allCompaniesDB));
+
             player.qrs.push({ id: qrCode, brand: empresaSorteada.name, offer: campSorteada.premio, expires: expTime });
+            
+            resBox.style.borderColor = "#ff0000";
             resBox.innerHTML = `<span style="color:#ff0000; font-weight:bold; font-size:18px;">🎉 PARABÉNS! GANHASTE! 🎉</span><br><span style="font-size:13px; color:#fff;">Prémio: <b style="color:#ff9800;">${campSorteada.premio}</b> da empresa ${empresaSorteada.name}<br>QR na tua carteira.</span>`;
             player.progressPR[campSorteada.id] = 0; updateQRWallet();
           } else {
+            resBox.style.borderColor = "#ff9800";
             resBox.innerHTML = `<span style="color:#ff9800; font-weight:bold;">Bandeira de Lote!</span><br><span style="font-size:12px; color:#fff;">Faltam: <b>${20 - player.progressPR[campSorteada.id]}</b> bandeiras para o prémio da ${empresaSorteada.name}!</span>`;
           }
         } else {
@@ -652,12 +819,12 @@
           let randEnergy = Math.random() * 100; let gain = 0; let msg = "";
           if (randEnergy < 1) { gain = 1000; msg = "JACKPOT! Energia Cheia (+100%)!"; } else if (randEnergy < 6) { gain = 500; msg = "Sorte! +50% Energia!"; } else if (randEnergy < 46) { gain = 100; msg = "Muito Bom! +10% Energia!"; } else { gain = 50; msg = "Bom! +5% Energia."; }
           player.energy = Math.min(player.maxEnergy, player.energy + gain);
-          resBox.innerHTML = `<span style="color:#00f0ff; font-weight:bold;">Bandeira de Energia</span><br><span style="font-size:12px; color:#fff;">${msg}</span>`;
+          resBox.style.borderColor = "#00f0ff"; resBox.innerHTML = `<span style="color:#00f0ff; font-weight:bold;">Bandeira de Energia</span><br><span style="font-size:12px; color:#fff;">${msg}</span>`;
         }
       } else {
         campSorteada.flagsEnergiaRestantes--;
         player.energy = Math.min(player.maxEnergy, player.energy + 50);
-        resBox.innerHTML = `<span style="color:#0f0; font-weight:bold;">Bandeira de Publicidade</span><br><span style="font-size:12px; color:#fff;">Ganhaste +Skill e Energia.</span>`;
+        resBox.innerHTML = `<span style="color:#0f0; font-weight:bold;">Bandeira de Publicidade</span>`;
       }
 
       allCompaniesDB[empresaSorteada.id] = empresaSorteada; localStorage.setItem("zap_all_companies", JSON.stringify(allCompaniesDB));
@@ -679,23 +846,27 @@
       });
     }
 
-    function populateSocialList() {
-      const list = document.getElementById("view-lista");
-      if(!list) return;
-      list.innerHTML = "";
-      allPlayersDB.slice(0,50).forEach(p => {
-        if(p !== player.name) {
-          list.innerHTML += `<div class="player-list-item"><span class="status-dot"></span> <b>${p}</b> <button class="btn-dark" style="padding:4px; font-size:10px;" onclick="alert('Pedido de Amizade Enviado a ${p}!')">Adicionar</button></div>`;
-        }
-      });
-      if(allPlayersDB.length <= 1) list.innerHTML = "<div style='font-size:12px; color:#aaa; text-align:center; padding:20px;'>Ainda não tens amigos.</div>";
+    function openWindow(id) { document.getElementById(id).classList.remove('hidden'); }
+    function closeWindow(id) { document.getElementById(id).classList.add('hidden'); }
+    function switchSoc(tab) {
+      document.getElementById('tab-lista').classList.remove('active'); document.getElementById('tab-chat').classList.remove('active'); document.getElementById('tab-troca').classList.remove('active');
+      document.getElementById('view-lista').classList.add('hidden'); document.getElementById('view-chat').classList.add('hidden'); document.getElementById('view-troca').classList.add('hidden');
+      document.getElementById('tab-' + tab).classList.add('active'); document.getElementById('view-' + tab).classList.remove('hidden');
+      if (tab === 'chat') { const sel = document.getElementById('trade-offer-select'); if(sel) { sel.innerHTML = '<option value="">-- O teu QR a oferecer --</option>'; if(player.qrs) player.qrs.forEach(qr => { sel.innerHTML += `<option value="${qr.id}">${qr.brand} (${qr.offer})</option>`; }); } }
     }
+    
+    // Drag / Drop Social
+    function allowDrop(ev) { ev.preventDefault(); }
+    function drag(ev) { ev.dataTransfer.setData("text", ev.target.id); }
+    function drop(ev) { ev.preventDefault(); var data = ev.dataTransfer.getData("text"); if (ev.target.id === "caixa-troca" || ev.target.id === "qr-inventory") { ev.target.appendChild(document.getElementById(data)); } }
 
-    // ================= FASE 2/3 (EMPRESAS - Lógica Manutenção) =================
-    // (As funções de registo PR, Login, Buy e Campanhas são iguais ao bloco testado anteriormente para não cortar o chat e garantirem funcionamento)
+    // ================= EMPRESA E FILIAL: MANUTENÇÃO DASHBOARD =================
+    // Mantemos as lógicas exatas já construídas na Fase 2 para não quebrar limites (Buy, Create, Cancel, etc.)
     function doRegisterPR() {
-      const isFilial = document.getElementById("pr-is-filial").checked; const fPropria = document.getElementById("filial-fatura-propria").checked; const codeSede = document.getElementById("pr-reg-codigo-sede").value.trim(); const name = document.getElementById("pr-reg-nome").value.trim(); const nif = document.getElementById("pr-reg-nif").value.trim(); const email = document.getElementById("pr-reg-email").value.trim(); const pass = document.getElementById("pr-reg-pass1").value; const morada = document.getElementById("pr-reg-morada").value.trim(); const latV = parseFloat(document.getElementById("pr-reg-lat").value); const lngV = parseFloat(document.getElementById("pr-reg-lng").value);
-      if (nif.length !== 9 || isNaN(nif)) return alert("O NIF tem de ter exatamente 9 algarismos numéricos!");
+      const isFilial = document.getElementById("pr-is-filial").checked; const fPropria = document.getElementById("filial-fatura-propria").checked; const codeSede = document.getElementById("pr-reg-codigo-sede").value.trim();
+      const name = document.getElementById("pr-reg-nome").value.trim(); const nif = document.getElementById("pr-reg-nif").value.trim(); const email = document.getElementById("pr-reg-email").value.trim(); const pass = document.getElementById("pr-reg-pass1").value; const morada = document.getElementById("pr-reg-morada").value.trim();
+      const latV = parseFloat(document.getElementById("pr-reg-lat").value); const lngV = parseFloat(document.getElementById("pr-reg-lng").value);
+      if (nif.length !== 9 || isNaN(nif)) return alert("O NIF tem de ter exatamente 9 números!");
       if (!validateEmail(email)) return alert("E-mail Profissional inválido."); if (pass.length < 5) return alert("A Senha tem de ter mais de 4 caracteres."); if (!name || !morada) return alert("Nome Legal e Morada são obrigatórios.");
       let type = isFilial ? (fPropria ? "FILIAL_AUTONOMA" : "FILIAL_SUBORDINADA") : "SEDE"; let isLocked = (type === "FILIAL_SUBORDINADA" && !codeSede);
       const id = "COMP-" + Math.random().toString(36).substr(2,6).toUpperCase();
@@ -706,9 +877,9 @@
 
     function doLoginPR() {
       const nif = document.getElementById("pr-log-nif").value.trim(); const pass = document.getElementById("pr-log-senha").value;
-      if (nif.length !== 9 || pass.length < 5) return alert("NIF (9 num) e Senha obrigatórios.");
+      if (nif.length !== 9 || pass.length < 5) return alert("O NIF tem de ter 9 números e a Senha >4 caracteres.");
       let foundId = null; for (let key in allCompaniesDB) { if (allCompaniesDB[key].nif === nif && allCompaniesDB[key].pass === pass) { foundId = key; break; } }
-      if (!foundId) { switchPRView('REG'); document.getElementById("pr-reg-nif").value = nif; return alert("Conta não encontrada. Registe-se."); }
+      if (!foundId) { alert("Conta Empresarial não encontrada. Reencaminhado para o Registo."); switchPRView('REG'); document.getElementById("pr-reg-nif").value = nif; return; }
       localStorage.setItem("zap_pr_last_id", foundId); loadCompanyDashboard(foundId);
     }
 
@@ -727,50 +898,138 @@
       switchDashView('loja'); updateCompanyDashboard();
     }
 
-    function activateFilialCode() { const code = document.getElementById("dash-insert-code").value.trim(); if(code.length < 5) return alert("Código Inválido."); activeCompany.isLocked = false; activeCompany.codeSede = code; saveCompanyDB(); alert("Código validado! Recebeu permissões."); loadCompanyDashboard(activeCompany.id); }
+    function activateFilialCode() {
+      const code = document.getElementById("dash-insert-code").value.trim();
+      if(code.length < 5) return alert("Código Inválido.");
+      activeCompany.isLocked = false; activeCompany.codeSede = code; saveCompanyDB();
+      alert("Código validado! Recebeu acesso de gestão local através da Sede."); loadCompanyDashboard(activeCompany.id);
+    }
+
     function saveCompanyDB() { allCompaniesDB[activeCompany.id] = activeCompany; localStorage.setItem("zap_all_companies", JSON.stringify(allCompaniesDB)); }
-    function buyPackage(nome, bandeiras, preco, dias) { if(activeCompany.isLocked) return alert("Gestão bloqueada."); if (confirm(`Comprar Pacote ${nome} (${bandeiras.toLocaleString()}) por ${preco}€?`)) { activeCompany.pacotesDisponiveis.push({ id: "COFRE-" + Math.random().toString(36).substr(2,6).toUpperCase(), nome: "Pacote " + nome, flagsTotal: bandeiras, validadeDias: dias, raioKm: 15 }); saveCompanyDB(); alert("Pacote comprado! Está guardado no seu cofre."); } }
-    function renderAvailablePackages() { const sel = document.getElementById("agenda-pack-select"); sel.innerHTML = ""; if (!activeCompany.pacotesDisponiveis || activeCompany.pacotesDisponiveis.length === 0) { sel.innerHTML = "<option value=''>Cofre Vazio</option>"; return; } activeCompany.pacotesDisponiveis.forEach(p => { sel.innerHTML += `<option value='${p.id}'>${p.nome} (${p.flagsTotal.toLocaleString()} band.)</option>`; }); }
-    
+
+    function buyPackage(nome, bandeiras, preco, dias) {
+      if(activeCompany.isLocked) return alert("A sua conta tem Faturação Centralizada. Insira o código da Sede para ter permissões.");
+      if (confirm(`Confirmar compra do Pacote ${nome} (${bandeiras.toLocaleString()}) por ${preco}€?\nO raio usa as coordenadas GPS da sua loja.`)) {
+        activeCompany.pacotesDisponiveis.push({ id: "COFRE-" + Math.random().toString(36).substr(2,6).toUpperCase(), nome: "Pacote " + nome, flagsTotal: bandeiras, validadeDias: dias, raioKm: 15 });
+        saveCompanyDB(); alert("Transação efetuada. Pacote guardado na sua conta.");
+      }
+    }
+
+    function renderAvailablePackages() {
+      const sel = document.getElementById("agenda-pack-select"); sel.innerHTML = "";
+      if (!activeCompany.pacotesDisponiveis || activeCompany.pacotesDisponiveis.length === 0) { sel.innerHTML = "<option value=''>A sua conta não tem pacotes disponíveis</option>"; return; }
+      activeCompany.pacotesDisponiveis.forEach(p => { sel.innerHTML += `<option value='${p.id}'>${p.nome} (${p.flagsTotal.toLocaleString()} band.)</option>`; });
+    }
+
     function scheduleCampaign() {
-      const packId = document.getElementById("agenda-pack-select").value; if (!packId) return alert("Sem pacotes.");
-      const lotesPedidos = parseInt(document.getElementById("agenda-lots").value || "0"); const diasPremio = parseInt(document.getElementById("agenda-days").value || "5"); const premioTxt = document.getElementById("agenda-prize").value.trim();
-      const packIdx = activeCompany.pacotesDisponiveis.findIndex(p => p.id === packId); const chosenPack = activeCompany.pacotesDisponiveis[packIdx]; const maxLotes = Math.floor(chosenPack.flagsTotal / 20);
-      if(lotesPedidos > maxLotes) return alert(`Máximo de ${maxLotes} lotes.`); if(lotesPedidos > 0 && diasPremio > chosenPack.validadeDias) return alert(`Erro: Excede validade do pacote (${chosenPack.validadeDias} dias).`);
+      const packId = document.getElementById("agenda-pack-select").value;
+      if (!packId) return alert("Selecione um pacote primeiro.");
+      const lotesPedidos = parseInt(document.getElementById("agenda-lots").value || "0");
+      const diasPremio = parseInt(document.getElementById("agenda-days").value || "5");
+      const premioTxt = document.getElementById("agenda-prize").value.trim();
+      const packIdx = activeCompany.pacotesDisponiveis.findIndex(p => p.id === packId);
+      const chosenPack = activeCompany.pacotesDisponiveis[packIdx];
+      const maxLotes = Math.floor(chosenPack.flagsTotal / 20);
+
+      if(lotesPedidos > 0 && !premioTxt) return alert("Tem de descrever o prémio a entregar.");
+      if(lotesPedidos > maxLotes) return alert(`Este pacote suporta um máximo de ${maxLotes} lotes de prémios.`);
+      if(lotesPedidos > 0 && diasPremio > chosenPack.validadeDias) return alert(`O prazo de levantamento excede a validade do pacote (${chosenPack.validadeDias} dias).`);
+
       activeCompany.pacotesDisponiveis.splice(packIdx, 1);
       
-      activeCompany.campanhas.push({
-        id: "CAMP-" + Math.random().toString(36).substr(2, 6).toUpperCase(), nome: chosenPack.nome, premio: lotesPedidos > 0 ? premioTxt : "Sem Prémio",
-        lotesIniciais: lotesPedidos, flagsTotais: chosenPack.flagsTotal, flagsRestantes: chosenPack.flagsTotal, flagsPremioRestantes: lotesPedidos * 20, flagsEnergiaRestantes: chosenPack.flagsTotal - (lotesPedidos * 20),
-        diasLevantamento: lotesPedidos > 0 ? diasPremio : 0, raioKm: chosenPack.raioKm, status: "active", activationTime: Date.now(), expiraEm: Date.now() + (chosenPack.validadeDias * 24 * 60 * 60 * 1000), vencedores: []
-      });
-      saveCompanyDB(); renderAvailablePackages(); updateCompanyDashboard(); alert(`Campanha ativada no mapa!`);
+      const novaCampanha = {
+        id: "CAMP-" + Math.random().toString(36).substr(2, 6).toUpperCase(),
+        nome: chosenPack.nome, premio: lotesPedidos > 0 ? premioTxt : "Bandeiras de Publicidade",
+        lotesIniciais: lotesPedidos, flagsTotais: chosenPack.flagsTotal, flagsRestantes: chosenPack.flagsTotal,
+        flagsPremioRestantes: lotesPedidos * 20, flagsEnergiaRestantes: chosenPack.flagsTotal - (lotesPedidos * 20),
+        flagsPremioIniciais: lotesPedidos * 20, diasLevantamento: lotesPedidos > 0 ? diasPremio : 0, raioKm: chosenPack.raioKm,
+        status: "pending", activationTime: Date.now() + delayCampanha, expiraEm: Date.now() + (chosenPack.validadeDias * 24 * 60 * 60 * 1000), vencedores: []
+      };
+
+      activeCompany.campanhas.push(novaCampanha);
+      saveCompanyDB(); renderAvailablePackages(); updateCompanyDashboard(); alert(`Campanha agendada. A fase de carência (${delayCampanha/60000} minutos) foi iniciada.`);
+    }
+
+    function changeCampStatus(campId, newStatus) {
+      const camp = activeCompany.campanhas.find(c => c.id === campId);
+      if (camp) {
+        if (newStatus === 'suspended' && camp.flagsPremioRestantes < camp.flagsPremioIniciais) { return alert("Já há jogadores a recolher este prémio. Não pode suspender a campanha!"); }
+        if (newStatus === 'eliminated') { if(!confirm("A empresa assume a responsabilidade legal pelos prémios. Deseja ELIMINAR a campanha definitivamente?")) return; }
+        camp.status = newStatus; updateCompanyDashboard();
+      }
     }
 
     function updateCompanyDashboard() {
-      if(!activeCompany.campanhas) activeCompany.campanhas = []; const listaDiv = document.getElementById("campanhas-ativas-lista"); if(!listaDiv) return; listaDiv.innerHTML = "";
+      if(!activeCompany.campanhas) activeCompany.campanhas = [];
+      const listaDiv = document.getElementById("campanhas-ativas-lista");
+      if(!listaDiv) return;
+      listaDiv.innerHTML = ""; const now = Date.now();
+
       activeCompany.campanhas.forEach(camp => {
-        let cardHtml = `<div class="camp-card"><div class="pack-title">${camp.nome}</div>`; const consumido = camp.flagsTotais - camp.flagsRestantes; const pct = (consumido / camp.flagsTotais) * 100;
-        cardHtml += `<div style="font-size:12px; color:#a7fca7;"><b>Raio:</b> ${camp.raioKm}km | <b>Prémio:</b> ${camp.premio}</div><div class="stat-bar" style="width:100%; height:8px; border-radius:4px; margin-top:5px;"><div class="stat-fill" style="width:${pct}%; background:#0f0;"></div></div></div>`; listaDiv.innerHTML += cardHtml;
+        if (camp.status === 'pending' && now >= camp.activationTime) { camp.status = 'active'; }
+        
+        let pacoteExpirado = false;
+        let diasVal = Math.ceil((camp.expiraEm - now) / (24*60*60*1000));
+        if (diasVal <= 0 && camp.status === 'active') { pacoteExpirado = true; camp.status = 'expired'; }
+
+        if (camp.status === 'eliminated') { listaDiv.innerHTML += `<div class="camp-card camp-expired"><div class="pack-title">${camp.nome} (ELIMINADO)</div><p style="font-size:12px; color:#aaa;">O pacote foi removido.</p></div>`; return; }
+
+        let cardHtml = `<div class="camp-card ${camp.status === 'pending' ? 'camp-pending' : ''} ${pacoteExpirado ? 'camp-expired' : ''}">`;
+        cardHtml += `<div class="pack-title">${camp.nome} ${pacoteExpirado ? '(EXPIROU)' : ''}</div>`;
+        
+        if (camp.status === 'pending') {
+          const diff = Math.max(0, camp.activationTime - now);
+          const m = Math.floor((diff/1000)/60).toString().padStart(2, '0');
+          const s = Math.floor((diff/1000)%60).toString().padStart(2, '0');
+          cardHtml += `<p style="font-size:12px; color:#aaa; margin:5px 0;">Período de carência de ${delayCampanha/60000} minutos.</p><div class="camp-timer">⏱️ Arranque em: ${m}:${s}</div><div style="display:flex; gap:10px; margin-top:10px;"><button class="btn-warning" style="flex:1;" onclick="changeCampStatus('${camp.id}', 'suspended')">⏸️ SUSPENDER</button><button class="btn-danger" style="flex:1;" onclick="changeCampStatus('${camp.id}', 'eliminated')">❌ ELIMINAR</button></div>`;
+        } else {
+          const consumido = camp.flagsTotais - camp.flagsRestantes; const pct = (consumido / camp.flagsTotais) * 100;
+          let statusTxt = camp.status === 'active' ? `<span style="color:#0f0;">🟢 ATIVA NO MAPA</span>` : (pacoteExpirado ? `<span style="color:red;">🔴 EXPIRADA</span>` : `<span style="color:#ff9800;">⏸️ SUSPENSA</span>`);
+          
+          let btnAction = "";
+          if (!pacoteExpirado) {
+             let canSuspend = camp.flagsPremioRestantes >= camp.flagsPremioIniciais;
+             btnAction = `<button class="btn-dark" style="font-size:10px; padding:5px;" ${canSuspend ? '' : 'disabled title="Jogadores a recolher!"'} onclick="changeCampStatus('${camp.id}', '${camp.status === 'active' ? 'suspended' : 'active'}')">${camp.status === 'active' ? '⏸️ SUSPENDER' : '▶️ RETOMAR'}</button>`;
+          }
+          btnAction += `<button class="btn-danger" style="font-size:10px; padding:5px; margin-left:5px;" onclick="changeCampStatus('${camp.id}', 'eliminated')">❌ ELIMINAR</button>`;
+
+          cardHtml += `<div style="display:flex; justify-content:space-between; align-items:center;">${statusTxt} <div>${btnAction}</div></div><div style="font-size:12px; color:#a7fca7; margin-top:5px;"><b>Raio:</b> ${camp.raioKm}km | <b>Prémio:</b> ${camp.premio} | <b>Validade:</b> ${pacoteExpirado ? 'Terminou' : diasVal + ' dias'}</div><div style="display:flex; justify-content:space-between; font-size:12px; margin-top:10px; color:#fff; background:#111; padding:5px; border-radius:4px;"><span>📦 Lotes: ${camp.lotesIniciais}</span><span>🚩 Consumo: ${consumido}/${camp.flagsTotais}</span><span>🎫 QRs: ${camp.vencedores.length}</span></div><div class="stat-bar" style="width:100%; height:8px; border-radius:4px; margin-top:5px;"><div class="stat-fill" style="width:${pct}%; background:${pacoteExpirado ? 'red' : '#0f0'};"></div></div>`;
+
+          if (camp.vencedores.length > 0) {
+            cardHtml += `<h4 style="margin:10px 0 5px 0; color:#4CAF50;">🏆 QRs Gerados</h4>`;
+            camp.vencedores.forEach(v => { const dFaltam = Math.ceil((v.expiraEm - Date.now()) / (24*60*60*1000)); cardHtml += `<div class="winner-item"><span>🎫 <b>${v.codigo}</b></span><span>Detentor: <b style="color:#0f0;">${v.jogador}</b></span><span style="color:${dFaltam<0 ? '#ff0000' : '#0f0'}">${dFaltam<0 ? 'Expirou' : dFaltam+'d'}</span></div>`; });
+          }
+        }
+        cardHtml += `</div>`; listaDiv.innerHTML += cardHtml;
       });
+      saveCompanyDB();
     }
 
-    function renderFiliaisList() { const list = document.getElementById("filiais-lista"); list.innerHTML = ""; if (activeCompany.type !== "SEDE") { list.innerHTML = "<span style='color:#888; font-size:12px;'>Apenas a Sede acede à rede global.</span>"; return; } for (let key in allCompaniesDB) { let c = allCompaniesDB[key]; if (c.nif === activeCompany.nif && c.id !== activeCompany.id) { list.innerHTML += `<div style="background:#222; padding:10px; margin-bottom:5px; border-radius:5px; border:1px solid #4CAF50;"><b>${c.name}</b><br><span style="font-size:11px;">${c.morada} | ${c.type.replace('_',' ')}</span></div>`; } } }
-    function generateBranchCode() { document.getElementById("branch-code-result").innerText = `${activeCompany.name.substring(0, 4).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`; }
-    function openCompanyMap() { document.getElementById("pr-dashboard-screen").classList.add("hidden"); document.getElementById("pr-map-screen").classList.remove("hidden"); if (!prMap) { prMap = L.map('map-empresa', { zoomControl: false }).setView([41.1496, -8.6109], 15); L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(prMap); } }
-    function closeCompanyMap() { document.getElementById("pr-map-screen").classList.add("hidden"); document.getElementById("pr-dashboard-screen").classList.remove("hidden"); }
-    
-    // JANELAS SOCIAIS E ARRASTO
-    function openWindow(id) { document.getElementById(id).classList.remove('hidden'); }
-    function closeWindow(id) { document.getElementById(id).classList.add('hidden'); }
-    function switchSoc(tab) { document.getElementById('tab-lista').classList.remove('active'); document.getElementById('tab-chat').classList.remove('active'); document.getElementById('tab-troca').classList.remove('active'); document.getElementById('view-lista').classList.add('hidden'); document.getElementById('view-chat').classList.add('hidden'); document.getElementById('view-troca').classList.add('hidden'); document.getElementById('tab-' + tab).classList.add('active'); document.getElementById('view-' + tab).classList.remove('hidden'); if (tab === 'chat') { const sel = document.getElementById('trade-offer-select'); if(sel) { sel.innerHTML = '<option value="">-- O teu QR a oferecer --</option>'; if(player.qrs) player.qrs.forEach(qr => { sel.innerHTML += `<option value="${qr.id}">${qr.brand} (${qr.offer})</option>`; }); } } }
-    function allowDrop(ev) { ev.preventDefault(); } function drag(ev) { ev.dataTransfer.setData("text", ev.target.id); } function drop(ev) { ev.preventDefault(); var data = ev.dataTransfer.getData("text"); if (ev.target.id === "caixa-troca" || ev.target.id === "qr-inventory") { ev.target.appendChild(document.getElementById(data)); } }
+    function renderFiliaisList() {
+      const list = document.getElementById("filiais-lista"); list.innerHTML = "";
+      if (activeCompany.type !== "SEDE") { list.innerHTML = "<span style='color:#888; font-size:12px;'>Apenas a Sede acede à rede de filiais.</span>"; return; }
+      for (let key in allCompaniesDB) {
+        let c = allCompaniesDB[key];
+        if (c.nif === activeCompany.nif && c.id !== activeCompany.id) { list.innerHTML += `<div style="background:#222; padding:10px; margin-bottom:5px; border-radius:5px; border:1px solid #4CAF50;"><b>${c.name}</b><br><span style="font-size:11px; color:#aaa;">${c.morada} | ${c.type.replace('_',' ')}</span></div>`; }
+      }
+    }
 
+    function generateBranchCode() { document.getElementById("branch-code-result").innerText = `${activeCompany.name.substring(0, 4).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`; }
+    function openCompanyMap() { document.getElementById("pr-dashboard-screen").classList.add("hidden"); document.getElementById("pr-map-screen").classList.remove("hidden"); if (!prMap) { prMap = L.map('map-empresa', { zoomControl: false }).setView([activeCompany.lat || 38.7223, activeCompany.lng || -9.1393], 15); L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(prMap); } for(let i=0; i<10; i++) { let icon = L.divIcon({ className: '', html: `<div class="flag-marker yellow-flag"></div>`, iconSize: [20,20] }); L.marker([activeCompany.lat + (Math.random()-0.5)*0.01, activeCompany.lng + (Math.random()-0.5)*0.01], { icon: icon }).addTo(prMap); } }
+    function closeCompanyMap() { document.getElementById("pr-map-screen").classList.add("hidden"); document.getElementById("pr-dashboard-screen").classList.remove("hidden"); }
+
+    // EVENTOS DE DRAG DAS JANELAS (INCLUI TOUCH MOBILE)
     document.querySelectorAll('.drag-window').forEach(el => {
-      const handle = el.querySelector('.drag-handle'); if(!handle) return; let isDragging = false, startX, startY, startLeft, startTop;
-      handle.addEventListener('mousedown', e => { isDragging = true; startLeft = el.offsetLeft; startTop = el.offsetTop; startX = e.clientX; startY = e.clientY; }); window.addEventListener('mousemove', e => { if (!isDragging) return; el.style.left = (startLeft + e.clientX - startX) + 'px'; el.style.top = (startTop + e.clientY - startY) + 'px'; }); window.addEventListener('mouseup', () => isDragging = false);
-      handle.addEventListener('touchstart', e => { isDragging = true; startLeft = el.offsetLeft; startTop = el.offsetTop; startX = e.touches[0].clientX; startY = e.touches[0].clientY; }, {passive: true}); window.addEventListener('touchmove', e => { if (!isDragging) return; el.style.left = (startLeft + e.touches[0].clientX - startX) + 'px'; el.style.top = (startTop + e.touches[0].clientY - startY) + 'px'; e.preventDefault(); }, {passive: false}); window.addEventListener('touchend', () => isDragging = false);
+      const handle = el.querySelector('.drag-handle'); if(!handle) return;
+      let isDragging = false, startX, startY, startLeft, startTop;
+      handle.addEventListener('mousedown', e => { isDragging = true; startLeft = el.offsetLeft; startTop = el.offsetTop; startX = e.clientX; startY = e.clientY; });
+      window.addEventListener('mousemove', e => { if (!isDragging) return; el.style.left = (startLeft + e.clientX - startX) + 'px'; el.style.top = (startTop + e.clientY - startY) + 'px'; });
+      window.addEventListener('mouseup', () => isDragging = false);
+      handle.addEventListener('touchstart', e => { isDragging = true; startLeft = el.offsetLeft; startTop = el.offsetTop; startX = e.touches[0].clientX; startY = e.touches[0].clientY; }, {passive: true});
+      window.addEventListener('touchmove', e => { if (!isDragging) return; el.style.left = (startLeft + e.touches[0].clientX - startX) + 'px'; el.style.top = (startTop + e.touches[0].clientY - startY) + 'px'; e.preventDefault(); }, {passive: false});
+      window.addEventListener('touchend', () => isDragging = false);
     });
+
   </script>
 </body>
 </html>
