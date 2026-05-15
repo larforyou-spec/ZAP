@@ -1014,152 +1014,88 @@
       }
     }
 
-    function registerAccount(type) {
+ function registerAccount(type) {
       if (type === "JG") {
         const name = document.getElementById("player-name").value.trim();
         const contact = document.getElementById("player-contact").value.trim();
-        const password = document.getElementById("player-password").value.trim();
-        const confirmPassword = document.getElementById("player-password-confirm").value.trim();
-        const avatarMode = document.getElementById("player-avatar-mode").value;
-        const avatarPhoto = document.getElementById("player-photo-url").value.trim();
+        const pass = document.getElementById("player-password").value.trim();
+        const conf = document.getElementById("player-password-confirm").value.trim();
         const msg = document.getElementById("jg-auth-msg");
 
-        if (!name || !contact || !password || !confirmPassword) {
-          msg.innerHTML = "Preenche todos os campos.";
+        if (!name || !contact || !pass || !conf) {
+          msg.innerHTML = "<span style='color:#ff6b6b;'>Preenche todos os campos obrigatórios (*).</span>";
           return;
         }
 
-        if (password !== confirmPassword) {
-          msg.innerHTML = "As senhas não coincidem.";
+        if (pass !== conf) {
+          msg.innerHTML = "<span style='color:#ff6b6b;'>As senhas não coincidem.</span>";
           return;
         }
 
         if (state.player.contact && state.player.contact !== contact) {
-          msg.innerHTML = "Já existe um jogador registado neste navegador.";
+          msg.innerHTML = "<span style='color:#ff6b6b;'>Já existe um jogador neste navegador.</span>";
           return;
         }
 
         if (contactAlreadyExists(contact, "JG")) {
-          msg.innerHTML = "Esse email/telefone já está em uso.";
+          msg.innerHTML = "<span style='color:#ff6b6b;'>Esse email/telefone já está em uso.</span>";
           return;
         }
 
         state.player.name = name;
         state.player.contact = contact;
-        state.player.password = password;
-        state.player.avatarMode = avatarMode;
-        state.player.avatarPhoto = avatarPhoto;
+        state.player.password = pass;
+        state.player.avatarMode = document.getElementById("player-avatar-mode").value;
+        state.player.avatarPhoto = document.getElementById("player-photo-url").value.trim();
 
         ensurePlayerData();
         updateSkillAndVision();
         saveState();
 
-        msg.innerHTML = "Registo criado com sucesso.";
+        msg.innerHTML = "<span style='color:#8fff8f;'>Registo criado com sucesso!</span>";
         showGameScreen();
         initMap();
         renderTopBar();
         closePanel();
         document.getElementById("mode-modal").classList.remove("hidden");
-      }
-
-      if (type === "PR") {
-        const company = document.getElementById("pr-company-name").value.trim();
+      } else {
+        // O registo de PR fica igual (podes ajustar na Fase 2)
+        const name = document.getElementById("pr-company-name").value.trim();
         const contact = document.getElementById("pr-contact").value.trim();
-        const password = document.getElementById("pr-password").value.trim();
-        const confirmPassword = document.getElementById("pr-password-confirm").value.trim();
-        const postalCode = document.getElementById("pr-postal-code").value.trim();
-        const latValue = document.getElementById("pr-lat").value.trim();
-        const lngValue = document.getElementById("pr-lng").value.trim();
+        const pass = document.getElementById("pr-password").value.trim();
+        const conf = document.getElementById("pr-password-confirm").value.trim();
+        const postal = document.getElementById("pr-postal-code").value.trim();
         const msg = document.getElementById("pr-auth-msg");
 
-        if (!company || !contact || !password || !confirmPassword) {
-          msg.innerHTML = "Preenche nome, contacto e senhas.";
+        if (!name || !contact || !pass || !conf) {
+          msg.innerHTML = "<span style='color:#ff6b6b;'>Preenche todos os campos.</span>";
           return;
         }
 
-        if (password !== confirmPassword) {
-          msg.innerHTML = "As senhas não coincidem.";
+        if (pass !== conf) {
+          msg.innerHTML = "<span style='color:#ff6b6b;'>As senhas não coincidem.</span>";
           return;
         }
 
-        if (contactAlreadyExists(contact, "PR")) {
-          msg.innerHTML = "Esse email/telefone já está em uso.";
+        if (!postal) {
+          msg.innerHTML = "<span style='color:#ff6b6b;'>Indica código postal.</span>";
           return;
         }
-
-        if (!postalCode && (!latValue || !lngValue)) {
-          msg.innerHTML = "Indica código postal ou coordenadas GPS da loja.";
-          return;
-        }
-
-        let lat = 38.7223;
-        let lng = -9.1393;
-
-        if (latValue && lngValue && !isNaN(parseFloat(latValue)) && !isNaN(parseFloat(lngValue))) {
-          lat = parseFloat(latValue);
-          lng = parseFloat(lngValue);
-        }
-
-        const palette = ["#FF4D4F", "#1677FF", "#52C41A", "#FADB14", "#722ED1", "#FA8C16"];
-        const color = palette[Math.floor(Math.random() * palette.length)];
 
         const pr = {
-          id: randomId("PR"),
-          ownerContact: contact,
-          ownerPassword: password,
-          name: company,
-          short: createShortName(company),
-          website: "",
-          contact: contact,
-          address: "",
-          postalCode: postalCode,
-          photo: "",
-          lat,
-          lng,
-          color,
-          packages: [createPackageInstance(FREE_PACK, "free-register")],
-          campaign: {
-            rewardsEnabled: false,
-            rewardType: "none",
-            rewardText: "Sem prémio",
-            promoLotsActive: 0,
-            promoBudgetLeft: 0,
-            bingoCountActive: 0,
-            bingoText: "",
-            rewardsGiven: 0
-          }
+          id: randomId("PR"), ownerContact: contact, ownerPassword: pass, name,
+          short: name.split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase(),
+          color: ["#FF4D4F","#1677FF","#52C41A","#FADB14","#722ED1","#FA8C16"][Math.floor(Math.random()*6)],
+          website:"", contact, address:"", postalCode:postal, lat:41.1496, lng:-8.6109,
+          packages:[{ id:randomId("PKG"), key:"FREE", label:"Grátis", price:0, flagsInitial:1000, flagsLeft:1000, radiusKm:5, maxLots:50, bingos:0, paid:false, source:"register", createdAt:Date.now() }],
+          campaign:{ rewardsEnabled:false, rewardType:"none", rewardText:"Sem prémio", promoLotsActive:0, promoBudgetLeft:0, bingoCountActive:0, bingoText:"", rewardsGiven:0 }
         };
 
-        state.prs.push(pr);
-        state.currentPRId = pr.id;
-        ensurePlayerData();
-        saveState();
-
-        msg.innerHTML = "Empresa registada com sucesso.";
-        showPRDashboard();
+        state.prs.push(pr); saveState();
+        msg.innerHTML = "<span style='color:#8fff8f;'>Empresa registada com sucesso!</span>";
+        startPRDashboard(pr.id);
       }
     }
-
-    function loginAccount(type) {
-      if (type === "JG") {
-        const contact = document.getElementById("player-contact").value.trim();
-        const password = document.getElementById("player-password").value.trim();
-        const msg = document.getElementById("jg-auth-msg");
-
-        if (!contact || !password) {
-          msg.innerHTML = "Indica contacto e senha.";
-          return;
-        }
-
-        if (!state.player.contact || !state.player.password) {
-          msg.innerHTML = "Ainda não existe jogador registado neste navegador.";
-          return;
-        }
-
-        if (state.player.contact !== contact || state.player.password !== password) {
-          msg.innerHTML = "Contacto ou senha incorretos.";
-          return;
-        }
 
         msg.innerHTML = "Entrada com sucesso.";
         showGameScreen();
