@@ -1384,47 +1384,49 @@
       gpsCenteredOnce = true;
     }
 
-    function updatePlayerLocation(lat, lng, fromMovement, centerMap) {
+       function updatePlayerLocation(lat, lng, fromMovement, centerMap) {
       currentPosition = { lat, lng };
 
       if (lastPosForEnergy && fromMovement) {
         const moved = getDistanceMeters(lastPosForEnergy.lat, lastPosForEnergy.lng, lat, lng);
-
         if (moved > 0.5) {
           movedMetersBuffer += moved;
           lastMovementTime = Date.now();
-
-          while (movedMetersBuffer >= 20) {
-            movedMetersBuffer -= 20;
-            state.player.energy = Math.max(0, state.player.energy - 1);
-          }
+          while (movedMetersBuffer >= 20) { movedMetersBuffer -= 20; state.player.energy = Math.max(0, state.player.energy - 1); }
         }
       }
-
       lastPosForEnergy = { lat, lng };
 
       if (!playerMarker) {
-        playerMarker = L.marker([lat, lng], { icon: createPlayerIcon() }).addTo(map);
+        playerMarker = L.marker([lat, lng], { icon:createPlayerIcon() }).addTo(map);
       } else {
         playerMarker.setLatLng([lat, lng]);
-        playerMarker.setIcon(createPlayerIcon());
       }
 
       if (!visionCircle) {
-        visionCircle = L.circle([lat, lng], {
-          radius: state.player.vision,
-          color: "#00ff00",
-          fillOpacity: 0.05,
-          weight: 1
-        }).addTo(map);
+        visionCircle = L.circle([lat, lng], { radius:state.player.vision, color:"#0066ff", fillOpacity:0.1, weight:1 }).addTo(map);
       } else {
         visionCircle.setLatLng([lat, lng]);
         visionCircle.setRadius(state.player.vision);
+        visionCircle.bringToFront();
       }
 
-      if (centerMap) {
-        map.setView([lat, lng], 20);
+      if (!catchCircle) {
+        catchCircle = L.circle([lat, lng], { radius:2.5, color:"#00ff00", className:"catch-circle", fillOpacity:0.2, weight:2 }).addTo(map);
+      } else {
+        catchCircle.setLatLng([lat, lng]);
+        catchCircle.bringToFront();
       }
+
+      if (centerMap) map.setView([lat, lng], 18);
+
+      updateFogOverlay();
+      refreshFlags(false);
+      updateVisibleFlags();
+      renderTopBar();
+      renderPanelIfOpen();
+      saveState();
+    }
 
       updateFogOverlay();
       refreshFlags(false);
