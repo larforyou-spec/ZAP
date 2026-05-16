@@ -4,97 +4,70 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Zap Flags – Jogo</title>
-    <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
-    <!-- QR Code Generator -->
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body, html { height: 100%; width: 100%; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #1a1a2e; color: #eee; overflow: hidden; }
+        body, html { height: 100%; width: 100%; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; color: #333; overflow: hidden; }
         #game-container { height: 100%; width: 100%; position: relative; }
 
-        /* Painéis modais */
-        .modal { position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.8); display: flex; justify-content: center; align-items: center; z-index: 2000; }
-        .modal-content { background: #16213e; border-radius: 1rem; padding: 2rem; max-width: 420px; width: 90%; color: #eee; box-shadow: 0 0 25px rgba(0,200,255,0.3); text-align: center; }
-        .modal-content h2 { color: #00d4ff; margin-bottom: 1rem; }
-        .modal-content input, .modal-content select { width: 100%; padding: 0.7rem; margin: 0.5rem 0; border-radius: 0.5rem; border: none; background: #0f3460; color: white; }
-        .modal-content button { background: #e94560; color: white; border: none; padding: 0.8rem 1.5rem; border-radius: 2rem; font-weight: bold; cursor: pointer; transition: 0.3s; margin: 0.5rem; }
-        .modal-content button:hover { background: #ff6b7a; transform: scale(1.02); }
-        .modal-content .link { color: #00d4ff; cursor: pointer; text-decoration: underline; }
-        .modal-content .close-btn { background: none; border: none; color: #aaa; font-size: 2rem; position: absolute; top:0.5rem; right:1rem; cursor: pointer; }
-        .modal-content .row { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+        /* Modais */
+        .modal { position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.7); display: flex; justify-content: center; align-items: center; z-index: 2000; }
+        .modal-content { background: white; border-radius: 1rem; padding: 2rem; max-width: 500px; width: 90%; color: #333; box-shadow: 0 0 30px rgba(0,0,0,0.2); text-align: center; }
+        .modal-content h2 { color: #16213e; margin-bottom: 1rem; }
+        .modal-content input, .modal-content select { width: 100%; padding: 0.7rem; margin: 0.5rem 0; border-radius: 0.5rem; border: 1px solid #ccc; background: white; color: #333; }
+        .modal-content button { background: #e94560; color: white; border: none; padding: 0.8rem 1.5rem; border-radius: 2rem; font-weight: bold; cursor: pointer; margin: 0.5rem; }
+        .modal-content button:hover { background: #c0392b; }
+        .link { color: #2980b9; cursor: pointer; text-decoration: underline; }
 
-        /* Interface no mapa */
+        /* Mapa (claro) */
         #map { height: 100%; width: 100%; z-index: 1; }
         .ui-overlay { position: absolute; z-index: 1000; pointer-events: none; }
         .ui-overlay > * { pointer-events: auto; }
 
-        #hud {
-            top: 1rem; left: 1rem;
-            background: rgba(15, 52, 96, 0.85);
-            backdrop-filter: blur(8px);
-            border-radius: 1rem;
-            padding: 0.8rem;
-            color: white;
-            min-width: 200px;
-            font-size: 0.9rem;
-        }
-        #hud .hud-icons { display: flex; align-items: center; gap: 0.8rem; flex-wrap: wrap; }
-        #hud .icon-btn { background: transparent; border: none; color: white; font-size: 1.4rem; cursor: pointer; padding: 0.2rem; }
-        #hud .energy-bar { width: 100%; height: 6px; background: #555; border-radius: 3px; margin: 0.3rem 0; }
-        #hud .energy-fill { height: 100%; background: #00d4ff; border-radius: 3px; }
+        /* HUD */
+        #hud { top: 1rem; left: 1rem; background: rgba(255,255,255,0.9); border-radius: 1rem; padding: 0.8rem; min-width: 220px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); color: #16213e; font-size: 0.9rem; }
+        .hud-icons { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
+        .icon-btn { background: none; border: none; color: #16213e; font-size: 1.3rem; cursor: pointer; }
+        .energy-bar { width: 100%; height: 6px; background: #ddd; border-radius: 3px; margin: 0.3rem 0; }
+        .energy-fill { height: 100%; background: #27ae60; border-radius: 3px; }
 
-        #offline-dpad {
-            bottom: 2rem; right: 1rem;
-            display: grid; grid-template-columns: 50px 50px 50px; grid-template-rows: 50px 50px 50px;
-            gap: 5px;
-        }
-        .dpad-btn { background: #0f3460; border: none; color: white; font-size: 1.5rem; border-radius: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-        .dpad-center { background: #e94560; grid-row: 2; grid-column: 2; }
+        /* D-Pad */
+        #offline-dpad { bottom: 2rem; right: 1rem; display: grid; grid-template-columns: 50px 50px 50px; grid-template-rows: 50px 50px 50px; gap: 5px; }
+        .dpad-btn { background: white; border: 1px solid #ccc; color: #16213e; font-size: 1.5rem; border-radius: 12px; cursor: pointer; }
+        .dpad-center { background: #e94560; color: white; }
 
-        /* Chat panel */
-        #chat-panel {
-            top: 1rem; right: 1rem;
-            bottom: auto; max-height: 60vh;
-            background: rgba(22, 33, 62, 0.95);
-            backdrop-filter: blur(12px);
-            border-radius: 1rem;
-            padding: 1rem;
-            width: 280px;
-            color: white;
-        }
-        #chat-messages { max-height: 200px; overflow-y: auto; margin-bottom: 0.5rem; font-size: 0.85rem; }
-        .chat-msg { margin: 0.3rem 0; }
-        .chat-input { width: calc(100% - 70px); padding: 0.4rem; border-radius: 1rem; border: none; background: #0f3460; color: white; }
-        .chat-send { background: #e94560; border: none; color: white; padding: 0.4rem 0.8rem; border-radius: 2rem; cursor: pointer; }
+        /* Rodapé publicitário */
+        #ticker { position: absolute; bottom: 0; left: 0; right: 0; height: 30px; background: #16213e; color: white; display: flex; align-items: center; padding: 0 1rem; font-size: 0.8rem; z-index: 900; overflow: hidden; white-space: nowrap; }
 
-        /* Trade modal */
-        .trade-area { display: flex; gap: 1rem; justify-content: center; margin: 1rem 0; }
-        .trade-slot { width: 120px; height: 120px; border: 2px dashed #00d4ff; border-radius: 1rem; display: flex; align-items: center; justify-content: center; position: relative; }
-        .trade-slot img { max-width: 100%; max-height: 100%; }
-        .qr-large { position: fixed; top:50%; left:50%; transform: translate(-50%, -50%); background: white; padding: 2rem; border-radius: 1rem; z-index: 9999; text-align: center; }
-        .qr-large canvas { width: 200px; height: 200px; }
-        .lock-overlay { position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; font-size: 3rem; color: white; pointer-events: none; }
+        /* Chat principal (lista de jogadores) */
+        #player-list-panel { top: 1rem; right: 1rem; background: white; border-radius: 1rem; padding: 1rem; min-width: 250px; max-height: 60vh; overflow-y: auto; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .player-entry { display: flex; justify-content: space-between; align-items: center; margin: 0.5rem 0; }
+        .add-friend-btn { background: #27ae60; color: white; border: none; padding: 0.2rem 0.8rem; border-radius: 1rem; cursor: pointer; }
+
+        /* Janela de chat privado */
+        .chat-modal { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; border-radius: 1rem; padding: 1rem; width: 400px; max-height: 80vh; z-index: 2500; box-shadow: 0 10px 40px rgba(0,0,0,0.3); display: flex; flex-direction: column; }
+        .chat-modal .messages { flex: 1; overflow-y: auto; margin-bottom: 0.5rem; max-height: 200px; }
+        .chat-modal .input-row { display: flex; gap: 0.5rem; }
+        .chat-modal input { flex: 1; padding: 0.4rem; border-radius: 1rem; border: 1px solid #ccc; }
+
+        /* Trade, warehouse embutidos */
+        .trade-slot { width: 100px; height: 100px; border: 2px dashed #ccc; border-radius: 1rem; margin: 0.5rem; }
+        .qr-large { background: white; padding: 2rem; border-radius: 1rem; }
         .hidden { display: none !important; }
-
-        /* Warehouse */
-        #warehouse-panel .qr-item { display: inline-block; margin: 0.3rem; cursor: pointer; }
-        #warehouse-panel canvas { width: 60px; height: 60px; }
     </style>
 </head>
 <body>
     <div id="game-container">
-        <!-- Mapa -->
         <div id="map"></div>
 
-        <!-- Modal de autenticação -->
+        <!-- Auth modal -->
         <div id="auth-modal" class="modal">
             <div class="modal-content">
                 <h2 id="auth-title">Zap Flags</h2>
-                <select id="account-type"><option value="JG">Jogador</option><option value="PR">Empresa</option></select>
-                <input id="auth-name" placeholder="Nome / Empresa" />
+                <select id="account-type"><option value="JG">Jogador</option><option value="PR">Empresa</option><option value="AD">Admin</option></select>
+                <input id="auth-name" placeholder="Nome" />
                 <input id="auth-password" type="password" placeholder="Password" />
                 <input id="auth-confirm-password" type="password" placeholder="Confirmar password" class="hidden" />
                 <button id="auth-action-btn">Entrar / Registar</button>
@@ -103,256 +76,180 @@
             </div>
         </div>
 
-        <!-- Escolha de modo (GPS vs Casa) -->
-        <div id="mode-modal" class="modal hidden">
-            <div class="modal-content">
-                <h2>Escolhe o modo</h2>
-                <div class="row">
-                    <button id="gps-mode-btn"><i class="fa-solid fa-location-dot"></i> GPS real</button>
-                    <button id="home-mode-btn"><i class="fa-solid fa-house"></i> Modo casa</button>
-                </div>
-            </div>
-        </div>
+        <!-- Modo modal -->
+        <div id="mode-modal" class="modal hidden"><div class="modal-content"><h2>Modo</h2><button id="gps-mode-btn">GPS</button><button id="home-mode-btn">Casa</button></div></div>
 
-        <!-- HUD do jogador -->
+        <!-- HUD -->
         <div id="hud" class="ui-overlay hidden">
-            <div class="hud-icons">
-                <span id="hud-name"></span>
-                <button class="icon-btn" id="skill-btn" title="Skills"><i class="fa-solid fa-bolt"></i></button>
-                <button class="icon-btn" id="flag-count-btn" title="Bandeiras apanhadas"><i class="fa-solid fa-flag"></i> <span id="flag-count">0</span></button>
-                <div class="energy-bar" style="flex:1"><div class="energy-fill" id="energy-fill" style="width:100%"></div></div>
-                <button class="icon-btn" id="gps-fix-btn" title="Fixar GPS / Centro"><i class="fa-solid fa-crosshairs"></i></button>
-                <button class="icon-btn" id="chat-toggle-btn" title="Chat"><i class="fa-solid fa-comments"></i></button>
-                <button class="icon-btn" id="logout-btn" title="Sair"><i class="fa-solid fa-right-from-bracket"></i></button>
-            </div>
+            <div class="hud-icons"><span id="hud-name"></span><button class="icon-btn" id="skill-btn"><i class="fa-solid fa-bolt"></i></button><button class="icon-btn"><i class="fa-solid fa-flag"></i> <span id="flag-count">0</span></button><div class="energy-bar"><div class="energy-fill" id="energy-fill"></div></div><button class="icon-btn" id="gps-fix-btn"><i class="fa-solid fa-crosshairs"></i></button><button class="icon-btn" id="player-list-btn"><i class="fa-solid fa-users"></i></button><button class="icon-btn" id="logout-btn"><i class="fa-solid fa-right-from-bracket"></i></button></div>
         </div>
 
-        <!-- D-Pad offline -->
-        <div id="offline-dpad" class="ui-overlay hidden">
-            <button class="dpad-btn" data-dir="nw"><i class="fa-solid fa-arrow-up-left"></i></button>
-            <button class="dpad-btn" data-dir="n"><i class="fa-solid fa-arrow-up"></i></button>
-            <button class="dpad-btn" data-dir="ne"><i class="fa-solid fa-arrow-up-right"></i></button>
-            <button class="dpad-btn" data-dir="w"><i class="fa-solid fa-arrow-left"></i></button>
-            <button class="dpad-center" id="center-btn"><i class="fa-solid fa-location-dot"></i></button>
-            <button class="dpad-btn" data-dir="e"><i class="fa-solid fa-arrow-right"></i></button>
-            <button class="dpad-btn" data-dir="sw"><i class="fa-solid fa-arrow-down-left"></i></button>
-            <button class="dpad-btn" data-dir="s"><i class="fa-solid fa-arrow-down"></i></button>
-            <button class="dpad-btn" data-dir="se"><i class="fa-solid fa-arrow-down-right"></i></button>
-        </div>
+        <!-- D-Pad -->
+        <div id="offline-dpad" class="ui-overlay hidden"><button data-dir="nw" class="dpad-btn"><i class="fa fa-arrow-up-left"></i></button><button data-dir="n" class="dpad-btn"><i class="fa fa-arrow-up"></i></button><button data-dir="ne" class="dpad-btn"><i class="fa fa-arrow-up-right"></i></button><button data-dir="w" class="dpad-btn"><i class="fa fa-arrow-left"></i></button><button class="dpad-center" id="center-btn"><i class="fa fa-location-dot"></i></button><button data-dir="e" class="dpad-btn"><i class="fa fa-arrow-right"></i></button><button data-dir="sw" class="dpad-btn"><i class="fa fa-arrow-down-left"></i></button><button data-dir="s" class="dpad-btn"><i class="fa fa-arrow-down"></i></button><button data-dir="se" class="dpad-btn"><i class="fa fa-arrow-down-right"></i></button></div>
 
-        <!-- Painel da empresa -->
-        <div id="pr-dashboard" class="ui-overlay hidden">
-            <h3><i class="fa-solid fa-building"></i> <span id="pr-name"></span></h3>
-            <p>Pacotes: <span id="pr-packages-count">0</span></p>
-            <button class="hud-btn small" id="pr-logout-btn">Sair</button>
-        </div>
+        <!-- Painel empresa / admin -->
+        <div id="pr-dashboard" class="ui-overlay hidden"><h3><span id="pr-name"></span></h3><p>Pacotes: <span id="pr-packages-count">0</span></p><button id="pr-logout-btn">Sair</button></div>
+        <div id="admin-panel" class="ui-overlay hidden" style="top:1rem; right:1rem; background:white; padding:1rem; border-radius:1rem; max-width:300px;"><h3>Admin</h3><p>Jogadores: <span id="admin-jg">0</span> / Empresas: <span id="admin-pr">0</span></p><button id="admin-create-flag-btn">Criar bandeira</button><button id="admin-promo-btn">Fazer promoção</button><button id="admin-logout-btn">Sair</button></div>
 
-        <!-- Modal de resultado -->
-        <div id="result-modal" class="modal hidden">
-            <div class="modal-content">
-                <h2 id="result-title"></h2>
-                <p id="result-message"></p>
-                <button id="close-result-btn">OK</button>
-            </div>
-        </div>
-
-        <!-- Chat panel -->
-        <div id="chat-panel" class="ui-overlay hidden">
-            <div id="chat-messages"></div>
-            <input class="chat-input" id="chat-input" placeholder="Mensagem..." />
-            <button class="chat-send" id="chat-send-btn"><i class="fa-solid fa-paper-plane"></i></button>
-            <button class="hud-btn small" id="open-trade-btn"><i class="fa-solid fa-right-left"></i> Trocar QR</button>
-            <button class="hud-btn small" id="open-warehouse-btn"><i class="fa-solid fa-warehouse"></i> Armazém</button>
-        </div>
+        <!-- Player list / friend chat -->
+        <div id="player-list-panel" class="ui-overlay hidden"><h3>Jogadores</h3><div id="player-list"></div></div>
+        <div id="private-chat-modal" class="chat-modal hidden"><div class="messages" id="private-messages"></div><div class="input-row"><input id="private-input" /><button id="private-send-btn">Enviar</button></div><button id="open-trade-from-chat">Troca</button><button id="open-warehouse-from-chat">Armazém</button><button id="close-private-chat">Fechar</button></div>
 
         <!-- Trade modal -->
-        <div id="trade-modal" class="modal hidden">
-            <div class="modal-content" style="max-width:600px;">
-                <h2>Troca de QR</h2>
-                <div class="trade-area">
-                    <div>
-                        <p>A tua oferta</p>
-                        <div class="trade-slot" id="my-offer-slot" ondragover="allowDrop(event)" ondrop="dropQR(event, 'my')" onclick="selectQRFromInventory('my')">Arrasta QR aqui</div>
-                    </div>
-                    <div>
-                        <p>Oferta do parceiro</p>
-                        <div class="trade-slot" id="partner-offer-slot">QR parceiro</div>
-                    </div>
-                </div>
-                <button id="enlarge-my-qr-btn"><i class="fa-solid fa-magnifying-glass"></i> Ampliar meu QR</button>
-                <button id="enlarge-partner-qr-btn"><i class="fa-solid fa-magnifying-glass"></i> Ampliar QR parceiro</button>
-                <button id="accept-trade-btn"><i class="fa-solid fa-check"></i> Aceitar troca</button>
-                <button class="close-btn" id="close-trade-btn">&times;</button>
-            </div>
-        </div>
+        <div id="trade-modal" class="modal hidden"><div class="modal-content"><h2>Troca</h2><div style="display:flex;gap:1rem;"><div class="trade-slot" id="my-offer-slot" ondragover="allowDrop(event)" ondrop="dropQR(event,'my')" onclick="selectQRFromInventory('my')">Arrasta QR</div><div class="trade-slot"><canvas id="partner-qr-canvas" width="100" height="100"></canvas></div></div><button id="enlarge-my-qr">Ampliar meu QR</button><button id="enlarge-partner-qr">Ampliar parceiro</button><button id="accept-trade-btn">Aceitar</button><button id="close-trade-btn">Fechar</button></div></div>
+        <div id="qr-large-overlay" class="modal hidden"><div class="qr-large"><div class="lock-overlay"><i class="fa fa-lock"></i></div><canvas id="qr-large-canvas" width="200" height="200"></canvas><button id="close-qr-large-btn">Fechar</button></div></div>
+        <div id="warehouse-panel" class="modal hidden"><div class="modal-content"><h2>Armazém</h2><div id="warehouse-qr-list"></div><button id="close-warehouse-btn">Fechar</button></div></div>
 
-        <!-- QR Large overlay -->
-        <div id="qr-large-overlay" class="modal hidden">
-            <div class="qr-large" id="qr-large-container">
-                <div class="lock-overlay"><i class="fa-solid fa-lock"></i></div>
-                <canvas id="qr-large-canvas" width="200" height="200"></canvas>
-                <button id="close-qr-large-btn">Fechar</button>
-            </div>
-        </div>
+        <!-- Ticker rodapé -->
+        <div id="ticker"></div>
 
-        <!-- Warehouse panel -->
-        <div id="warehouse-panel" class="modal hidden">
-            <div class="modal-content" style="max-width:500px;">
-                <h2>Armazém de QRs</h2>
-                <div id="warehouse-qr-list"></div>
-                <button id="close-warehouse-btn">Fechar</button>
-            </div>
-        </div>
+        <!-- Result modal -->
+        <div id="result-modal" class="modal hidden"><div class="modal-content"><h2 id="result-title"></h2><p id="result-message"></p><button id="close-result-btn">OK</button></div></div>
     </div>
-
-    <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-      <script>
-    // ======================== 🏠 ARRANQUE ========================
+     <script>
+    // ======================== BOOT ========================
     const STORAGE_KEY = 'zapflags_state';
     let gameState = defaultState();
-
     function defaultState() {
         return {
             players: {},
             companies: {},
-            currentUser: null,
             flags: [],
-            chatMessages: [],
-            settings: { maxFlags: 5, flagRadius: 0.001, viewRadius: 0.000045 } // ~5m
+            chatMessages: {},  // key: "user1|user2" array
+            settings: { maxFlags: 5, flagRadius: 0.001, viewRadius: 0.000045 },
+            ads: []  // últimas recolhas (nome jogador, empresa, prémio)
         };
     }
-
     function loadState() {
         const raw = localStorage.getItem(STORAGE_KEY);
-        if (raw) {
-            try { gameState = JSON.parse(raw); } catch(e) { gameState = defaultState(); }
-        } else {
-            gameState = defaultState();
-        }
-        gameState.flags = gameState.flags || [];
-        gameState.players = gameState.players || {};
-        gameState.companies = gameState.companies || {};
-        gameState.chatMessages = gameState.chatMessages || [];
+        if (raw) { try { gameState = JSON.parse(raw); } catch(e) { gameState = defaultState(); } }
+        else gameState = defaultState();
     }
+    function saveState() { localStorage.setItem(STORAGE_KEY, JSON.stringify(gameState)); }
 
-    function saveState() {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(gameState));
-    }
-
-    function normalizePlayer(p) {
-        return { ...p, energy: p.energy ?? 100, points: p.points ?? 0, flagsCollected: p.flagsCollected ?? [], inventory: p.inventory ?? [] };
-    }
-    function normalizeCompany(c) {
-        return { ...c, budget: c.budget ?? 1000, packages: c.packages ?? [] };
-    }
-
-    // ======================== 🔐 LOGIN / REGISTO ========================
+    // ======================== AUTH ========================
     let authMode = 'login';
-    function showAuthModal() { document.getElementById('auth-modal').classList.remove('hidden'); updateAuthUI(); }
     function updateAuthUI() {
         const type = document.getElementById('account-type').value;
-        document.getElementById('auth-title').innerText = type === 'JG' ? 'Zap Flags - Jogador' : 'Zap Flags - Empresa';
-        document.getElementById('auth-action-btn').innerText = authMode === 'login' ? 'Entrar' : 'Criar conta';
-        document.getElementById('switch-mode').innerText = authMode === 'login' ? 'Não tem conta? Criar' : 'Já tem conta? Entrar';
-        document.getElementById('auth-confirm-password').classList.toggle('hidden', authMode !== 'register');
-        if (authMode === 'login') document.getElementById('auth-confirm-password').value = '';
+        document.getElementById('auth-title').innerText = type==='JG'?'Jogador':type==='PR'?'Empresa':'Admin';
+        document.getElementById('auth-action-btn').innerText = authMode==='login'?'Entrar':'Criar';
+        document.getElementById('switch-mode').innerText = authMode==='login'?'Criar conta':'Já tem conta?';
+        document.getElementById('auth-confirm-password').classList.toggle('hidden', authMode!=='register');
     }
-    document.getElementById('account-type').addEventListener('change', updateAuthUI);
-    document.getElementById('switch-mode').addEventListener('click', ()=>{ authMode = authMode === 'login' ? 'register' : 'login'; updateAuthUI(); });
-
-    document.getElementById('recover-pw').addEventListener('click', ()=>{
+    document.getElementById('account-type').onchange = updateAuthUI;
+    document.getElementById('switch-mode').onclick = ()=>{ authMode = authMode==='login'?'register':'login'; updateAuthUI(); };
+    document.getElementById('recover-pw').onclick = ()=>{
         const name = document.getElementById('auth-name').value.trim();
         const type = document.getElementById('account-type').value;
-        const col = type === 'JG' ? gameState.players : gameState.companies;
-        const found = Object.values(col).find(u => u.name === name);
-        alert(found ? `Password (demo): ${found.password}` : 'Não encontrado');
-    });
-
-    document.getElementById('auth-action-btn').addEventListener('click', ()=>{
+        let col = type==='JG'?gameState.players:type==='PR'?gameState.companies:null;
+        if (type==='AD') { alert('Admin não recupera password'); return; }
+        const found = Object.values(col).find(u=>u.name===name);
+        alert(found ? 'Password: '+found.password : 'Não encontrado');
+    };
+    document.getElementById('auth-action-btn').onclick = ()=>{
         const type = document.getElementById('account-type').value;
         const name = document.getElementById('auth-name').value.trim();
         const pw = document.getElementById('auth-password').value.trim();
-        const confirmPw = document.getElementById('auth-confirm-password').value.trim();
-        if (!name || !pw) { alert('Nome e password obrigatórios'); return; }
-        if (authMode === 'register') {
-            if (pw !== confirmPw) { alert('Passwords não coincidem'); return; }
-            const id = Date.now().toString(36)+Math.random().toString(36).substr(2);
-            if (type === 'JG') {
-                gameState.players[id] = normalizePlayer({ id, name, password: pw, x: 38.7223, y: -9.1393 });
-            } else {
-                gameState.companies[id] = normalizeCompany({ id, name, password: pw });
-            }
-            saveState();
-            alert('Conta criada! Faça login.');
-            authMode = 'login';
-            updateAuthUI();
+        const confirm = document.getElementById('auth-confirm-password').value.trim();
+        if (!name || !pw) { alert('Preencha nome e password'); return; }
+        if (authMode==='register') {
+            if (pw !== confirm) { alert('Passwords não coincidem'); return; }
+            if (type==='AD') { alert('Não pode criar admin'); return; }
+            const id = Date.now().toString(36)+Math.random().toString(36);
+            if (type==='JG') gameState.players[id] = normalizePlayer({ id, name, password: pw, x:38.7223, y:-9.1393 });
+            else gameState.companies[id] = normalizeCompany({ id, name, password: pw });
+            saveState(); alert('Conta criada!'); authMode='login'; updateAuthUI();
         } else {
-            const col = type === 'JG' ? gameState.players : gameState.companies;
-            const found = Object.values(col).find(u => u.name === name && u.password === pw);
-            if (!found) { alert('Credenciais inválidas'); return; }
-            gameState.currentUser = { type, id: found.id };
+            if (type==='AD') {
+                if (name==='admin' && pw==='admin') { gameState.currentUser={type:'AD',id:'admin'}; saveState(); startAdmin(); return; }
+                else { alert('Credenciais admin inválidas'); return; }
+            }
+            const col = type==='JG'?gameState.players:gameState.companies;
+            const user = Object.values(col).find(u=>u.name===name && u.password===pw);
+            if (!user) { alert('Credenciais inválidas'); return; }
+            gameState.currentUser = { type, id: user.id };
             saveState();
             document.getElementById('auth-modal').classList.add('hidden');
-            if (type === 'JG') startPlayerGame(); else startPRGame();
+            if (type==='JG') startPlayerGame(); else startPRGame();
         }
-    });
+    };
 
-    // ======================== 🗺️ MAPA E JOGO ========================
-    let map, playerMarker, flagMarkers = {}, watchId = null;
-    let currentTradeQR = null; // QR que o jogador quer oferecer
+    function normalizePlayer(p) { return { ...p, energy:100, points:0, flagsCollected:[], inventory:[], friends:[] }; }
+    function normalizeCompany(c) { return { ...c, packages:[] }; }
 
+    let map, playerMarker, flagMarkers={}, watchId;
+    let circleInner, circleOuter;
+    let currentPrivateChat = null; // nome do amigo
+
+    // ======================== PLAYER GAME ========================
     function startPlayerGame() {
         document.getElementById('hud').classList.remove('hidden');
         document.getElementById('pr-dashboard').classList.add('hidden');
-        document.getElementById('offline-dpad').classList.add('hidden');
+        document.getElementById('admin-panel').classList.add('hidden');
         document.getElementById('mode-modal').classList.remove('hidden');
-        initMap();
-        updateHUD();
-        refreshFlags();
+        document.getElementById('player-list-panel').classList.add('hidden');
+        initMap(); updateHUD(); refreshFlags();
     }
     function startPRGame() {
         document.getElementById('hud').classList.add('hidden');
         document.getElementById('pr-dashboard').classList.remove('hidden');
-        document.getElementById('offline-dpad').classList.add('hidden');
+        document.getElementById('admin-panel').classList.add('hidden');
         document.getElementById('mode-modal').classList.add('hidden');
-        if (map) map.remove();
-        map = null; document.getElementById('map').classList.add('hidden');
+        if (map) map.remove(); map=null; document.getElementById('map').classList.add('hidden');
         updatePRDashboard();
     }
+    function startAdmin() {
+        document.getElementById('auth-modal').classList.add('hidden');
+        document.getElementById('hud').classList.add('hidden');
+        document.getElementById('pr-dashboard').classList.add('hidden');
+        document.getElementById('admin-panel').classList.remove('hidden');
+        document.getElementById('mode-modal').classList.add('hidden');
+        if (map) map.remove(); map=null; document.getElementById('map').classList.add('hidden');
+        document.getElementById('admin-jg').innerText = Object.keys(gameState.players).length;
+        document.getElementById('admin-pr').innerText = Object.keys(gameState.companies).length;
+    }
 
-    document.getElementById('gps-mode-btn').addEventListener('click', ()=>{ document.getElementById('mode-modal').classList.add('hidden'); requestGPSMode(); });
-    document.getElementById('home-mode-btn').addEventListener('click', ()=>{ document.getElementById('mode-modal').classList.add('hidden'); activateHomeMode(); });
-    document.getElementById('logout-btn').addEventListener('click', logout);
-    document.getElementById('pr-logout-btn').addEventListener('click', logout);
-    function logout() { stopGPS(); gameState.currentUser=null; saveState(); if(map){map.remove();map=null;} document.getElementById('hud').classList.add('hidden'); document.getElementById('pr-dashboard').classList.add('hidden'); document.getElementById('offline-dpad').classList.add('hidden'); document.getElementById('map').classList.add('hidden'); showAuthModal(); }
+    document.getElementById('gps-mode-btn').onclick = ()=>{ document.getElementById('mode-modal').classList.add('hidden'); requestGPSMode(); };
+    document.getElementById('home-mode-btn').onclick = ()=>{ document.getElementById('mode-modal').classList.add('hidden'); activateHomeMode(); };
+    document.getElementById('logout-btn').onclick = logout;
+    document.getElementById('pr-logout-btn').onclick = logout;
+    document.getElementById('admin-logout-btn').onclick = logout;
+    function logout() {
+        stopGPS(); gameState.currentUser=null; saveState();
+        if (map) { map.remove(); map=null; }
+        document.querySelectorAll('.ui-overlay, .modal, .chat-modal').forEach(el => el.classList.add('hidden'));
+        document.getElementById('auth-modal').classList.remove('hidden');
+    }
 
     function initMap() {
         if (map) map.remove();
         document.getElementById('map').classList.remove('hidden');
         map = L.map('map', { center: [38.7223, -9.1393], zoom: 17, zoomControl: false });
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution: '&copy; OSM' }).addTo(map);
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { attribution: '&copy; OSM' }).addTo(map);
         L.control.zoom({ position: 'bottomleft' }).addTo(map);
-        // Avatar humano (corpo inteiro)
-        const playerIcon = L.divIcon({ className: 'player-icon', html: '<i class="fa-solid fa-person" style="color:#e94560; font-size:40px; filter: drop-shadow(0 0 8px red);"></i>', iconSize: [40,40], iconAnchor: [20,40] });
+
+        const playerIcon = L.divIcon({ className:'player-icon', html:'<i class="fa-solid fa-person" style="color:#e94560; font-size:40px;"></i>', iconSize:[40,40], iconAnchor:[20,40] });
         const player = gameState.players[gameState.currentUser.id];
-        playerMarker = L.marker([player.x, player.y], { icon: playerIcon, zIndexOffset: 1000 }).addTo(map);
+        playerMarker = L.marker([player.x, player.y], { icon: playerIcon, zIndexOffset:1000 }).addTo(map);
+
+        circleInner = L.circle([player.x, player.y], { radius: 2.5, color: 'red', fillColor: '#f03', fillOpacity: 0.1, weight: 2 }).addTo(map);
+        circleOuter = L.circle([player.x, player.y], { radius: 5, color: 'red', fill: false, weight: 2, dashArray: '5, 5' }).addTo(map);
+
         updatePlayerLocation([player.x, player.y]);
         centerOnPlayer();
         refreshFlags();
     }
 
-    function createFlagIcon() { // todas vermelhas
-        return L.divIcon({
-            className: 'flag-icon',
-            html: '<i class="fa-solid fa-flag" style="color:red; font-size:20px; filter: drop-shadow(0 0 6px red);"></i>',
-            iconSize: [24,24], iconAnchor: [12,24]
-        });
+    function createFlagIcon() {
+        return L.divIcon({ className:'flag-icon', html:'<i class="fa-solid fa-flag" style="color:red; font-size:20px;"></i>', iconSize:[24,24], iconAnchor:[12,24] });
     }
 
     function updatePlayerLocation(latlng) {
         if (!playerMarker) return;
         playerMarker.setLatLng(latlng);
+        circleInner.setLatLng(latlng);
+        circleOuter.setLatLng(latlng);
         const player = gameState.players[gameState.currentUser.id];
         player.x = latlng[0]; player.y = latlng[1];
         saveState();
@@ -361,7 +258,6 @@
 
     function updateHUD() {
         const player = gameState.players[gameState.currentUser.id];
-        if (!player) return;
         document.getElementById('hud-name').innerText = player.name;
         document.getElementById('flag-count').innerText = player.flagsCollected.length;
         document.getElementById('energy-fill').style.width = player.energy + '%';
@@ -371,10 +267,10 @@
         if (navigator.geolocation) {
             watchId = navigator.geolocation.watchPosition(updatePosition, handleGeoError, { enableHighAccuracy: true });
             document.getElementById('offline-dpad').classList.add('hidden');
-        } else { alert('GPS indisponível'); activateHomeMode(); }
+        } else { activateHomeMode(); }
     }
     function activateHomeMode() { stopGPS(); document.getElementById('offline-dpad').classList.remove('hidden'); }
-    function stopGPS() { if (watchId) { navigator.geolocation.clearWatch(watchId); watchId = null; } }
+    function stopGPS() { if (watchId) { navigator.geolocation.clearWatch(watchId); watchId=null; } }
     function updatePosition(pos) {
         const latlng = [pos.coords.latitude, pos.coords.longitude];
         updatePlayerLocation(latlng);
@@ -382,50 +278,51 @@
         player.energy = Math.max(0, player.energy - 0.05);
         updateHUD(); saveState();
     }
-    function handleGeoError(err) { alert('Erro GPS'); activateHomeMode(); }
+    function handleGeoError() { alert('Erro GPS'); activateHomeMode(); }
 
-    // Movimento manual (setas já estão corretas: norte sobe, sul desce)
-    document.querySelectorAll('.dpad-btn[data-dir]').forEach(btn => btn.addEventListener('click', e => moveHomePlayer(e.currentTarget.dataset.dir)));
-    document.getElementById('center-btn').addEventListener('click', centerOnPlayer);
-    document.addEventListener('keydown', e => {
-        if (gameState.currentUser?.type==='JG' && !document.getElementById('offline-dpad').classList.contains('hidden')) {
-            const dirMap = { ArrowUp:'n', ArrowDown:'s', ArrowLeft:'w', ArrowRight:'e' };
-            if (dirMap[e.key]) moveHomePlayer(dirMap[e.key]);
-        }
-    });
+    document.querySelectorAll('.dpad-btn[data-dir]').forEach(b => b.onclick = (e) => moveHomePlayer(e.currentTarget.dataset.dir));
+    document.getElementById('center-btn').onclick = centerOnPlayer;
     function moveHomePlayer(dir) {
         const step = 0.00002; // ~2m
-        const player = gameState.players[gameState.currentUser.id];
-        if (dir.includes('n')) player.x += step;
-        if (dir.includes('s')) player.x -= step;
-        if (dir.includes('e')) player.y += step;
-        if (dir.includes('w')) player.y -= step;
-        updatePlayerLocation([player.x, player.y]);
-        player.energy = Math.max(0, player.energy - 0.1);
+        const p = gameState.players[gameState.currentUser.id];
+        if (dir.includes('n')) p.x += step;
+        if (dir.includes('s')) p.x -= step;
+        if (dir.includes('e')) p.y += step;
+        if (dir.includes('w')) p.y -= step;
+        updatePlayerLocation([p.x, p.y]);
+        p.energy = Math.max(0, p.energy - 0.1);
         updateHUD(); saveState();
     }
-    function centerOnPlayer() { const p = gameState.players[gameState.currentUser.id]; if(map) map.setView([p.x, p.y], 17); }
+    function centerOnPlayer() {
+        const p = gameState.players[gameState.currentUser.id];
+        if (map) map.setView([p.x, p.y], 17);
+    }
 
-    // ======================== 🔵 BANDEIRAS ========================
+    // ======================== FLAGS ========================
     function getAllActivePackages() {
         const pkgs = [];
         for (let cid in gameState.companies) {
-            (gameState.companies[cid].packages || []).forEach(p => { if (p.flagsRemaining>0) pkgs.push({...p, companyId: cid}); });
+            (gameState.companies[cid].packages||[]).forEach(p => { if (p.flagsRemaining>0) pkgs.push({...p, companyId: cid}); });
         }
         return pkgs;
     }
-
     function createFlagCandidate() {
         const player = gameState.players[gameState.currentUser.id];
-        const r = gameState.settings.flagRadius;
+        const r = 0.001;
         const lat = player.x + (Math.random()-0.5)*r*2;
         const lng = player.y + (Math.random()-0.5)*r*2;
         const active = getAllActivePackages();
+        // se não houver empresas, cria fantasma
+        if (active.length===0 && Object.keys(gameState.companies).length===0) {
+            // bandeira fantasma
+            const fakeCompanyId = 'fantasma';
+            const fakepackageId = 'pkfantasma';
+            return { id:'f'+Date.now()+Math.random(), lat, lng, packageId:fakepackageId, companyId:fakeCompanyId, points:10, promo:false, logo:null };
+        }
         if (active.length===0) return null;
         const chosen = active[Math.floor(Math.random()*active.length)];
         const promo = Math.random()<0.2;
-        const points = promo?20:10;
-        return { id: 'f'+Date.now()+Math.random(), lat, lng, packageId: chosen.id, companyId: chosen.companyId, points, promo };
+        return { id:'f'+Date.now()+Math.random(), lat, lng, packageId:chosen.id, companyId:chosen.companyId, points:promo?20:10, promo };
     }
 
     function refreshFlags() {
@@ -437,48 +334,47 @@
         drawFlagsOnMap();
         saveState();
     }
-
     function drawFlagsOnMap() {
         if (!map) return;
         Object.values(flagMarkers).forEach(m => map.removeLayer(m));
         flagMarkers = {};
         gameState.flags.forEach(flag => {
-            const marker = L.marker([flag.lat, flag.lng], { icon: createFlagIcon() }).addTo(map);
+            const icon = createFlagIcon();
+            const marker = L.marker([flag.lat, flag.lng], { icon }).addTo(map);
             marker.bindPopup(`<div class="flag-popup"><strong>${flag.promo?'🌟PROMO':'🏁Bandeira'}</strong><br>+${flag.points} pts<br><button onclick="collectFlag('${flag.id}')">Recolher</button></div>`);
             flagMarkers[flag.id] = marker;
         });
     }
-
     window.collectFlag = function(flagId) {
-        if (!gameState.currentUser || gameState.currentUser.type!=='JG') return;
         const player = gameState.players[gameState.currentUser.id];
         const flag = gameState.flags.find(f=>f.id===flagId);
         if (!flag || player.energy<=0) return;
-        const dist = map.distance([player.x, player.y], [flag.lat, flag.lng]);
-        if (dist > 2.5) { alert('Demasiado longe!'); return; } // 2.5 metros
+        const dist = map.distance([player.x,player.y], [flag.lat,flag.lng]);
+        if (dist > 2.5) { alert('Demasiado longe'); return; }
         player.points += flag.points;
         player.energy = Math.min(100, player.energy+5);
-        // recolher gera QR no inventário
-        const qrData = JSON.stringify({flagId, promo:flag.promo, points:flag.points});
         player.flagsCollected.push(flagId);
-        player.inventory.push({ qr: qrData, name: flag.promo?'Promo'+flag.points:'Flag'+flag.points });
-        const comp = gameState.companies[flag.companyId];
-        if (comp) {
-            const pkg = comp.packages.find(p=>p.id===flag.packageId);
+        const qrData = JSON.stringify({flagId, promo:flag.promo, points:flag.points});
+        player.inventory.push({ qr: qrData, name: (flag.promo?'Promo':'Flag')+flag.points });
+        // adicionar ao ticker
+        const compName = gameState.companies[flag.companyId]?.name || 'Fantasma';
+        gameState.ads.push({ player: player.name, company: compName, prize: flag.points+' pts' });
+        if (gameState.ads.length > 10) gameState.ads.shift();
+        // atualizar pacote se existir
+        if (gameState.companies[flag.companyId]) {
+            const pkg = gameState.companies[flag.companyId].packages.find(p=>p.id===flag.packageId);
             if (pkg) pkg.flagsRemaining = Math.max(0, (pkg.flagsRemaining||1)-1);
         }
         removeFlag(flagId);
         updateHUD(); saveState();
-        document.getElementById('result-title').innerText = flag.promo?'🌟 Promo!':'Bandeira recolhida!';
-        document.getElementById('result-message').innerText = `+${flag.points}pts! QR guardado.`;
+        document.getElementById('result-title').innerText = flag.promo?'🌟 Promo!':'Bandeira!';
+        document.getElementById('result-message').innerText = `+${flag.points} pontos`;
         document.getElementById('result-modal').classList.remove('hidden');
         if (gameState.flags.length < gameState.settings.maxFlags) {
             const f = createFlagCandidate();
             if (f) { gameState.flags.push(f); drawFlagsOnMap(); }
         }
     };
-    document.getElementById('close-result-btn').addEventListener('click', ()=>document.getElementById('result-modal').classList.add('hidden'));
-
     function removeFlag(flagId) {
         gameState.flags = gameState.flags.filter(f=>f.id!==flagId);
         if (flagMarkers[flagId]) { map.removeLayer(flagMarkers[flagId]); delete flagMarkers[flagId]; }
@@ -488,70 +384,75 @@
         Object.values(flagMarkers).forEach(m => map.removeLayer(m));
         flagMarkers = {};
     }
-
     function updateVisibleFlags() {
         const player = gameState.players[gameState.currentUser.id];
         gameState.flags.forEach(flag => {
             const marker = flagMarkers[flag.id];
             if (!marker) return;
-            const dist = map.distance([player.x, player.y], [flag.lat, flag.lng]);
+            const dist = map.distance([player.x,player.y], [flag.lat,flag.lng]);
             if (dist <= 5) { if (!map.hasLayer(marker)) marker.addTo(map); }
             else { if (map.hasLayer(marker)) map.removeLayer(marker); }
         });
     }
 
-    // ======================== 💬 CHAT ========================
-    document.getElementById('chat-toggle-btn').addEventListener('click', ()=>{
-        document.getElementById('chat-panel').classList.toggle('hidden');
-    });
-    document.getElementById('chat-send-btn').addEventListener('click', sendMessage);
-    document.getElementById('chat-input').addEventListener('keypress', (e)=>{ if (e.key==='Enter') sendMessage(); });
-    function sendMessage() {
-        const input = document.getElementById('chat-input');
+    // ======================== PLAYER LIST & CHAT ========================
+    document.getElementById('player-list-btn').onclick = ()=>{
+        const panel = document.getElementById('player-list-panel');
+        panel.classList.toggle('hidden');
+        if (!panel.classList.contains('hidden')) renderPlayerList();
+    };
+    function renderPlayerList() {
+        const list = document.getElementById('player-list');
+        list.innerHTML = '';
+        const me = gameState.players[gameState.currentUser.id];
+        for (let id in gameState.players) {
+            const p = gameState.players[id];
+            if (p.id === me.id) continue;
+            const entry = document.createElement('div');
+            entry.className = 'player-entry';
+            const isFriend = me.friends.includes(p.id);
+            entry.innerHTML = `<span>${p.name}</span>`;
+            const btn = document.createElement('button');
+            btn.className = 'add-friend-btn';
+            btn.innerText = isFriend ? 'Chat' : 'Adicionar';
+            btn.onclick = ()=> {
+                if (isFriend) openPrivateChat(p.name);
+                else { me.friends.push(p.id); saveState(); renderPlayerList(); openPrivateChat(p.name); }
+            };
+            entry.appendChild(btn);
+            list.appendChild(entry);
+        }
+    }
+
+    function openPrivateChat(friendName) {
+        currentPrivateChat = friendName;
+        document.getElementById('private-chat-modal').classList.remove('hidden');
+        renderPrivateMessages();
+    }
+    document.getElementById('private-send-btn').onclick = ()=>{
+        const input = document.getElementById('private-input');
         const msg = input.value.trim();
-        if (!msg) return;
-        gameState.chatMessages.push({ from: gameState.players[gameState.currentUser.id].name, text: msg, time: Date.now() });
+        if (!msg || !currentPrivateChat) return;
+        const key = [gameState.currentUser.id, currentPrivateChat].sort().join('|');
+        if (!gameState.chatMessages[key]) gameState.chatMessages[key] = [];
+        gameState.chatMessages[key].push({ from: gameState.players[gameState.currentUser.id].name, text: msg, time: Date.now() });
         saveState();
         input.value = '';
-        renderChat();
+        renderPrivateMessages();
+    };
+    function renderPrivateMessages() {
+        const cont = document.getElementById('private-messages');
+        if (!currentPrivateChat) return;
+        const key = [gameState.currentUser.id, currentPrivateChat].sort().join('|');
+        const msgs = gameState.chatMessages[key] || [];
+        cont.innerHTML = msgs.slice(-30).map(m=>`<div><b>${m.from}:</b> ${m.text}</div>`).join('');
     }
-    function renderChat() {
-        const container = document.getElementById('chat-messages');
-        container.innerHTML = gameState.chatMessages.slice(-20).map(m => `<div class="chat-msg"><b>${m.from}:</b> ${m.text}</div>`).join('');
-        container.scrollTop = container.scrollHeight;
-    }
+    document.getElementById('close-private-chat').onclick = ()=> document.getElementById('private-chat-modal').classList.add('hidden');
+    document.getElementById('open-trade-from-chat').onclick = ()=> document.getElementById('trade-modal').classList.remove('hidden');
+    document.getElementById('open-warehouse-from-chat').onclick = openWarehouse;
 
-    // ======================== 🏬 ARMAZÉM ========================
-    document.getElementById('open-warehouse-btn').addEventListener('click', openWarehouse);
-    document.getElementById('close-warehouse-btn').addEventListener('click', ()=>document.getElementById('warehouse-panel').classList.add('hidden'));
-    function openWarehouse() {
-        const player = gameState.players[gameState.currentUser.id];
-        const list = document.getElementById('warehouse-qr-list');
-        list.innerHTML = '';
-        player.inventory.forEach((item, idx) => {
-            const div = document.createElement('div');
-            div.className = 'qr-item';
-            div.innerHTML = `<canvas id="qr-canvas-${idx}" width="60" height="60"></canvas><br><small>${item.name}</small>`;
-            div.addEventListener('click', ()=> showLargeQR(item.qr));
-            list.appendChild(div);
-            setTimeout(()=> new QRCode(document.getElementById(`qr-canvas-${idx}`), { text: item.qr, width:60, height:60 }), 10);
-        });
-        document.getElementById('warehouse-panel').classList.remove('hidden');
-    }
-
-    // ======================== 🔁 TROCA DE QR ========================
-    document.getElementById('open-trade-btn').addEventListener('click', openTrade);
-    document.getElementById('close-trade-btn').addEventListener('click', ()=>document.getElementById('trade-modal').classList.add('hidden'));
-    function openTrade() {
-        document.getElementById('trade-modal').classList.remove('hidden');
-        // limpar slots
-        document.getElementById('my-offer-slot').innerHTML = 'Arrasta QR aqui';
-        document.getElementById('partner-offer-slot').innerHTML = '<canvas id="partner-qr-canvas" width="120" height="120"></canvas>';
-        // gerar QR parceiro aleatório
-        const partnerQR = JSON.stringify({ partner: true, id: 'par'+Date.now() });
-        new QRCode(document.getElementById('partner-qr-canvas'), { text: partnerQR, width:120, height:120 });
-        currentTradeQR = null;
-    }
+    // ======================== TRADE & WAREHOUSE ========================
+    let currentTradeQR = null;
     function allowDrop(ev) { ev.preventDefault(); }
     function dropQR(ev, slot) {
         ev.preventDefault();
@@ -559,69 +460,106 @@
         if (data && slot==='my') {
             currentTradeQR = data;
             const slotEl = document.getElementById('my-offer-slot');
-            slotEl.innerHTML = '';
-            new QRCode(slotEl, { text: data, width:120, height:120 });
+            new QRCode(slotEl, { text: data, width:100, height:100 });
         }
     }
     function selectQRFromInventory(slot) {
-        // Simula: abre lista de QRs para selecionar
         const player = gameState.players[gameState.currentUser.id];
-        if (player.inventory.length===0) { alert('Sem QRs no inventário'); return; }
-        const qrData = prompt('Escolhe um QR (0 a '+(player.inventory.length-1)+')');
-        const idx = parseInt(qrData);
-        if (isNaN(idx) || idx<0 || idx>=player.inventory.length) return;
-        const qr = player.inventory[idx].qr;
-        currentTradeQR = qr;
-        const slotEl = document.getElementById('my-offer-slot');
-        slotEl.innerHTML = '';
-        new QRCode(slotEl, { text: qr, width:120, height:120 });
+        if (player.inventory.length===0) { alert('Sem QRs'); return; }
+        const idx = prompt('Índice (0 a '+(player.inventory.length-1)+')');
+        const i = parseInt(idx);
+        if (isNaN(i) || i<0 || i>=player.inventory.length) return;
+        currentTradeQR = player.inventory[i].qr;
+        document.getElementById('my-offer-slot').innerHTML = '';
+        new QRCode(document.getElementById('my-offer-slot'), { text: currentTradeQR, width:100, height:100 });
     }
-    document.getElementById('enlarge-my-qr-btn').addEventListener('click', ()=>{
-        if (!currentTradeQR) { alert('Seleciona um QR primeiro'); return; }
-        showLargeQR(currentTradeQR);
-    });
-    document.getElementById('enlarge-partner-qr-btn').addEventListener('click', ()=>{
-        const canvas = document.getElementById('partner-qr-canvas');
-        if (canvas) {
-            // obter texto do QR parceiro (hardcoded)
-            showLargeQR(JSON.stringify({ partner: true }));
-        }
-    });
-    document.getElementById('accept-trade-btn').addEventListener('click', ()=>{
-        if (!currentTradeQR) { alert('Oferece um QR primeiro'); return; }
+    document.getElementById('enlarge-my-qr').onclick = ()=> { if (currentTradeQR) showLargeQR(currentTradeQR); };
+    document.getElementById('enlarge-partner-qr').onclick = ()=> {
+        showLargeQR(JSON.stringify({ partner: true }));
+    };
+    document.getElementById('accept-trade-btn').onclick = ()=>{
+        if (!currentTradeQR) { alert('Ofereça um QR'); return; }
         const player = gameState.players[gameState.currentUser.id];
-        // remover QR do inventário
-        const idx = player.inventory.findIndex(item => item.qr === currentTradeQR);
-        if (idx===-1) { alert('QR não encontrado'); return; }
+        const idx = player.inventory.findIndex(i=>i.qr===currentTradeQR);
+        if (idx===-1) return;
         player.inventory.splice(idx,1);
-        // adicionar QR do parceiro (fictício)
-        const partnerQR = JSON.stringify({ partner: true, id: 'par'+Date.now() });
-        player.inventory.push({ qr: partnerQR, name: 'QR parceiro' });
-        saveState();
-        alert('Troca realizada!');
-        document.getElementById('trade-modal').classList.add('hidden');
-        // atualizar warehouse se aberto
-        if (!document.getElementById('warehouse-panel').classList.contains('hidden')) openWarehouse();
-    });
+        player.inventory.push({ qr: JSON.stringify({ partner: true }), name: 'QR parceiro' });
+        saveState(); alert('Troca OK'); document.getElementById('trade-modal').classList.add('hidden');
+    };
+    document.getElementById('close-trade-btn').onclick = ()=> document.getElementById('trade-modal').classList.add('hidden');
+
+    function openWarehouse() {
+        const player = gameState.players[gameState.currentUser.id];
+        const list = document.getElementById('warehouse-qr-list');
+        list.innerHTML = '';
+        player.inventory.forEach((item, idx) => {
+            const div = document.createElement('div');
+            div.className = 'qr-item';
+            div.innerHTML = `<canvas id="qr-canvas-${idx}" width="60" height="60"></canvas><br>${item.name}`;
+            div.onclick = ()=> showLargeQR(item.qr);
+            list.appendChild(div);
+            setTimeout(()=> new QRCode(document.getElementById(`qr-canvas-${idx}`), { text: item.qr, width:60, height:60 }), 10);
+        });
+        document.getElementById('warehouse-panel').classList.remove('hidden');
+    }
+    document.getElementById('close-warehouse-btn').onclick = ()=> document.getElementById('warehouse-panel').classList.add('hidden');
+
     function showLargeQR(data) {
-        const overlay = document.getElementById('qr-large-overlay');
+        document.getElementById('qr-large-overlay').classList.remove('hidden');
         const canvas = document.getElementById('qr-large-canvas');
-        overlay.classList.remove('hidden');
         canvas.innerHTML = '';
         new QRCode(canvas, { text: data, width:200, height:200 });
-        // bloquear print screen
         document.addEventListener('keydown', blockPrint);
-        overlay.addEventListener('contextmenu', e => { e.preventDefault(); alert('Screenshot bloqueado'); });
     }
-    document.getElementById('close-qr-large-btn').addEventListener('click', ()=>{
+    document.getElementById('close-qr-large-btn').onclick = ()=>{
         document.getElementById('qr-large-overlay').classList.add('hidden');
         document.removeEventListener('keydown', blockPrint);
-    });
+    };
     function blockPrint(e) {
-        if (e.key === 'PrintScreen' || (e.ctrlKey && e.key === 'p')) { e.preventDefault(); alert('Print bloqueado'); }
+        if (e.key==='PrintScreen' || (e.ctrlKey && e.key==='p')) { e.preventDefault(); alert('Bloqueado'); }
     }
 
-    // ======================== PAINEL EMPRESA ========================
+    // ======================== ADMIN ========================
+    document.getElementById('admin-create-flag-btn').onclick = ()=>{
+        const lat = prompt('Latitude?', '38.7223');
+        const lng = prompt('Longitude?', '-9.1393');
+        const logo = prompt('URL do logotipo (opcional)');
+        const points = parseInt(prompt('Pontos?','10'));
+        if (!lat || !lng || isNaN(points)) return;
+        const flag = { id:'admin'+Date.now(), lat:parseFloat(lat), lng:parseFloat(lng), companyId:'admin', packageId:'admin', points, promo:false, logo };
+        gameState.flags.push(flag);
+        saveState();
+        alert('Bandeira criada');
+    };
+    document.getElementById('admin-promo-btn').onclick = ()=>{
+        gameState.ads.push({ player: 'Sistema', company: 'Promoção', prize: 'Prémio especial' });
+        alert('Promoção lançada (ver rodapé)');
+    };
+
+    // ======================== TICKER ========================
+    let tickerIndex = 0;
+    function updateTicker() {
+        const el = document.getElementById('ticker');
+        if (!el) return;
+        const ads = gameState.ads || [];
+        let msgs = [];
+        // adicionar mensagens de bingo mock
+        msgs.push('🎉 Empresa XPTO colocou um BINGO: Prémio 1000€ por tempo limitado!');
+        ads.forEach(ad => msgs.push(`${ad.player} ganhou ${ad.prize} da empresa ${ad.company}`));
+        const text = msgs.join('  •  ');
+        el.innerText = text;
+        // scroll se necessário
+        if (el.scrollWidth > el.clientWidth) {
+            el.style.overflow = 'hidden';
+            el.style.whiteSpace = 'nowrap';
+            // animação simples
+            el.animate([{ transform: 'translateX(100%)' }, { transform: 'translateX(-100%)' }], { duration: 20000, iterations: Infinity });
+        }
+    }
+    setInterval(updateTicker, 15000);
+    updateTicker();
+
+    // ======================== PR DASHBOARD ========================
     function updatePRDashboard() {
         const comp = gameState.companies[gameState.currentUser.id];
         document.getElementById('pr-name').innerText = comp.name;
@@ -629,13 +567,15 @@
         if (comp.packages.length===0) { comp.packages.push({ id:'p'+Date.now(), flagsRemaining:3 }); saveState(); }
     }
 
-    // ======================== INICIALIZAÇÃO ========================
+    // ======================== INIT ========================
     loadState();
     if (gameState.currentUser) {
         if (gameState.currentUser.type==='JG') startPlayerGame();
-        else startPRGame();
+        else if (gameState.currentUser.type==='PR') startPRGame();
+        else startAdmin();
     } else {
-        showAuthModal();
+        document.getElementById('auth-modal').classList.remove('hidden');
+        updateAuthUI();
     }
     window.addEventListener('beforeunload', ()=>{ stopGPS(); saveState(); });
     </script>
