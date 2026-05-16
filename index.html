@@ -82,6 +82,7 @@
                     <input id="auth-email" placeholder="Email" />
                     <input id="auth-phone" placeholder="Telefone (opcional)" />
                     <input id="auth-password" type="password" placeholder="Password" />
+                    <input id="auth-confirm-password" type="password" placeholder="Confirmar password" class="hidden" />
                     <button id="auth-action-btn">Entrar / Registar</button>
                     <p class="link" id="switch-mode">Criar conta</p>
                     <p class="link" id="recover-pw">Recuperar password</p>
@@ -140,21 +141,21 @@
 
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script>
+     <script>
     // ======================== 🏠 ARRANQUE (Boot) ========================
     const STORAGE_KEY = 'zapflags_state';
     let gameState = defaultState();
 
     function defaultState() {
         return {
-            players: {},      // id -> { id, name, email, phone, password, points, energy, x, y, homeMode }
-            companies: {},    // id -> { id, name, email, phone, password, budget, packages: [...] }
-            currentUser: null, // { type: 'JG'|'PR', id }
-            flags: [],        // { id, lat, lng, packageId, companyId, points, promo }
+            players: {},
+            companies: {},
+            currentUser: null,
+            flags: [],
             settings: {
                 maxFlags: 5,
-                flagRadius: 0.005, // ~500m
-                viewRadius: 0.01,  // ~1km
+                flagRadius: 0.005,
+                viewRadius: 0.01,
             }
         };
     }
@@ -166,7 +167,6 @@
         } else {
             gameState = defaultState();
         }
-        // normalização básica
         gameState.flags = gameState.flags || [];
         gameState.players = gameState.players || {};
         gameState.companies = gameState.companies || {};
@@ -176,20 +176,20 @@
         localStorage.setItem(STORAGE_KEY, JSON.stringify(gameState));
     }
 
-    // Helpers de normalização
     function normalizePlayer(p) {
         return { ...p, energy: p.energy ?? 100, points: p.points ?? 0, homeMode: p.homeMode ?? false };
     }
     function normalizeCompany(c) {
         return { ...c, budget: c.budget ?? 1000, packages: c.packages ?? [] };
     }
+
     // ======================== 🔐 LOGIN / REGISTO ========================
     let authMode = 'login'; // 'login' ou 'register'
 
     function showAuthModal() {
         document.getElementById('auth-modal').classList.remove('hidden');
         document.getElementById('mode-modal').classList.add('hidden');
-        document.getElementById('game-container').querySelector('#map').classList.add('hidden'); // esconde mapa atrás
+        document.querySelector('#game-container #map').classList.add('hidden');
         updateAuthUI();
     }
 
@@ -200,6 +200,14 @@
         const btn = document.getElementById('auth-action-btn');
         btn.innerText = authMode === 'login' ? 'Entrar' : 'Criar conta';
         document.getElementById('switch-mode').innerText = authMode === 'login' ? 'Não tem conta? Criar' : 'Já tem conta? Entrar';
+        // Mostra/oculta o campo de confirmar password
+        const confirmPw = document.getElementById('auth-confirm-password');
+        if (authMode === 'register') {
+            confirmPw.classList.remove('hidden');
+        } else {
+            confirmPw.classList.add('hidden');
+            confirmPw.value = '';
+        }
     }
 
     document.getElementById('account-type').addEventListener('change', updateAuthUI);
@@ -228,9 +236,11 @@
         const email = document.getElementById('auth-email').value.trim();
         const phone = document.getElementById('auth-phone').value.trim();
         const pw = document.getElementById('auth-password').value.trim();
+        const confirmPw = document.getElementById('auth-confirm-password').value.trim();
         if (!name || !email || !pw) { alert('Preencha os campos obrigatórios'); return; }
         if (authMode === 'register') {
             if (contactAlreadyExists(type, email, phone)) { alert('Email/telefone já existe'); return; }
+            if (pw !== confirmPw) { alert('As passwords não coincidem'); return; }
             const id = Date.now().toString(36)+Math.random().toString(36).substr(2);
             if (type === 'JG') {
                 gameState.players[id] = normalizePlayer({ id, name, email, phone, password: pw, points: 0, energy: 100, x: 38.7223, y: -9.1393, homeMode: false });
@@ -264,7 +274,6 @@
     // ======================== 🗺️ MAPA E JOGO ========================
     let map, playerMarker, flagMarkers = {};
     let watchId = null;
-    let offlineMoveInterval = null;
 
     function startPlayerGame() {
         document.getElementById('hud').classList.remove('hidden');
@@ -321,7 +330,6 @@
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
         }).addTo(map);
         L.control.zoom({ position: 'bottomleft' }).addTo(map);
-        // criar ícone do jogador
         const playerIcon = L.divIcon({ className: 'player-icon', html: '<i class="fa-solid fa-circle" style="color:#e94560; font-size:24px; filter: drop-shadow(0 0 8px red);"></i>' });
         const player = gameState.players[gameState.currentUser.id];
         playerMarker = L.marker([player.x, player.y], { icon: playerIcon, zIndexOffset: 1000 }).addTo(map);
@@ -375,7 +383,6 @@
         stopGPS();
         document.getElementById('offline-dpad').classList.remove('hidden');
         document.getElementById('offline-dpad').style.display = 'grid';
-        // movimento com teclado também
     }
 
     function stopGPS() {
@@ -385,7 +392,6 @@
     function updatePosition(position) {
         const latlng = [position.coords.latitude, position.coords.longitude];
         updatePlayerLocation(latlng);
-        // reduzir energia com base na distância
         const player = gameState.players[gameState.currentUser.id];
         if (player.energy > 0) {
             player.energy = Math.max(0, player.energy - 0.1);
@@ -410,14 +416,14 @@
     });
     document.getElementById('center-btn').addEventListener('click', centerOnPlayer);
     document.addEventListener('keydown', (e) => {
-        if (gameState.currentUser?.type !== 'JG' || !document.getElementById('offline-dpad').classList.contains('hidden')) {
+        if (gameState.currentUser?.type === 'JG' && !document.getElementById('offline-dpad').classList.contains('hidden')) {
             const dirMap = { ArrowUp:'n', ArrowDown:'s', ArrowLeft:'w', ArrowRight:'e' };
             if (dirMap[e.key]) moveHomePlayer(dirMap[e.key]);
         }
     });
 
     function moveHomePlayer(dir) {
-        const step = 0.0003; // ~30m
+        const step = 0.0003;
         const player = gameState.players[gameState.currentUser.id];
         let dx=0, dy=0;
         if (dir.includes('n')) dy = step;
@@ -460,11 +466,10 @@
         const lat = baseLat + (dist * Math.cos(angle));
         const lng = baseLng + (dist * Math.sin(angle));
 
-        // Escolher pacote de empresa por proximidade/peso (simplificado)
         const active = getAllActivePackages();
         if (active.length === 0) return null;
         const chosen = active[Math.floor(Math.random() * active.length)];
-        const promo = Math.random() < promoChanceForPackage(chosen);
+        const promo = Math.random() < 0.2;
         const points = promo ? 20 : 10;
 
         return {
@@ -475,10 +480,6 @@
             points,
             promo
         };
-    }
-
-    function promoChanceForPackage(pkg) {
-        return 0.2; // 20% fixo
     }
 
     function refreshFlags() {
@@ -494,7 +495,6 @@
 
     function drawFlagsOnMap() {
         if (!map) return;
-        // Remove existentes
         Object.values(flagMarkers).forEach(m => map.removeLayer(m));
         flagMarkers = {};
         gameState.flags.forEach(flag => {
@@ -507,7 +507,6 @@
                     <button onclick="collectFlag('${flag.id}')">Recolher</button>
                 </div>
             `);
-            marker.on('click', () => { /* open popup */ });
             flagMarkers[flag.id] = marker;
         });
     }
@@ -518,26 +517,21 @@
         const flag = gameState.flags.find(f => f.id === flagId);
         if (!flag) return;
         if (player.energy <= 0) { alert('Sem energia!'); return; }
-        // Verificar distância
         const dist = map.distance([player.x, player.y], [flag.lat, flag.lng]);
         if (dist > 50) { alert('Demasiado longe!'); return; }
-        // Recompensa
         player.points += flag.points;
         player.energy = Math.min(100, player.energy + 5);
-        // Atualizar pacote
         const company = gameState.companies[flag.companyId];
         if (company) {
             const pkg = company.packages.find(p => p.id === flag.packageId);
             if (pkg) pkg.flagsRemaining = Math.max(0, (pkg.flagsRemaining||1) - 1);
         }
-        // Remover bandeira
         removeFlag(flagId);
         updateHUD();
         saveState();
         document.getElementById('result-title').innerText = flag.promo ? '🌟 Promo!' : 'Bandeira recolhida';
         document.getElementById('result-message').innerText = `+${flag.points} pontos! Continua!`;
         document.getElementById('result-modal').classList.remove('hidden');
-        // Redesenhar bandeiras se necessário
         if (gameState.flags.length < gameState.settings.maxFlags) {
             const cand = createFlagCandidate();
             if (cand) { gameState.flags.push(cand); drawFlagsOnMap(); }
@@ -564,14 +558,13 @@
     });
 
     function updateVisibleFlags() {
-        // Mostra/esconde baseado na distância do jogador
         const player = gameState.players[gameState.currentUser.id];
         const view = gameState.settings.viewRadius;
         gameState.flags.forEach(flag => {
             const marker = flagMarkers[flag.id];
             if (!marker) return;
             const dist = map.distance([player.x, player.y], [flag.lat, flag.lng]);
-            if (dist < view * 111000) { // aprox graus->metros
+            if (dist < view * 111000) {
                 if (!map.hasLayer(marker)) marker.addTo(map);
             } else {
                 if (map.hasLayer(marker)) map.removeLayer(marker);
@@ -584,7 +577,6 @@
         const comp = gameState.companies[gameState.currentUser.id];
         document.getElementById('pr-name').innerText = comp.name;
         document.getElementById('pr-packages-count').innerText = comp.packages.length;
-        // criar pacote demo se vazio
         if (comp.packages.length === 0) {
             comp.packages.push({ id: 'p'+Date.now(), flagsRemaining: 3, budget: 50 });
             saveState();
@@ -603,7 +595,6 @@
         showAuthModal();
     }
 
-    // limpeza ao fechar
     window.addEventListener('beforeunload', ()=>{ stopGPS(); saveState(); });
     </script>
 </body>
