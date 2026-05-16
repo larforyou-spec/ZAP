@@ -1,116 +1,642 @@
 <!DOCTYPE html>
 <html lang="pt">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Zap Flags</title>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
-<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
-<style>
-*{box-sizing:border-box;margin:0;padding:0}body,html{height:100%;width:100%;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:#f0f2f5;color:#333;overflow:hidden}#game-container{height:100%;width:100%;position:relative}.modal,.draggable-window{position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);display:flex;justify-content:center;align-items:center;z-index:2000}.draggable-content{background:white;border-radius:1rem;padding:2rem;max-width:500px;width:90%;color:#333;box-shadow:0 0 30px rgba(0,0,0,0.2);text-align:center;cursor:move;position:relative}.draggable-content h2{color:#16213e;margin-bottom:1rem}.draggable-content input,.draggable-content select,.draggable-content textarea{width:100%;padding:0.7rem;margin:0.5rem 0;border-radius:0.5rem;border:1px solid #ccc;background:white;color:#333}.draggable-content button{background:#e94560;color:white;border:none;padding:0.8rem 1.5rem;border-radius:2rem;font-weight:bold;cursor:pointer;margin:0.5rem}.draggable-content button:hover{background:#c0392b}.link{color:#2980b9;cursor:pointer;text-decoration:underline}.hidden{display:none!important}.ui-overlay{position:absolute;z-index:1000;pointer-events:none}.ui-overlay>*{pointer-events:auto}#map{height:100%;width:100%;z-index:1}#hud{top:1rem;left:1rem;background:rgba(255,255,255,0.9);border-radius:1rem;padding:0.8rem;min-width:220px;box-shadow:0 4px 15px rgba(0,0,0,0.1);color:#16213e;font-size:0.9rem}.hud-icons{display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap}.icon-btn{background:none;border:none;color:#16213e;font-size:1.3rem;cursor:pointer}.energy-bar{width:100%;height:6px;background:#ddd;border-radius:3px;margin:0.3rem 0}.energy-fill{height:100%;background:#27ae60;border-radius:3px}#offline-dpad{bottom:2rem;right:1rem;display:grid;grid-template-columns:50px 50px 50px;grid-template-rows:50px 50px 50px;gap:5px}.dpad-btn{background:white;border:1px solid #ccc;color:#16213e;font-size:1.5rem;border-radius:12px;cursor:pointer}.dpad-center{background:#e94560;color:white}#ticker{position:absolute;bottom:0;left:0;right:0;height:30px;background:#16213e;color:white;display:flex;align-items:center;padding:0 1rem;font-size:0.8rem;z-index:900;overflow:hidden;white-space:nowrap}.flag-popup button{background:#e94560;border:none;color:white;padding:0.3rem 1rem;border-radius:1rem;cursor:pointer}#player-list-panel{top:1rem;right:1rem;background:white;border-radius:1rem;padding:1rem;min-width:250px;max-height:60vh;overflow-y:auto;box-shadow:0 4px 15px rgba(0,0,0,0.1)}.player-entry{display:flex;justify-content:space-between;align-items:center;margin:0.5rem 0}.add-friend-btn{background:#27ae60;color:white;border:none;padding:0.2rem 0.8rem;border-radius:1rem;cursor:pointer}.chat-modal{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:white;border-radius:1rem;padding:1rem;width:400px;max-height:80vh;z-index:2500;box-shadow:0 10px 40px rgba(0,0,0,0.3);cursor:move}.chat-modal .messages{max-height:200px;overflow-y:auto;margin-bottom:0.5rem}.chat-modal .input-row{display:flex;gap:0.5rem}.trade-slot{width:100px;height:100px;border:2px dashed #ccc;border-radius:1rem;margin:0.5rem}.qr-large{background:white;padding:2rem;border-radius:1rem}.lock-overlay{position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;font-size:3rem;color:white;pointer-events:none}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Zap Flags – Jogo</title>
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+    <!-- QR Code Generator -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body, html { height: 100%; width: 100%; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #1a1a2e; color: #eee; overflow: hidden; }
+        #game-container { height: 100%; width: 100%; position: relative; }
+
+        /* Painéis modais */
+        .modal { position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.8); display: flex; justify-content: center; align-items: center; z-index: 2000; }
+        .modal-content { background: #16213e; border-radius: 1rem; padding: 2rem; max-width: 420px; width: 90%; color: #eee; box-shadow: 0 0 25px rgba(0,200,255,0.3); text-align: center; }
+        .modal-content h2 { color: #00d4ff; margin-bottom: 1rem; }
+        .modal-content input, .modal-content select { width: 100%; padding: 0.7rem; margin: 0.5rem 0; border-radius: 0.5rem; border: none; background: #0f3460; color: white; }
+        .modal-content button { background: #e94560; color: white; border: none; padding: 0.8rem 1.5rem; border-radius: 2rem; font-weight: bold; cursor: pointer; transition: 0.3s; margin: 0.5rem; }
+        .modal-content button:hover { background: #ff6b7a; transform: scale(1.02); }
+        .modal-content .link { color: #00d4ff; cursor: pointer; text-decoration: underline; }
+        .modal-content .close-btn { background: none; border: none; color: #aaa; font-size: 2rem; position: absolute; top:0.5rem; right:1rem; cursor: pointer; }
+        .modal-content .row { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+
+        /* Interface no mapa */
+        #map { height: 100%; width: 100%; z-index: 1; }
+        .ui-overlay { position: absolute; z-index: 1000; pointer-events: none; }
+        .ui-overlay > * { pointer-events: auto; }
+
+        #hud {
+            top: 1rem; left: 1rem;
+            background: rgba(15, 52, 96, 0.85);
+            backdrop-filter: blur(8px);
+            border-radius: 1rem;
+            padding: 0.8rem;
+            color: white;
+            min-width: 200px;
+            font-size: 0.9rem;
+        }
+        #hud .hud-icons { display: flex; align-items: center; gap: 0.8rem; flex-wrap: wrap; }
+        #hud .icon-btn { background: transparent; border: none; color: white; font-size: 1.4rem; cursor: pointer; padding: 0.2rem; }
+        #hud .energy-bar { width: 100%; height: 6px; background: #555; border-radius: 3px; margin: 0.3rem 0; }
+        #hud .energy-fill { height: 100%; background: #00d4ff; border-radius: 3px; }
+
+        #offline-dpad {
+            bottom: 2rem; right: 1rem;
+            display: grid; grid-template-columns: 50px 50px 50px; grid-template-rows: 50px 50px 50px;
+            gap: 5px;
+        }
+        .dpad-btn { background: #0f3460; border: none; color: white; font-size: 1.5rem; border-radius: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .dpad-center { background: #e94560; grid-row: 2; grid-column: 2; }
+
+        /* Chat panel */
+        #chat-panel {
+            top: 1rem; right: 1rem;
+            bottom: auto; max-height: 60vh;
+            background: rgba(22, 33, 62, 0.95);
+            backdrop-filter: blur(12px);
+            border-radius: 1rem;
+            padding: 1rem;
+            width: 280px;
+            color: white;
+        }
+        #chat-messages { max-height: 200px; overflow-y: auto; margin-bottom: 0.5rem; font-size: 0.85rem; }
+        .chat-msg { margin: 0.3rem 0; }
+        .chat-input { width: calc(100% - 70px); padding: 0.4rem; border-radius: 1rem; border: none; background: #0f3460; color: white; }
+        .chat-send { background: #e94560; border: none; color: white; padding: 0.4rem 0.8rem; border-radius: 2rem; cursor: pointer; }
+
+        /* Trade modal */
+        .trade-area { display: flex; gap: 1rem; justify-content: center; margin: 1rem 0; }
+        .trade-slot { width: 120px; height: 120px; border: 2px dashed #00d4ff; border-radius: 1rem; display: flex; align-items: center; justify-content: center; position: relative; }
+        .trade-slot img { max-width: 100%; max-height: 100%; }
+        .qr-large { position: fixed; top:50%; left:50%; transform: translate(-50%, -50%); background: white; padding: 2rem; border-radius: 1rem; z-index: 9999; text-align: center; }
+        .qr-large canvas { width: 200px; height: 200px; }
+        .lock-overlay { position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; font-size: 3rem; color: white; pointer-events: none; }
+        .hidden { display: none !important; }
+
+        /* Warehouse */
+        #warehouse-panel .qr-item { display: inline-block; margin: 0.3rem; cursor: pointer; }
+        #warehouse-panel canvas { width: 60px; height: 60px; }
+    </style>
 </head>
 <body>
-<div id="game-container">
-<div id="map"></div>
-<div id="auth-modal" class="modal hidden"><div class="draggable-content" id="auth-drag-header"><h2 id="auth-title">Zap Flags</h2><select id="account-type"><option value="JG">Jogador</option><option value="PR">Empresa</option><option value="AD">Admin</option></select><input id="auth-name" placeholder="Nome" /><div id="auth-extra-fields"></div><input id="auth-password" type="password" placeholder="Password" /><input id="auth-confirm-password" type="password" placeholder="Confirmar password" class="hidden" /><button id="auth-action-btn">Entrar / Registar</button><p class="link" id="switch-mode">Criar conta</p><p class="link" id="recover-pw">Recuperar password</p></div></div>
-<div id="mode-modal" class="modal hidden"><div class="draggable-content"><h2>Escolhe o modo</h2><button id="gps-mode-btn"><i class="fa-solid fa-location-dot"></i> GPS real</button><button id="home-mode-btn"><i class="fa-solid fa-house"></i> Modo casa</button><p style="margin-top:1rem;font-size:0.8rem;color:gray;">Se o GPS não funcionar, o modo casa será ativado automaticamente.</p></div></div>
-<div id="hud" class="ui-overlay hidden"><div class="hud-icons"><span id="hud-name"></span><button class="icon-btn" id="skill-btn"><i class="fa-solid fa-bolt"></i></button><button class="icon-btn"><i class="fa-solid fa-flag"></i> <span id="flag-count">0</span></button><div class="energy-bar"><div class="energy-fill" id="energy-fill" style="width:100%"></div></div><span id="energy-text">100%</span><button class="icon-btn" id="gps-fix-btn"><i class="fa-solid fa-crosshairs"></i></button><button class="icon-btn" id="player-list-btn"><i class="fa-solid fa-users"></i></button><button class="icon-btn" id="logout-btn"><i class="fa-solid fa-right-from-bracket"></i></button></div></div>
-<div id="offline-dpad" class="ui-overlay hidden"><button class="dpad-btn" data-dir="nw"><i class="fa-solid fa-arrow-up-left"></i></button><button class="dpad-btn" data-dir="n"><i class="fa-solid fa-arrow-up"></i></button><button class="dpad-btn" data-dir="ne"><i class="fa-solid fa-arrow-up-right"></i></button><button class="dpad-btn" data-dir="w"><i class="fa-solid fa-arrow-left"></i></button><button class="dpad-center" id="center-btn"><i class="fa-solid fa-location-dot"></i></button><button class="dpad-btn" data-dir="e"><i class="fa-solid fa-arrow-right"></i></button><button class="dpad-btn" data-dir="sw"><i class="fa-solid fa-arrow-down-left"></i></button><button class="dpad-btn" data-dir="s"><i class="fa-solid fa-arrow-down"></i></button><button class="dpad-btn" data-dir="se"><i class="fa-solid fa-arrow-down-right"></i></button></div>
-<div id="pr-dashboard" class="ui-overlay hidden draggable-window" style="top:1rem;right:1rem;width:280px;background:white;border-radius:1rem;padding:1rem;"><h3><span id="pr-name"></span></h3><p>Pacotes: <span id="pr-packages-count">0</span></p><button id="pr-logout-btn">Sair</button></div>
-<div id="admin-panel" class="ui-overlay hidden draggable-window" style="top:1rem;right:1rem;width:300px;background:white;border-radius:1rem;padding:1rem;"><h3>Admin</h3><p>Jogadores: <span id="admin-jg">0</span> / Empresas: <span id="admin-pr">0</span></p><button id="admin-create-flag-btn">Criar bandeira</button><button id="admin-promo-btn">Fazer promoção</button><button id="admin-logout-btn">Sair</button></div>
-<div id="player-list-panel" class="ui-overlay hidden"><h3>Jogadores</h3><div id="player-list"></div></div>
-<div id="private-chat-modal" class="chat-modal hidden"><div class="messages" id="private-messages"></div><div class="input-row"><input id="private-input" placeholder="Mensagem..." /><button id="private-send-btn">Enviar</button></div><button id="open-trade-from-chat">Troca</button><button id="open-warehouse-from-chat">Armazém</button><button id="close-private-chat">Fechar</button></div>
-<div id="trade-modal" class="modal hidden"><div class="draggable-content"><h2>Troca</h2><div style="display:flex;gap:1rem;"><div class="trade-slot" id="my-offer-slot" ondragover="allowDrop(event)" ondrop="dropQR(event,'my')" onclick="selectQRFromInventory('my')">Arrasta QR</div><div class="trade-slot"><canvas id="partner-qr-canvas" width="100" height="100"></canvas></div></div><button id="enlarge-my-qr">Ampliar meu QR</button><button id="enlarge-partner-qr">Ampliar parceiro</button><button id="accept-trade-btn">Aceitar</button><button id="close-trade-btn">Fechar</button></div></div>
-<div id="qr-large-overlay" class="modal hidden"><div class="qr-large"><div class="lock-overlay"><i class="fa-solid fa-lock"></i></div><canvas id="qr-large-canvas" width="200" height="200"></canvas><button id="close-qr-large-btn">Fechar</button></div></div>
-<div id="warehouse-panel" class="modal hidden"><div class="draggable-content"><h2>Armazém</h2><div id="warehouse-qr-list"></div><button id="close-warehouse-btn">Fechar</button></div></div>
-<div id="result-modal" class="modal hidden"><div class="draggable-content"><h2 id="result-title"></h2><p id="result-message"></p><button id="close-result-btn">OK</button></div></div>
-<div id="ticker"></div>
-</div>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <div id="game-container">
+        <!-- Mapa -->
+        <div id="map"></div>
+
+        <!-- Modal de autenticação -->
+        <div id="auth-modal" class="modal">
+            <div class="modal-content">
+                <h2 id="auth-title">Zap Flags</h2>
+                <select id="account-type"><option value="JG">Jogador</option><option value="PR">Empresa</option></select>
+                <input id="auth-name" placeholder="Nome / Empresa" />
+                <input id="auth-password" type="password" placeholder="Password" />
+                <input id="auth-confirm-password" type="password" placeholder="Confirmar password" class="hidden" />
+                <button id="auth-action-btn">Entrar / Registar</button>
+                <p class="link" id="switch-mode">Criar conta</p>
+                <p class="link" id="recover-pw">Recuperar password</p>
+            </div>
+        </div>
+
+        <!-- Escolha de modo (GPS vs Casa) -->
+        <div id="mode-modal" class="modal hidden">
+            <div class="modal-content">
+                <h2>Escolhe o modo</h2>
+                <div class="row">
+                    <button id="gps-mode-btn"><i class="fa-solid fa-location-dot"></i> GPS real</button>
+                    <button id="home-mode-btn"><i class="fa-solid fa-house"></i> Modo casa</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- HUD do jogador -->
+        <div id="hud" class="ui-overlay hidden">
+            <div class="hud-icons">
+                <span id="hud-name"></span>
+                <button class="icon-btn" id="skill-btn" title="Skills"><i class="fa-solid fa-bolt"></i></button>
+                <button class="icon-btn" id="flag-count-btn" title="Bandeiras apanhadas"><i class="fa-solid fa-flag"></i> <span id="flag-count">0</span></button>
+                <div class="energy-bar" style="flex:1"><div class="energy-fill" id="energy-fill" style="width:100%"></div></div>
+                <button class="icon-btn" id="gps-fix-btn" title="Fixar GPS / Centro"><i class="fa-solid fa-crosshairs"></i></button>
+                <button class="icon-btn" id="chat-toggle-btn" title="Chat"><i class="fa-solid fa-comments"></i></button>
+                <button class="icon-btn" id="logout-btn" title="Sair"><i class="fa-solid fa-right-from-bracket"></i></button>
+            </div>
+        </div>
+
+        <!-- D-Pad offline -->
+        <div id="offline-dpad" class="ui-overlay hidden">
+            <button class="dpad-btn" data-dir="nw"><i class="fa-solid fa-arrow-up-left"></i></button>
+            <button class="dpad-btn" data-dir="n"><i class="fa-solid fa-arrow-up"></i></button>
+            <button class="dpad-btn" data-dir="ne"><i class="fa-solid fa-arrow-up-right"></i></button>
+            <button class="dpad-btn" data-dir="w"><i class="fa-solid fa-arrow-left"></i></button>
+            <button class="dpad-center" id="center-btn"><i class="fa-solid fa-location-dot"></i></button>
+            <button class="dpad-btn" data-dir="e"><i class="fa-solid fa-arrow-right"></i></button>
+            <button class="dpad-btn" data-dir="sw"><i class="fa-solid fa-arrow-down-left"></i></button>
+            <button class="dpad-btn" data-dir="s"><i class="fa-solid fa-arrow-down"></i></button>
+            <button class="dpad-btn" data-dir="se"><i class="fa-solid fa-arrow-down-right"></i></button>
+        </div>
+
+        <!-- Painel da empresa -->
+        <div id="pr-dashboard" class="ui-overlay hidden">
+            <h3><i class="fa-solid fa-building"></i> <span id="pr-name"></span></h3>
+            <p>Pacotes: <span id="pr-packages-count">0</span></p>
+            <button class="hud-btn small" id="pr-logout-btn">Sair</button>
+        </div>
+
+        <!-- Modal de resultado -->
+        <div id="result-modal" class="modal hidden">
+            <div class="modal-content">
+                <h2 id="result-title"></h2>
+                <p id="result-message"></p>
+                <button id="close-result-btn">OK</button>
+            </div>
+        </div>
+
+        <!-- Chat panel -->
+        <div id="chat-panel" class="ui-overlay hidden">
+            <div id="chat-messages"></div>
+            <input class="chat-input" id="chat-input" placeholder="Mensagem..." />
+            <button class="chat-send" id="chat-send-btn"><i class="fa-solid fa-paper-plane"></i></button>
+            <button class="hud-btn small" id="open-trade-btn"><i class="fa-solid fa-right-left"></i> Trocar QR</button>
+            <button class="hud-btn small" id="open-warehouse-btn"><i class="fa-solid fa-warehouse"></i> Armazém</button>
+        </div>
+
+        <!-- Trade modal -->
+        <div id="trade-modal" class="modal hidden">
+            <div class="modal-content" style="max-width:600px;">
+                <h2>Troca de QR</h2>
+                <div class="trade-area">
+                    <div>
+                        <p>A tua oferta</p>
+                        <div class="trade-slot" id="my-offer-slot" ondragover="allowDrop(event)" ondrop="dropQR(event, 'my')" onclick="selectQRFromInventory('my')">Arrasta QR aqui</div>
+                    </div>
+                    <div>
+                        <p>Oferta do parceiro</p>
+                        <div class="trade-slot" id="partner-offer-slot">QR parceiro</div>
+                    </div>
+                </div>
+                <button id="enlarge-my-qr-btn"><i class="fa-solid fa-magnifying-glass"></i> Ampliar meu QR</button>
+                <button id="enlarge-partner-qr-btn"><i class="fa-solid fa-magnifying-glass"></i> Ampliar QR parceiro</button>
+                <button id="accept-trade-btn"><i class="fa-solid fa-check"></i> Aceitar troca</button>
+                <button class="close-btn" id="close-trade-btn">&times;</button>
+            </div>
+        </div>
+
+        <!-- QR Large overlay -->
+        <div id="qr-large-overlay" class="modal hidden">
+            <div class="qr-large" id="qr-large-container">
+                <div class="lock-overlay"><i class="fa-solid fa-lock"></i></div>
+                <canvas id="qr-large-canvas" width="200" height="200"></canvas>
+                <button id="close-qr-large-btn">Fechar</button>
+            </div>
+        </div>
+
+        <!-- Warehouse panel -->
+        <div id="warehouse-panel" class="modal hidden">
+            <div class="modal-content" style="max-width:500px;">
+                <h2>Armazém de QRs</h2>
+                <div id="warehouse-qr-list"></div>
+                <button id="close-warehouse-btn">Fechar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-const STORAGE_KEY='zapflags_state';
-let gameState=defaultState();
-function defaultState(){return {players:{},companies:{},flags:[],chatMessages:{},settings:{maxFlags:5,flagRadius:0.001,viewRadius:0.000045},ads:[]};}
-function loadState(){const raw=localStorage.getItem(STORAGE_KEY);if(raw){try{gameState=JSON.parse(raw);}catch(e){gameState=defaultState();}}else gameState=defaultState();}
-function saveState(){localStorage.setItem(STORAGE_KEY,JSON.stringify(gameState));}
-let authMode='login';
-const lastLoginLS=JSON.parse(localStorage.getItem('lastLogin')||'{}');
-function showAuthModal(){document.getElementById('auth-modal').classList.remove('hidden');updateAuthUI();const type=document.getElementById('account-type').value;const nameField=document.getElementById('auth-name');if(type==='JG'&&lastLoginLS.jgName)nameField.value=lastLoginLS.jgName;else if(type==='PR'&&lastLoginLS.prName){nameField.value=lastLoginLS.prName;const emailField=document.getElementById('auth-email');if(emailField)emailField.value=lastLoginLS.prEmail||'';}}
-function updateAuthUI(){const type=document.getElementById('account-type').value;document.getElementById('auth-title').innerText=type==='JG'?'Jogador':type==='PR'?'Empresa':'Admin';document.getElementById('auth-action-btn').innerText=authMode==='login'?'Entrar':'Criar conta';document.getElementById('switch-mode').innerText=authMode==='login'?'Criar conta':'Já tem conta?';document.getElementById('auth-confirm-password').classList.toggle('hidden',authMode!=='register');const extra=document.getElementById('auth-extra-fields');extra.innerHTML='';if(authMode==='register'){if(type==='JG'){extra.innerHTML=`<input id="auth-email" placeholder="Email (opcional)" /><input id="auth-contact" placeholder="Contacto (opcional)" /><input id="auth-locality" placeholder="Localidade (opcional)" /><input id="auth-district" placeholder="Distrito (opcional)" />`;}else if(type==='PR'){extra.innerHTML=`<input id="auth-email" type="email" placeholder="Email (obrigatório)" required /><input id="auth-nif" placeholder="NIF (obrigatório)" /><input id="auth-address" placeholder="Morada" /><input id="auth-locality" placeholder="Localidade" /><input id="auth-contact" placeholder="Contacto" /><input id="auth-website" placeholder="Website (opcional)" /><label>Logótipo / Foto (obrigatório)<input type="file" id="auth-logo" accept="image/*" /></label><img id="auth-logo-preview" style="max-width:80px;display:none;" />`;document.getElementById('auth-logo').addEventListener('change',function(e){const file=e.target.files[0];if(file){const reader=new FileReader();reader.onload=function(ev){document.getElementById('auth-logo-preview').src=ev.target.result;document.getElementById('auth-logo-preview').style.display='block';};reader.readAsDataURL(file);}});}}else{if(type==='PR'){extra.innerHTML=`<input id="auth-email" type="email" placeholder="Email" required />`;}}}
-document.getElementById('account-type').onchange=updateAuthUI;
-document.getElementById('switch-mode').onclick=()=>{authMode=authMode==='login'?'register':'login';updateAuthUI();};
-document.getElementById('recover-pw').onclick=()=>{const type=document.getElementById('account-type').value;const name=document.getElementById('auth-name').value.trim();if(!name){alert('Preencha o nome');return;}if(type==='AD'){alert('Admin não recupera password');return;}const col=type==='JG'?gameState.players:gameState.companies;const found=Object.values(col).find(u=>u.name===name);alert(found?'Password: '+found.password:'Utilizador não encontrado');};
-document.getElementById('auth-action-btn').onclick=()=>{const type=document.getElementById('account-type').value;const name=document.getElementById('auth-name').value.trim();const pw=document.getElementById('auth-password').value.trim();const confirmPw=document.getElementById('auth-confirm-password').value.trim();if(authMode==='register'){if(!name||!pw){alert('Preencha nome e password');return;}if(pw!==confirmPw){alert('Passwords não coincidem');return;}if(type==='AD'){alert('Admin não pode ser criado');return;}if(type==='JG'){const email=document.getElementById('auth-email')?.value.trim()||'';const contact=document.getElementById('auth-contact')?.value.trim()||'';const locality=document.getElementById('auth-locality')?.value.trim()||'';const district=document.getElementById('auth-district')?.value.trim()||'';const id=Date.now().toString(36)+Math.random().toString(36);gameState.players[id]=normalizePlayer({id,name,password:pw,email,contact,locality,district});saveState();lastLoginLS.jgName=name;localStorage.setItem('lastLogin',JSON.stringify(lastLoginLS));alert('Conta criada! Por favor faça login.');authMode='login';updateAuthUI();document.getElementById('auth-name').value=name;}else if(type==='PR'){const email=document.getElementById('auth-email')?.value.trim()||'';const nif=document.getElementById('auth-nif')?.value.trim()||'';const address=document.getElementById('auth-address')?.value.trim()||'';const locality=document.getElementById('auth-locality')?.value.trim()||'';const contact=document.getElementById('auth-contact')?.value.trim()||'';const website=document.getElementById('auth-website')?.value.trim()||'';const logoFile=document.getElementById('auth-logo')?.files[0];if(!email||!nif){alert('Email e NIF são obrigatórios');return;}if(!logoFile){alert('Logótipo obrigatório');return;}const reader=new FileReader();reader.onload=function(ev){const logoData=ev.target.result;const id=Date.now().toString(36)+Math.random().toString(36);gameState.companies[id]=normalizeCompany({id,name,email,password:pw,nif,address,locality,contact,website,logo:logoData});saveState();lastLoginLS.prName=name;lastLoginLS.prEmail=email;localStorage.setItem('lastLogin',JSON.stringify(lastLoginLS));alert('Empresa criada! Faça login.');authMode='login';updateAuthUI();document.getElementById('auth-name').value=name;};reader.readAsDataURL(logoFile);}}else{if(!name||!pw){alert('Preencha nome e password');return;}if(type==='AD'){const email=document.getElementById('auth-email')?.value.trim()||'';if(name==='admin'&&pw==='321321'&&email==='ze_ovo@ovo'){gameState.currentUser={type:'AD',id:'admin'};saveState();document.getElementById('auth-modal').classList.add('hidden');startAdmin();return;}else{alert('Credenciais admin inválidas');return;}}let user=null;if(type==='JG'){user=Object.values(gameState.players).find(u=>u.name===name&&u.password===pw);if(user){lastLoginLS.jgName=name;localStorage.setItem('lastLogin',JSON.stringify(lastLoginLS));}}else if(type==='PR'){const email=document.getElementById('auth-email')?.value.trim()||'';user=Object.values(gameState.companies).find(u=>u.name===name&&u.email===email&&u.password===pw);if(user){lastLoginLS.prName=name;lastLoginLS.prEmail=email;localStorage.setItem('lastLogin',JSON.stringify(lastLoginLS));}}if(!user){alert('Credenciais inválidas');return;}gameState.currentUser={type,id:user.id};saveState();document.getElementById('auth-modal').classList.add('hidden');if(type==='JG')startPlayerGame();else if(type==='PR')startPRGame();}};
-function normalizePlayer(p){return {...p,energy:100,points:0,flagsCollected:[],inventory:[],friends:[],x:38.7223,y:-9.1393,lastEnergyUpdate:Date.now()};}
-function normalizeCompany(c){return {...c,packages:[]};}
-function makeDraggable(modalId){const modal=document.getElementById(modalId);if(!modal)return;const header=modal.querySelector('.draggable-content');if(!header)return;let offsetX,offsetY,isDown=false;header.addEventListener('mousedown',function(e){isDown=true;offsetX=e.clientX-modal.getBoundingClientRect().left;offsetY=e.clientY-modal.getBoundingClientRect().top;modal.style.cursor='grabbing';});document.addEventListener('mousemove',function(e){if(!isDown)return;e.preventDefault();modal.style.left=(e.clientX-offsetX)+'px';modal.style.top=(e.clientY-offsetY)+'px';modal.style.right='auto';modal.style.bottom='auto';});document.addEventListener('mouseup',function(){isDown=false;modal.style.cursor='';});}
-window.addEventListener('load',()=>{['auth-modal','mode-modal','pr-dashboard','admin-panel','private-chat-modal','trade-modal','warehouse-panel','result-modal'].forEach(makeDraggable);});
-let map,playerMarker,flagMarkers={},watchId,circleInner,circleOuter,gpsTimeout;
-function startPlayerGame(){document.getElementById('hud').classList.remove('hidden');document.getElementById('admin-panel').classList.add('hidden');document.getElementById('pr-dashboard').classList.add('hidden');document.getElementById('mode-modal').classList.remove('hidden');initMap();updateHUD();refreshFlags();}
-function startPRGame(){document.getElementById('hud').classList.add('hidden');document.getElementById('pr-dashboard').classList.remove('hidden');document.getElementById('admin-panel').classList.add('hidden');document.getElementById('mode-modal').classList.add('hidden');if(map){map.remove();map=null;}document.getElementById('map').classList.add('hidden');updatePRDashboard();}
-function startAdmin(){document.getElementById('admin-panel').classList.remove('hidden');document.getElementById('hud').classList.add('hidden');document.getElementById('pr-dashboard').classList.add('hidden');document.getElementById('mode-modal').classList.add('hidden');if(map){map.remove();map=null;}document.getElementById('map').classList.add('hidden');document.getElementById('admin-jg').innerText=Object.keys(gameState.players).length;document.getElementById('admin-pr').innerText=Object.keys(gameState.companies).length;}
-function initMap(){if(map)map.remove();document.getElementById('map').classList.remove('hidden');map=L.map('map',{center:[38.7223,-9.1393],zoom:17,zoomControl:false});L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'}).addTo(map);L.control.zoom({position:'bottomleft'}).addTo(map);const icon=L.divIcon({html:'<i class="fa-solid fa-person" style="color:#e94560;font-size:40px;"></i>',iconSize:[40,40],iconAnchor:[20,40]});const player=gameState.players[gameState.currentUser.id];playerMarker=L.marker([player.x,player.y],{icon,zIndexOffset:1000}).addTo(map);circleInner=L.circle([player.x,player.y],{radius:2.5,color:'red',fillColor:'#f03',fillOpacity:0.1,weight:2}).addTo(map);circleOuter=L.circle([player.x,player.y],{radius:5,color:'red',fill:false,weight:2,dashArray:'5,5'}).addTo(map);updatePlayerLocation([player.x,player.y]);centerOnPlayer();}
-function updatePlayerLocation(latlng){playerMarker.setLatLng(latlng);circleInner.setLatLng(latlng);circleOuter.setLatLng(latlng);const p=gameState.players[gameState.currentUser.id];p.x=latlng[0];p.y=latlng[1];regenEnergy(p);saveState();updateVisibleFlags();}
-function regenEnergy(player){if(!player.lastEnergyUpdate)player.lastEnergyUpdate=Date.now();const now=Date.now();const diff=now-player.lastEnergyUpdate;const intervals=Math.floor(diff/(15*60*1000));if(intervals>0){player.energy=Math.min(100,player.energy+intervals*10);player.lastEnergyUpdate=now-(diff%(15*60*1000));}}
-function updateHUD(){const p=gameState.players[gameState.currentUser.id];document.getElementById('hud-name').innerText=p.name;document.getElementById('flag-count').innerText=p.flagsCollected.length;document.getElementById('energy-fill').style.width=p.energy+'%';document.getElementById('energy-text').innerText=p.energy+'%';if(p.energy<=0){document.getElementById('energy-text').innerText='0% (descansando...)';}}
-function requestGPSMode(){if(navigator.geolocation){gpsTimeout=setTimeout(()=>{alert('GPS não respondeu. Ativando modo casa.');activateHomeMode();},3000);watchId=navigator.geolocation.watchPosition((pos)=>{clearTimeout(gpsTimeout);updatePosition(pos);},(err)=>{clearTimeout(gpsTimeout);console.warn('Erro GPS:',err);alert('Erro no GPS. Ativando modo casa.');activateHomeMode();},{enableHighAccuracy:true,timeout:5000,maximumAge:0});document.getElementById('offline-dpad').classList.add('hidden');}else{alert('Geolocalização não suportada. Modo casa ativado.');activateHomeMode();}}
-function activateHomeMode(){stopGPS();document.getElementById('offline-dpad').classList.remove('hidden');document.getElementById('mode-modal').classList.add('hidden');}
-function stopGPS(){if(watchId){navigator.geolocation.clearWatch(watchId);watchId=null;}clearTimeout(gpsTimeout);}
-function updatePosition(pos){const latlng=[pos.coords.latitude,pos.coords.longitude];updatePlayerLocation(latlng);const p=gameState.players[gameState.currentUser.id];p.energy=Math.max(0,p.energy-0.05);updateHUD();saveState();}
-function handleGeoError(err){console.error(err);alert('Erro no GPS. Ativando modo casa.');activateHomeMode();}
-document.getElementById('gps-mode-btn').addEventListener('click',()=>{document.getElementById('mode-modal').classList.add('hidden');requestGPSMode();});
-document.getElementById('home-mode-btn').addEventListener('click',()=>{document.getElementById('mode-modal').classList.add('hidden');activateHomeMode();});
-document.querySelectorAll('.dpad-btn[data-dir]').forEach(btn=>{btn.addEventListener('click',(e)=>moveHomePlayer(e.currentTarget.dataset.dir));});
-document.getElementById('center-btn').addEventListener('click',centerOnPlayer);
-document.addEventListener('keydown',(e)=>{if(gameState.currentUser?.type==='JG'&&!document.getElementById('offline-dpad').classList.contains('hidden')){const maps={ArrowUp:'n',ArrowDown:'s',ArrowLeft:'w',ArrowRight:'e'};if(maps[e.key]){e.preventDefault();moveHomePlayer(maps[e.key]);}}});
-function moveHomePlayer(dir){if(!gameState.currentUser||gameState.currentUser.type!=='JG')return;const p=gameState.players[gameState.currentUser.id];if(p.energy<=0){alert('Energia esgotada! Descanse 15 minutos.');return;}const step=0.00002;if(dir.includes('n'))p.x+=step;if(dir.includes('s'))p.x-=step;if(dir.includes('e'))p.y+=step;if(dir.includes('w'))p.y-=step;updatePlayerLocation([p.x,p.y]);p.energy=Math.max(0,p.energy-0.1);updateHUD();saveState();}
-function centerOnPlayer(){const p=gameState.players[gameState.currentUser.id];if(map)map.setView([p.x,p.y],17);}
-function getAllActivePackages(){const pkgs=[];for(let cid in gameState.companies){(gameState.companies[cid].packages||[]).forEach(p=>{if(p.flagsRemaining>0)pkgs.push({...p,companyId:cid});});}return pkgs;}
-function createFlagCandidate(){const player=gameState.players[gameState.currentUser.id];const r=gameState.settings.flagRadius;const lat=player.x+(Math.random()-0.5)*r*2;const lng=player.y+(Math.random()-0.5)*r*2;const active=getAllActivePackages();if(active.length===0&&Object.keys(gameState.companies).length===0){return {id:'f'+Date.now()+Math.random(),lat,lng,packageId:'fantasma',companyId:'fantasma',points:10,promo:false};}if(active.length===0)return null;const chosen=active[Math.floor(Math.random()*active.length)];const promo=Math.random()<0.2;return {id:'f'+Date.now()+Math.random(),lat,lng,packageId:chosen.id,companyId:chosen.companyId,points:promo?20:10,promo};}
-function refreshFlags(){clearFlags();for(let i=0;i<gameState.settings.maxFlags;i++){const f=createFlagCandidate();if(f)gameState.flags.push(f);}drawFlagsOnMap();saveState();}
-function drawFlagsOnMap(){if(!map)return;Object.values(flagMarkers).forEach(m=>map.removeLayer(m));flagMarkers={};gameState.flags.forEach(flag=>{const icon=L.divIcon({html:'<i class="fa-solid fa-flag" style="color:red;font-size:20px;"></i>',iconSize:[24,24],iconAnchor:[12,24]});const marker=L.marker([flag.lat,flag.lng],{icon}).addTo(map);marker.bindPopup(`<div class="flag-popup"><strong>${flag.promo?'🌟PROMO':'🏁Bandeira'}</strong><br>+${flag.points} pts<br><button onclick="collectFlag('${flag.id}')">Recolher</button></div>`);flagMarkers[flag.id]=marker;});}
-window.collectFlag=function(flagId){const player=gameState.players[gameState.currentUser.id];const flag=gameState.flags.find(f=>f.id===flagId);if(!flag||player.energy<=0)return;const dist=map.distance([player.x,player.y],[flag.lat,flag.lng]);if(dist>2.5){alert('Demasiado longe');return;}player.points+=flag.points;player.energy=Math.min(100,player.energy+5);player.flagsCollected.push(flagId);const qrData=JSON.stringify({flagId,promo:flag.promo,points:flag.points});player.inventory.push({qr:qrData,name:(flag.promo?'Promo':'Flag')+flag.points});const compName=gameState.companies[flag.companyId]?.name||'Fantasma';gameState.ads.push({player:player.name,company:compName,prize:flag.points+' pts'});if(gameState.ads.length>10)gameState.ads.shift();if(gameState.companies[flag.companyId]){const pkg=gameState.companies[flag.companyId].packages.find(p=>p.id===flag.packageId);if(pkg)pkg.flagsRemaining=Math.max(0,(pkg.flagsRemaining||1)-1);}removeFlag(flagId);updateHUD();saveState();document.getElementById('result-title').innerText=flag.promo?'🌟 Promo!':'Bandeira!';document.getElementById('result-message').innerText=`+${flag.points} pontos! QR guardado.`;document.getElementById('result-modal').classList.remove('hidden');if(gameState.flags.length<gameState.settings.maxFlags){const f=createFlagCandidate();if(f){gameState.flags.push(f);drawFlagsOnMap();}}};
-function removeFlag(flagId){gameState.flags=gameState.flags.filter(f=>f.id!==flagId);if(flagMarkers[flagId]){map.removeLayer(flagMarkers[flagId]);delete flagMarkers[flagId];}}
-function clearFlags(){gameState.flags=[];Object.values(flagMarkers).forEach(m=>map.removeLayer(m));flagMarkers={};}
-function updateVisibleFlags(){const player=gameState.players[gameState.currentUser.id];gameState.flags.forEach(flag=>{const marker=flagMarkers[flag.id];if(!marker)return;const dist=map.distance([player.x,player.y],[flag.lat,flag.lng]);if(dist<=5){if(!map.hasLayer(marker))marker.addTo(map);}else{if(map.hasLayer(marker))map.removeLayer(marker);}});}
-document.getElementById('close-result-btn').onclick=()=>document.getElementById('result-modal').classList.add('hidden');
-document.getElementById('admin-create-flag-btn').onclick=()=>{const districts={'Lisboa':[38.7223,-9.1393],'Porto':[41.1579,-8.6291],'Faro':[37.0194,-7.9322],'Coimbra':[40.2033,-8.4103],'Braga':[41.5518,-8.4241]};let district=prompt('Distrito (Lisboa, Porto, Faro, Coimbra, Braga) ou cancela para manual:');let lat,lng;if(district&&districts[district]){lat=districts[district][0]+(Math.random()-0.5)*0.01;lng=districts[district][1]+(Math.random()-0.5)*0.01;}else{lat=parseFloat(prompt('Latitude:'));lng=parseFloat(prompt('Longitude:'));}if(isNaN(lat)||isNaN(lng))return;const points=parseInt(prompt('Pontos:','10'))||10;gameState.flags.push({id:'admin'+Date.now(),lat,lng,companyId:'admin',packageId:'admin',points,promo:false});saveState();alert('Bandeira criada');};
-document.getElementById('admin-promo-btn').onclick=()=>{gameState.ads.push({player:'Sistema',company:'Promoção',prize:'Prémio especial'});alert('Promoção lançada');};
-document.getElementById('player-list-btn').onclick=()=>{const panel=document.getElementById('player-list-panel');panel.classList.toggle('hidden');if(!panel.classList.contains('hidden'))renderPlayerList();};
-function renderPlayerList(){const list=document.getElementById('player-list');list.innerHTML='';const me=gameState.players[gameState.currentUser.id];for(let id in gameState.players){const p=gameState.players[id];if(p.id===me.id)continue;const entry=document.createElement('div');entry.className='player-entry';const isFriend=me.friends.includes(p.id);entry.innerHTML=`<span>${p.name}</span>`;const btn=document.createElement('button');btn.className='add-friend-btn';btn.innerText=isFriend?'Chat':'Adicionar';btn.onclick=()=>{if(isFriend)openPrivateChat(p.name);else{me.friends.push(p.id);saveState();renderPlayerList();openPrivateChat(p.name);}};entry.appendChild(btn);list.appendChild(entry);}}
-let currentPrivateChat=null;
-function openPrivateChat(friendName){currentPrivateChat=friendName;document.getElementById('private-chat-modal').classList.remove('hidden');renderPrivateMessages();}
-document.getElementById('private-send-btn').onclick=()=>{const input=document.getElementById('private-input');const msg=input.value.trim();if(!msg||!currentPrivateChat)return;const key=[gameState.currentUser.id,currentPrivateChat].sort().join('|');if(!gameState.chatMessages[key])gameState.chatMessages[key]=[];gameState.chatMessages[key].push({from:gameState.players[gameState.currentUser.id].name,text:msg,time:Date.now()});saveState();input.value='';renderPrivateMessages();};
-function renderPrivateMessages(){const cont=document.getElementById('private-messages');if(!currentPrivateChat)return;const key=[gameState.currentUser.id,currentPrivateChat].sort().join('|');const msgs=gameState.chatMessages[key]||[];cont.innerHTML=msgs.slice(-30).map(m=>`<div><b>${m.from}:</b> ${m.text}</div>`).join('');}
-document.getElementById('close-private-chat').onclick=()=>document.getElementById('private-chat-modal').classList.add('hidden');
-document.getElementById('open-trade-from-chat').onclick=()=>document.getElementById('trade-modal').classList.remove('hidden');
-document.getElementById('open-warehouse-from-chat').onclick=openWarehouse;
-let currentTradeQR=null;
-function allowDrop(ev){ev.preventDefault();}
-function dropQR(ev,slot){ev.preventDefault();const data=ev.dataTransfer.getData('text/plain');if(data&&slot==='my'){currentTradeQR=data;document.getElementById('my-offer-slot').innerHTML='';new QRCode(document.getElementById('my-offer-slot'),{text:data,width:100,height:100});}}
-function selectQRFromInventory(){const player=gameState.players[gameState.currentUser.id];if(player.inventory.length===0){alert('Sem QRs');return;}const idx=prompt('Índice (0 a '+(player.inventory.length-1)+')');const i=parseInt(idx);if(isNaN(i)||i<0||i>=player.inventory.length)return;currentTradeQR=player.inventory[i].qr;document.getElementById('my-offer-slot').innerHTML='';new QRCode(document.getElementById('my-offer-slot'),{text:currentTradeQR,width:100,height:100});}
-document.getElementById('enlarge-my-qr').onclick=()=>{if(currentTradeQR)showLargeQR(currentTradeQR);};
-document.getElementById('enlarge-partner-qr').onclick=()=>{showLargeQR(JSON.stringify({partner:true}));};
-document.getElementById('accept-trade-btn').onclick=()=>{if(!currentTradeQR){alert('Ofereça um QR');return;}const player=gameState.players[gameState.currentUser.id];const idx=player.inventory.findIndex(i=>i.qr===currentTradeQR);if(idx===-1)return;player.inventory.splice(idx,1);player.inventory.push({qr:JSON.stringify({partner:true}),name:'QR parceiro'});saveState();alert('Troca OK');document.getElementById('trade-modal').classList.add('hidden');};
-document.getElementById('close-trade-btn').onclick=()=>document.getElementById('trade-modal').classList.add('hidden');
-function openWarehouse(){const player=gameState.players[gameState.currentUser.id];const list=document.getElementById('warehouse-qr-list');list.innerHTML='';player.inventory.forEach((item,idx)=>{const div=document.createElement('div');div.className='qr-item';div.innerHTML=`<canvas id="qr-canvas-${idx}" width="60" height="60"></canvas><br>${item.name}`;div.onclick=()=>showLargeQR(item.qr);list.appendChild(div);setTimeout(()=>new QRCode(document.getElementById(`qr-canvas-${idx}`),{text:item.qr,width:60,height:60}),10);});document.getElementById('warehouse-panel').classList.remove('hidden');}
-document.getElementById('close-warehouse-btn').onclick=()=>document.getElementById('warehouse-panel').classList.add('hidden');
-function showLargeQR(data){document.getElementById('qr-large-overlay').classList.remove('hidden');const canvas=document.getElementById('qr-large-canvas');canvas.innerHTML='';new QRCode(canvas,{text:data,width:200,height:200});document.addEventListener('keydown',blockPrint);}
-document.getElementById('close-qr-large-btn').onclick=()=>{document.getElementById('qr-large-overlay').classList.add('hidden');document.removeEventListener('keydown',blockPrint);};
-function blockPrint(e){if(e.key==='PrintScreen'||(e.ctrlKey&&e.key==='p')){e.preventDefault();alert('Print bloqueado pelo cadeado.');}}
-function updatePRDashboard(){const comp=gameState.companies[gameState.currentUser.id];document.getElementById('pr-name').innerText=comp.name;document.getElementById('pr-packages-count').innerText=comp.packages.length;if(comp.packages.length===0){comp.packages.push({id:'p'+Date.now(),flagsRemaining:3});saveState();}}
-document.getElementById('logout-btn').onclick=logout;
-document.getElementById('pr-logout-btn').onclick=logout;
-document.getElementById('admin-logout-btn').onclick=logout;
-function logout(){stopGPS();gameState.currentUser=null;saveState();if(map){map.remove();map=null;}['hud','offline-dpad','pr-dashboard','admin-panel','player-list-panel','private-chat-modal','trade-modal','warehouse-panel','result-modal','qr-large-overlay','mode-modal'].forEach(id=>{document.getElementById(id)?.classList.add('hidden');});document.getElementById('map').classList.add('hidden');showAuthModal();}
-function updateTicker(){const el=document.getElementById('ticker');if(!el)return;let msgs=['🎉 Empresa XPTO lançou um BINGO: 1000€ por tempo limitado!'];gameState.ads.forEach(ad=>msgs.push(`${ad.player} ganhou ${ad.prize} da ${ad.company}`));el.innerText=msgs.join('  •  ');el.animate([{transform:'translateX(100%)'},{transform:'translateX(-100%)'}],{duration:20000,iterations:Infinity});}
-setInterval(updateTicker,15000);
-updateTicker();
-loadState();
-if(gameState.currentUser){if(gameState.currentUser.type==='JG')startPlayerGame();else if(gameState.currentUser.type==='PR')startPRGame();else startAdmin();}else{showAuthModal();}
-window.addEventListener('beforeunload',()=>{stopGPS();saveState();});
-</script>
+    // ======================== 🏠 ARRANQUE ========================
+    const STORAGE_KEY = 'zapflags_state';
+    let gameState = defaultState();
+
+    function defaultState() {
+        return {
+            players: {},
+            companies: {},
+            currentUser: null,
+            flags: [],
+            chatMessages: [],
+            settings: { maxFlags: 5, flagRadius: 0.001, viewRadius: 0.000045 } // ~5m
+        };
+    }
+
+    function loadState() {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+            try { gameState = JSON.parse(raw); } catch(e) { gameState = defaultState(); }
+        } else {
+            gameState = defaultState();
+        }
+        gameState.flags = gameState.flags || [];
+        gameState.players = gameState.players || {};
+        gameState.companies = gameState.companies || {};
+        gameState.chatMessages = gameState.chatMessages || [];
+    }
+
+    function saveState() {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(gameState));
+    }
+
+    function normalizePlayer(p) {
+        return { ...p, energy: p.energy ?? 100, points: p.points ?? 0, flagsCollected: p.flagsCollected ?? [], inventory: p.inventory ?? [] };
+    }
+    function normalizeCompany(c) {
+        return { ...c, budget: c.budget ?? 1000, packages: c.packages ?? [] };
+    }
+
+    // ======================== 🔐 LOGIN / REGISTO ========================
+    let authMode = 'login';
+    function showAuthModal() { document.getElementById('auth-modal').classList.remove('hidden'); updateAuthUI(); }
+    function updateAuthUI() {
+        const type = document.getElementById('account-type').value;
+        document.getElementById('auth-title').innerText = type === 'JG' ? 'Zap Flags - Jogador' : 'Zap Flags - Empresa';
+        document.getElementById('auth-action-btn').innerText = authMode === 'login' ? 'Entrar' : 'Criar conta';
+        document.getElementById('switch-mode').innerText = authMode === 'login' ? 'Não tem conta? Criar' : 'Já tem conta? Entrar';
+        document.getElementById('auth-confirm-password').classList.toggle('hidden', authMode !== 'register');
+        if (authMode === 'login') document.getElementById('auth-confirm-password').value = '';
+    }
+    document.getElementById('account-type').addEventListener('change', updateAuthUI);
+    document.getElementById('switch-mode').addEventListener('click', ()=>{ authMode = authMode === 'login' ? 'register' : 'login'; updateAuthUI(); });
+
+    document.getElementById('recover-pw').addEventListener('click', ()=>{
+        const name = document.getElementById('auth-name').value.trim();
+        const type = document.getElementById('account-type').value;
+        const col = type === 'JG' ? gameState.players : gameState.companies;
+        const found = Object.values(col).find(u => u.name === name);
+        alert(found ? `Password (demo): ${found.password}` : 'Não encontrado');
+    });
+
+    document.getElementById('auth-action-btn').addEventListener('click', ()=>{
+        const type = document.getElementById('account-type').value;
+        const name = document.getElementById('auth-name').value.trim();
+        const pw = document.getElementById('auth-password').value.trim();
+        const confirmPw = document.getElementById('auth-confirm-password').value.trim();
+        if (!name || !pw) { alert('Nome e password obrigatórios'); return; }
+        if (authMode === 'register') {
+            if (pw !== confirmPw) { alert('Passwords não coincidem'); return; }
+            const id = Date.now().toString(36)+Math.random().toString(36).substr(2);
+            if (type === 'JG') {
+                gameState.players[id] = normalizePlayer({ id, name, password: pw, x: 38.7223, y: -9.1393 });
+            } else {
+                gameState.companies[id] = normalizeCompany({ id, name, password: pw });
+            }
+            saveState();
+            alert('Conta criada! Faça login.');
+            authMode = 'login';
+            updateAuthUI();
+        } else {
+            const col = type === 'JG' ? gameState.players : gameState.companies;
+            const found = Object.values(col).find(u => u.name === name && u.password === pw);
+            if (!found) { alert('Credenciais inválidas'); return; }
+            gameState.currentUser = { type, id: found.id };
+            saveState();
+            document.getElementById('auth-modal').classList.add('hidden');
+            if (type === 'JG') startPlayerGame(); else startPRGame();
+        }
+    });
+
+    // ======================== 🗺️ MAPA E JOGO ========================
+    let map, playerMarker, flagMarkers = {}, watchId = null;
+    let currentTradeQR = null; // QR que o jogador quer oferecer
+
+    function startPlayerGame() {
+        document.getElementById('hud').classList.remove('hidden');
+        document.getElementById('pr-dashboard').classList.add('hidden');
+        document.getElementById('offline-dpad').classList.add('hidden');
+        document.getElementById('mode-modal').classList.remove('hidden');
+        initMap();
+        updateHUD();
+        refreshFlags();
+    }
+    function startPRGame() {
+        document.getElementById('hud').classList.add('hidden');
+        document.getElementById('pr-dashboard').classList.remove('hidden');
+        document.getElementById('offline-dpad').classList.add('hidden');
+        document.getElementById('mode-modal').classList.add('hidden');
+        if (map) map.remove();
+        map = null; document.getElementById('map').classList.add('hidden');
+        updatePRDashboard();
+    }
+
+    document.getElementById('gps-mode-btn').addEventListener('click', ()=>{ document.getElementById('mode-modal').classList.add('hidden'); requestGPSMode(); });
+    document.getElementById('home-mode-btn').addEventListener('click', ()=>{ document.getElementById('mode-modal').classList.add('hidden'); activateHomeMode(); });
+    document.getElementById('logout-btn').addEventListener('click', logout);
+    document.getElementById('pr-logout-btn').addEventListener('click', logout);
+    function logout() { stopGPS(); gameState.currentUser=null; saveState(); if(map){map.remove();map=null;} document.getElementById('hud').classList.add('hidden'); document.getElementById('pr-dashboard').classList.add('hidden'); document.getElementById('offline-dpad').classList.add('hidden'); document.getElementById('map').classList.add('hidden'); showAuthModal(); }
+
+    function initMap() {
+        if (map) map.remove();
+        document.getElementById('map').classList.remove('hidden');
+        map = L.map('map', { center: [38.7223, -9.1393], zoom: 17, zoomControl: false });
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution: '&copy; OSM' }).addTo(map);
+        L.control.zoom({ position: 'bottomleft' }).addTo(map);
+        // Avatar humano (corpo inteiro)
+        const playerIcon = L.divIcon({ className: 'player-icon', html: '<i class="fa-solid fa-person" style="color:#e94560; font-size:40px; filter: drop-shadow(0 0 8px red);"></i>', iconSize: [40,40], iconAnchor: [20,40] });
+        const player = gameState.players[gameState.currentUser.id];
+        playerMarker = L.marker([player.x, player.y], { icon: playerIcon, zIndexOffset: 1000 }).addTo(map);
+        updatePlayerLocation([player.x, player.y]);
+        centerOnPlayer();
+        refreshFlags();
+    }
+
+    function createFlagIcon() { // todas vermelhas
+        return L.divIcon({
+            className: 'flag-icon',
+            html: '<i class="fa-solid fa-flag" style="color:red; font-size:20px; filter: drop-shadow(0 0 6px red);"></i>',
+            iconSize: [24,24], iconAnchor: [12,24]
+        });
+    }
+
+    function updatePlayerLocation(latlng) {
+        if (!playerMarker) return;
+        playerMarker.setLatLng(latlng);
+        const player = gameState.players[gameState.currentUser.id];
+        player.x = latlng[0]; player.y = latlng[1];
+        saveState();
+        updateVisibleFlags();
+    }
+
+    function updateHUD() {
+        const player = gameState.players[gameState.currentUser.id];
+        if (!player) return;
+        document.getElementById('hud-name').innerText = player.name;
+        document.getElementById('flag-count').innerText = player.flagsCollected.length;
+        document.getElementById('energy-fill').style.width = player.energy + '%';
+    }
+
+    function requestGPSMode() {
+        if (navigator.geolocation) {
+            watchId = navigator.geolocation.watchPosition(updatePosition, handleGeoError, { enableHighAccuracy: true });
+            document.getElementById('offline-dpad').classList.add('hidden');
+        } else { alert('GPS indisponível'); activateHomeMode(); }
+    }
+    function activateHomeMode() { stopGPS(); document.getElementById('offline-dpad').classList.remove('hidden'); }
+    function stopGPS() { if (watchId) { navigator.geolocation.clearWatch(watchId); watchId = null; } }
+    function updatePosition(pos) {
+        const latlng = [pos.coords.latitude, pos.coords.longitude];
+        updatePlayerLocation(latlng);
+        const player = gameState.players[gameState.currentUser.id];
+        player.energy = Math.max(0, player.energy - 0.05);
+        updateHUD(); saveState();
+    }
+    function handleGeoError(err) { alert('Erro GPS'); activateHomeMode(); }
+
+    // Movimento manual (setas já estão corretas: norte sobe, sul desce)
+    document.querySelectorAll('.dpad-btn[data-dir]').forEach(btn => btn.addEventListener('click', e => moveHomePlayer(e.currentTarget.dataset.dir)));
+    document.getElementById('center-btn').addEventListener('click', centerOnPlayer);
+    document.addEventListener('keydown', e => {
+        if (gameState.currentUser?.type==='JG' && !document.getElementById('offline-dpad').classList.contains('hidden')) {
+            const dirMap = { ArrowUp:'n', ArrowDown:'s', ArrowLeft:'w', ArrowRight:'e' };
+            if (dirMap[e.key]) moveHomePlayer(dirMap[e.key]);
+        }
+    });
+    function moveHomePlayer(dir) {
+        const step = 0.00002; // ~2m
+        const player = gameState.players[gameState.currentUser.id];
+        if (dir.includes('n')) player.x += step;
+        if (dir.includes('s')) player.x -= step;
+        if (dir.includes('e')) player.y += step;
+        if (dir.includes('w')) player.y -= step;
+        updatePlayerLocation([player.x, player.y]);
+        player.energy = Math.max(0, player.energy - 0.1);
+        updateHUD(); saveState();
+    }
+    function centerOnPlayer() { const p = gameState.players[gameState.currentUser.id]; if(map) map.setView([p.x, p.y], 17); }
+
+    // ======================== 🔵 BANDEIRAS ========================
+    function getAllActivePackages() {
+        const pkgs = [];
+        for (let cid in gameState.companies) {
+            (gameState.companies[cid].packages || []).forEach(p => { if (p.flagsRemaining>0) pkgs.push({...p, companyId: cid}); });
+        }
+        return pkgs;
+    }
+
+    function createFlagCandidate() {
+        const player = gameState.players[gameState.currentUser.id];
+        const r = gameState.settings.flagRadius;
+        const lat = player.x + (Math.random()-0.5)*r*2;
+        const lng = player.y + (Math.random()-0.5)*r*2;
+        const active = getAllActivePackages();
+        if (active.length===0) return null;
+        const chosen = active[Math.floor(Math.random()*active.length)];
+        const promo = Math.random()<0.2;
+        const points = promo?20:10;
+        return { id: 'f'+Date.now()+Math.random(), lat, lng, packageId: chosen.id, companyId: chosen.companyId, points, promo };
+    }
+
+    function refreshFlags() {
+        clearFlags();
+        for (let i=0; i<gameState.settings.maxFlags; i++) {
+            const f = createFlagCandidate();
+            if (f) gameState.flags.push(f);
+        }
+        drawFlagsOnMap();
+        saveState();
+    }
+
+    function drawFlagsOnMap() {
+        if (!map) return;
+        Object.values(flagMarkers).forEach(m => map.removeLayer(m));
+        flagMarkers = {};
+        gameState.flags.forEach(flag => {
+            const marker = L.marker([flag.lat, flag.lng], { icon: createFlagIcon() }).addTo(map);
+            marker.bindPopup(`<div class="flag-popup"><strong>${flag.promo?'🌟PROMO':'🏁Bandeira'}</strong><br>+${flag.points} pts<br><button onclick="collectFlag('${flag.id}')">Recolher</button></div>`);
+            flagMarkers[flag.id] = marker;
+        });
+    }
+
+    window.collectFlag = function(flagId) {
+        if (!gameState.currentUser || gameState.currentUser.type!=='JG') return;
+        const player = gameState.players[gameState.currentUser.id];
+        const flag = gameState.flags.find(f=>f.id===flagId);
+        if (!flag || player.energy<=0) return;
+        const dist = map.distance([player.x, player.y], [flag.lat, flag.lng]);
+        if (dist > 2.5) { alert('Demasiado longe!'); return; } // 2.5 metros
+        player.points += flag.points;
+        player.energy = Math.min(100, player.energy+5);
+        // recolher gera QR no inventário
+        const qrData = JSON.stringify({flagId, promo:flag.promo, points:flag.points});
+        player.flagsCollected.push(flagId);
+        player.inventory.push({ qr: qrData, name: flag.promo?'Promo'+flag.points:'Flag'+flag.points });
+        const comp = gameState.companies[flag.companyId];
+        if (comp) {
+            const pkg = comp.packages.find(p=>p.id===flag.packageId);
+            if (pkg) pkg.flagsRemaining = Math.max(0, (pkg.flagsRemaining||1)-1);
+        }
+        removeFlag(flagId);
+        updateHUD(); saveState();
+        document.getElementById('result-title').innerText = flag.promo?'🌟 Promo!':'Bandeira recolhida!';
+        document.getElementById('result-message').innerText = `+${flag.points}pts! QR guardado.`;
+        document.getElementById('result-modal').classList.remove('hidden');
+        if (gameState.flags.length < gameState.settings.maxFlags) {
+            const f = createFlagCandidate();
+            if (f) { gameState.flags.push(f); drawFlagsOnMap(); }
+        }
+    };
+    document.getElementById('close-result-btn').addEventListener('click', ()=>document.getElementById('result-modal').classList.add('hidden'));
+
+    function removeFlag(flagId) {
+        gameState.flags = gameState.flags.filter(f=>f.id!==flagId);
+        if (flagMarkers[flagId]) { map.removeLayer(flagMarkers[flagId]); delete flagMarkers[flagId]; }
+    }
+    function clearFlags() {
+        gameState.flags = [];
+        Object.values(flagMarkers).forEach(m => map.removeLayer(m));
+        flagMarkers = {};
+    }
+
+    function updateVisibleFlags() {
+        const player = gameState.players[gameState.currentUser.id];
+        gameState.flags.forEach(flag => {
+            const marker = flagMarkers[flag.id];
+            if (!marker) return;
+            const dist = map.distance([player.x, player.y], [flag.lat, flag.lng]);
+            if (dist <= 5) { if (!map.hasLayer(marker)) marker.addTo(map); }
+            else { if (map.hasLayer(marker)) map.removeLayer(marker); }
+        });
+    }
+
+    // ======================== 💬 CHAT ========================
+    document.getElementById('chat-toggle-btn').addEventListener('click', ()=>{
+        document.getElementById('chat-panel').classList.toggle('hidden');
+    });
+    document.getElementById('chat-send-btn').addEventListener('click', sendMessage);
+    document.getElementById('chat-input').addEventListener('keypress', (e)=>{ if (e.key==='Enter') sendMessage(); });
+    function sendMessage() {
+        const input = document.getElementById('chat-input');
+        const msg = input.value.trim();
+        if (!msg) return;
+        gameState.chatMessages.push({ from: gameState.players[gameState.currentUser.id].name, text: msg, time: Date.now() });
+        saveState();
+        input.value = '';
+        renderChat();
+    }
+    function renderChat() {
+        const container = document.getElementById('chat-messages');
+        container.innerHTML = gameState.chatMessages.slice(-20).map(m => `<div class="chat-msg"><b>${m.from}:</b> ${m.text}</div>`).join('');
+        container.scrollTop = container.scrollHeight;
+    }
+
+    // ======================== 🏬 ARMAZÉM ========================
+    document.getElementById('open-warehouse-btn').addEventListener('click', openWarehouse);
+    document.getElementById('close-warehouse-btn').addEventListener('click', ()=>document.getElementById('warehouse-panel').classList.add('hidden'));
+    function openWarehouse() {
+        const player = gameState.players[gameState.currentUser.id];
+        const list = document.getElementById('warehouse-qr-list');
+        list.innerHTML = '';
+        player.inventory.forEach((item, idx) => {
+            const div = document.createElement('div');
+            div.className = 'qr-item';
+            div.innerHTML = `<canvas id="qr-canvas-${idx}" width="60" height="60"></canvas><br><small>${item.name}</small>`;
+            div.addEventListener('click', ()=> showLargeQR(item.qr));
+            list.appendChild(div);
+            setTimeout(()=> new QRCode(document.getElementById(`qr-canvas-${idx}`), { text: item.qr, width:60, height:60 }), 10);
+        });
+        document.getElementById('warehouse-panel').classList.remove('hidden');
+    }
+
+    // ======================== 🔁 TROCA DE QR ========================
+    document.getElementById('open-trade-btn').addEventListener('click', openTrade);
+    document.getElementById('close-trade-btn').addEventListener('click', ()=>document.getElementById('trade-modal').classList.add('hidden'));
+    function openTrade() {
+        document.getElementById('trade-modal').classList.remove('hidden');
+        // limpar slots
+        document.getElementById('my-offer-slot').innerHTML = 'Arrasta QR aqui';
+        document.getElementById('partner-offer-slot').innerHTML = '<canvas id="partner-qr-canvas" width="120" height="120"></canvas>';
+        // gerar QR parceiro aleatório
+        const partnerQR = JSON.stringify({ partner: true, id: 'par'+Date.now() });
+        new QRCode(document.getElementById('partner-qr-canvas'), { text: partnerQR, width:120, height:120 });
+        currentTradeQR = null;
+    }
+    function allowDrop(ev) { ev.preventDefault(); }
+    function dropQR(ev, slot) {
+        ev.preventDefault();
+        const data = ev.dataTransfer.getData('text/plain');
+        if (data && slot==='my') {
+            currentTradeQR = data;
+            const slotEl = document.getElementById('my-offer-slot');
+            slotEl.innerHTML = '';
+            new QRCode(slotEl, { text: data, width:120, height:120 });
+        }
+    }
+    function selectQRFromInventory(slot) {
+        // Simula: abre lista de QRs para selecionar
+        const player = gameState.players[gameState.currentUser.id];
+        if (player.inventory.length===0) { alert('Sem QRs no inventário'); return; }
+        const qrData = prompt('Escolhe um QR (0 a '+(player.inventory.length-1)+')');
+        const idx = parseInt(qrData);
+        if (isNaN(idx) || idx<0 || idx>=player.inventory.length) return;
+        const qr = player.inventory[idx].qr;
+        currentTradeQR = qr;
+        const slotEl = document.getElementById('my-offer-slot');
+        slotEl.innerHTML = '';
+        new QRCode(slotEl, { text: qr, width:120, height:120 });
+    }
+    document.getElementById('enlarge-my-qr-btn').addEventListener('click', ()=>{
+        if (!currentTradeQR) { alert('Seleciona um QR primeiro'); return; }
+        showLargeQR(currentTradeQR);
+    });
+    document.getElementById('enlarge-partner-qr-btn').addEventListener('click', ()=>{
+        const canvas = document.getElementById('partner-qr-canvas');
+        if (canvas) {
+            // obter texto do QR parceiro (hardcoded)
+            showLargeQR(JSON.stringify({ partner: true }));
+        }
+    });
+    document.getElementById('accept-trade-btn').addEventListener('click', ()=>{
+        if (!currentTradeQR) { alert('Oferece um QR primeiro'); return; }
+        const player = gameState.players[gameState.currentUser.id];
+        // remover QR do inventário
+        const idx = player.inventory.findIndex(item => item.qr === currentTradeQR);
+        if (idx===-1) { alert('QR não encontrado'); return; }
+        player.inventory.splice(idx,1);
+        // adicionar QR do parceiro (fictício)
+        const partnerQR = JSON.stringify({ partner: true, id: 'par'+Date.now() });
+        player.inventory.push({ qr: partnerQR, name: 'QR parceiro' });
+        saveState();
+        alert('Troca realizada!');
+        document.getElementById('trade-modal').classList.add('hidden');
+        // atualizar warehouse se aberto
+        if (!document.getElementById('warehouse-panel').classList.contains('hidden')) openWarehouse();
+    });
+    function showLargeQR(data) {
+        const overlay = document.getElementById('qr-large-overlay');
+        const canvas = document.getElementById('qr-large-canvas');
+        overlay.classList.remove('hidden');
+        canvas.innerHTML = '';
+        new QRCode(canvas, { text: data, width:200, height:200 });
+        // bloquear print screen
+        document.addEventListener('keydown', blockPrint);
+        overlay.addEventListener('contextmenu', e => { e.preventDefault(); alert('Screenshot bloqueado'); });
+    }
+    document.getElementById('close-qr-large-btn').addEventListener('click', ()=>{
+        document.getElementById('qr-large-overlay').classList.add('hidden');
+        document.removeEventListener('keydown', blockPrint);
+    });
+    function blockPrint(e) {
+        if (e.key === 'PrintScreen' || (e.ctrlKey && e.key === 'p')) { e.preventDefault(); alert('Print bloqueado'); }
+    }
+
+    // ======================== PAINEL EMPRESA ========================
+    function updatePRDashboard() {
+        const comp = gameState.companies[gameState.currentUser.id];
+        document.getElementById('pr-name').innerText = comp.name;
+        document.getElementById('pr-packages-count').innerText = comp.packages.length;
+        if (comp.packages.length===0) { comp.packages.push({ id:'p'+Date.now(), flagsRemaining:3 }); saveState(); }
+    }
+
+    // ======================== INICIALIZAÇÃO ========================
+    loadState();
+    if (gameState.currentUser) {
+        if (gameState.currentUser.type==='JG') startPlayerGame();
+        else startPRGame();
+    } else {
+        showAuthModal();
+    }
+    window.addEventListener('beforeunload', ()=>{ stopGPS(); saveState(); });
+    </script>
 </body>
-</html>
