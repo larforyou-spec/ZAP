@@ -111,11 +111,13 @@
             </div>
         </div>
 
-        <!-- Modo -->
+        <!-- Mode modal -->
         <div id="mode-modal" class="modal hidden">
-            <div class="draggable-content"><h2>Modo</h2>
-                <button id="gps-mode-btn">GPS</button>
-                <button id="home-mode-btn">Casa</button>
+            <div class="draggable-content">
+                <h2>Escolhe o modo</h2>
+                <button id="gps-mode-btn"><i class="fa-solid fa-location-dot"></i> GPS real</button>
+                <button id="home-mode-btn"><i class="fa-solid fa-house"></i> Modo casa</button>
+                <p style="margin-top:1rem; font-size:0.8rem; color:gray;">Se o GPS não funcionar, o modo casa será ativado automaticamente.</p>
             </div>
         </div>
 
@@ -146,14 +148,14 @@
             <button class="dpad-btn" data-dir="se"><i class="fa-solid fa-arrow-down-right"></i></button>
         </div>
 
-        <!-- Empresa -->
+        <!-- Empresa dashboard -->
         <div id="pr-dashboard" class="ui-overlay hidden draggable-window" style="top:1rem;right:1rem;width:280px;background:white;border-radius:1rem;padding:1rem;">
             <h3><span id="pr-name"></span></h3>
             <p>Pacotes: <span id="pr-packages-count">0</span></p>
             <button id="pr-logout-btn">Sair</button>
         </div>
 
-        <!-- Admin -->
+        <!-- Admin panel -->
         <div id="admin-panel" class="ui-overlay hidden draggable-window" style="top:1rem;right:1rem;width:300px;background:white;border-radius:1rem;padding:1rem;">
             <h3>Admin</h3>
             <p>Jogadores: <span id="admin-jg">0</span> / Empresas: <span id="admin-pr">0</span></p>
@@ -162,17 +164,17 @@
             <button id="admin-logout-btn">Sair</button>
         </div>
 
-        <!-- Lista de jogadores -->
+        <!-- Player list -->
         <div id="player-list-panel" class="ui-overlay hidden">
             <h3>Jogadores</h3>
             <div id="player-list"></div>
         </div>
 
-        <!-- Chat privado -->
+        <!-- Private chat modal -->
         <div id="private-chat-modal" class="chat-modal hidden">
             <div class="messages" id="private-messages"></div>
             <div class="input-row">
-                <input id="private-input" />
+                <input id="private-input" placeholder="Mensagem..." />
                 <button id="private-send-btn">Enviar</button>
             </div>
             <button id="open-trade-from-chat">Troca</button>
@@ -180,7 +182,7 @@
             <button id="close-private-chat">Fechar</button>
         </div>
 
-        <!-- Trade -->
+        <!-- Trade modal -->
         <div id="trade-modal" class="modal hidden">
             <div class="draggable-content">
                 <h2>Troca</h2>
@@ -195,7 +197,7 @@
             </div>
         </div>
 
-        <!-- QR grande -->
+        <!-- QR large -->
         <div id="qr-large-overlay" class="modal hidden">
             <div class="qr-large">
                 <div class="lock-overlay"><i class="fa-solid fa-lock"></i></div>
@@ -227,7 +229,7 @@
     </div>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-// ---------------- BOOT ----------------
+// ======================== BOOT ========================
 const STORAGE_KEY = 'zapflags_state';
 let gameState = defaultState();
 function defaultState() {
@@ -247,7 +249,7 @@ function loadState() {
 }
 function saveState() { localStorage.setItem(STORAGE_KEY, JSON.stringify(gameState)); }
 
-// ---------------- AUTH ----------------
+// ======================== AUTH ========================
 let authMode = 'login';
 const lastLoginLS = JSON.parse(localStorage.getItem('lastLogin')||'{}');
 
@@ -310,7 +312,6 @@ function updateAuthUI() {
         }
     }
 }
-
 document.getElementById('account-type').onchange = updateAuthUI;
 document.getElementById('switch-mode').onclick = ()=>{
     authMode = authMode==='login'?'register':'login';
@@ -421,7 +422,7 @@ function normalizeCompany(c) {
     return { ...c, packages:[] };
 }
 
-// ---------------- DRAGGABLE ----------------
+// ======================== DRAGGABLE ========================
 function makeDraggable(modalId) {
     const modal = document.getElementById(modalId);
     if (!modal) return;
@@ -451,17 +452,21 @@ window.addEventListener('load', ()=>{
     ['auth-modal','mode-modal','pr-dashboard','admin-panel','private-chat-modal','trade-modal','warehouse-panel','result-modal'].forEach(makeDraggable);
 });
 
-// ---------------- MAPA / JOGO ----------------
-let map, playerMarker, flagMarkers={}, watchId, circleInner, circleOuter;
+// ======================== MAPA / JOGO ========================
+let map, playerMarker, flagMarkers={}, watchId, circleInner, circleOuter, gpsTimeout;
+
 function startPlayerGame() {
     document.getElementById('hud').classList.remove('hidden');
     document.getElementById('admin-panel').classList.add('hidden');
     document.getElementById('pr-dashboard').classList.add('hidden');
     document.getElementById('mode-modal').classList.remove('hidden');
+    // Se já existir mapa, remove
+    if (map) { map.remove(); map = null; }
     initMap();
     updateHUD();
     refreshFlags();
 }
+
 function startPRGame() {
     document.getElementById('hud').classList.add('hidden');
     document.getElementById('pr-dashboard').classList.remove('hidden');
@@ -471,6 +476,7 @@ function startPRGame() {
     document.getElementById('map').classList.add('hidden');
     updatePRDashboard();
 }
+
 function startAdmin() {
     document.getElementById('admin-panel').classList.remove('hidden');
     document.getElementById('hud').classList.add('hidden');
@@ -481,8 +487,8 @@ function startAdmin() {
     document.getElementById('admin-jg').innerText = Object.keys(gameState.players).length;
     document.getElementById('admin-pr').innerText = Object.keys(gameState.companies).length;
 }
+
 function initMap() {
-    if (map) map.remove();
     document.getElementById('map').classList.remove('hidden');
     map = L.map('map', { center: [38.7223, -9.1393], zoom: 17, zoomControl: false });
     L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { attribution: '&copy; OSM' }).addTo(map);
@@ -494,8 +500,8 @@ function initMap() {
     circleOuter = L.circle([player.x,player.y], { radius:5, color:'red', fill:false, weight:2, dashArray:'5,5' }).addTo(map);
     updatePlayerLocation([player.x, player.y]);
     centerOnPlayer();
-    refreshFlags();
 }
+
 function updatePlayerLocation(latlng) {
     playerMarker.setLatLng(latlng);
     circleInner.setLatLng(latlng);
@@ -506,6 +512,7 @@ function updatePlayerLocation(latlng) {
     saveState();
     updateVisibleFlags();
 }
+
 function regenEnergy(player) {
     if (!player.lastEnergyUpdate) player.lastEnergyUpdate = Date.now();
     const now = Date.now();
@@ -516,6 +523,7 @@ function regenEnergy(player) {
         player.lastEnergyUpdate = now - (diff % (15*60*1000));
     }
 }
+
 function updateHUD() {
     const p = gameState.players[gameState.currentUser.id];
     document.getElementById('hud-name').innerText = p.name;
@@ -526,28 +534,100 @@ function updateHUD() {
         document.getElementById('energy-text').innerText = '0% (descansando...)';
     }
 }
+
+// ---------- GPS / Modo Casa ----------
 function requestGPSMode() {
     if (navigator.geolocation) {
-        watchId = navigator.geolocation.watchPosition(updatePosition, handleGeoError, { enableHighAccuracy: true });
+        // Definir um timeout: se não houver resposta em 3 segundos, ativa modo casa
+        gpsTimeout = setTimeout(() => {
+            alert('GPS não respondeu. Ativando modo casa.');
+            activateHomeMode();
+        }, 3000);
+        watchId = navigator.geolocation.watchPosition(
+            (pos) => {
+                clearTimeout(gpsTimeout);
+                updatePosition(pos);
+            },
+            (err) => {
+                clearTimeout(gpsTimeout);
+                console.warn('Erro GPS:', err);
+                alert('Erro no GPS. Ativando modo casa.');
+                activateHomeMode();
+            },
+            { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+        );
         document.getElementById('offline-dpad').classList.add('hidden');
-    } else { activateHomeMode(); }
+    } else {
+        alert('Geolocalização não suportada. Modo casa ativado.');
+        activateHomeMode();
+    }
 }
-function activateHomeMode() { stopGPS(); document.getElementById('offline-dpad').classList.remove('hidden'); }
-function stopGPS() { if (watchId) { navigator.geolocation.clearWatch(watchId); watchId=null; } }
+
+function activateHomeMode() {
+    stopGPS();
+    document.getElementById('offline-dpad').classList.remove('hidden');
+    document.getElementById('mode-modal').classList.add('hidden');
+    // Mostra o HUD caso não esteja
+    document.getElementById('hud').classList.remove('hidden');
+    alert('Modo casa: use as setas do teclado ou o D-pad para mover.');
+}
+
+function stopGPS() {
+    if (watchId) {
+        navigator.geolocation.clearWatch(watchId);
+        watchId = null;
+    }
+    clearTimeout(gpsTimeout);
+}
+
 function updatePosition(pos) {
     const latlng = [pos.coords.latitude, pos.coords.longitude];
     updatePlayerLocation(latlng);
     const p = gameState.players[gameState.currentUser.id];
     p.energy = Math.max(0, p.energy - 0.05);
-    updateHUD(); saveState();
+    updateHUD();
+    saveState();
 }
-function handleGeoError() { alert('Erro GPS'); activateHomeMode(); }
-document.querySelectorAll('.dpad-btn[data-dir]').forEach(b => b.onclick = (e)=> moveHomePlayer(e.currentTarget.dataset.dir));
-document.getElementById('center-btn').onclick = centerOnPlayer;
+
+function handleGeoError(err) {
+    console.error(err);
+    alert('Erro no GPS. Ativando modo casa.');
+    activateHomeMode();
+}
+
+// Botões do modal de modo
+document.getElementById('gps-mode-btn').addEventListener('click', ()=>{
+    document.getElementById('mode-modal').classList.add('hidden');
+    requestGPSMode();
+});
+document.getElementById('home-mode-btn').addEventListener('click', ()=>{
+    document.getElementById('mode-modal').classList.add('hidden');
+    activateHomeMode();
+});
+
+// D-Pad + teclado
+document.querySelectorAll('.dpad-btn[data-dir]').forEach(btn => {
+    btn.addEventListener('click', (e) => moveHomePlayer(e.currentTarget.dataset.dir));
+});
+document.getElementById('center-btn').addEventListener('click', centerOnPlayer);
+
+document.addEventListener('keydown', (e) => {
+    if (gameState.currentUser?.type === 'JG' && !document.getElementById('offline-dpad').classList.contains('hidden')) {
+        const mapDir = { ArrowUp: 'n', ArrowDown: 's', ArrowLeft: 'w', ArrowRight: 'e' };
+        if (mapDir[e.key]) {
+            e.preventDefault();
+            moveHomePlayer(mapDir[e.key]);
+        }
+    }
+});
+
 function moveHomePlayer(dir) {
-    if (!gameState.currentUser || gameState.currentUser.type!=='JG') return;
+    if (!gameState.currentUser || gameState.currentUser.type !== 'JG') return;
     const p = gameState.players[gameState.currentUser.id];
-    if (p.energy <= 0) { alert('Energia esgotada! Descanse 15 minutos.'); return; }
+    if (p.energy <= 0) {
+        alert('Energia esgotada! Descanse 15 minutos.');
+        return;
+    }
     const step = 0.00002;
     if (dir.includes('n')) p.x += step;
     if (dir.includes('s')) p.x -= step;
@@ -555,104 +635,150 @@ function moveHomePlayer(dir) {
     if (dir.includes('w')) p.y -= step;
     updatePlayerLocation([p.x, p.y]);
     p.energy = Math.max(0, p.energy - 0.1);
-    updateHUD(); saveState();
+    updateHUD();
+    saveState();
 }
+
 function centerOnPlayer() {
     const p = gameState.players[gameState.currentUser.id];
     if (map) map.setView([p.x, p.y], 17);
 }
 
-// ---------------- BANDEIRAS ----------------
+// ======================== BANDEIRAS ========================
 function getAllActivePackages() {
     const pkgs = [];
     for (let cid in gameState.companies) {
-        (gameState.companies[cid].packages||[]).forEach(p => { if (p.flagsRemaining>0) pkgs.push({...p, companyId: cid}); });
+        (gameState.companies[cid].packages||[]).forEach(p => {
+            if (p.flagsRemaining > 0) pkgs.push({...p, companyId: cid});
+        });
     }
     return pkgs;
 }
+
 function createFlagCandidate() {
     const player = gameState.players[gameState.currentUser.id];
     const r = gameState.settings.flagRadius;
     const lat = player.x + (Math.random()-0.5)*r*2;
     const lng = player.y + (Math.random()-0.5)*r*2;
     const active = getAllActivePackages();
-    if (active.length===0 && Object.keys(gameState.companies).length===0) {
-        const fakeCompanyId = 'fantasma';
-        const fakePackageId = 'pkfantasma';
-        return { id:'f'+Date.now()+Math.random(), lat, lng, packageId:fakePackageId, companyId:fakeCompanyId, points:10, promo:false, logo:null };
+    if (active.length === 0 && Object.keys(gameState.companies).length === 0) {
+        return {
+            id: 'f'+Date.now()+Math.random(),
+            lat, lng,
+            packageId: 'fantasma',
+            companyId: 'fantasma',
+            points: 10,
+            promo: false,
+            logo: null
+        };
     }
-    if (active.length===0) return null;
+    if (active.length === 0) return null;
     const chosen = active[Math.floor(Math.random()*active.length)];
-    const promo = Math.random()<0.2;
-    return { id:'f'+Date.now()+Math.random(), lat, lng, packageId:chosen.id, companyId:chosen.companyId, points:promo?20:10, promo };
+    const promo = Math.random() < 0.2;
+    return {
+        id: 'f'+Date.now()+Math.random(),
+        lat, lng,
+        packageId: chosen.id,
+        companyId: chosen.companyId,
+        points: promo ? 20 : 10,
+        promo
+    };
 }
+
 function refreshFlags() {
     clearFlags();
-    for (let i=0; i<gameState.settings.maxFlags; i++) {
+    for (let i=0; i < gameState.settings.maxFlags; i++) {
         const f = createFlagCandidate();
         if (f) gameState.flags.push(f);
     }
     drawFlagsOnMap();
     saveState();
 }
+
 function drawFlagsOnMap() {
     if (!map) return;
     Object.values(flagMarkers).forEach(m => map.removeLayer(m));
     flagMarkers = {};
     gameState.flags.forEach(flag => {
-        const icon = L.divIcon({ html:'<i class="fa-solid fa-flag" style="color:red;font-size:20px;"></i>', iconSize:[24,24], iconAnchor:[12,24] });
+        const icon = L.divIcon({
+            html: '<i class="fa-solid fa-flag" style="color:red; font-size:20px;"></i>',
+            iconSize: [24,24],
+            iconAnchor: [12,24]
+        });
         const marker = L.marker([flag.lat, flag.lng], { icon }).addTo(map);
-        marker.bindPopup(`<div class="flag-popup"><strong>${flag.promo?'🌟PROMO':'🏁Bandeira'}</strong><br>+${flag.points} pts<br><button onclick="collectFlag('${flag.id}')">Recolher</button></div>`);
+        marker.bindPopup(`
+            <div class="flag-popup">
+                <strong>${flag.promo ? '🌟 PROMO' : '🏁 Bandeira'}</strong><br>
+                +${flag.points} pts<br>
+                <button onclick="collectFlag('${flag.id}')">Recolher</button>
+            </div>
+        `);
         flagMarkers[flag.id] = marker;
     });
 }
+
 window.collectFlag = function(flagId) {
     const player = gameState.players[gameState.currentUser.id];
-    const flag = gameState.flags.find(f=>f.id===flagId);
-    if (!flag || player.energy<=0) return;
-    const dist = map.distance([player.x,player.y], [flag.lat,flag.lng]);
+    const flag = gameState.flags.find(f => f.id === flagId);
+    if (!flag || player.energy <= 0) return;
+    const dist = map.distance([player.x, player.y], [flag.lat, flag.lng]);
     if (dist > 2.5) { alert('Demasiado longe'); return; }
     player.points += flag.points;
-    player.energy = Math.min(100, player.energy+5);
+    player.energy = Math.min(100, player.energy + 5);
     player.flagsCollected.push(flagId);
-    const qrData = JSON.stringify({flagId, promo:flag.promo, points:flag.points});
-    player.inventory.push({ qr: qrData, name: (flag.promo?'Promo':'Flag')+flag.points });
+    const qrData = JSON.stringify({ flagId, promo: flag.promo, points: flag.points });
+    player.inventory.push({ qr: qrData, name: (flag.promo ? 'Promo' : 'Flag') + flag.points });
     const compName = gameState.companies[flag.companyId]?.name || 'Fantasma';
-    gameState.ads.push({ player: player.name, company: compName, prize: flag.points+' pts' });
+    gameState.ads.push({ player: player.name, company: compName, prize: flag.points + ' pts' });
     if (gameState.ads.length > 10) gameState.ads.shift();
     if (gameState.companies[flag.companyId]) {
-        const pkg = gameState.companies[flag.companyId].packages.find(p=>p.id===flag.packageId);
-        if (pkg) pkg.flagsRemaining = Math.max(0, (pkg.flagsRemaining||1)-1);
+        const pkg = gameState.companies[flag.companyId].packages.find(p => p.id === flag.packageId);
+        if (pkg) pkg.flagsRemaining = Math.max(0, (pkg.flagsRemaining || 1) - 1);
     }
     removeFlag(flagId);
-    updateHUD(); saveState();
-    document.getElementById('result-title').innerText = flag.promo?'🌟 Promo!':'Bandeira!';
-    document.getElementById('result-message').innerText = `+${flag.points} pontos`;
+    updateHUD();
+    saveState();
+    document.getElementById('result-title').innerText = flag.promo ? '🌟 Promo!' : 'Bandeira!';
+    document.getElementById('result-message').innerText = `+${flag.points} pontos! QR guardado.`;
     document.getElementById('result-modal').classList.remove('hidden');
     if (gameState.flags.length < gameState.settings.maxFlags) {
         const f = createFlagCandidate();
         if (f) { gameState.flags.push(f); drawFlagsOnMap(); }
     }
 };
+
 function removeFlag(flagId) {
-    gameState.flags = gameState.flags.filter(f=>f.id!==flagId);
-    if (flagMarkers[flagId]) { map.removeLayer(flagMarkers[flagId]); delete flagMarkers[flagId]; }
+    gameState.flags = gameState.flags.filter(f => f.id !== flagId);
+    if (flagMarkers[flagId]) {
+        map.removeLayer(flagMarkers[flagId]);
+        delete flagMarkers[flagId];
+    }
 }
-function clearFlags() { gameState.flags=[]; Object.values(flagMarkers).forEach(m=>map.removeLayer(m)); flagMarkers={}; }
+
+function clearFlags() {
+    gameState.flags = [];
+    Object.values(flagMarkers).forEach(m => map.removeLayer(m));
+    flagMarkers = {};
+}
+
 function updateVisibleFlags() {
     const player = gameState.players[gameState.currentUser.id];
     gameState.flags.forEach(flag => {
         const marker = flagMarkers[flag.id];
         if (!marker) return;
-        const dist = map.distance([player.x,player.y],[flag.lat,flag.lng]);
-        if (dist <= 5) { if (!map.hasLayer(marker)) marker.addTo(map); }
-        else { if (map.hasLayer(marker)) map.removeLayer(marker); }
+        const dist = map.distance([player.x, player.y], [flag.lat, flag.lng]);
+        if (dist <= 5) {
+            if (!map.hasLayer(marker)) marker.addTo(map);
+        } else {
+            if (map.hasLayer(marker)) map.removeLayer(marker);
+        }
     });
 }
-document.getElementById('close-result-btn').onclick = ()=> document.getElementById('result-modal').classList.add('hidden');
 
-// ---------------- ADMIN ----------------
-document.getElementById('admin-create-flag-btn').onclick = ()=>{
+document.getElementById('close-result-btn').onclick = () => document.getElementById('result-modal').classList.add('hidden');
+
+// ======================== ADMIN ========================
+document.getElementById('admin-create-flag-btn').addEventListener('click', ()=>{
     const districts = {
         'Lisboa': [38.7223, -9.1393],
         'Porto': [41.1579, -8.6291],
@@ -667,26 +793,36 @@ document.getElementById('admin-create-flag-btn').onclick = ()=>{
         lat += (Math.random()-0.5)*0.01;
         lng += (Math.random()-0.5)*0.01;
     } else {
-        lat = parseFloat(prompt('Latitude:')); lng = parseFloat(prompt('Longitude:'));
+        lat = parseFloat(prompt('Latitude:'));
+        lng = parseFloat(prompt('Longitude:'));
     }
     if (isNaN(lat) || isNaN(lng)) return;
     const points = parseInt(prompt('Pontos:', '10')) || 10;
-    const flag = { id:'admin'+Date.now(), lat, lng, companyId:'admin', packageId:'admin', points, promo:false, logo:null };
-    gameState.flags.push(flag);
+    gameState.flags.push({
+        id: 'admin'+Date.now(),
+        lat, lng,
+        companyId: 'admin',
+        packageId: 'admin',
+        points,
+        promo: false,
+        logo: null
+    });
     saveState();
-    alert('Bandeira criada');
-};
-document.getElementById('admin-promo-btn').onclick = ()=>{
-    gameState.ads.push({player:'Sistema', company:'Promoção', prize:'Prémio especial'});
-    alert('Promoção lançada');
-};
+    alert('Bandeira criada!');
+});
 
-// ---------------- CHAT / AMIGOS ----------------
-document.getElementById('player-list-btn').onclick = ()=>{
+document.getElementById('admin-promo-btn').addEventListener('click', ()=>{
+    gameState.ads.push({ player: 'Sistema', company: 'Promoção', prize: 'Prémio especial!' });
+    alert('Promoção lançada!');
+});
+
+// ======================== CHAT / AMIGOS ========================
+document.getElementById('player-list-btn').addEventListener('click', ()=>{
     const panel = document.getElementById('player-list-panel');
     panel.classList.toggle('hidden');
     if (!panel.classList.contains('hidden')) renderPlayerList();
-};
+});
+
 function renderPlayerList() {
     const list = document.getElementById('player-list');
     list.innerHTML = '';
@@ -701,77 +837,103 @@ function renderPlayerList() {
         const btn = document.createElement('button');
         btn.className = 'add-friend-btn';
         btn.innerText = isFriend ? 'Chat' : 'Adicionar';
-        btn.onclick = ()=>{
+        btn.onclick = () => {
             if (isFriend) openPrivateChat(p.name);
-            else { me.friends.push(p.id); saveState(); renderPlayerList(); openPrivateChat(p.name); }
+            else {
+                me.friends.push(p.id);
+                saveState();
+                renderPlayerList();
+                openPrivateChat(p.name);
+            }
         };
         entry.appendChild(btn);
         list.appendChild(entry);
     }
 }
+
+let currentPrivateChat = null;
+
 function openPrivateChat(friendName) {
     currentPrivateChat = friendName;
     document.getElementById('private-chat-modal').classList.remove('hidden');
     renderPrivateMessages();
 }
-let currentPrivateChat = null;
-document.getElementById('private-send-btn').onclick = ()=>{
+
+document.getElementById('private-send-btn').addEventListener('click', () => {
     const input = document.getElementById('private-input');
     const msg = input.value.trim();
     if (!msg || !currentPrivateChat) return;
     const key = [gameState.currentUser.id, currentPrivateChat].sort().join('|');
     if (!gameState.chatMessages[key]) gameState.chatMessages[key] = [];
-    gameState.chatMessages[key].push({ from: gameState.players[gameState.currentUser.id].name, text: msg, time: Date.now() });
+    gameState.chatMessages[key].push({
+        from: gameState.players[gameState.currentUser.id].name,
+        text: msg,
+        time: Date.now()
+    });
     saveState();
     input.value = '';
     renderPrivateMessages();
-};
+});
+
 function renderPrivateMessages() {
     const cont = document.getElementById('private-messages');
     if (!currentPrivateChat) return;
     const key = [gameState.currentUser.id, currentPrivateChat].sort().join('|');
     const msgs = gameState.chatMessages[key] || [];
-    cont.innerHTML = msgs.slice(-30).map(m=>`<div><b>${m.from}:</b> ${m.text}</div>`).join('');
+    cont.innerHTML = msgs.slice(-30).map(m => `<div><b>${m.from}:</b> ${m.text}</div>`).join('');
 }
-document.getElementById('close-private-chat').onclick = ()=> document.getElementById('private-chat-modal').classList.add('hidden');
-document.getElementById('open-trade-from-chat').onclick = ()=> document.getElementById('trade-modal').classList.remove('hidden');
+
+document.getElementById('close-private-chat').onclick = () => document.getElementById('private-chat-modal').classList.add('hidden');
+document.getElementById('open-trade-from-chat').onclick = () => document.getElementById('trade-modal').classList.remove('hidden');
 document.getElementById('open-warehouse-from-chat').onclick = openWarehouse;
 
-// ---------------- TRADE / WAREHOUSE / QR ----------------
+// ======================== TRADE / WAREHOUSE / QR ========================
 let currentTradeQR = null;
+
 function allowDrop(ev) { ev.preventDefault(); }
+
 function dropQR(ev, slot) {
     ev.preventDefault();
     const data = ev.dataTransfer.getData('text/plain');
-    if (data && slot==='my') {
+    if (data && slot === 'my') {
         currentTradeQR = data;
-        const slotEl = document.getElementById('my-offer-slot');
-        slotEl.innerHTML = '';
-        new QRCode(slotEl, { text: data, width:100, height:100 });
+        document.getElementById('my-offer-slot').innerHTML = '';
+        new QRCode(document.getElementById('my-offer-slot'), { text: data, width: 100, height: 100 });
     }
 }
-function selectQRFromInventory(slot) {
+
+function selectQRFromInventory() {
     const player = gameState.players[gameState.currentUser.id];
-    if (player.inventory.length===0) { alert('Sem QRs'); return; }
-    const idx = prompt('Índice (0 a '+(player.inventory.length-1)+')');
+    if (player.inventory.length === 0) { alert('Sem QRs no inventário'); return; }
+    const idx = prompt('Escolhe um QR (0 a ' + (player.inventory.length-1) + '):');
     const i = parseInt(idx);
-    if (isNaN(i) || i<0 || i>=player.inventory.length) return;
+    if (isNaN(i) || i < 0 || i >= player.inventory.length) return;
     currentTradeQR = player.inventory[i].qr;
     document.getElementById('my-offer-slot').innerHTML = '';
-    new QRCode(document.getElementById('my-offer-slot'), { text: currentTradeQR, width:100, height:100 });
+    new QRCode(document.getElementById('my-offer-slot'), { text: currentTradeQR, width: 100, height: 100 });
 }
-document.getElementById('enlarge-my-qr').onclick = ()=>{ if (currentTradeQR) showLargeQR(currentTradeQR); };
-document.getElementById('enlarge-partner-qr').onclick = ()=>{ showLargeQR(JSON.stringify({ partner: true })); };
-document.getElementById('accept-trade-btn').onclick = ()=>{
-    if (!currentTradeQR) { alert('Ofereça um QR'); return; }
-    const player = gameState.players[gameState.currentUser.id];
-    const idx = player.inventory.findIndex(i=>i.qr===currentTradeQR);
-    if (idx===-1) return;
-    player.inventory.splice(idx,1);
-    player.inventory.push({ qr: JSON.stringify({ partner: true }), name: 'QR parceiro' });
-    saveState(); alert('Troca OK'); document.getElementById('trade-modal').classList.add('hidden');
+
+document.getElementById('enlarge-my-qr').onclick = () => {
+    if (currentTradeQR) showLargeQR(currentTradeQR);
 };
-document.getElementById('close-trade-btn').onclick = ()=> document.getElementById('trade-modal').classList.add('hidden');
+
+document.getElementById('enlarge-partner-qr').onclick = () => {
+    showLargeQR(JSON.stringify({ partner: true }));
+};
+
+document.getElementById('accept-trade-btn').onclick = () => {
+    if (!currentTradeQR) { alert('Ofereça um QR primeiro'); return; }
+    const player = gameState.players[gameState.currentUser.id];
+    const idx = player.inventory.findIndex(i => i.qr === currentTradeQR);
+    if (idx === -1) { alert('QR não encontrado no inventário'); return; }
+    player.inventory.splice(idx, 1);
+    player.inventory.push({ qr: JSON.stringify({ partner: true }), name: 'QR parceiro' });
+    saveState();
+    alert('Troca realizada!');
+    document.getElementById('trade-modal').classList.add('hidden');
+};
+
+document.getElementById('close-trade-btn').onclick = () => document.getElementById('trade-modal').classList.add('hidden');
 
 function openWarehouse() {
     const player = gameState.players[gameState.currentUser.id];
@@ -781,70 +943,89 @@ function openWarehouse() {
         const div = document.createElement('div');
         div.className = 'qr-item';
         div.innerHTML = `<canvas id="qr-canvas-${idx}" width="60" height="60"></canvas><br>${item.name}`;
-        div.onclick = ()=> showLargeQR(item.qr);
+        div.onclick = () => showLargeQR(item.qr);
         list.appendChild(div);
-        setTimeout(()=> new QRCode(document.getElementById(`qr-canvas-${idx}`), { text: item.qr, width:60, height:60 }), 10);
+        setTimeout(() => {
+            new QRCode(document.getElementById(`qr-canvas-${idx}`), { text: item.qr, width: 60, height: 60 });
+        }, 10);
     });
     document.getElementById('warehouse-panel').classList.remove('hidden');
 }
-document.getElementById('close-warehouse-btn').onclick = ()=> document.getElementById('warehouse-panel').classList.add('hidden');
+
+document.getElementById('close-warehouse-btn').onclick = () => document.getElementById('warehouse-panel').classList.add('hidden');
 
 function showLargeQR(data) {
     document.getElementById('qr-large-overlay').classList.remove('hidden');
     const canvas = document.getElementById('qr-large-canvas');
     canvas.innerHTML = '';
-    new QRCode(canvas, { text: data, width:200, height:200 });
+    new QRCode(canvas, { text: data, width: 200, height: 200 });
     document.addEventListener('keydown', blockPrint);
 }
-document.getElementById('close-qr-large-btn').onclick = ()=>{
+
+document.getElementById('close-qr-large-btn').onclick = () => {
     document.getElementById('qr-large-overlay').classList.add('hidden');
     document.removeEventListener('keydown', blockPrint);
 };
+
 function blockPrint(e) {
-    if (e.key==='PrintScreen' || (e.ctrlKey && e.key==='p')) { e.preventDefault(); alert('Bloqueado'); }
+    if (e.key === 'PrintScreen' || (e.ctrlKey && e.key === 'p')) {
+        e.preventDefault();
+        alert('Print bloqueado pelo cadeado de segurança.');
+    }
 }
 
-// ---------------- PR DASHBOARD ----------------
+// ======================== PR DASHBOARD ========================
 function updatePRDashboard() {
     const comp = gameState.companies[gameState.currentUser.id];
     document.getElementById('pr-name').innerText = comp.name;
     document.getElementById('pr-packages-count').innerText = comp.packages.length;
-    if (comp.packages.length===0) { comp.packages.push({ id:'p'+Date.now(), flagsRemaining:3 }); saveState(); }
+    if (comp.packages.length === 0) {
+        comp.packages.push({ id: 'p' + Date.now(), flagsRemaining: 3 });
+        saveState();
+    }
 }
 
-// ---------------- LOGOUT / TICKER / INIT ----------------
+// ======================== LOGOUT / TICKER / INIT ========================
 document.getElementById('logout-btn').onclick = logout;
 document.getElementById('pr-logout-btn').onclick = logout;
 document.getElementById('admin-logout-btn').onclick = logout;
+
 function logout() {
     stopGPS();
     gameState.currentUser = null;
     saveState();
-    if (map) { map.remove(); map=null; }
-    document.querySelectorAll('.ui-overlay, .modal, .chat-modal').forEach(el => el.classList.add('hidden'));
+    if (map) { map.remove(); map = null; }
+    ['hud','offline-dpad','pr-dashboard','admin-panel','player-list-panel','private-chat-modal','trade-modal','warehouse-panel','result-modal','qr-large-overlay','mode-modal'].forEach(id => {
+        document.getElementById(id).classList.add('hidden');
+    });
+    document.getElementById('map').classList.add('hidden');
     showAuthModal();
 }
-let tickerIdx = 0;
+
 function updateTicker() {
     const el = document.getElementById('ticker');
     if (!el) return;
     let msgs = ['🎉 Empresa XPTO lançou um BINGO: 1000€ por tempo limitado!'];
     gameState.ads.forEach(ad => msgs.push(`${ad.player} ganhou ${ad.prize} da ${ad.company}`));
     el.innerText = msgs.join('  •  ');
-    el.animate([{ transform: 'translateX(100%)' }, { transform: 'translateX(-100%)' }], { duration: 20000, iterations: Infinity });
+    el.animate([{ transform: 'translateX(100%)' }, { transform: 'translateX(-100%)' }], {
+        duration: 20000,
+        iterations: Infinity
+    });
 }
 setInterval(updateTicker, 15000);
 updateTicker();
 
+// Inicialização
 loadState();
 if (gameState.currentUser) {
-    if (gameState.currentUser.type==='JG') startPlayerGame();
-    else if (gameState.currentUser.type==='PR') startPRGame();
+    if (gameState.currentUser.type === 'JG') startPlayerGame();
+    else if (gameState.currentUser.type === 'PR') startPRGame();
     else startAdmin();
 } else {
     showAuthModal();
 }
-window.addEventListener('beforeunload', ()=>{ stopGPS(); saveState(); });
+window.addEventListener('beforeunload', () => { stopGPS(); saveState(); });
 </script>
 </body>
 </html>
