@@ -1,759 +1,610 @@
 <!DOCTYPE html>
 <html lang="pt">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
-<title>ZAP FLAGS | Larforyou®</title>
-<meta name="theme-color" content="#000000"/>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-<link rel="icon" href="./icon.png" type="image/png" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Zap Flags – Jogo</title>
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body, html { height: 100%; width: 100%; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #1a1a2e; color: #eee; overflow: hidden; }
+        #game-container { height: 100%; width: 100%; position: relative; }
 
-<style>
-/* =========================================
-   GLOBAL & UTILITIES
-========================================= */
-*,*::before,*::after {box-sizing:border-box;margin:0;padding:0}
-html,body {width:100%;height:100%;overflow:hidden;font-family:'Segoe UI',Arial,sans-serif;background:#000;color:#0f0;user-select:none;-webkit-user-select:none}
+        /* Painéis modais */
+        .modal { position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.8); display: flex; justify-content: center; align-items: center; z-index: 2000; }
+        .modal-content { background: #16213e; border-radius: 1rem; padding: 2rem; max-width: 420px; width: 90%; color: #eee; box-shadow: 0 0 25px rgba(0,200,255,0.3); text-align: center; }
+        .modal-content h2 { color: #00d4ff; margin-bottom: 1rem; }
+        .modal-content input, .modal-content select { width: 100%; padding: 0.7rem; margin: 0.5rem 0; border-radius: 0.5rem; border: none; background: #0f3460; color: white; }
+        .modal-content button { background: #e94560; color: white; border: none; padding: 0.8rem 1.5rem; border-radius: 2rem; font-weight: bold; cursor: pointer; transition: 0.3s; margin: 0.5rem; }
+        .modal-content button:hover { background: #ff6b7a; transform: scale(1.02); }
+        .modal-content .link { color: #00d4ff; cursor: pointer; text-decoration: underline; }
+        .modal-content .close-btn { background: none; border: none; color: #aaa; font-size: 2rem; position: absolute; top:0.5rem; right:1rem; cursor: pointer; }
+        .modal-content .row { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
 
-.hidden {display:none !important}
-.scroll {max-height:65vh;overflow-y:auto}
-.pw-wrap {position:relative}.pw-wrap input {padding-right:44px;margin:0}
-.pw-toggle {position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:14px;color:#555;padding:3px}
-.fbar {height:4px;border-radius:2px;margin-top:4px;transition:.3s;background:#333;width:0%}
-.g2 {display:grid;grid-template-columns:1fr 1fr;gap:0 10px}
-.tab-bar {display:flex;margin-bottom:14px;border-bottom:2px solid #0f0}
-.tab {flex:1;text-align:center;padding:10px;cursor:pointer;font-weight:700;color:#0a0;border-bottom:3px solid transparent;transition:.2s}
-.tab.active {color:#0f0;border-bottom-color:#0f0}
-.msg{min-height:18px;font-size:12px;margin:6px 0;color:#a7fca7}
-.msg.err{color:#f66}
-.item{border:1px solid #0f0;background:rgba(0,25,0,.16);border-radius:10px;padding:10px;margin-bottom:8px;font-size:13px;line-height:1.5;color:#ccc}
-.row{padding:4px 0;border-bottom:1px solid #0a0a0a;font-size:13px;display:flex;justify-content:space-between;gap:8px}
-.rl{color:#0aa;font-size:11px;white-space:nowrap;flex-shrink:0}
-.rv{text-align:right;word-break:break-word}
-.card{background:rgba(0,15,0,.2);border:1px solid #0a0;border-radius:10px;padding:12px;margin:8px 0}
-.card-y{border-color:#f90}
-.btn-row{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:10px}
+        /* Interface no mapa */
+        #map { height: 100%; width: 100%; z-index: 1; }
+        .ui-overlay { position: absolute; z-index: 1000; pointer-events: none; }
+        .ui-overlay > * { pointer-events: auto; }
 
-/* =========================================
-   BUTTONS
-========================================= */
-button{background:#0f0;color:#000;border:none;border-radius:12px;padding:12px 18px;font-size:15px;font-weight:800;cursor:pointer;transition:.15s}
-button:active{transform:scale(.94)}
-button:disabled{opacity:.4;cursor:not-allowed}
-.bb{display:block;width:100%;margin:5px 0;text-align:center}
-.bp{padding:24px 55px;font-size:26px;background:linear-gradient(135deg,#00ff66,#00c853);color:#000;border-radius:20px;box-shadow:0 0 40px rgba(0,255,100,.3);letter-spacing:2px}
-.be{padding:16px 36px;font-size:17px;background:#181818;color:#0f0;border:2px solid #0f0;border-radius:16px}
-.bbo{padding:14px 32px;font-size:15px;background:linear-gradient(135deg,#004,#008);color:#0ff;border:1px solid #0ff;border-radius:14px}
-.btn-dark{background:#181818;color:#0f0;border:1px solid #0f0}
-.btn-danger{background:#600;color:#f88;border:1px solid #f44}
-.btn-small{padding:6px 10px;font-size:12px}
+        #hud {
+            top: 1rem; left: 1rem;
+            background: rgba(15, 52, 96, 0.85);
+            backdrop-filter: blur(8px);
+            border-radius: 1rem;
+            padding: 1rem;
+            color: white;
+            min-width: 180px;
+        }
+        #hud .energy-bar { width: 100%; height: 8px; background: #555; border-radius: 4px; margin: 0.5rem 0; }
+        #hud .energy-fill { height: 100%; background: #00d4ff; border-radius: 4px; transition: width 0.3s; }
+        .hud-btn { background: #e94560; border: none; color: white; padding: 0.4rem 1rem; border-radius: 1rem; font-size: 0.8rem; margin-top: 0.3rem; cursor: pointer; }
+        .hud-btn.small { padding: 0.2rem 0.8rem; font-size: 0.7rem; background: #0f3460; }
 
-/* =========================================
-   LAYOUT PAGES
-========================================= */
-/* Landing */
-#landing {display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;background:linear-gradient(180deg,#000,#051005);gap:20px;padding:24px;text-align:center}
-#landing h1{font-size:46px;text-shadow:0 0 30px rgba(0,255,0,.4);letter-spacing:3px}
-.sub{color:#a7fca7;font-size:15px;line-height:1.6}
-.auth-title {text-align:center;margin-bottom:12px}
+        #offline-dpad {
+            bottom: 2rem; right: 1rem;
+            display: grid; grid-template-columns: 50px 50px 50px; grid-template-rows: 50px 50px 50px;
+            gap: 5px;
+        }
+        .dpad-btn { background: #0f3460; border: none; color: white; font-size: 1.5rem; border-radius: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .dpad-center { background: #e94560; grid-row: 2; grid-column: 2; }
 
-/* Auth Screen */
-.auth-wrap {height:100vh;overflow-y:auto;padding:20px;background:linear-gradient(180deg,#000,#051005)}
-.auth-box {max-width:500px;margin:0 auto;border:2px solid #0f0;border-radius:16px;background:rgba(0,20,0,.3);padding:20px;box-shadow:0 0 20px rgba(0,255,0,.1)}
+        #pr-dashboard {
+            top: 1rem; right: 1rem;
+            background: rgba(22, 33, 62, 0.9);
+            backdrop-filter: blur(8px);
+            padding: 1rem;
+            border-radius: 1rem;
+            max-width: 250px;
+        }
 
-/* Game Screen */
-#game-screen {position:absolute;inset:0;z-index:900}
-#map-wrap {position:absolute;inset:0}
-#map {width:100%;height:100%;z-index:1}
-.leaflet-container {background:#0a0a0a}
-#fog-overlay {position:absolute;inset:0;pointer-events:none;z-index:450;--fog-x:50%;--fog-y:50%;--fog-r:90px;background:radial-gradient(circle var(--fog-r) at var(--fog-x) var(--fog-y),transparent 0%,transparent 60%,rgba(0,30,90,.6) 78%,rgba(0,30,90,.86) 100%)}
-#top-strip {position:absolute;top:8px;left:8px;right:8px;z-index:1000;background:rgba(0,0,0,.85);border:1px solid #0f0;border-radius:12px;padding:8px;display:flex;justify-content:space-between;align-items:center;gap:10px}
-.ebar {width:100%;height:8px;background:#222;border-radius:999px;overflow:hidden;border:1px solid rgba(0,255,0,.35)}
-#efill {height:100%;width:100%;background:linear-gradient(90deg,#008f1f,#00ff66);transition:width .3s}
-#fbtns {position:absolute;right:10px;bottom:100px;z-index:1100;display:flex;flex-direction:column;gap:8px}
-.fb {width:46px;height:46px;border-radius:50%;padding:0;display:flex;align-items:center;justify-content:center;font-size:18px}
+        /* Flag modal */
+        .flag-popup { background: #16213e; border-radius: 1rem; padding: 1rem; text-align: center; color: white; }
+        .flag-popup button { background: #e94560; border: none; color: white; padding: 0.5rem 1.5rem; border-radius: 2rem; margin-top: 0.5rem; }
 
-/* Joystick */
-#offctrl {position:absolute;left:10px;bottom:100px;z-index:2600;background:rgba(0,0,0,.88);border:1px solid #0f0;border-radius:12px;padding:8px;width:140px;text-align:center;touch-action:none;cursor:move}
-.dpad {display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;margin-top:6px}
-.dpad button {padding:10px;font-size:15px;border-radius:8px}
-
-/* Side Panel */
-#sidep {position:absolute;left:8px;right:8px;bottom:8px;z-index:2500;background:rgba(0,0,0,.92);border:2px solid #0f0;border-radius:14px;padding:12px;max-height:38vh;overflow-y:auto}
-.ph {display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;gap:10px}
-
-/* Map Markers */
-.pm {width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#00f0ff,#0066ff);border:3px solid #fff;box-shadow:0 0 10px rgba(0,255,255,.55);display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:900;overflow:hidden}
-.pm img {width:100%;height:100%;object-fit:cover;border-radius:50%}
-.fm {width:34px;height:34px;position:relative}
-.fs {position:absolute;width:2px;height:18px;left:14px;top:12px;border-radius:2px;background:#aaa}
-.fbn {position:absolute;left:14px;top:4px;width:16px;height:10px;clip-path:polygon(0 0,100% 28%,0 100%);border:1px solid #fff}
-.fc-z {background:#00ff66!important}
-.fc-p {background:#f00!important}
-.fc-r {background:#fa0!important}
-
-/* Modal */
-.modal {position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:3000;width:92%;max-width:480px;background:#000;border:3px solid #0f0;border-radius:14px;padding:16px;box-shadow:0 0 25px rgba(0,255,0,.22);max-height:90vh;overflow-y:auto}
-.qrc {display:inline-block;margin-top:8px;padding:8px;border-radius:10px;border:1px solid #0f0;background:#111;font-family:monospace;word-break:break-all;color:#fff;font-size:12px}
-
-/* PR SCREEN */
-#pr-screen {display:flex;flex-direction:column;height:100vh;background:linear-gradient(180deg,#000,#051005)}
-#pr-hdr {background:rgba(0,255,0,.08);border-bottom:1px solid #0f0;padding:10px 16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
-#pr-body {flex:1;overflow-y:auto;padding:16px;max-width:640px;margin:0 auto;width:100%}
-.branch-card {border:1px solid #0a0;background:rgba(0,25,0,.1);border-radius:10px;padding:12px;margin-bottom:8px}
-
-/* BACKOFFICE */
-#bo-screen {display:flex;flex-direction:column;height:100vh;background:linear-gradient(180deg,#000,#040820)}
-#bo-hdr {background:rgba(0,200,255,.08);border-bottom:1px solid #0ff;padding:10px 16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
-#bo-body {flex:1;overflow-y:auto;padding:16px;max-width:700px;margin:0 auto;width:100%}
-.bo-card {border:1px solid #0ff;background:rgba(0,20,40,.2);border-radius:10px;padding:14px;margin-bottom:10px}
-
-/* MARKS */
-.watermark {position:fixed;bottom:36px;left:14px;font-size:16px;font-weight:900;color:rgba(0,255,0,.2);z-index:9999;pointer-events:none}
-.copyright {position:fixed;bottom:4px;width:100%;text-align:center;font-size:9px;color:rgba(0,255,0,.15);z-index:9999;pointer-events:none}
-</style>
+        .hidden { display: none !important; }
+    </style>
 </head>
 <body>
+    <div id="game-container">
+        <!-- Mapa será inserido aqui -->
+        <div id="map"></div>
 
-<div class="watermark">Larforyou®</div>
-<div class="copyright">© 2025 Larforyou® — Marca Registada</div>
+        <!-- Painel de login / registo (inicial) -->
+        <div id="auth-modal" class="modal">
+            <div class="modal-content">
+                <h2 id="auth-title">Zap Flags</h2>
+                <div id="auth-form">
+                    <select id="account-type"><option value="JG">Jogador</option><option value="PR">Empresa</option></select>
+                    <input id="auth-name" placeholder="Nome / Empresa" />
+                    <input id="auth-email" placeholder="Email" />
+                    <input id="auth-phone" placeholder="Telefone (opcional)" />
+                    <input id="auth-password" type="password" placeholder="Password" />
+                    <button id="auth-action-btn">Entrar / Registar</button>
+                    <p class="link" id="switch-mode">Criar conta</p>
+                    <p class="link" id="recover-pw">Recuperar password</p>
+                </div>
+            </div>
+        </div>
 
-<!-- ==================== LANDING ==================== -->
-<div id="landing">
-  <h1>🚩 ZAP FLAGS</h1>
-  <div class="sub">Encontra bandeiras. Ganha prémios.<br>Desafia empresas.</div>
-  <button class="bp" onclick="showAuth('JG')">▶ JOGAR</button>
-  <button class="be" onclick="showAuth('PR')">🏢 EMPRESA / PR</button>
-  <button class="bbo" onclick="showBOLogin()">🖥️ BACKOFFICE</button>
-  <p style="font-size:10px;color:#0a0;margin-top:8px">v13 © 2025 ZAP FLAGS by Larforyou®</p>
-</div>
+        <!-- Modal de escolha de modo (GPS vs Casa) -->
+        <div id="mode-modal" class="modal hidden">
+            <div class="modal-content">
+                <h2>Escolhe o modo</h2>
+                <div class="row">
+                    <button id="gps-mode-btn"><i class="fa-solid fa-location-dot"></i> GPS real</button>
+                    <button id="home-mode-btn"><i class="fa-solid fa-house"></i> Modo casa</button>
+                </div>
+            </div>
+        </div>
 
-<!-- ==================== AUTH ==================== -->
-<div id="auth-screen" class="hidden">
-  <div class="auth-wrap">
-    <div class="auth-box">
-      <h2 id="auth-title">🎮 JOGADOR</h2>
-      <div style="text-align:center;margin-bottom:16px"><button class="btn-dark btn-small" onclick="goLanding()">← Voltar</button></div>
-      
-      <div class="tab-bar">
-        <div class="tab active" id="tab-reg" onclick="showTab('reg')">Registar</div>
-        <div class="tab" id="tab-log" onclick="showTab('log')">Entrar</div>
-      </div>
+        <!-- HUD do jogador -->
+        <div id="hud" class="ui-overlay hidden">
+            <strong id="hud-name"></strong> ⭐<span id="hud-points">0</span><br>
+            Energia <div class="energy-bar"><div class="energy-fill" id="energy-fill" style="width:100%"></div></div>
+            <button class="hud-btn small" id="refresh-flags-btn">🔄 Renovar bandeiras</button>
+            <button class="hud-btn" id="logout-btn">Sair</button>
+        </div>
 
-      <!-- REG JOGADOR -->
-      <div id="jg-reg">
-        <label><span class="req">*</span> Nome</label><input id="r-name" placeholder="Obrigatório">
-        <label><span class="req">*</span> E-mail</label><input id="r-email" type="email" placeholder="Obrigatório">
-        <label><span class="req">*</span> Senha</label>
-        <div class="pw-wrap"><input id="r-pass" type="password" placeholder="Mín. 4 caracteres"><button class="pw-toggle" onclick="tPW('r-pass',this)">👁</button></div>
-        <label><span class="req">*</span> Confirmar</label>
-        <div class="pw-wrap"><input id="r-pass2" type="password" placeholder="Repete"><button class="pw-toggle" onclick="tPW('r-pass2',this)">👁</button></div>
-        <label>Contacto</label><input id="r-contact" placeholder="Telefone (opcional)">
-        <label>Morada</label><input id="r-addr" placeholder="Rua, nº (opcional)">
-        <label>Localidade</label><input id="r-city" placeholder="Cidade (opcional)">
-        <label>Distrito</label>
-        <select id="r-district"><option value="">Selecionar (opcional)</option><option>Aveiro</option><option>Beja</option><option>Braga</option><option>Bragança</option><option>Castelo Branco</option><option>Coimbra</option><option>Évora</option><option>Faro</option><option>Guarda</option><option>Leiria</option><option>Lisboa</option><option>Portalegre</option><option>Porto</option><option>Santarém</option><option>Setúbal</option><option>Viana do Castelo</option><option>Vila Real</option><option>Viseu</option></select>
-        <div id="jg-reg-msg" class="msg"></div>
-        <button onclick="regPlayer()" class="bb" style="padding:14px;font-size:15px">✅ REGISTAR E ENTRAR</button>
-      </div>
+        <!-- D-Pad offline -->
+        <div id="offline-dpad" class="ui-overlay hidden">
+            <button class="dpad-btn" data-dir="nw"><i class="fa-solid fa-arrow-up-left"></i></button>
+            <button class="dpad-btn" data-dir="n"><i class="fa-solid fa-arrow-up"></i></button>
+            <button class="dpad-btn" data-dir="ne"><i class="fa-solid fa-arrow-up-right"></i></button>
+            <button class="dpad-btn" data-dir="w"><i class="fa-solid fa-arrow-left"></i></button>
+            <button class="dpad-center" id="center-btn"><i class="fa-solid fa-location-dot"></i></button>
+            <button class="dpad-btn" data-dir="e"><i class="fa-solid fa-arrow-right"></i></button>
+            <button class="dpad-btn" data-dir="sw"><i class="fa-solid fa-arrow-down-left"></i></button>
+            <button class="dpad-btn" data-dir="s"><i class="fa-solid fa-arrow-down"></i></button>
+            <button class="dpad-btn" data-dir="se"><i class="fa-solid fa-arrow-down-right"></i></button>
+        </div>
 
-      <!-- LOGIN JOGADOR -->
-      <div id="jg-log" class="hidden">
-        <label><span class="req">*</span> E-mail</label><input id="l-email" type="email" placeholder="O teu e-mail">
-        <label><span class="req">*</span> Senha</label>
-        <div class="pw-wrap"><input id="l-pass" type="password" placeholder="Senha" onkeydown="if(event.key==='Enter')loginPlayer()"><button class="pw-toggle" onclick="tPW('l-pass',this)">👁</button></div>
-        <div id="jg-log-msg" class="msg"></div>
-        <button onclick="loginPlayer()" class="bb" style="padding:14px;font-size:15px">▶ ENTRAR</button>
-      </div>
+        <!-- Painel da empresa (quando logada como PR) -->
+        <div id="pr-dashboard" class="ui-overlay hidden">
+            <h3><i class="fa-solid fa-building"></i> <span id="pr-name"></span></h3>
+            <p>Pacotes: <span id="pr-packages-count">0</span></p>
+            <button class="hud-btn small" id="pr-logout-btn">Sair</button>
+        </div>
 
-      <!-- REG EMPRESA -->
-      <div id="pr-reg" class="hidden">
-        <label><span class="req">*</span> Nome da Empresa</label><input id="pr-r-name" placeholder="Obrigatório">
-        <label><span class="req">*</span> NIF (9 dígitos)</label><input id="pr-r-nif" placeholder="Obrigatório" maxlength="9">
-        <label><span class="req">*</span> E-mail</label><input id="pr-r-email" type="email" placeholder="Obrigatório">
-        <label><span class="req">*</span> Senha</label>
-        <div class="pw-wrap"><input id="pr-r-pass" type="password" placeholder="Mín. 4"><button class="pw-toggle" onclick="tPW('pr-r-pass',this)">👁</button></div>
-        <label><span class="req">*</span> Confirmar</label>
-        <div class="pw-wrap"><input id="pr-r-pass2" type="password" placeholder="Repete"><button class="pw-toggle" onclick="tPW('pr-r-pass2',this)">👁</button></div>
-        <label><span class="req">*</span> Contacto</label><input id="pr-r-contact" placeholder="Telefone">
-        <label><span class="req">*</span> Morada</label><input id="pr-r-addr" placeholder="Rua e nº">
-        <label><span class="req">*</span> Localidade</label><input id="pr-r-city" placeholder="Cidade">
-        <label><span class="req">*</span> Distrito</label>
-        <select id="pr-r-district"><option value="">Selecionar</option><option>Aveiro</option><option>Beja</option><option>Braga</option><option>Bragança</option><option>Castelo Branco</option><option>Coimbra</option><option>Évora</option><option>Faro</option><option>Guarda</option><option>Leiria</option><option>Lisboa</option><option>Portalegre</option><option>Porto</option><option>Santarém</option><option>Setúbal</option><option>Viana do Castelo</option><option>Vila Real</option><option>Viseu</option></select>
-        <label><span class="req">*</span> Código Postal</label><input id="pr-r-postal" placeholder="0000-000">
-        <div id="pr-reg-msg" class="msg"></div>
-        <button onclick="regPR()" class="bb" style="padding:14px;font-size:15px">✅ REGISTAR EMPRESA</button>
-      </div>
-
-      <!-- LOGIN EMPRESA -->
-      <div id="pr-log" class="hidden">
-        <label><span class="req">*</span> E-mail ou NIF</label><input id="pr-l-id" placeholder="E-mail ou NIF">
-        <label><span class="req">*</span> Senha</label>
-        <div class="pw-wrap"><input id="pr-l-pass" type="password" placeholder="Senha"><button class="pw-toggle" onclick="tPW('pr-l-pass',this)">👁</button></div>
-        <div id="pr-log-msg" class="msg"></div>
-        <button onclick="loginPR()" class="bb" style="padding:14px;font-size:15px">▶ ENTRAR</button>
-      </div>
+        <!-- Modal de resultado ao recolher bandeira -->
+        <div id="result-modal" class="modal hidden">
+            <div class="modal-content">
+                <h2 id="result-title"></h2>
+                <p id="result-message"></p>
+                <button id="close-result-btn">OK</button>
+            </div>
+        </div>
     </div>
-  </div>
-</div>
 
-<!-- ==================== GAME ==================== -->
-<div id="game-screen" class="hidden">
-  <div id="map-wrap">
-    <div id="map"></div>
-    <div id="fog-overlay"></div>
-  </div>
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+    // ======================== 🏠 ARRANQUE (Boot) ========================
+    const STORAGE_KEY = 'zapflags_state';
+    let gameState = defaultState();
 
-  <div id="top-strip">
-    <div style="width:100%">
-      <div class="ebar"><div id="efill"></div></div>
-    </div>
-    <div id="status-text" style="font-size:10px;color:#bfffbf;white-space:nowrap;">Offline</div>
-  </div>
-
-  <div id="fbtns">
-    <button class="fb btn-dark" onclick="openPanel('progress')">📈</button>
-    <button class="fb btn-dark" onclick="openQR()">🎫</button>
-    <button class="fb btn-dark" onclick="centerPlayer()">📍</button>
-  </div>
-
-  <div id="offctrl">
-    <div class="dpad">
-      <div></div><button onclick="moveHomePlayer(0,-1)">▲</button><div></div>
-      <button onclick="moveHomePlayer(-1,0)">◀</button><button onclick="refreshFlagsManual()" style="font-size:10px">⟳</button><button onclick="moveHomePlayer(1,0)">▶</button>
-      <div></div><button onclick="moveHomePlayer(0,1)">▼</button><div></div>
-    </div>
-  </div>
-
-  <div id="sidep" class="hidden">
-    <div class="ph"><b id="panel-title">Painel</b><button class="btn-dark btn-small" onclick="closeSidePanel()">X</button></div>
-    <div id="panel-content"></div>
-  </div>
-</div>
-
-<!-- MODAL BAND/FLAG INFO -->
-<div id="flag-modal" class="modal hidden">
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-    <h2 style="margin:0">Detalhes</h2>
-    <button class="btn-dark btn-small" onclick="closeFlagModal()">✕</button>
-  </div>
-  <div id="flag-content"></div>
-</div>
-
-<!-- QR PANEL (Inline in game) -->
-<div id="qr-modal" class="modal hidden">
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-    <h2 style="margin:0">Meus QRs</h2>
-    <button class="btn-dark btn-small" onclick="closeQRModal()">✕</button>
-  </div>
-  <div id="qr-list"></div>
-</div>
-
-<!-- ==================== PR DASHBOARD ==================== -->
-<div id="pr-screen" class="hidden">
-  <div id="pr-hdr">
-    <div>
-      <div style="font-weight:700;font-size:14px;color:#f90" id="pr-name">Empresa</div>
-      <div style="font-size:10px;color:#888" id="pr-info">NIF --- | Loc ---</div>
-    </div>
-    <div style="display:flex;gap:4px">
-      <button class="btn-dark btn-small" onclick="goLanding()">Início</button>
-      <button class="btn-danger btn-small" onclick="logoutPR()">Sair</button>
-    </div>
-  </div>
-  
-  <div id="pr-body">
-    <!-- Tabs -->
-    <div class="tab-bar">
-      <div class="tab active" onclick="prSwitchTab('dash')">📊 Resumo</div>
-      <div class="tab" onclick="prSwitchTab('lojas')">🏪 Lojas</div>
-      <div class="tab" onclick="prSwitchTab('qrs')">📱 QRs</div>
-    </div>
-    
-    <!-- Content Area -->
-    <div id="pr-tab-content"></div>
-  </div>
-</div>
-
-<!-- ==================== BO ADMIN ==================== -->
-<div id="bo-screen" class="hidden">
-  <div id="bo-hdr">
-    <div style="font-weight:700;color:#0ff">BackOffice Geral</div>
-    <button class="btn-danger btn-small" onclick="goLanding()">Sair</button>
-  </div>
-  <div id="bo-body">
-    <!-- Loaded dynamically -->
-  </div>
-</div>
-
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script>
-/* =========================================
-   CORE STATE
-========================================= */
-const STORAGE_KEY = 'zap_flags_v_final';
-let state = loadState();
-let currentPRId = null; // For PR Login context
-let prTabsActive = 'dash';
-
-// Config
-const CFG = {
-  VISUAL: 5, // base radius
-  PICKUP: 5, // pickup distance
-  SKILL_PER: 1, // skill gained per flag
-  QR_NEEDED: 20 // flags to get a QR
-};
-
-/* =========================================
-   DATA MANAGEMENT
-========================================= */
-function defaultState() {
-  return {
-    lastEmail: '',
-    players: [],
-    prs: [], // Companies
-    boLogs: []
-  };
-}
-
-function loadState() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return defaultState();
-    const p = JSON.parse(raw);
-    return p;
-  } catch (e) { return defaultState(); }
-}
-
-function saveState() {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch(e){ console.error("Save err",e); }
-}
-
-/* =========================================
-   HELPERS
-========================================= */
-function uid(p) { return p + '_' + Math.random().toString(36).slice(2,8).toUpperCase(); }
-function now() { return Date.now(); }
-
-function calcDist(lat1, lng1, lat2, lng2) {
-  const R = 6371e3, phi1 = lat1*Math.PI/180, phi2 = lat2*Math.PI/180;
-  const dPhi = (lat2-lat1)*Math.PI/180, dLam = (lng2-lng1)*Math.PI/180;
-  const a = Math.sin(dPhi/2)**2 + Math.cos(phi1)*Math.cos(phi2)*Math.sin(dLam/2)**2;
-  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
-}
-
-function showMsg(id, text, isError=false) {
-  const el = document.getElementById(id); if(!el) return;
-  el.textContent = text; el.className = 'msg' + (isError ? ' err' : ''); setTimeout(()=>{if(el)el.innerText=''}, 4000);
-}
-
-function tPW(id,b) {
-  const i = document.getElementById(id); if(!i) return;
-  i.type = i.type === 'text' ? 'password' : 'text';
-  b.innerText = i.type === 'password' ? '👁' : '🙈';
-}
-
-/* =========================================
-   NAVIGATION
-========================================= */
-function goLanding() { hideAll(); document.getElementById('landing').classList.remove('hidden'); }
-function hideAll() { document.querySelectorAll('.hidden').forEach(e=>e.classList.add('hidden')); }
-
-function showAuth(type) {
-  hideAll(); 
-  document.getElementById('auth-screen').classList.remove('hidden');
-  document.getElementById('auth-title').textContent = type === 'JG' ? '🎮 JOGADOR' : '🏢 EMPRESA';
-  // Reset Tabs
-  showTab(type==='JG'?'reg':'reg'); 
-  if(type==='JG') document.getElementById('jg-reg').classList.add('hidden'); else document.getElementById('pr-reg').classList.add('hidden');
-  document.getElementById('tab-log').click(); // Ensure login tab is ready
-}
-
-function showTab(mode) {
-  // JG Tabs
-  if(document.getElementById('jg-reg')) document.getElementById('jg-reg').classList.toggle('hidden', mode!=='reg');
-  if(document.getElementById('jg-log')) document.getElementById('jg-log').classList.toggle('hidden', mode!=='log');
-  
-  // PR Tabs
-  if(document.getElementById('pr-reg')) document.getElementById('pr-reg').classList.toggle('hidden', mode!=='reg');
-  if(document.getElementById('pr-log')) document.getElementById('pr-log').classList.toggle('hidden', mode!=='log');
-}
-
-function showBOLogin() {
-  hideAll();
-  const div = document.createElement('div');
-  div.id = 'bo-login';
-  div.innerHTML = '<div class="auth-wrap"><div class="auth-box"><h2>🔐 BackOffice</h2><input type="password" id="bo-pass" placeholder="Senha Admin"><button class="bb" onclick="doLoginBO()">ENTRAR</button><button class="btn-dark btn-small bb" onclick="goLanding()">CANCELAR</button></div></div>';
-  document.body.appendChild(div);
-}
-
-/* =========================================
-   AUTHENTICATION (JOGADOR & PR)
-========================================= */
-function regPlayer() {
-  const name = document.getElementById('r-name').value.trim();
-  const email = document.getElementById('r-email').value.trim().toLowerCase();
-  const pass = document.getElementById('r-pass').value;
-  const pass2 = document.getElementById('r-pass2').value;
-  const msg = 'jg-reg-msg';
-
-  if(!name || !email || !pass || !pass2) return showMsg(msg,'Faltam campos obrigatórios.',true);
-  if(pass !== pass2) return showMsg(msg,'Senhas diferentes!',true);
-  if(pass.length < 4) return showMsg(msg,'Senha min. 4 car.',true);
-  if(state.players.find(p => p.email===email)) return showMsg(msg,'Este e-mail já existe!',true);
-
-  const p = {
-    id: uid('PL'), name, email, password: pass,
-    contact: document.getElementById('r-contact').value,
-    address: document.getElementById('r-addr').value, city: document.getElementById('r-city').value, district: document.getElementById('r-district').value,
-    energy: 100, skill: 0, flags: 0, qrList: [], companiesSeen: {}, seenCounts: {}
-  };
-
-  state.players.push(p);
-  state.lastEmail = email;
-  saveState();
-  
-  // Auto Login
-  enterGame(p);
-}
-
-function loginPlayer() {
-  const email = document.getElementById('l-email').value.trim().toLowerCase();
-  const pass = document.getElementById('l-pass').value;
-  const msg = 'jg-log-msg';
-
-  const player = state.players.find(p => p.email===email && p.password===pass);
-  if(!player) return showMsg(msg,'Credenciais inválidas.',true);
-
-  state.lastEmail = email;
-  saveState();
-  enterGame(player);
-}
-
-function regPR() {
-  const nif = document.getElementById('pr-r-nif').value.trim();
-  const email = document.getElementById('pr-r-email').value.trim().toLowerCase();
-  const pass = document.getElementById('pr-r-pass').value;
-  const msg = 'pr-reg-msg';
-
-  if(!nif || !email || !pass || !document.getElementById('pr-r-nif').value||!document.getElementById('pr-r-email').value) {
-    return showMsg(msg,'Campos obrigatórios em falta.',true);
-  }
-  if(nif.length!==9) return showMsg(msg,'NIF inválido (9 dígitos).',true);
-  if(state.prs.find(pr => pr.nif===nif || pr.email===email)) return showMsg(msg,'Empresa já registada.',true);
-
-  const pr = {
-    id: uid('PR'), name: document.getElementById('pr-r-name').value, nif, email, password: pass,
-    phone: document.getElementById('pr-r-contact').value,
-    address: document.getElementById('pr-r-addr').value, city: document.getElementById('pr-r-city').value,
-    district: document.getElementById('pr-r-district').value, postal: document.getElementById('pr-r-postal').value,
-    packs: [{id:'PK_1',name:'Grátis',flagsTotal:1000,flagsLeft:1000,expires:new Date(Date.now()+86400000*365),type:'FREE'}],
-    campaigns: [],
-    validQrs: 0, issuedQrs: 0
-  };
-
-  state.prs.push(pr);
-  saveState();
-  
-  // Auto Login as this PR
-  openPRDashboard(pr.id);
-}
-
-function loginPR() {
-  const cred = document.getElementById('pr-l-id').value.trim(); // Email or NIF
-  const pass = document.getElementById('pr-l-pass').value;
-  const msg = 'pr-log-msg';
-
-  const pr = state.prs.find(p => (p.email===cred || p.nif===cred) && p.password===pass);
-  if(!pr) return showMsg(msg,'Empresa não encontrada ou senha errada.',true);
-
-  openPRDashboard(pr.id);
-}
-
-function logoutPR() {
-  currentPRId = null;
-  goLanding();
-}
-
-/* =========================================
-   ENTER GAME LOGIC
-========================================= */
-function enterGame(player) {
-  hideAll();
-  document.getElementById('game-screen').classList.remove('hidden');
-  initMap();
-  
-  // Init Player State Locally
-  window.currentUser = player;
-  updateHUD();
-}
-
-/* =========================================
-   GAME ENGINE (MAP & MOVEMENT)
-========================================= */
-let map = null; let playerMarker = null; let visionCircle = null; let currentPos = {lat:38.7223,lng:-9.1393};
-let myFlags = [];
-
-function initMap() {
-  if(map) { map.remove(); map=null; playerMarker=null; visionCircle=null; }
-  map = L.map('map',{zoomControl:false,attributionControl:false}).setView([currentPos.lat,currentPos.lng],18);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{}).addTo(map);
-  
-  // Circle Player
-  playerMarker = L.marker([currentPos.lat,currentPos.lng]).addTo(map);
-  visionCircle = L.circle([currentPos.lat,currentPos.lng], {radius:CFG.VISUAL, color:'#00ff00'}).addTo(map);
-  
-  spawnMyFlags();
-}
-
-function spawnMyFlags() {
-  if(!map) return;
-  myFlags.forEach(f=>{ if(f.m) map.removeLayer(f.m); }); myFlags = [];
-
-  // Spawn 10 Flags around
-  for(let i=0;i<10;i++){
-    const dist = 10 + Math.random()*15; // meters approx
-    const angle = Math.random()*Math.PI*2;
-    // Approximate offset for small distances
-    const dLat = (dist/111320); 
-    const dLng = (dist/(111320*Math.cos(currentPos.lat*Math.PI/180)));
-    const fLat = currentPos.lat + (Math.sin(angle)*dLat);
-    const fLng = currentPos.lng + (Math.cos(angle)*dLng);
-
-    const types = ['ENERGY','PRIZE','EMPTY'];
-    const type = types[Math.floor(Math.random()*types.length)];
-    
-    myFlags.push({
-      id: uid('FL'), type: type, lat: fLat, lng: fLng, m: null,
-      prize: `Prémio Extra`
-    });
-  }
-  drawFlags();
-}
-
-function drawFlags() {
-  myFlags.forEach((f, idx)=>{
-    if(f.m) map.removeLayer(f.m); f.m = null;
-    
-    const d = calcDist(currentPos.lat,currentPos.lng,f.lat,f.lng);
-    if(d <= CFG.VISUAL) {
-      let color = '#f00'; // empty/red
-      if(f.type==='ENERGY') color='#00ff66'; // green
-      if(f.type==='PRIZE') color='#f00'; // red/purpleish
-      
-      const icon = L.divIcon({className:'fm',html:`<div class="fs"></div><div class="fbn ${f.type==='ENERGY'?'fc-z':(f.type==='PRIZE'?'fc-p':'fc-r')}"></div>`});
-      f.m = L.marker([f.lat,f.lng],{icon:icon,zIndexOffset:100}).addTo(map);
-      f.m.on('click',()=>tryPick(idx));
+    function defaultState() {
+        return {
+            players: {},      // id -> { id, name, email, phone, password, points, energy, x, y, homeMode }
+            companies: {},    // id -> { id, name, email, phone, password, budget, packages: [...] }
+            currentUser: null, // { type: 'JG'|'PR', id }
+            flags: [],        // { id, lat, lng, packageId, companyId, points, promo }
+            settings: {
+                maxFlags: 5,
+                flagRadius: 0.005, // ~500m
+                viewRadius: 0.01,  // ~1km
+            }
+        };
     }
-  });
-}
 
-function moveHomePlayer(dx,dy) {
-  if(window.currentUser.energy <= 0) { alert('Sem energia!'); return; }
-  
-  const step = 1; // meters
-  const old = {...currentPos};
-  currentPos.lat += dy*(step/111320);
-  currentPos.lng += dx*(step/(111320*Math.cos(currentPos.lat*Math.PI/180)));
+    function loadState() {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+            try { gameState = JSON.parse(raw); } catch(e) { gameState = defaultState(); }
+        } else {
+            gameState = defaultState();
+        }
+        // normalização básica
+        gameState.flags = gameState.flags || [];
+        gameState.players = gameState.players || {};
+        gameState.companies = gameState.companies || {};
+    }
 
-  window.currentUser.energy -= 0.2;
-  saveState();
+    function saveState() {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(gameState));
+    }
 
-  playerMarker.setLatLng([currentPos.lat,currentPos.lng]);
-  visionCircle.setLatLng([currentPos.lat,currentPos.lng]);
-  drawFlags();
-  updateHUD();
-}
+    // Helpers de normalização
+    function normalizePlayer(p) {
+        return { ...p, energy: p.energy ?? 100, points: p.points ?? 0, homeMode: p.homeMode ?? false };
+    }
+    function normalizeCompany(c) {
+        return { ...c, budget: c.budget ?? 1000, packages: c.packages ?? [] };
+    }
+    // ======================== 🔐 LOGIN / REGISTO ========================
+    let authMode = 'login'; // 'login' ou 'register'
 
-function centerPlayer() {
-  if(map) map.setView([currentPos.lat,currentPos.lng],18);
-}
+    function showAuthModal() {
+        document.getElementById('auth-modal').classList.remove('hidden');
+        document.getElementById('mode-modal').classList.add('hidden');
+        document.getElementById('game-container').querySelector('#map').classList.add('hidden'); // esconde mapa atrás
+        updateAuthUI();
+    }
 
-function refreshFlagsManual() {
-  spawnMyFlags();
-}
+    function updateAuthUI() {
+        const type = document.getElementById('account-type').value;
+        const title = document.getElementById('auth-title');
+        title.innerText = type === 'JG' ? 'Zap Flags - Jogador' : 'Zap Flags - Empresa';
+        const btn = document.getElementById('auth-action-btn');
+        btn.innerText = authMode === 'login' ? 'Entrar' : 'Criar conta';
+        document.getElementById('switch-mode').innerText = authMode === 'login' ? 'Não tem conta? Criar' : 'Já tem conta? Entrar';
+    }
 
-function tryPick(idx) {
-  const f = myFlags[idx];
-  const d = calcDist(currentPos.lat,currentPos.lng,f.lat,f.lng);
-  
-  if(d > CFG.PICKUP) {
-    showFlagInfo(f,false,d); return;
-  }
-  
-  collectFlag(f);
-}
+    document.getElementById('account-type').addEventListener('change', updateAuthUI);
+    document.getElementById('switch-mode').addEventListener('click', ()=>{
+        authMode = authMode === 'login' ? 'register' : 'login';
+        updateAuthUI();
+    });
 
-function collectFlag(f) {
-  f.collected = true;
-  if(f.m) map.removeLayer(f.m);
-  
-  window.currentUser.flags++;
-  window.currentUser.skill += CFG.SKILL_PER;
-  
-  // XP/Points logic could go here
-  let energyGain = 5;
-  if(f.type==='ENERGY') energyGain += 15;
-  window.currentUser.energy = Math.min(100, window.currentUser.energy + energyGain);
-  
-  // Company tracking
-  // In this basic version, "empty" or "prize" are generic. 
-  // In a full version, f.companyId would link to state.prs.
-  
-  saveState();
-  updateHUD();
-  showFlagInfo(f,true,0);
-  spawnMyFlags(); // Respawn others
-}
+    document.getElementById('recover-pw').addEventListener('click', ()=>{
+        const name = document.getElementById('auth-name').value.trim();
+        const email = document.getElementById('auth-email').value.trim();
+        if (!name || !email) { alert('Preencha nome e email para recuperar'); return; }
+        const type = document.getElementById('account-type').value;
+        const collection = type === 'JG' ? gameState.players : gameState.companies;
+        const found = Object.values(collection).find(u => u.name === name && u.email === email);
+        if (found) {
+            alert(`Password (demo): ${found.password}`);
+        } else {
+            alert('Não encontrado');
+        }
+    });
 
-/* =========================================
-   HUD & MODALS
-========================================= */
-function updateHUD() {
-  const u = window.currentUser;
-  if(!u) return;
-  document.getElementById('status-text').innerText = `👤 ${u.name} | ⚡ ${u.energy}%`;
-  document.getElementById('efill').style.width = u.energy+'%';
-}
+    document.getElementById('auth-action-btn').addEventListener('click', ()=>{
+        const type = document.getElementById('account-type').value;
+        const name = document.getElementById('auth-name').value.trim();
+        const email = document.getElementById('auth-email').value.trim();
+        const phone = document.getElementById('auth-phone').value.trim();
+        const pw = document.getElementById('auth-password').value.trim();
+        if (!name || !email || !pw) { alert('Preencha os campos obrigatórios'); return; }
+        if (authMode === 'register') {
+            if (contactAlreadyExists(type, email, phone)) { alert('Email/telefone já existe'); return; }
+            const id = Date.now().toString(36)+Math.random().toString(36).substr(2);
+            if (type === 'JG') {
+                gameState.players[id] = normalizePlayer({ id, name, email, phone, password: pw, points: 0, energy: 100, x: 38.7223, y: -9.1393, homeMode: false });
+            } else {
+                gameState.companies[id] = normalizeCompany({ id, name, email, phone, password: pw, packages: [] });
+            }
+            saveState();
+            alert('Conta criada! Faça login.');
+            authMode = 'login';
+            updateAuthUI();
+        } else {
+            const collection = type === 'JG' ? gameState.players : gameState.companies;
+            const found = Object.values(collection).find(u => u.name === name && u.email === email && u.password === pw);
+            if (!found) { alert('Credenciais inválidas'); return; }
+            gameState.currentUser = { type, id: found.id };
+            saveState();
+            document.getElementById('auth-modal').classList.add('hidden');
+            if (type === 'JG') {
+                startPlayerGame();
+            } else {
+                startPRGame();
+            }
+        }
+    });
 
-function showFlagInfo(flag, collected, dist) {
-  const c = document.getElementById('flag-content');
-  c.innerHTML = `
-    <div class="item">
-      <b>${collected?'RECOLHIDA':'NO MAPA'}</b>: ${flag.type}<br>
-      Distância: ${Math.round(dist)}m<br>
-      Reputação/Próximo: +${CFG.SKILL_PER}% Skill
-    </div>
-    ${!collected ? `<button class="bb" onclick="closeFlagModal()">Fechar</button>` : ''}
-  `;
-  document.getElementById('flag-modal').classList.remove('hidden');
-}
-function closeFlagModal(){ document.getElementById('flag-modal').classList.add('hidden'); }
+    function contactAlreadyExists(type, email, phone) {
+        const col = type === 'JG' ? gameState.players : gameState.companies;
+        return Object.values(col).some(u => u.email === email || (phone && u.phone === phone));
+    }
 
-/* =========================================
-   SIDE PANELS & QR
-========================================= */
-function openPanel(t) {
-  document.getElementById('panel-content').innerHTML = '<div class="item">Carregar...</div>';
-  const panel = document.getElementById('sidep');
-  const pTitle = document.getElementById('panel-title');
-  
-  if(t==='progress') {
-    pTitle.innerText = 'Progresso';
-    document.getElementById('panel-content').innerHTML = `
-      <div class="item"><b>Total Bandeiras:</b> ${window.currentUser.flags}</div>
-      <div class="item"><b>Skill:</b> ${window.currentUser.skill.toFixed(1)}%</div>
-      <div class="item"><b>Energia Max:</b> 100%</div>
-    `;
-  } else if (t==='qrs'){
-    pTitle.innerText = 'Meus Prémios';
-    renderQRsSimple();
-  }
-  panel.classList.remove('hidden');
-}
-function closeSidePanel() { document.getElementById('sidep').classList.add('hidden'); }
+    // ======================== 🗺️ MAPA E JOGO ========================
+    let map, playerMarker, flagMarkers = {};
+    let watchId = null;
+    let offlineMoveInterval = null;
 
-function openQR() {
-  document.getElementById('qr-list').innerHTML = '<div class="item">Verificar...</div>';
-  renderQRsSimple();
-  document.getElementById('qr-modal').classList.remove('hidden');
-}
-function closeQRModal() { document.getElementById('qr-modal').classList.add('hidden'); }
+    function startPlayerGame() {
+        document.getElementById('hud').classList.remove('hidden');
+        document.getElementById('pr-dashboard').classList.add('hidden');
+        document.getElementById('offline-dpad').classList.add('hidden');
+        document.getElementById('mode-modal').classList.remove('hidden');
+        initMap();
+        updateHUD();
+        refreshFlags();
+    }
 
-function renderQRsSimple() {
-  const list = window.currentUser.qrList || [];
-  if(list.length===0) { document.getElementById('qr-list').innerHTML='<div class="item">Não tens QRs ativos.</div>'; return; }
-  
-  let html = '';
-  list.forEach(qr => {
-    html += `<div class="item card-v"><b>${qr.company}</b><br>Prémio: ${qr.prize}<br>ID: ${qr.code}<br>Validade: ${new Date(qr.exp).toLocaleDateString()}</div>`;
-  });
-  document.getElementById('qr-list').innerHTML = html;
-}
+    function startPRGame() {
+        document.getElementById('hud').classList.add('hidden');
+        document.getElementById('pr-dashboard').classList.remove('hidden');
+        document.getElementById('offline-dpad').classList.add('hidden');
+        document.getElementById('mode-modal').classList.add('hidden');
+        if (map) map.remove();
+        map = null;
+        document.getElementById('map').classList.add('hidden');
+        updatePRDashboard();
+    }
 
-/* =========================================
-   PR DASHBOARD LOGIC
-========================================= */
-let currentPR = null;
+    document.getElementById('gps-mode-btn').addEventListener('click', ()=>{
+        document.getElementById('mode-modal').classList.add('hidden');
+        requestGPSMode();
+    });
+    document.getElementById('home-mode-btn').addEventListener('click', ()=>{
+        document.getElementById('mode-modal').classList.add('hidden');
+        activateHomeMode();
+    });
+    document.getElementById('logout-btn').addEventListener('click', logout);
+    document.getElementById('pr-logout-btn').addEventListener('click', logout);
+    function logout() {
+        stopGPS();
+        gameState.currentUser = null;
+        saveState();
+        if (map) { map.remove(); map = null; }
+        document.getElementById('hud').classList.add('hidden');
+        document.getElementById('pr-dashboard').classList.add('hidden');
+        document.getElementById('offline-dpad').classList.add('hidden');
+        document.getElementById('map').classList.add('hidden');
+        showAuthModal();
+    }
 
-function openPRDashboard(prId) {
-  hideAll();
-  const pr = state.prs.find(p=>p.id===prId);
-  if(!pr) { goLanding(); return; }
-  
-  currentPR = pr;
-  currentPRId = prId;
-  document.getElementById('pr-screen').classList.remove('hidden');
-  
-  document.getElementById('pr-name').innerText = pr.name;
-  document.getElementById('pr-info').innerText = `NIF ${pr.nif} | ${pr.postal}`;
-  
-  prSwitchTab('dash');
-}
+    function initMap() {
+        if (map) map.remove();
+        document.getElementById('map').classList.remove('hidden');
+        map = L.map('map', {
+            center: [38.7223, -9.1393],
+            zoom: 15,
+            zoomControl: false
+        });
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
+        }).addTo(map);
+        L.control.zoom({ position: 'bottomleft' }).addTo(map);
+        // criar ícone do jogador
+        const playerIcon = L.divIcon({ className: 'player-icon', html: '<i class="fa-solid fa-circle" style="color:#e94560; font-size:24px; filter: drop-shadow(0 0 8px red);"></i>' });
+        const player = gameState.players[gameState.currentUser.id];
+        playerMarker = L.marker([player.x, player.y], { icon: playerIcon, zIndexOffset: 1000 }).addTo(map);
+        updatePlayerLocation([player.x, player.y]);
+        centerOnPlayer();
+        refreshFlags();
+    }
 
-function prSwitchTab(tab) {
-  prTabsActive = tab;
-  document.querySelectorAll('#pr-hdr .tab').forEach(t=>t.classList.remove('active'));
-  event.target.classList.add('active');
-  
-  const c = document.getElementById('pr-tab-content');
-  
-  if(tab==='dash') {
-    // Basic Stats
-    const totalFlags = currentPR.packs.reduce((acc,p)=>acc+p.flagsLeft,0);
-    const packs = currentPR.packs.length;
-    c.innerHTML = `
-      <div class="card card-y">📦 Stock Total: <b>${totalFlags}</b> bandeiras</div>
-      <div class="card card-b">🏪 Pacotes Ativos: ${packs}</div>
-      <div class="card card-v">📱 QRs Gerados: <b>${currentPR.issuedQrs}</b></div>
-      <div class="card">⚙️ Gestão: Compra de novos pacotes em breve.</div>
-    `;
-  }
-  else if (tab==='lojas') {
-     c.innerHTML = `<div class="branch-card">🛒 Loja Principal <br><small>Ativo</small></div>
-     <div class="item">Adicionar Filial... (Em desenvolvimento)</div>`;
-  }
-  else if (tab==='qrs') {
-    c.innerHTML = `<div class="item">📋 Validação Manual<br><input id="val-code" placeholder="Código QR"><button class="bb" onclick="manualValidateQR()">Validar</button><div id="val-res"></div></div>`;
-  }
-}
+    function createFlagIcon(promo) {
+        return L.divIcon({
+            className: 'flag-icon',
+            html: `<i class="fa-solid fa-flag" style="color:${promo?'gold':'#00d4ff'}; font-size:20px; filter: drop-shadow(0 0 6px ${promo?'orange':'cyan'});"></i>`,
+            iconSize: [24, 24],
+            iconAnchor: [12, 24]
+        });
+    }
 
-function manualValidateQR() {
-  const code = document.getElementById('val-code').value.toUpperCase();
-  const res = document.getElementById('val-res');
-  res.innerText = '';
+    function updatePlayerLocation(latlng) {
+        if (!playerMarker) return;
+        playerMarker.setLatLng(latlng);
+        const player = gameState.players[gameState.currentUser.id];
+        player.x = latlng[0];
+        player.y = latlng[1];
+        saveState();
+        updateVisibleFlags();
+    }
 
-  // Simple check against logged players
-  const found = state.players.some(pl => pl.qrList && pl.qrList.some(q => q.code===code));
-  
-  if(found) {
-    res.innerHTML = '<div class="msg">✅ Prémio Entregue!</div>';
-    currentPR.validQrs++;
-    currentPR.issuedQrs++;
-    saveState();
-  } else {
-    res.innerHTML = '<div class="msg err">❌ QR Inválido ou Já Usado</div>';
-  }
-}
+    function updateHUD() {
+        const player = gameState.players[gameState.currentUser.id];
+        if (!player) return;
+        document.getElementById('hud-name').innerText = player.name;
+        document.getElementById('hud-points').innerText = player.points;
+        document.getElementById('energy-fill').style.width = player.energy + '%';
+    }
 
-/* =========================================
-   BOOTSTRAP
-========================================= */
-// Check URL params or default behavior? Just landing for now.
-document.addEventListener('DOMContentLoaded', () => {
-  // No auto-login needed for demo security, always start at landing
-  // BUT we can check if localStorage has data to populate UI if needed
-  console.log('ZAP FLAGS Initialized');
-});
+    function requestGPSMode() {
+        if (navigator.geolocation) {
+            watchId = navigator.geolocation.watchPosition(updatePosition, handleGeoError, {
+                enableHighAccuracy: true,
+                maximumAge: 5000,
+                timeout: 10000
+            });
+            document.getElementById('offline-dpad').classList.add('hidden');
+        } else {
+            alert('GPS não disponível. Modo casa ativado.');
+            activateHomeMode();
+        }
+    }
 
-function logoutPlayer() {
-  if(confirm('Terminar sessão?')) goLanding();
-}
+    function activateHomeMode() {
+        stopGPS();
+        document.getElementById('offline-dpad').classList.remove('hidden');
+        document.getElementById('offline-dpad').style.display = 'grid';
+        // movimento com teclado também
+    }
 
-// Add Logout to side panel or somewhere safe?
-// Let's add a simple logout in side panel for "account" option if we expand later.
-// For now, closing app effectively logs out.
+    function stopGPS() {
+        if (watchId) { navigator.geolocation.clearWatch(watchId); watchId = null; }
+    }
 
-</script>
+    function updatePosition(position) {
+        const latlng = [position.coords.latitude, position.coords.longitude];
+        updatePlayerLocation(latlng);
+        // reduzir energia com base na distância
+        const player = gameState.players[gameState.currentUser.id];
+        if (player.energy > 0) {
+            player.energy = Math.max(0, player.energy - 0.1);
+            if (player.energy <= 0) alert('Energia esgotada!');
+        }
+        updateHUD();
+        saveState();
+    }
+
+    function handleGeoError(err) {
+        console.warn(err);
+        alert('Erro no GPS. Ativando modo casa.');
+        activateHomeMode();
+    }
+
+    // Movimento manual (d-pad + setas)
+    document.querySelectorAll('.dpad-btn[data-dir]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const dir = e.currentTarget.dataset.dir;
+            moveHomePlayer(dir);
+        });
+    });
+    document.getElementById('center-btn').addEventListener('click', centerOnPlayer);
+    document.addEventListener('keydown', (e) => {
+        if (gameState.currentUser?.type !== 'JG' || !document.getElementById('offline-dpad').classList.contains('hidden')) {
+            const dirMap = { ArrowUp:'n', ArrowDown:'s', ArrowLeft:'w', ArrowRight:'e' };
+            if (dirMap[e.key]) moveHomePlayer(dirMap[e.key]);
+        }
+    });
+
+    function moveHomePlayer(dir) {
+        const step = 0.0003; // ~30m
+        const player = gameState.players[gameState.currentUser.id];
+        let dx=0, dy=0;
+        if (dir.includes('n')) dy = step;
+        if (dir.includes('s')) dy = -step;
+        if (dir.includes('e')) dx = step;
+        if (dir.includes('w')) dx = -step;
+        player.x += dx;
+        player.y += dy;
+        updatePlayerLocation([player.x, player.y]);
+        if (player.energy > 0) {
+            player.energy = Math.max(0, player.energy - 0.2);
+        }
+        updateHUD();
+    }
+
+    function centerOnPlayer() {
+        const player = gameState.players[gameState.currentUser.id];
+        if (map) map.setView([player.x, player.y], 16);
+    }
+
+    // ======================== 🔵 BANDEIRAS ========================
+    function getAllActivePackages() {
+        const packages = [];
+        for (let cid in gameState.companies) {
+            const comp = gameState.companies[cid];
+            (comp.packages || []).forEach(pkg => {
+                if (pkg.flagsRemaining > 0) packages.push({ ...pkg, companyId: cid });
+            });
+        }
+        return packages;
+    }
+
+    function createFlagCandidate() {
+        const player = gameState.players[gameState.currentUser.id];
+        const baseLat = player.x;
+        const baseLng = player.y;
+        const r = gameState.settings.flagRadius;
+        const angle = Math.random() * 2 * Math.PI;
+        const dist = Math.random() * r;
+        const lat = baseLat + (dist * Math.cos(angle));
+        const lng = baseLng + (dist * Math.sin(angle));
+
+        // Escolher pacote de empresa por proximidade/peso (simplificado)
+        const active = getAllActivePackages();
+        if (active.length === 0) return null;
+        const chosen = active[Math.floor(Math.random() * active.length)];
+        const promo = Math.random() < promoChanceForPackage(chosen);
+        const points = promo ? 20 : 10;
+
+        return {
+            id: 'f'+Date.now()+Math.random(),
+            lat, lng,
+            packageId: chosen.id,
+            companyId: chosen.companyId,
+            points,
+            promo
+        };
+    }
+
+    function promoChanceForPackage(pkg) {
+        return 0.2; // 20% fixo
+    }
+
+    function refreshFlags() {
+        clearFlags();
+        const max = gameState.settings.maxFlags;
+        for (let i = 0; i < max; i++) {
+            const candidate = createFlagCandidate();
+            if (candidate) gameState.flags.push(candidate);
+        }
+        drawFlagsOnMap();
+        saveState();
+    }
+
+    function drawFlagsOnMap() {
+        if (!map) return;
+        // Remove existentes
+        Object.values(flagMarkers).forEach(m => map.removeLayer(m));
+        flagMarkers = {};
+        gameState.flags.forEach(flag => {
+            const icon = createFlagIcon(flag.promo);
+            const marker = L.marker([flag.lat, flag.lng], { icon }).addTo(map);
+            marker.bindPopup(`
+                <div class="flag-popup">
+                    <strong>${flag.promo ? '🌟PROMO' : '🏁Bandeira'}</strong><br>
+                    +${flag.points} pts<br>
+                    <button onclick="collectFlag('${flag.id}')">Recolher</button>
+                </div>
+            `);
+            marker.on('click', () => { /* open popup */ });
+            flagMarkers[flag.id] = marker;
+        });
+    }
+
+    window.collectFlag = function(flagId) {
+        if (!gameState.currentUser || gameState.currentUser.type !== 'JG') return;
+        const player = gameState.players[gameState.currentUser.id];
+        const flag = gameState.flags.find(f => f.id === flagId);
+        if (!flag) return;
+        if (player.energy <= 0) { alert('Sem energia!'); return; }
+        // Verificar distância
+        const dist = map.distance([player.x, player.y], [flag.lat, flag.lng]);
+        if (dist > 50) { alert('Demasiado longe!'); return; }
+        // Recompensa
+        player.points += flag.points;
+        player.energy = Math.min(100, player.energy + 5);
+        // Atualizar pacote
+        const company = gameState.companies[flag.companyId];
+        if (company) {
+            const pkg = company.packages.find(p => p.id === flag.packageId);
+            if (pkg) pkg.flagsRemaining = Math.max(0, (pkg.flagsRemaining||1) - 1);
+        }
+        // Remover bandeira
+        removeFlag(flagId);
+        updateHUD();
+        saveState();
+        document.getElementById('result-title').innerText = flag.promo ? '🌟 Promo!' : 'Bandeira recolhida';
+        document.getElementById('result-message').innerText = `+${flag.points} pontos! Continua!`;
+        document.getElementById('result-modal').classList.remove('hidden');
+        // Redesenhar bandeiras se necessário
+        if (gameState.flags.length < gameState.settings.maxFlags) {
+            const cand = createFlagCandidate();
+            if (cand) { gameState.flags.push(cand); drawFlagsOnMap(); }
+        }
+    };
+
+    document.getElementById('close-result-btn').addEventListener('click', ()=>{
+        document.getElementById('result-modal').classList.add('hidden');
+    });
+
+    function removeFlag(flagId) {
+        gameState.flags = gameState.flags.filter(f => f.id !== flagId);
+        if (flagMarkers[flagId]) { map.removeLayer(flagMarkers[flagId]); delete flagMarkers[flagId]; }
+    }
+
+    function clearFlags() {
+        gameState.flags = [];
+        Object.values(flagMarkers).forEach(m => map.removeLayer(m));
+        flagMarkers = {};
+    }
+
+    document.getElementById('refresh-flags-btn').addEventListener('click', ()=>{
+        refreshFlags();
+    });
+
+    function updateVisibleFlags() {
+        // Mostra/esconde baseado na distância do jogador
+        const player = gameState.players[gameState.currentUser.id];
+        const view = gameState.settings.viewRadius;
+        gameState.flags.forEach(flag => {
+            const marker = flagMarkers[flag.id];
+            if (!marker) return;
+            const dist = map.distance([player.x, player.y], [flag.lat, flag.lng]);
+            if (dist < view * 111000) { // aprox graus->metros
+                if (!map.hasLayer(marker)) marker.addTo(map);
+            } else {
+                if (map.hasLayer(marker)) map.removeLayer(marker);
+            }
+        });
+    }
+
+    // ======================== PAINEL EMPRESA ========================
+    function updatePRDashboard() {
+        const comp = gameState.companies[gameState.currentUser.id];
+        document.getElementById('pr-name').innerText = comp.name;
+        document.getElementById('pr-packages-count').innerText = comp.packages.length;
+        // criar pacote demo se vazio
+        if (comp.packages.length === 0) {
+            comp.packages.push({ id: 'p'+Date.now(), flagsRemaining: 3, budget: 50 });
+            saveState();
+        }
+    }
+
+    // ======================== INICIALIZAÇÃO ========================
+    loadState();
+    if (gameState.currentUser) {
+        if (gameState.currentUser.type === 'JG') {
+            startPlayerGame();
+        } else {
+            startPRGame();
+        }
+    } else {
+        showAuthModal();
+    }
+
+    // limpeza ao fechar
+    window.addEventListener('beforeunload', ()=>{ stopGPS(); saveState(); });
+    </script>
 </body>
 </html>
