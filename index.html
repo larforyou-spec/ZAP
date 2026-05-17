@@ -1015,7 +1015,351 @@ B) Não encontrei </style>
     let lastFlagRefreshTime = 0;
     let lastOfflineSuggestion = 0;
     let gpsCenteredOnce = false;
+// ── ADMIN ─────────────────────────────────────────────────────
+const ADMIN_EMAIL    = "ze_carlos00@hotmail.com";
+const ADMIN_PASSWORD = "qwolnxirsp";
+const ADMIN_PHONE    = "915592760";
+let adminLoggedIn    = false;
+let adminRecoverCode = null;
 
+function loginAdmin() {
+  const email    = document.getElementById("admin-email").value.trim();
+  const password = document.getElementById("admin-password").value.trim();
+  const msg      = document.getElementById("admin-login-msg");
+
+  if (!email || !password) {
+    msg.innerHTML = "<span class='danger'>Preenche e-mail e senha.</span>";
+    return;
+  }
+
+  if (email !== ADMIN_EMAIL || password !== ADMIN_PASSWORD) {
+    msg.innerHTML = "<span class='danger'>Credenciais incorretas.</span>";
+    return;
+  }
+
+  adminLoggedIn = true;
+  msg.innerHTML = "<span class='ok'>Entrada com sucesso!</span>";
+
+  setTimeout(() => {
+    document.getElementById("login-screen").classList.add("hidden");
+    document.getElementById("admin-screen").classList.remove("hidden");
+    showAdminTab("dashboard");
+  }, 300);
+}
+
+function logoutAdmin() {
+  adminLoggedIn = false;
+  document.getElementById("admin-screen").classList.add("hidden");
+  document.getElementById("login-screen").classList.remove("hidden");
+  resetEntryMode();
+}
+
+function sendAdminCode(via) {
+  const msg  = document.getElementById("admin-recover-msg");
+  const wrap = document.getElementById("admin-code-wrap");
+
+  adminRecoverCode = Math.floor(100000 + Math.random() * 900000).toString();
+  wrap.classList.remove("hidden");
+
+  if (via === "email") {
+    alert("Modo demo: código enviado para " + ADMIN_EMAIL + "\nCódigo: " + adminRecoverCode);
+  } else {
+    alert("Modo demo: código enviado para " + ADMIN_PHONE + "\nCódigo: " + adminRecoverCode);
+  }
+
+  msg.innerHTML = "<span class='ok'>Código enviado. Introduz os 6 dígitos.</span>";
+}
+
+function verifyAdminCode() {
+  const input = document.getElementById("admin-code-input").value.trim();
+  const msg   = document.getElementById("admin-recover-msg");
+
+  if (!adminRecoverCode) {
+    msg.innerHTML = "<span class='danger'>Pede primeiro um código.</span>";
+    return;
+  }
+
+  if (input !== adminRecoverCode) {
+    msg.innerHTML = "<span class='danger'>Código incorreto.</span>";
+    return;
+  }
+
+  msg.innerHTML = "<span class='ok'>Código correto. A entrar…</span>";
+  adminRecoverCode = null;
+  adminLoggedIn = true;
+
+  setTimeout(() => {
+    document.getElementById("login-screen").classList.add("hidden");
+    document.getElementById("admin-screen").classList.remove("hidden");
+    showAdminTab("dashboard");
+  }, 300);
+}
+
+function showAdminTab(tab) {
+  if (tab === "dashboard")  renderAdminDashboard();
+  if (tab === "players")    renderAdminPlayers();
+  if (tab === "companies")  renderAdminCompanies();
+  if (tab === "messages")   renderAdminMessages();
+  if (tab === "banner")     renderAdminBanner();
+}
+
+function renderAdminDashboard() {
+  const content        = document.getElementById("admin-content");
+  const totalPlayers   = state.player.name ? 1 : 0;
+  const totalCompanies = state.prs.length;
+  const totalFlags     = state.player.totalFlags || 0;
+  const activeCompanies = state.prs.filter(pr => {
+    try { return getPackageTotals(pr).totalLeft > 0; } catch(e) { return false; }
+  }).length;
+
+  content.innerHTML = `
+    <div style="display:flex; flex-wrap:wrap; gap:10px; margin-bottom:16px;">
+      <div class="item" style="flex:1; min-width:140px; text-align:center;">
+        <div style="font-size:28px; font-weight:900; color:#0f0;">${totalPlayers}</div>
+        <div class="small">👥 Jogadores</div>
+      </div>
+      <div class="item" style="flex:1; min-width:140px; text-align:center;">
+        <div style="font-size:28px; font-weight:900; color:#0f0;">${totalCompanies}</div>
+        <div class="small">🏢 Empresas</div>
+      </div>
+      <div class="item" style="flex:1; min-width:140px; text-align:center;">
+        <div style="font-size:28px; font-weight:900; color:#0f0;">${activeCompanies}</div>
+        <div class="small">✅ Empresas ativas</div>
+      </div>
+      <div class="item" style="flex:1; min-width:140px; text-align:center;">
+        <div style="font-size:28px; font-weight:900; color:#0f0;">${totalFlags}</div>
+        <div class="small">🚩 Bandeiras apanhadas</div>
+      </div>
+    </div>
+
+    <div class="item">
+      <b>⚠️ Reset total do sistema</b><br><br>
+      <div class="small">Apaga TODOS os dados. Só com senha admin.</div><br>
+      <input id="admin-reset-code" type="password" placeholder="Senha admin" />
+      <div class="btn-row" style="justify-content:flex-start;">
+        <button class="btn-danger" onclick="adminResetAll()">⚠️ RESET TOTAL</button>
+      </div>
+      <div id="admin-reset-msg" class="small auth-msg"></div>
+    </div>
+  `;
+}
+
+function adminResetAll() {
+  const code = document.getElementById("admin-reset-code").value.trim();
+  const msg  = document.getElementById("admin-reset-msg");
+
+  if (code !== ADMIN_PASSWORD) {
+    msg.innerHTML = "<span class='danger'>Código incorreto.</span>";
+    return;
+  }
+
+  if (!confirm("Apagar TODOS os dados?")) return;
+  if (!confirm("Última confirmação: apagar tudo?")) return;
+
+  localStorage.removeItem(STORAGE_KEY);
+  alert("Reset feito. A recarregar...");
+  location.reload();
+}
+
+function renderAdminPlayers() {
+  const content = document.getElementById("admin-content");
+
+  if (!state.player.name) {
+    content.innerHTML = `<div class="item">Nenhum jogador registado.</div>`;
+    return;
+  }
+
+  content.innerHTML = `
+    <div class="item" style="overflow-x:auto;">
+      <b>👥 Jogadores</b>
+      <table class="admin-table">
+        <tr>
+          <th>Nome</th>
+          <th>E-mail</th>
+          <th>Contacto</th>
+          <th>Localidade</th>
+          <th>Bandeiras</th>
+          <th>Data Registo</th>
+          <th>Ações</th>
+        </tr>
+        <tr>
+          <td>${state.player.name || "—"}</td>
+          <td>${state.player.email || state.player.contact || "—"}</td>
+          <td>${state.player.phone || "—"}</td>
+          <td>${state.player.city || "—"}</td>
+          <td>${state.player.totalFlags || 0}</td>
+          <td>${state.player.createdAt ? new Date(state.player.createdAt).toLocaleString("pt-PT") : "—"}</td>
+          <td><button class="btn-danger btn-small" onclick="adminDeletePlayer()">APAGAR</button></td>
+        </tr>
+      </table>
+    </div>
+  `;
+}
+
+function adminDeletePlayer() {
+  const code = prompt("Senha admin para confirmar:");
+  if (code !== ADMIN_PASSWORD) { alert("Código incorreto."); return; }
+  if (!confirm("Apagar jogador?")) return;
+
+  state.player = defaultState().player;
+  saveState();
+  alert("Jogador apagado.");
+  renderAdminPlayers();
+}
+
+function renderAdminCompanies() {
+  const content = document.getElementById("admin-content");
+
+  if (!state.prs.length) {
+    content.innerHTML = `<div class="item">Nenhuma empresa registada.</div>`;
+    return;
+  }
+
+  const rows = state.prs.map(pr => {
+    const totals = getPackageTotals(pr);
+    return `
+      <tr>
+        <td>${pr.name || "—"}</td>
+        <td>${pr.nif || "—"}</td>
+        <td>${pr.email || pr.ownerContact || "—"}</td>
+        <td>${pr.city || "—"}</td>
+        <td>${pr.contact || "—"}</td>
+        <td>${totals.totalLeft.toLocaleString()}</td>
+        <td>${pr.createdAt ? new Date(pr.createdAt).toLocaleString("pt-PT") : "—"}</td>
+        <td><button class="btn-danger btn-small" onclick="adminDeleteCompany('${pr.id}')">APAGAR</button></td>
+      </tr>
+    `;
+  }).join("");
+
+  content.innerHTML = `
+    <div class="item" style="overflow-x:auto;">
+      <b>🏢 Empresas (${state.prs.length})</b>
+      <table class="admin-table">
+        <tr>
+          <th>Nome</th>
+          <th>NIF</th>
+          <th>E-mail</th>
+          <th>Localidade</th>
+          <th>Contacto</th>
+          <th>Bandeiras</th>
+          <th>Data Registo</th>
+          <th>Ações</th>
+        </tr>
+        ${rows}
+      </table>
+    </div>
+  `;
+}
+
+function adminDeleteCompany(prId) {
+  const code = prompt("Senha admin para confirmar:");
+  if (code !== ADMIN_PASSWORD) { alert("Código incorreto."); return; }
+  if (!confirm("Apagar esta empresa?")) return;
+
+  state.prs = state.prs.filter(pr => pr.id !== prId);
+  saveState();
+  alert("Empresa apagada.");
+  renderAdminCompanies();
+}
+
+function renderAdminMessages() {
+  const content = document.getElementById("admin-content");
+
+  content.innerHTML = `
+    <div class="item">
+      <b>✉️ Mensagens (modo demo)</b><br>
+      <div class="small" style="margin-bottom:10px;">Envio real precisa de servidor. Em modo demo mostra alerta.</div>
+
+      <select id="msg-target">
+        <option value="all">Todos</option>
+        <option value="players">Só jogadores</option>
+        <option value="companies">Só empresas</option>
+      </select>
+
+      <input id="msg-subject" type="text" placeholder="Assunto" />
+      <textarea id="msg-body" placeholder="Mensagem..."></textarea>
+
+      <div class="btn-row" style="justify-content:flex-start;">
+        <button onclick="adminSendMessage()">📨 ENVIAR</button>
+      </div>
+      <div id="msg-result" class="small auth-msg"></div>
+    </div>
+  `;
+}
+
+function adminSendMessage() {
+  const subject = document.getElementById("msg-subject").value.trim();
+  const body    = document.getElementById("msg-body").value.trim();
+  const target  = document.getElementById("msg-target").value;
+  const result  = document.getElementById("msg-result");
+
+  if (!subject || !body) {
+    result.innerHTML = "<span class='danger'>Preenche assunto e mensagem.</span>";
+    return;
+  }
+
+  let recipients = [];
+  if (target === "all" || target === "players") {
+    if (state.player.email) recipients.push(state.player.email);
+  }
+  if (target === "all" || target === "companies") {
+    state.prs.forEach(pr => { if (pr.email) recipients.push(pr.email); });
+  }
+
+  alert("Modo demo: mensagem enviada para:\n" + (recipients.join("\n") || "sem destinatários") + "\n\nAssunto: " + subject);
+  result.innerHTML = `<span class='ok'>Enviado (demo) para ${recipients.length} destinatário(s).</span>`;
+}
+
+function renderAdminBanner() {
+  const content        = document.getElementById("admin-content");
+  const players        = state.player.name ? 1 : 0;
+  const activeCompanies = state.prs.filter(pr => {
+    try { return getPackageTotals(pr).totalLeft > 0; } catch(e) { return false; }
+  }).length;
+
+  content.innerHTML = `
+    <div class="item">
+      <b>📢 Banner no jogo</b><br><br>
+      <div class="btn-row" style="justify-content:flex-start;">
+        <button onclick="showGameBanner(${players}, ${activeCompanies})">MOSTRAR BANNER</button>
+        <button class="btn-dark" onclick="hideGameBanner()">ESCONDER BANNER</button>
+      </div>
+    </div>
+
+    <div class="item">
+      <b>📜 Ticker rodapé</b><br><br>
+      <textarea id="ticker-input" placeholder="Texto a passar no rodapé...">ZAP FLAGS — Bem-vindo!</textarea>
+      <div class="btn-row" style="justify-content:flex-start;">
+        <button onclick="showTicker()">MOSTRAR TICKER</button>
+        <button class="btn-dark" onclick="hideTicker()">ESCONDER TICKER</button>
+      </div>
+    </div>
+  `;
+}
+
+function showGameBanner(players, companies) {
+  const b = document.getElementById("game-banner");
+  if (!b) return;
+  b.innerHTML = `<span>👥 Jogadores: ${players}</span><span>🏢 Empresas ativas: ${companies}</span>`;
+  b.classList.remove("hidden");
+}
+
+function hideGameBanner() {
+  document.getElementById("game-banner").classList.add("hidden");
+}
+
+function showTicker() {
+  const wrap  = document.getElementById("ticker-wrap");
+  const text  = document.getElementById("ticker-text");
+  const input = document.getElementById("ticker-input");
+  if (!wrap || !text || !input) return;
+  text.innerText = input.value || "ZAP FLAGS";
+  wrap.classList.remove("hidden");
+}
+
+function hideTicker() {
+  document.getElementById("ticker-wrap").classList.add("hidden");
+}
     function createPackageInstance(packDef, source = "paid") {
       return {
         id: randomId("PKG"),
