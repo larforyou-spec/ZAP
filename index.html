@@ -530,12 +530,10 @@
 <div id="login-screen">
   <div class="login-box">
     <h1>ZAP FLAGS</h1>
-    <div class="sub">
-      Escolhe como queres entrar.
-    </div>
+    <div class="sub">Escolhe como queres entrar.</div>
 
-    <!-- Botões -->
-    <div class="entry-switch">
+    <!-- Botões de escolha -->
+    <div class="entry-switch" id="entry-switch">
       <button id="btn-entry-jg" class="entry-jg" onclick="switchEntryMode('JG')">
         ENTRAR COMO JOGADOR
       </button>
@@ -544,51 +542,134 @@
       </button>
     </div>
 
-    <!-- FORM JOGADOR -->
+    <!-- ===== FORM JOGADOR ===== -->
     <div id="jg-form" class="hidden">
-      <div class="form-title">Jogador</div>
-      <input id="player-name" type="text" placeholder="Nome do jogador" />
-      <input id="player-contact" type="text" placeholder="Email ou nº de telefone" />
-      <input id="player-password" type="password" placeholder="Criar senha" />
-      <input id="player-password-confirm" type="password" placeholder="Confirmar senha" />
+      <div class="form-title" id="jg-title">👤 JOGADOR</div>
 
-      <select id="player-avatar-mode">
-        <option value="male">Avatar masculino</option>
-        <option value="female">Avatar feminino</option>
-        <option value="photo">Usar foto por URL</option>
-      </select>
-
-      <input id="player-photo-url" type="text" placeholder="URL da foto (opcional)" />
-
-      <div class="btn-row">
-        <button onclick="registerAccount('JG')">REGISTAR</button>
-        <button class="btn-dark" onclick="loginAccount('JG')">ENTRAR</button>
-        <button class="btn-dark" onclick="recoverPassword('JG')">RECUPERAR SENHA</button>
+      <!-- separador registo / login -->
+      <div class="tab-row">
+        <button class="tab-btn active" id="jg-tab-reg" onclick="showTab('jg','reg')">REGISTAR</button>
+        <button class="tab-btn" id="jg-tab-login" onclick="showTab('jg','login')">ENTRAR</button>
       </div>
 
-      <div id="jg-auth-msg" class="small auth-msg"></div>
+      <!-- registo jogador -->
+      <div id="jg-reg">
+        <input id="player-name" type="text" placeholder="Nome (obrigatório)" />
+        <input id="player-email" type="email" placeholder="E-mail (obrigatório)" />
+        <input id="player-password" type="password" placeholder="Senha (obrigatório)" />
+        <input id="player-password-confirm" type="password" placeholder="Confirmar senha (obrigatório)" />
+
+        <!-- opcionais -->
+        <div class="small" style="margin-bottom:6px; color:#a7fca7;">Opcionais:</div>
+        <input id="player-address" type="text" placeholder="Morada" />
+        <input id="player-city" type="text" placeholder="Localidade" />
+        <input id="player-contact" type="text" placeholder="Contacto (telemóvel)" />
+
+        <select id="player-avatar-mode">
+          <option value="male">Avatar masculino</option>
+          <option value="female">Avatar feminino</option>
+          <option value="photo">Usar foto por URL</option>
+        </select>
+        <input id="player-photo-url" type="text" placeholder="URL da foto (opcional)" />
+
+        <div class="btn-row">
+          <button onclick="registerAccount('JG')">CONTINUAR</button>
+          <button class="btn-dark" onclick="resetEntryMode()">VOLTAR</button>
+        </div>
+        <div id="jg-auth-msg" class="small auth-msg"></div>
+      </div>
+
+      <!-- login jogador -->
+      <div id="jg-login" class="hidden">
+        <input id="player-login-name" type="text" placeholder="Nome" />
+        <input id="player-login-password" type="password" placeholder="Senha" />
+
+        <div class="btn-row">
+          <button onclick="loginAccount('JG')">ENTRAR</button>
+          <button class="btn-dark" onclick="resetEntryMode()">VOLTAR</button>
+          <button class="btn-dark" onclick="openRecoverModal('JG')">RECUPERAR SENHA</button>
+        </div>
+        <div id="jg-login-msg" class="small auth-msg"></div>
+      </div>
     </div>
 
-    <!-- FORM EMPRESA / PR -->
+    <!-- ===== FORM EMPRESA / PR ===== -->
     <div id="pr-form" class="hidden">
-      <div class="form-title">Empresa / PR</div>
-      <input id="pr-company-name" type="text" placeholder="Nome da empresa" />
-      <input id="pr-contact" type="text" placeholder="Email ou nº de telefone" />
-      <input id="pr-password" type="password" placeholder="Criar senha" />
-      <input id="pr-password-confirm" type="password" placeholder="Confirmar senha" />
-      <input id="pr-postal-code" type="text" placeholder="Código postal da loja" />
-      <input id="pr-lat" type="text" placeholder="Latitude da loja (opcional)" />
-      <input id="pr-lng" type="text" placeholder="Longitude da loja (opcional)" />
+      <div class="form-title" id="pr-title">🏢 EMPRESA / PR</div>
 
-      <div class="btn-row">
-        <button onclick="registerAccount('PR')">REGISTAR</button>
-        <button class="btn-dark" onclick="loginAccount('PR')">ENTRAR</button>
-        <button class="btn-dark" onclick="recoverPassword('PR')">RECUPERAR SENHA</button>
+      <!-- separador registo / login -->
+      <div class="tab-row">
+        <button class="tab-btn active" id="pr-tab-reg" onclick="showTab('pr','reg')">REGISTAR</button>
+        <button class="tab-btn" id="pr-tab-login" onclick="showTab('pr','login')">ENTRAR</button>
       </div>
 
-      <div id="pr-auth-msg" class="small auth-msg"></div>
+      <!-- registo empresa -->
+      <div id="pr-reg">
+        <div class="small" style="margin-bottom:6px; color:#a7fca7;">Obrigatórios:</div>
+
+        <input id="pr-company-name" type="text" placeholder="Nome da empresa (obrigatório)" />
+        <input id="pr-address" type="text" placeholder="Morada (obrigatório)" />
+        <input id="pr-city" type="text" placeholder="Localidade (obrigatório)" />
+        <input id="pr-nif" type="text" placeholder="Código fiscal / NIF (obrigatório)" />
+        <input id="pr-email" type="email" placeholder="E-mail da empresa (obrigatório)" />
+        <input id="pr-responsible" type="text" placeholder="Nome do responsável (obrigatório)" />
+        <input id="pr-password" type="password" placeholder="Senha (obrigatório)" />
+        <input id="pr-password-confirm" type="password" placeholder="Confirmar senha (obrigatório)" />
+
+        <div class="small" style="margin-bottom:6px; margin-top:6px; color:#a7fca7;">Opcionais:</div>
+
+        <select id="pr-role">
+          <option value="">Cargo do responsável (opcional)</option>
+          <option value="patrao">Patrão</option>
+          <option value="gerente">Gerente</option>
+          <option value="funcionario">Funcionário</option>
+          <option value="outro">Outro</option>
+        </select>
+
+        <input id="pr-contact" type="text" placeholder="Contacto da empresa (opcional)" />
+        <input id="pr-responsible-email" type="email" placeholder="E-mail do responsável (opcional)" />
+        <input id="pr-responsible-contact" type="text" placeholder="Contacto do responsável (opcional)" />
+        <input id="pr-photo" type="text" placeholder="URL foto da loja / logotipo (opcional)" />
+        <input id="pr-website" type="text" placeholder="Website (opcional)" />
+        <input id="pr-postal-code" type="text" placeholder="Código postal (opcional)" />
+        <input id="pr-lat" type="text" placeholder="Latitude GPS (opcional)" />
+        <input id="pr-lng" type="text" placeholder="Longitude GPS (opcional)" />
+
+        <div class="btn-row">
+          <button onclick="registerAccount('PR')">CONTINUAR</button>
+          <button class="btn-dark" onclick="resetEntryMode()">VOLTAR</button>
+        </div>
+        <div id="pr-auth-msg" class="small auth-msg"></div>
+      </div>
+
+      <!-- login empresa -->
+      <div id="pr-login" class="hidden">
+        <input id="pr-login-nif" type="text" placeholder="NIF da empresa" />
+        <input id="pr-login-password" type="password" placeholder="Senha" />
+
+        <div class="btn-row">
+          <button onclick="loginAccount('PR')">ENTRAR</button>
+          <button class="btn-dark" onclick="resetEntryMode()">VOLTAR</button>
+          <button class="btn-dark" onclick="openRecoverModal('PR')">RECUPERAR SENHA</button>
+        </div>
+        <div id="pr-login-msg" class="small auth-msg"></div>
+      </div>
     </div>
   </div>
+</div>
+
+<!-- MODAL RECUPERAR SENHA -->
+<div id="recover-modal" class="modal hidden">
+  <div class="panel-header">
+    <h2 style="margin:0;">🔑 RECUPERAR SENHA</h2>
+    <button class="btn-dark btn-small" onclick="closeRecoverModal()">X</button>
+  </div>
+  <div class="sub">Como queres receber a tua senha?</div>
+  <div class="btn-row">
+    <button onclick="recoverPassword('email')">📧 POR E-MAIL</button>
+    <button class="btn-dark" onclick="recoverPassword('phone')">📱 POR TELEFONE</button>
+  </div>
+  <div id="recover-msg" class="small auth-msg" style="margin-top:10px;"></div>
 </div>
 
   <!-- GAME -->
