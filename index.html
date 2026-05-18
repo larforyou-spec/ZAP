@@ -573,7 +573,27 @@ document.getElementById('auth-action-btn').onclick = () => {
     if (authMode === 'register') {
         if (!name || !pw) { alert('Preencha nome e password'); return; }
         if (pw !== confirmPw) { alert('Passwords não coincidem'); return; }
-        if (type === 'AD') { alert('Admin não pode ser criado'); return; }
+       document.getElementById('auth-action-btn').onclick = () => {
+    const type = document.getElementById('account-type').value;
+    const name = document.getElementById('auth-name').value.trim();
+    const pw = document.getElementById('auth-password').value.trim();
+    const confirmPw = document.getElementById('auth-confirm-password').value.trim();
+
+    if (authMode === 'register') {
+        if (!name || !pw) {
+            alert('Preencha nome e password');
+            return;
+        }
+
+        if (pw !== confirmPw) {
+            alert('Passwords não coincidem');
+            return;
+        }
+
+        if (type === 'AD') {
+            alert('Admin não pode ser criado');
+            return;
+        }
 
         if (type === 'JG') {
             const email = document.getElementById('auth-email')?.value.trim() || '';
@@ -581,17 +601,32 @@ document.getElementById('auth-action-btn').onclick = () => {
             const locality = document.getElementById('auth-locality')?.value.trim() || '';
             const district = document.getElementById('auth-district')?.value.trim() || '';
             const id = Date.now().toString(36) + Math.random().toString(36).substr(2);
+
             gameState.players[id] = normalizePlayer({
-                id, name, password: pw, email, contact, locality, district
+                id,
+                name,
+                password: pw,
+                email,
+                contact,
+                locality,
+                district
             });
+
             saveState();
+
             lastLoginLS.jgName = name;
             localStorage.setItem('lastLogin', JSON.stringify(lastLoginLS));
+
             alert('Conta criada! Faça login.');
             authMode = 'login';
             updateAuthUI();
             document.getElementById('auth-name').value = name;
-        } else if (type === 'PR') {
+            document.getElementById('auth-password').value = '';
+            document.getElementById('auth-confirm-password').value = '';
+            return;
+        }
+
+        if (type === 'PR') {
             const email = document.getElementById('auth-email')?.value.trim() || '';
             const nif = document.getElementById('auth-nif')?.value.trim() || '';
             const address = document.getElementById('auth-address')?.value.trim() || '';
@@ -599,61 +634,139 @@ document.getElementById('auth-action-btn').onclick = () => {
             const contact = document.getElementById('auth-contact')?.value.trim() || '';
             const website = document.getElementById('auth-website')?.value.trim() || '';
             const logoFile = document.getElementById('auth-logo')?.files[0];
-            if (!email || !nif) { alert('Email e NIF são obrigatórios'); return; }
-            if (!logoFile) { alert('Logótipo obrigatório'); return; }
+
+            if (!email || !nif) {
+                alert('Email e NIF são obrigatórios');
+                return;
+            }
+
+            if (!logoFile) {
+                alert('Logótipo obrigatório');
+                return;
+            }
+
             const reader = new FileReader();
+
             reader.onload = function(ev) {
                 const logoData = ev.target.result;
                 const id = Date.now().toString(36) + Math.random().toString(36).substr(2);
+
                 gameState.companies[id] = normalizeCompany({
-                    id, name, email, password: pw, nif, address, locality, contact, website, logo: logoData
+                    id,
+                    name,
+                    email,
+                    password: pw,
+                    nif,
+                    address,
+                    locality,
+                    contact,
+                    website,
+                    logo: logoData
                 });
+
                 saveState();
+
                 lastLoginLS.prName = name;
                 lastLoginLS.prEmail = email;
                 localStorage.setItem('lastLogin', JSON.stringify(lastLoginLS));
+
                 alert('Empresa criada! Faça login.');
                 authMode = 'login';
                 updateAuthUI();
                 document.getElementById('auth-name').value = name;
+                document.getElementById('auth-password').value = '';
+                document.getElementById('auth-confirm-password').value = '';
             };
+
             reader.readAsDataURL(logoFile);
+            return;
         }
-    } else { // login
-        if (!name || !pw) { alert('Preencha nome e password'); return; }
-        if (type === 'AD') {
-            const email = document.getElementById('auth-email')?.value.trim() || '';
-            if (name === 'admin' && pw === '321321' && email === 'ze_ovo@ovo') {
-                gameState.currentUser = { type: 'AD', id: 'admin' };
-                saveState();
-                document.getElementById('auth-modal').classList.add('hidden');
-                startAdmin();
-                return;
-            } else { alert('Credenciais admin inválidas'); return; }
+    }
+
+    // ========================
+    // LOGIN
+    // ========================
+    if (!name || !pw) {
+        alert('Preencha nome e password');
+        return;
+    }
+
+    if (type === 'AD') {
+        const email = document.getElementById('auth-email')?.value.trim() || '';
+
+        /*
+            Correção:
+            - Se o campo email aparecer, aceita apenas ze_ovo@ovo.
+            - Se o campo email não aparecer no teu layout atual, permite entrar só com nome e password.
+        */
+        const adminNameOk = name === 'admin';
+        const adminPasswordOk = pw === '321321';
+        const adminEmailOk = email === '' || email === 'ze_ovo@ovo';
+
+        if (adminNameOk && adminPasswordOk && adminEmailOk) {
+            gameState.currentUser = {
+                type: 'AD',
+                id: 'admin'
+            };
+
+            saveState();
+
+            document.getElementById('auth-modal').classList.add('hidden');
+            startAdmin();
+            return;
         }
 
-        let user = null;
-        if (type === 'JG') {
-            user = Object.values(gameState.players).find(u => u.name === name && u.password === pw);
-            if (user) {
-                lastLoginLS.jgName = name;
-                localStorage.setItem('lastLogin', JSON.stringify(lastLoginLS));
-            }
-        } else if (type === 'PR') {
-            const email = document.getElementById('auth-email')?.value.trim() || '';
-            user = Object.values(gameState.companies).find(u => u.name === name && u.email === email && u.password === pw);
-            if (user) {
-                lastLoginLS.prName = name;
-                lastLoginLS.prEmail = email;
-                localStorage.setItem('lastLogin', JSON.stringify(lastLoginLS));
-            }
+        alert('Credenciais admin inválidas');
+        return;
+    }
+
+    let user = null;
+
+    if (type === 'JG') {
+        user = Object.values(gameState.players).find(u =>
+            u.name === name && u.password === pw
+        );
+
+        if (user) {
+            lastLoginLS.jgName = name;
+            localStorage.setItem('lastLogin', JSON.stringify(lastLoginLS));
         }
-        if (!user) { alert('Credenciais inválidas'); return; }
-        gameState.currentUser = { type, id: user.id };
-        saveState();
-        document.getElementById('auth-modal').classList.add('hidden');
-        if (type === 'JG') startPlayerGame();
-        else if (type === 'PR') startPRGame();
+    }
+
+    if (type === 'PR') {
+        const email = document.getElementById('auth-email')?.value.trim() || '';
+
+        user = Object.values(gameState.companies).find(u =>
+            u.name === name &&
+            u.email === email &&
+            u.password === pw
+        );
+
+        if (user) {
+            lastLoginLS.prName = name;
+            lastLoginLS.prEmail = email;
+            localStorage.setItem('lastLogin', JSON.stringify(lastLoginLS));
+        }
+    }
+
+    if (!user) {
+        alert('Credenciais inválidas');
+        return;
+    }
+
+    gameState.currentUser = {
+        type,
+        id: user.id
+    };
+
+    saveState();
+
+    document.getElementById('auth-modal').classList.add('hidden');
+
+    if (type === 'JG') {
+        startPlayerGame();
+    } else if (type === 'PR') {
+        startPRGame();
     }
 };
 
