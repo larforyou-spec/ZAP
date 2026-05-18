@@ -575,16 +575,17 @@ function initMap() {
 function updatePlayerLocation(latlng) {
     if (!playerMarker) return;
     playerMarker.setLatLng(latlng);
-    circleInner.setLatLng(latlng);
-    circleOuter.setLatLng(latlng);
+    if (circleInner) circleInner.setLatLng(latlng);
+    if (circleOuter) circleOuter.setLatLng(latlng);
     const p = gameState.players[gameState.currentUser.id];
     p.x = latlng[0];
     p.y = latlng[1];
     regenEnergy(p);
     saveState();
     updateVisibleFlags();
+    // Manter o mapa centrado no jogador
+    if (map) map.setView(latlng, map.getZoom());
 }
-
 function regenEnergy(player) {
     if (!player.lastEnergyUpdate) player.lastEnergyUpdate = Date.now();
     const now = Date.now();
