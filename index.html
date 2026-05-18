@@ -593,7 +593,36 @@ function initMap() {
     updatePlayerLocation([player.x, player.y]);
     centerOnPlayer();
 }
+// Variável de estado: true = offline (imagem fixa), false = online (tiles)
+let streetViewMode = false;
+let streetViewLayer = null;   // camada offline
+let normalTileLayer = null;   // camada online (a que já existia)
+let roadLabelLayer = null;    // sobreposição de ruas (a que já existia)
 
+function toggleStreetView() {
+    if (!map) return;
+
+    if (!streetViewMode) {
+        // Ativar modo offline: esconde as camadas online e mostra uma imagem fixa
+        if (!normalTileLayer) normalTileLayer = map._layers[Object.keys(map._layers).find(k => map._layers[k]._url && map._layers[k]._url.includes('tile.openstreetmap.org'))];
+        if (!roadLabelLayer) roadLabelLayer = map._layers[Object.keys(map._layers).find(k => map._layers[k]._url && map._layers[k]._url.includes('server.arcgisonline.com'))];
+
+        if (normalTileLayer) map.removeLayer(normalTileLayer);
+        if (roadLabelLayer) map.removeLayer(roadLabelLayer);
+
+        // Imagem offline (substitui pelo teu URL ou por uma imagem local)
+        const bounds = map.getBounds();
+        streetViewLayer = L.imageOverlay('https://via.placeholder.com/800x600?text=Modo+Offline', bounds).addTo(map);
+        document.getElementById('street-view-btn').title = 'Voltar ao mapa online';
+    } else {
+        // Voltar ao modo online
+        if (streetViewLayer) map.removeLayer(streetViewLayer);
+        if (normalTileLayer) map.addLayer(normalTileLayer);
+        if (roadLabelLayer) map.addLayer(roadLabelLayer);
+        document.getElementById('street-view-btn').title = 'Alternar Street View';
+    }
+    streetViewMode = !streetViewMode;
+}
 function updatePlayerLocation(latlng) {
     if (!playerMarker) return;
     playerMarker.setLatLng(latlng);
