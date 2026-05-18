@@ -98,7 +98,151 @@
             background:rgba(0,0,0,0.4); display:flex; align-items:center;
             justify-content:center; font-size:3rem; color:white; pointer-events:none;
         }
- </style>
+    </style>
+</head>
+<body>
+<div id="game-container">
+    <div id="map"></div>
+
+    <!-- Autenticação -->
+    <div id="auth-modal" class="modal hidden">
+        <div class="draggable-content" id="auth-drag-header">
+            <h2 id="auth-title">Zap Flags</h2>
+            <select id="account-type">
+                <option value="JG">Jogador</option>
+                <option value="PR">Empresa</option>
+                <option value="AD">Admin</option>
+            </select>
+            <input id="auth-name" placeholder="Nome" />
+            <div id="auth-extra-fields"></div>
+            <input id="auth-password" type="password" placeholder="Password" />
+            <input id="auth-confirm-password" type="password" placeholder="Confirmar password" class="hidden" />
+            <button id="auth-action-btn">Entrar / Registar</button>
+            <p class="link" id="switch-mode">Criar conta</p>
+            <p class="link" id="recover-pw">Recuperar password</p>
+        </div>
+    </div>
+
+    <!-- Escolha de modo -->
+    <div id="mode-modal" class="modal hidden">
+        <div class="draggable-content">
+            <h2>Escolhe o modo</h2>
+            <button id="gps-mode-btn"><i class="fa-solid fa-location-dot"></i> GPS real</button>
+            <button id="home-mode-btn"><i class="fa-solid fa-house"></i> Modo casa</button>
+            <p style="margin-top:1rem;font-size:0.8rem;color:gray;">Se o GPS não funcionar, o modo casa será ativado automaticamente.</p>
+        </div>
+    </div>
+
+    <!-- HUD do jogador -->
+    <div id="hud" class="ui-overlay hidden">
+        <div class="hud-icons">
+            <span id="hud-name"></span>
+            <button class="icon-btn" id="skill-btn"><i class="fa-solid fa-bolt"></i></button>
+            <button class="icon-btn"><i class="fa-solid fa-flag"></i> <span id="flag-count">0</span></button>
+            <div class="energy-bar"><div class="energy-fill" id="energy-fill" style="width:100%"></div></div>
+            <span id="energy-text">100%</span>
+            <button class="icon-btn" id="gps-fix-btn"><i class="fa-solid fa-crosshairs"></i></button>
+            <button class="icon-btn" id="player-list-btn"><i class="fa-solid fa-users"></i></button>
+            <button class="icon-btn" id="logout-btn"><i class="fa-solid fa-right-from-bracket"></i></button>
+        <button class="icon-btn" id="street-view-btn" title="Alternar Street View"><i class="fa-solid fa-road"></i></button>
+        </div>
+    </div>
+
+    <!-- D-Pad -->
+    <div id="offline-dpad" class="ui-overlay hidden">
+        <button class="dpad-btn" data-dir="nw"><i class="fa-solid fa-arrow-up-left"></i></button>
+        <button class="dpad-btn" data-dir="n"><i class="fa-solid fa-arrow-up"></i></button>
+        <button class="dpad-btn" data-dir="ne"><i class="fa-solid fa-arrow-up-right"></i></button>
+        <button class="dpad-btn" data-dir="w"><i class="fa-solid fa-arrow-left"></i></button>
+        <button class="dpad-center" id="center-btn"><i class="fa-solid fa-location-dot"></i></button>
+        <button class="dpad-btn" data-dir="e"><i class="fa-solid fa-arrow-right"></i></button>
+        <button class="dpad-btn" data-dir="sw"><i class="fa-solid fa-arrow-down-left"></i></button>
+        <button class="dpad-btn" data-dir="s"><i class="fa-solid fa-arrow-down"></i></button>
+        <button class="dpad-btn" data-dir="se"><i class="fa-solid fa-arrow-down-right"></i></button>
+    </div>
+
+    <!-- Painel da empresa -->
+    <div id="pr-dashboard" class="ui-overlay hidden draggable-window" style="top:1rem;right:1rem;width:280px;background:white;border-radius:1rem;padding:1rem;">
+        <h3><span id="pr-name"></span></h3>
+        <p>Pacotes: <span id="pr-packages-count">0</span></p>
+        <button id="pr-logout-btn">Sair</button>
+    </div>
+
+    <!-- Painel do admin -->
+    <div id="admin-panel" class="ui-overlay hidden draggable-window" style="top:1rem;right:1rem;width:300px;background:white;border-radius:1rem;padding:1rem;">
+        <h3>Admin</h3>
+        <p>Jogadores: <span id="admin-jg">0</span> / Empresas: <span id="admin-pr">0</span></p>
+        <button id="admin-create-flag-btn">Criar bandeira</button>
+        <button id="admin-promo-btn">Fazer promoção</button>
+        <button id="admin-logout-btn">Sair</button>
+    </div>
+
+    <!-- Lista de jogadores (chat) -->
+    <div id="player-list-panel" class="ui-overlay hidden">
+        <h3>Jogadores</h3>
+        <div id="player-list"></div>
+    </div>
+
+    <!-- Chat privado -->
+    <div id="private-chat-modal" class="chat-modal hidden">
+        <div class="messages" id="private-messages"></div>
+        <div class="input-row">
+            <input id="private-input" placeholder="Mensagem..." />
+            <button id="private-send-btn">Enviar</button>
+        </div>
+        <button id="open-trade-from-chat">Troca</button>
+        <button id="open-warehouse-from-chat">Armazém</button>
+        <button id="close-private-chat">Fechar</button>
+    </div>
+
+    <!-- Troca de QR -->
+    <div id="trade-modal" class="modal hidden">
+        <div class="draggable-content">
+            <h2>Troca</h2>
+            <div style="display:flex; gap:1rem;">
+                <div class="trade-slot" id="my-offer-slot" ondragover="allowDrop(event)" ondrop="dropQR(event,'my')" onclick="selectQRFromInventory('my')">Arrasta QR</div>
+                <div class="trade-slot"><canvas id="partner-qr-canvas" width="100" height="100"></canvas></div>
+            </div>
+            <button id="enlarge-my-qr">Ampliar meu QR</button>
+            <button id="enlarge-partner-qr">Ampliar parceiro</button>
+            <button id="accept-trade-btn">Aceitar</button>
+            <button id="close-trade-btn">Fechar</button>
+        </div>
+    </div>
+
+    <!-- Visualização grande do QR -->
+    <div id="qr-large-overlay" class="modal hidden">
+        <div class="qr-large">
+            <div class="lock-overlay"><i class="fa-solid fa-lock"></i></div>
+            <canvas id="qr-large-canvas" width="200" height="200"></canvas>
+            <button id="close-qr-large-btn">Fechar</button>
+        </div>
+    </div>
+
+    <!-- Armazém -->
+    <div id="warehouse-panel" class="modal hidden">
+        <div class="draggable-content">
+            <h2>Armazém</h2>
+            <div id="warehouse-qr-list"></div>
+            <button id="close-warehouse-btn">Fechar</button>
+        </div>
+    </div>
+
+    <!-- Resultado da recolha -->
+    <div id="result-modal" class="modal hidden">
+        <div class="draggable-content">
+            <h2 id="result-title"></h2>
+            <p id="result-message"></p>
+            <button id="close-result-btn">OK</button>
+        </div>
+    </div>
+
+    <!-- Ticker -->
+    <div id="ticker"></div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
 // ======================== BOOT ========================
 const STORAGE_KEY = 'zapflags_state';
 let gameState = defaultState();
