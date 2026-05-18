@@ -2364,6 +2364,104 @@
     if (offlineBox) {
       makeDraggable(offlineBox);
     }
-  </script>
+</script>
+
+<!-- remover bloco Pacotes PR da página de entrada -->
+<script>
+function removerPacotesPRDaEntrada() {
+    const normalizar = (txt) => (txt || '').replace(/\s+/g, ' ').trim();
+
+    // 1) Tenta encontrar diretamente o título "Pacotes PR"
+    const elementos = Array.from(document.querySelectorAll('h1,h2,h3,h4,h5,p,div,strong,section'));
+
+    const titulo = elementos.find(el => normalizar(el.textContent) === 'Pacotes PR');
+
+    if (titulo) {
+        // Tenta remover só o bloco pequeno onde estão os pacotes
+        let container = titulo.parentElement;
+
+        while (container && container !== document.body) {
+            const texto = normalizar(container.textContent);
+
+            const temPacotes =
+                texto.includes('Pacotes PR') &&
+                texto.includes('Mínimo') &&
+                texto.includes('Médio') &&
+                texto.includes('Grande') &&
+                texto.includes('Enorme');
+
+            const pareceFormulario =
+                texto.includes('ENTRAR COMO JOGADOR') ||
+                texto.includes('SOU EMPRESA') ||
+                texto.includes('RECUPERAR SENHA') ||
+                texto.includes('REGISTAR');
+
+            if (temPacotes && !pareceFormulario) {
+                container.remove();
+                return;
+            }
+
+            container = container.parentElement;
+        }
+
+        // Se não houver contentor próprio, remove o título e os elementos seguintes dos pacotes
+        let atual = titulo;
+
+        while (atual) {
+            const proximo = atual.nextElementSibling;
+            const textoAtual = normalizar(atual.textContent);
+
+            atual.remove();
+
+            if (!proximo) break;
+
+            const textoProximo = normalizar(proximo.textContent);
+
+            const aindaEhPacote =
+                textoProximo.includes('Mínimo') ||
+                textoProximo.includes('Médio') ||
+                textoProximo.includes('Grande') ||
+                textoProximo.includes('Enorme') ||
+                textoProximo.includes('bandeiras') ||
+                textoProximo.includes('bingos') ||
+                textoProximo.includes('lotes') ||
+                textoProximo.includes('país inteiro') ||
+                textoProximo.includes('€');
+
+            if (!aindaEhPacote) break;
+
+            atual = proximo;
+        }
+
+        return;
+    }
+
+    // 2) Plano B: procurar um bloco pequeno que contenha todos os textos dos pacotes
+    const candidatos = Array.from(document.querySelectorAll('div,section,aside,article'))
+        .filter(el => {
+            const texto = normalizar(el.textContent);
+
+            return (
+                texto.includes('Pacotes PR') &&
+                texto.includes('Mínimo') &&
+                texto.includes('Médio') &&
+                texto.includes('Grande') &&
+                texto.includes('Enorme') &&
+                !texto.includes('ENTRAR COMO JOGADOR') &&
+                !texto.includes('RECUPERAR SENHA')
+            );
+        })
+        .sort((a, b) => normalizar(a.textContent).length - normalizar(b.textContent).length);
+
+    if (candidatos[0]) {
+        candidatos[0].remove();
+    }
+}
+
+document.addEventListener('DOMContentLoaded', removerPacotesPRDaEntrada);
+setTimeout(removerPacotesPRDaEntrada, 300);
+setTimeout(removerPacotesPRDaEntrada, 1000);
+</script>
+
 </body>
 </html>
