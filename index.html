@@ -1,1 +1,723 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>ZAP FLAGS</title>
 
+  <link rel="icon" href="./icon.png" type="image/png" />
+  <link rel="manifest" href="./manifest.json" />
+  <meta name="theme-color" content="#000000" />
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+  <style>
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: Arial, sans-serif;
+      background: #000;
+      color: #0f0;
+    }
+
+    .hidden { display: none !important; }
+
+    button {
+      background: #0f0;
+      color: #000;
+      border: none;
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-size: 14px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .btn-dark {
+      background: #181818;
+      color: #0f0;
+      border: 1px solid #0f0;
+    }
+
+    .btn-danger {
+      background: #8b0000;
+      color: #fff;
+      border: 1px solid #ff6b6b;
+    }
+
+    .btn-small {
+      padding: 6px 10px;
+      font-size: 12px;
+    }
+
+    input, select, textarea {
+      width: 100%;
+      margin-bottom: 10px;
+      padding: 12px;
+      border-radius: 10px;
+      border: 1px solid #0f0;
+      background: #101010;
+      color: #0f0;
+      font-size: 14px;
+    }
+
+    textarea {
+      min-height: 70px;
+      resize: vertical;
+    }
+
+    .small {
+      font-size: 12px;
+      color: #a7fca7;
+      line-height: 1.45;
+    }
+
+    .sub {
+      color: #a7fca7;
+      font-size: 13px;
+      line-height: 1.45;
+      margin-bottom: 16px;
+    }
+
+    .btn-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+      margin-top: 10px;
+    }
+
+    .warning { color: #ffb347; font-weight: bold; }
+    .danger  { color: #ff8686; font-weight: bold; }
+    .ok      { color: #8fff8f; font-weight: bold; }
+
+    #login-screen,
+    #game-screen,
+    #pr-screen {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* LOGIN */
+    #login-screen {
+      background:
+        radial-gradient(circle at 20% 20%, rgba(0,255,0,.12), transparent 25%),
+        radial-gradient(circle at 80% 30%, rgba(0,255,255,.08), transparent 25%),
+        linear-gradient(180deg, #000, #051005);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      z-index: 9999;
+      overflow-y: auto;
+    }
+
+    .login-box {
+      width: 100%;
+      max-width: 600px;
+      border: 2px solid #0f0;
+      border-radius: 16px;
+      background: rgba(0,20,0,.30);
+      padding: 18px;
+      box-shadow: 0 0 20px rgba(0,255,0,.10);
+      text-align: center;
+    }
+
+    .login-box h1 {
+      margin-top: 0;
+      margin-bottom: 8px;
+      text-shadow: 0 0 10px #0f0;
+    }
+
+    .entry-switch {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin: 18px 0;
+    }
+
+    .entry-jg {
+      padding: 18px 16px;
+      font-size: 20px;
+      background: linear-gradient(135deg,#00ff66,#00c853);
+      color: #000;
+      border-radius: 14px;
+      font-weight: 900;
+    }
+
+    .entry-pr {
+      padding: 12px 14px;
+      font-size: 14px;
+      background: #202020;
+      color: #0f0;
+      border: 1px solid #0f0;
+      border-radius: 14px;
+      font-weight: 900;
+    }
+
+    .entry-jg.active,
+    .entry-pr.active {
+      outline: 3px solid rgba(255,255,255,.18);
+    }
+
+    .form-title {
+      text-align: left;
+      margin-top: 8px;
+      margin-bottom: 8px;
+      font-size: 14px;
+      font-weight: 700;
+      color: #d1ffd1;
+    }
+
+    .form-group {
+      margin-bottom: 10px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 12px;
+      color: #a7fca7;
+      margin-bottom: 4px;
+      text-align: left;
+    }
+
+    .form-group input,
+    .form-group select {
+      margin-bottom: 0;
+    }
+
+    .auth-msg {
+      text-align: left;
+      min-height: 20px;
+      margin-top: 6px;
+    }
+
+    .visually-hidden {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    .pack-preview {
+      border: 1px solid #0f0;
+      border-radius: 10px;
+      padding: 10px;
+      margin-top: 10px;
+      text-align: left;
+      background: rgba(0,25,0,.16);
+    }
+
+    .pack-preview h4 {
+      margin: 0 0 12px 0;
+      font-size: 15px;
+      color: #0f0;
+    }
+
+    .pack-item {
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid rgba(0,255,0,.15);
+    }
+
+    .pack-item:last-child {
+      margin-bottom: 0;
+      padding-bottom: 0;
+      border-bottom: none;
+    }
+
+    .pack-item strong {
+      display: block;
+      margin-bottom: 4px;
+      color: #0f0;
+    }
+
+    .pack-item p {
+      margin: 0;
+      font-size: 13px;
+      color: #a7fca7;
+    }
+
+    /* JOGO */
+    #map-wrap {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    #map {
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+    }
+
+    #fog-overlay {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 450;
+      --fog-x: 50%;
+      --fog-y: 50%;
+      --fog-r: 90px;
+      background:
+        radial-gradient(
+          circle var(--fog-r) at var(--fog-x) var(--fog-y),
+          rgba(0,0,0,0) 0%,
+          rgba(0,0,0,0) 60%,
+          rgba(0,30,90,0.60) 78%,
+          rgba(0,30,90,0.86) 100%
+        );
+    }
+
+    #top-strip {
+      position: absolute;
+      top: 8px;
+      left: 8px;
+      right: 8px;
+      z-index: 1000;
+      background: rgba(0,0,0,.82);
+      border: 1px solid #0f0;
+      border-radius: 12px;
+      padding: 8px;
+    }
+
+    .energy-bar {
+      width: 100%;
+      height: 8px;
+      background: #222;
+      border-radius: 999px;
+      overflow: hidden;
+      border: 1px solid rgba(0,255,0,.35);
+    }
+
+    #energy-fill {
+      height: 100%;
+      width: 100%;
+      background: linear-gradient(90deg,#008f1f,#00ff66);
+      transition: width 0.3s;
+    }
+
+    #top-strip-text {
+      margin-top: 6px;
+      font-size: 12px;
+      color: #bfffbf;
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    #floating-buttons {
+      position: absolute;
+      right: 10px;
+      bottom: 90px;
+      z-index: 1100;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .float-btn {
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      box-shadow: 0 0 10px rgba(0,255,0,.15);
+    }
+
+    /* OFFLINE */
+    #offline-controls {
+      position: absolute;
+      left: 10px;
+      bottom: 90px;
+      z-index: 2600;
+      background: rgba(0,0,0,.88);
+      border: 1px solid #0f0;
+      border-radius: 12px;
+      padding: 8px;
+      width: 118px;
+      height: 138px;
+      text-align: center;
+      touch-action: none;
+      user-select: none;
+      cursor: move;
+    }
+
+    .drag-handle {
+      font-size: 14px;
+      color: #bfffbf;
+      margin-bottom: 4px;
+      padding: 2px;
+      border-bottom: 1px solid rgba(0,255,0,.25);
+    }
+
+    .offline-size-row {
+      display: flex;
+      justify-content: center;
+      gap: 4px;
+      margin-top: 4px;
+      margin-bottom: 4px;
+    }
+
+    .dpad {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 4px;
+      margin-top: 6px;
+    }
+
+    .dpad button {
+      padding: 8px;
+      font-size: 14px;
+      min-width: 0;
+    }
+
+    .dpad .empty {
+      visibility: hidden;
+    }
+
+    #side-panel {
+      position: absolute;
+      left: 8px;
+      right: 8px;
+      bottom: 8px;
+      z-index: 2500;
+      background: rgba(0,0,0,.92);
+      border: 2px solid #0f0;
+      border-radius: 14px;
+      padding: 12px;
+      max-height: 36vh;
+      overflow-y: auto;
+    }
+
+    .item {
+      border: 1px solid #0f0;
+      background: rgba(0,25,0,.16);
+      border-radius: 10px;
+      padding: 10px;
+      margin-bottom: 8px;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 4px 8px;
+      font-size: 12px;
+      font-weight: bold;
+      border-radius: 999px;
+      margin-right: 4px;
+      margin-top: 5px;
+      background: #033;
+      color: #fff;
+    }
+
+    .badge-gold {
+      background: #a67c00;
+    }
+
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      gap: 10px;
+    }
+
+    .modal {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 3000;
+      width: 92%;
+      max-width: 480px;
+      background: #000;
+      border: 3px solid #0f0;
+      border-radius: 14px;
+      padding: 16px;
+      box-shadow: 0 0 25px rgba(0,255,0,.22);
+    }
+
+    .brand-head {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .brand-icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      font-size: 13px;
+      color: white;
+    }
+
+    .qr-code {
+      display: inline-block;
+      margin-top: 8px;
+      padding: 8px;
+      border-radius: 10px;
+      border: 1px solid #0f0;
+      background: #111;
+      font-family: monospace;
+      word-break: break-all;
+      color: #fff;
+    }
+
+    /* PR */
+    #pr-screen {
+      background: #000;
+      z-index: 9998;
+      overflow-y: auto;
+      padding: 16px;
+    }
+
+    .pr-box {
+      max-width: 980px;
+      margin: 0 auto;
+      border: 2px solid #0f0;
+      border-radius: 14px;
+      padding: 16px;
+      background: rgba(0,20,0,.15);
+    }
+
+    .pack-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .pack-card {
+      border: 1px solid #0f0;
+      border-radius: 10px;
+      padding: 10px;
+      margin-bottom: 8px;
+      background: rgba(0,25,0,.18);
+      flex: 1;
+      min-width: 200px;
+    }
+
+    .pack-card.selected {
+      outline: 2px solid #fff;
+      box-shadow: 0 0 10px rgba(255,255,255,.2);
+    }
+
+    .player-marker {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: linear-gradient(135deg,#00f0ff,#0066ff);
+      border: 3px solid #fff;
+      box-shadow: 0 0 10px rgba(0,255,255,.55);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 12px;
+      font-weight: 900;
+      overflow: hidden;
+    }
+
+    .player-marker img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 50%;
+    }
+
+    .flag-marker {
+      width: 34px;
+      height: 34px;
+      position: relative;
+    }
+
+    .flag-stick {
+      position: absolute;
+      width: 2px;
+      height: 18px;
+      left: 14px;
+      top: 12px;
+      border-radius: 2px;
+      background: #aaa;
+    }
+
+    .flag-banner {
+      position: absolute;
+      left: 14px;
+      top: 4px;
+      width: 16px;
+      height: 10px;
+      clip-path: polygon(0 0, 100% 28%, 0 100%);
+      border: 1px solid #fff;
+    }
+
+    .leaflet-popup-content-wrapper,
+    .leaflet-popup-tip {
+      background: #000;
+      color: #0f0;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ====== ECRÃ DE LOGIN ====== -->
+  <main id="login-screen" role="main" aria-labelledby="login-title">
+    <section class="login-box">
+      <h1 id="login-title">ZAP FLAGS</h1>
+      <p class="sub">
+        Escolhe como queres entrar. O jogador é a opção principal.
+        A recuperação de senha está em modo demonstração nesta fase.
+      </p>
+
+      <nav class="entry-switch" role="tablist" aria-label="Tipo de conta">
+        <button id="btn-entry-jg" class="entry-jg active" role="tab" aria-selected="true" aria-controls="jg-form" onclick="switchEntryMode('JG')">
+          ENTRAR COMO JOGADOR
+        </button>
+        <button id="btn-entry-pr" class="entry-pr" role="tab" aria-selected="false" aria-controls="pr-form" onclick="switchEntryMode('PR')">
+          SOU EMPRESA / PR
+        </button>
+      </nav>
+
+      <!-- FORMULÁRIO JOGADOR -->
+      <form id="jg-form" role="tabpanel" aria-labelledby="btn-entry-jg" onsubmit="return false;">
+        <h2 class="form-title">Jogador</h2>
+
+        <div class="form-group">
+          <label for="player-name">Nome do jogador</label>
+          <input id="player-name" type="text" placeholder="Ex: João Silva" autocomplete="name" required />
+        </div>
+
+        <div class="form-group">
+          <label for="player-contact">Email ou número de telefone</label>
+          <input id="player-contact" type="text" placeholder="Ex: joao@email.com ou 912345678" autocomplete="email" required />
+        </div>
+
+        <div class="form-group">
+          <label for="player-password">Criar senha</label>
+          <input id="player-password" type="password" placeholder="Mínimo 6 caracteres" autocomplete="new-password" minlength="6" required />
+        </div>
+
+        <div class="form-group">
+          <label for="player-password-confirm">Confirmar senha</label>
+          <input id="player-password-confirm" type="password" placeholder="Repete a senha" autocomplete="new-password" minlength="6" required />
+        </div>
+
+        <div class="form-group">
+          <label for="player-avatar-mode">Tipo de avatar</label>
+          <select id="player-avatar-mode">
+            <option value="male">Avatar masculino</option>
+            <option value="female">Avatar feminino</option>
+            <option value="photo">Usar foto por URL</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="player-photo-url">URL da foto (opcional)</label>
+          <input id="player-photo-url" type="url" placeholder="https://exemplo.com/foto.jpg" />
+        </div>
+
+        <div class="btn-row">
+          <button type="button" onclick="registerAccount('JG')">REGISTAR</button>
+          <button type="button" class="btn-dark" onclick="loginAccount('JG')">ENTRAR</button>
+          <button type="button" class="btn-dark" onclick="recoverPassword('JG')">RECUPERAR SENHA</button>
+        </div>
+
+        <output id="jg-auth-msg" class="small auth-msg" aria-live="polite"></output>
+      </form>
+
+      <!-- FORMULÁRIO EMPRESA/PR -->
+      <form id="pr-form" class="hidden" role="tabpanel" aria-labelledby="btn-entry-pr" onsubmit="return false;">
+        <h2 class="form-title">Empresa / PR</h2>
+
+        <div class="form-group">
+          <label for="pr-company-name">Nome da empresa</label>
+          <input id="pr-company-name" type="text" placeholder="Ex: Café Central" autocomplete="organization" required />
+        </div>
+
+        <div class="form-group">
+          <label for="pr-contact">Email ou número de telefone</label>
+          <input id="pr-contact" type="text" placeholder="Ex: empresa@email.com ou 212345678" autocomplete="email" required />
+        </div>
+
+        <div class="form-group">
+          <label for="pr-password">Criar senha</label>
+          <input id="pr-password" type="password" placeholder="Mínimo 6 caracteres" autocomplete="new-password" minlength="6" required />
+        </div>
+
+        <div class="form-group">
+          <label for="pr-password-confirm">Confirmar senha</label>
+          <input id="pr-password-confirm" type="password" placeholder="Repete a senha" autocomplete="new-password" minlength="6" required />
+        </div>
+
+        <div class="form-group">
+          <label for="pr-postal-code">Código postal da loja</label>
+          <input id="pr-postal-code" type="text" placeholder="Ex: 1000-001" autocomplete="postal-code" pattern="[0-9]{4}-[0-9]{3}" title="Formato: 0000-000" required />
+        </div>
+
+        <div class="form-group">
+          <label for="pr-lat">Latitude da loja (opcional)</label>
+          <input id="pr-lat" type="number" step="any" min="-90" max="90" placeholder="Ex: 38.7223" inputmode="decimal" />
+        </div>
+
+        <div class="form-group">
+          <label for="pr-lng">Longitude da loja (opcional)</label>
+          <input id="pr-lng" type="number" step="any" min="-180" max="180" placeholder="Ex: -9.1393" inputmode="decimal" />
+        </div>
+
+        <div class="btn-row">
+          <button type="button" onclick="registerAccount('PR')">REGISTAR</button>
+          <button type="button" class="btn-dark" onclick="loginAccount('PR')">ENTRAR</button>
+          <button type="button" class="btn-dark" onclick="recoverPassword('PR')">RECUPERAR SENHA</button>
+        </div>
+
+        <output id="pr-auth-msg" class="small auth-msg" aria-live="polite"></output>
+
+        <aside class="pack-preview" aria-label="Informação sobre pacotes disponíveis">
+          <h4>Pacotes PR</h4>
+          <article class="pack-item">
+            <strong>Mínimo — 10€</strong>
+            <p>1.000 bandeiras · 5 km · 50 lotes</p>
+          </article>
+          <article class="pack-item">
+            <strong>Médio — 15€</strong>
+            <p>2.500 bandeiras · 15 km · 125 lotes · 2 bingos</p>
+          </article>
+          <article class="pack-item">
+            <strong>Grande — 25€</strong>
+            <p>10.000 bandeiras · 50 km · 500 lotes · 3 bingos</p>
+          </article>
+          <article class="pack-item">
+            <strong>Enorme — 50€</strong>
+            <p>25.000 bandeiras · país inteiro · 1.250 lotes · 5 bingos</p>
+          </article>
+        </aside>
+      </form>
+    </section>
+  </main>
