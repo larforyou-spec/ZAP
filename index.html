@@ -553,15 +553,28 @@ function initMap() {
     const player = gameState.players[gameState.currentUser.id];
     playerMarker = L.marker([player.x, player.y], { icon: playerIcon, zIndexOffset: 1000 }).addTo(map);
 
-    // Círculo exterior (5m) – muito discreto
+    // Círculo exterior (5m) – ligeiramente mais visível mas discreto
     circleOuter = L.circle([player.x, player.y], {
         radius: 5,
-        color: '#ffcccc',
+        color: '#ff9999',        // vermelho muito suave
         fill: false,
-        weight: 0.5,
-        dashArray: '2, 8',
+        weight: 1.5,             // um pouco mais grosso para ser visível
+        dashArray: '4, 6',       // tracejado suave
         interactive: false
     }).addTo(map);
+
+    // Círculo interior (2.5m) – só aparece quando há bandeiras no raio de visão
+    circleInner = L.circle([player.x, player.y], {
+        radius: 2.5,
+        color: 'red',
+        fillColor: '#f03',
+        fillOpacity: 0.15,
+        weight: 1.5,
+        dashArray: '4, 4',
+        interactive: false
+    });
+    // Inicialmente escondido
+    circleInner.removeFrom(map);
 
     // Círculo interior (2.5m) – só aparece quando há bandeiras no raio de visão
     circleInner = L.circle([player.x, player.y], {
