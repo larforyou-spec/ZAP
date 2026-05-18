@@ -839,16 +839,28 @@ function clearFlags() {
 
 function updateVisibleFlags() {
     const player = gameState.players[gameState.currentUser.id];
+    let bandeiraNoRaioDeVisao = false;
+
     gameState.flags.forEach(flag => {
         const marker = flagMarkers[flag.id];
         if (!marker) return;
         const dist = map.distance([player.x, player.y], [flag.lat, flag.lng]);
         if (dist <= 5) {
             if (!map.hasLayer(marker)) marker.addTo(map);
+            bandeiraNoRaioDeVisao = true;
         } else {
             if (map.hasLayer(marker)) map.removeLayer(marker);
         }
     });
+
+    // Mostrar/ocultar o círculo interior baseado na presença de bandeiras
+    if (circleInner) {
+        if (bandeiraNoRaioDeVisao) {
+            if (!map.hasLayer(circleInner)) circleInner.addTo(map);
+        } else {
+            if (map.hasLayer(circleInner)) circleInner.removeFrom(map);
+        }
+    }
 }
 
 document.getElementById('close-result-btn').onclick = () => document.getElementById('result-modal').classList.add('hidden');
