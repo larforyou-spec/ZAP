@@ -1340,3 +1340,659 @@ function getStockWarning(pr) {
   }
   return '<span class="ok">✓ Campanha ativa com bom stock.</span>';
 }
+// ============================================================
+// AUTENTICAÇÃO E LOGIN
+// ============================================================
+
+/**
+ * Alterna entre formulário de jogador e PR
+ */
+function switchEntryMode(mode) {
+  const jgForm = document.getElementById("jg-form");
+  const prForm = document.getElementById("pr-form");
+  const btnJG = document.getElementById("btn-entry-jg");
+  const btnPR = document.getElementById("btn-entry-pr");
+
+  if (!jgForm || !prForm || !btnJG || !btnPR) return;
+
+  if (mode === "JG") {
+    jgForm.classList.remove("hidden");
+    jgForm.setAttribute("aria-hidden", "false");
+    prForm.classList.add("hidden");
+    prForm.setAttribute("aria-hidden", "true");
+    btnJG.classList.add("active");
+    btnJG.setAttribute("aria-selected", "true");
+    btnPR.classList.remove("active");
+    btnPR.setAttribute("aria-selected", "false");
+  } else {
+    prForm.classList.remove("hidden");
+    prForm.setAttribute("aria-hidden", "false");
+    jgForm.classList.add("hidden");
+    jgForm.setAttribute("aria-hidden", "true");
+    btnPR.classList.add("active");
+    btnPR.setAttribute("aria-selected", "true");
+    btnJG.classList.remove("active");
+    btnJG.setAttribute("aria-selected", "false");
+  }
+}
+
+/**
+ * Regista uma nova conta
+ */
+function registerAccount(type) {
+  if (type === "JG") {
+    const name = document.getElementById("player-name").value.trim();
+    const contact = document.getElementById("player-contact").value.trim();
+    const password = document.getElementById("player-password").value;
+    const passwordConfirm = document.getElementById("player-password-confirm").value;
+    const avatarMode = document.getElementById("player-avatar-mode").value;
+    const photoUrl = document.getElementById("player-photo-url").value.trim();
+    const msg = document.getElementById("jg-auth-msg");
+
+    // Validações
+    if (!name || !contact || !password) {
+      msg.innerHTML = '<span class="warning">Preenche todos os campos obrigatórios.</span>';
+      return;
+    }
+    if (password.length < 6) {
+      msg.innerHTML = '<span class="warning">A senha deve ter pelo menos 6 caracteres.</span>';
+      return;
+    }
+    if (password !== passwordConfirm) {
+      msg.innerHTML = '<span class="danger">As senhas não coincidem.</span>';
+      return;
+    }
+    if (state.player.contact && state.player.contact !== contact) {
+      msg.innerHTML = '<span class="warning">Já existe uma conta. Usa "Entrar" ou outro contacto.</span>';
+      return;
+    }
+
+    // Guardar dados
+    state.player.name = name;
+    state.player.contact = contact;
+    state.player.password = password;
+    state.player.avatarMode = avatarMode;
+    state.player.avatarPhoto = photoUrl;
+    saveState();
+
+    msg.innerHTML = '<span class="ok">✓ Conta criada com sucesso!</span>';
+    announceToScreenReader("Conta de jogador criada com sucesso.");
+
+    setTimeout(() => {
+      showGameScreen();
+      initMap();
+      document.getElementById("mode-modal").classList.remove("hidden");
+    }, 800);
+  }
+
+  if (type === "PR") {
+    const name = document.getElementById("pr-company-name").value.trim();
+    const contact = document.getElementById("pr-contact").value.trim();
+    const password = document.getElementById("pr-password").value;
+    const passwordConfirm = document.getElementById("pr-password-confirm").value;
+    const postalCode = document.getElementById("pr-postal-code").value.trim();
+    const lat = parseFloat(document.getElementById("pr-lat").value) || 38.7223;
+    const lng = parseFloat(document.getElementById("pr-lng").value) || -9.1393;
+    const msg = document.getElementById("pr-auth-msg");
+
+    // Validações
+    if (!name || !contact || !password) {
+      msg.innerHTML = '<span class="warning">Preenche todos os campos obrigatórios.</span>';
+      return;
+    }
+    if (password.length < 6) {
+      msg.innerHTML = '<span class="warning">A senha deve ter pelo menos 6 caracteres.</span>';
+      return;
+    }
+    if (password !== passwordConfirm) {
+      msg.innerHTML = '<span class="danger">As senhas não coincidem.</span>';
+      return;
+    }
+
+    // Verificar se já existe
+    const exists = state.prs.find(p => p.ownerContact === contact);
+    if (exists) {
+      msg.innerHTML = '<span class="danger">Já existe uma empresa com esse contacto. Usa "Entrar".</span>';
+      return;
+    }
+
+    // Criar nova empresa
+    const newPR = {
+      id: randomId("PR"),
+      ownerContact: contact,
+      ownerPassword: password,
+      name: name,
+      short: createShortName(name),
+      website: "",
+      contact: contact,
+      address: "",
+      postalCode: postalCode,
+      photo: "",
+      lat: lat,
+      lng: lng,
+      color: "#" + Math.floor(Math.random() * 16777215).toString(16).padStart(6, "0"),
+      packages: [createPackageInstance(FREE_PACK, "free")],
+      prizeLots: [],
+      campaign: {
+        rewardsEnabled: false,
+        rewardType: "none",
+        rewardText: "Sem prémio",
+        promoLotsActive: 0,
+        promoBudgetLeft: 0,
+        bingoCountActive: 0,
+        bingoText: "",
+        rewardsGiven: 0
+      }
+    };
+
+    state.prs.push(newPR);
+    state.currentPRId = newPR.id;
+    saveState();
+
+    msg.innerHTML = '<span class="ok">✓ Empresa registada com sucesso! Recebeste 1.000 bandeiras grátis.</span>';
+    announceToScreenReader("Empresa registada com sucesso.");
+
+    setTimeout(() => showPRDashboard(), 800);
+  }
+}
+
+/**
+ * Faz login numa conta existente
+ */
+function loginAccount(type) {
+  if (type === "JG") {
+    const contact = document.getElementById("player-contact").value.trim();
+    const password = document.getElementById("player-password").value;
+    const msg = document.getElementById("jg-auth-msg");
+
+    if (!contact || !password) {
+      msg.innerHTML = '<span class="warning">Preenche o contacto e a senha.</span>';
+      return;
+    }
+    if (!state.player.contact || state.player.contact !== contact) {
+      msg.innerHTML = '<span class="danger">Conta não encontrada. Regista-te primeiro.</span>';
+      return;
+    }
+    if (state.player.password !== password) {
+      msg.innerHTML = '<span class="danger">Senha incorreta.</span>';
+      return;
+    }
+
+    msg.innerHTML = '<span class="ok">✓ Login com sucesso!</span>';
+    announceToScreenReader("Login de jogador com sucesso.");
+
+    setTimeout(() => {
+      showGameScreen();
+      initMap();
+      document.getElementById("mode-modal").classList.remove("hidden");
+    }, 500);
+  }
+
+  if (type === "PR") {
+    const contact = document.getElementById("pr-contact").value.trim();
+    const password = document.getElementById("pr-password").value;
+    const msg = document.getElementById("pr-auth-msg");
+
+    if (!contact || !password) {
+      msg.innerHTML = '<span class="warning">Preenche o contacto e a senha.</span>';
+      return;
+    }
+
+    const pr = state.prs.find(p => p.ownerContact === contact);
+    if (!pr) {
+      msg.innerHTML = '<span class="danger">Empresa não encontrada. Regista-te primeiro.</span>';
+      return;
+    }
+    if (pr.ownerPassword !== password) {
+      msg.innerHTML = '<span class="danger">Senha incorreta.</span>';
+      return;
+    }
+
+    state.currentPRId = pr.id;
+    saveState();
+
+    msg.innerHTML = '<span class="ok">✓ Login com sucesso!</span>';
+    announceToScreenReader("Login de empresa com sucesso.");
+
+    setTimeout(() => showPRDashboard(), 500);
+  }
+}
+
+/**
+ * Recupera senha (modo demo)
+ */
+function recoverPassword(type) {
+  if (type === "JG") {
+    const contact = document.getElementById("player-contact").value.trim();
+    const msg = document.getElementById("jg-auth-msg");
+
+    if (!contact) {
+      msg.innerHTML = '<span class="warning">Indica primeiro o email/telefone.</span>';
+      return;
+    }
+    if (!state.player.contact || state.player.contact !== contact) {
+      msg.innerHTML = '<span class="danger">Conta não encontrada.</span>';
+      return;
+    }
+
+    // Em modo demo, mostra a senha
+    const maskedPw = state.player.password.charAt(0) + "****" + state.player.password.charAt(state.player.password.length - 1);
+    alert("Modo demo: A tua senha é aproximadamente: " + maskedPw + "\n\nSenha completa: " + state.player.password);
+    msg.innerHTML = '<span class="ok">Recuperação enviada (modo demo).</span>';
+  }
+
+  if (type === "PR") {
+    const contact = document.getElementById("pr-contact").value.trim();
+    const msg = document.getElementById("pr-auth-msg");
+
+    if (!contact) {
+      msg.innerHTML = '<span class="warning">Indica primeiro o email/telefone.</span>';
+      return;
+    }
+
+    const pr = state.prs.find(p => p.ownerContact === contact);
+    if (!pr) {
+      msg.innerHTML = '<span class="danger">Empresa não encontrada.</span>';
+      return;
+    }
+
+    alert("Modo demo: A senha da empresa é: " + pr.ownerPassword);
+    msg.innerHTML = '<span class="ok">Recuperação enviada (modo demo).</span>';
+  }
+}
+
+// ============================================================
+// NAVEGAÇÃO ENTRE ECRÃS
+// ============================================================
+
+/**
+ * Mostra o ecrã de jogo
+ */
+function showGameScreen() {
+  document.getElementById("login-screen").classList.add("hidden");
+  document.getElementById("pr-screen").classList.add("hidden");
+  document.getElementById("game-screen").classList.remove("hidden");
+}
+
+/**
+ * Mostra o dashboard do PR
+ */
+function showPRDashboard() {
+  document.getElementById("login-screen").classList.add("hidden");
+  document.getElementById("game-screen").classList.add("hidden");
+  document.getElementById("pr-screen").classList.remove("hidden");
+  renderPRDashboard();
+}
+
+/**
+ * Volta ao ecrã de login
+ */
+function goBackToLogin() {
+  document.getElementById("login-screen").classList.remove("hidden");
+  document.getElementById("game-screen").classList.add("hidden");
+  document.getElementById("pr-screen").classList.add("hidden");
+}
+
+/**
+ * Logout do PR
+ */
+function logoutPR() {
+  if (!confirm("Queres terminar a sessão da empresa?")) return;
+  state.currentPRId = null;
+  saveState();
+  goBackToLogin();
+  announceToScreenReader("Sessão da empresa terminada.");
+}
+
+/**
+ * Logout do jogador
+ */
+function logoutPlayer() {
+  if (!confirm("Queres terminar a sessão?")) return;
+  
+  // Parar GPS
+  if (watchId !== null) {
+    navigator.geolocation.clearWatch(watchId);
+    watchId = null;
+  }
+  
+  goBackToLogin();
+  announceToScreenReader("Sessão terminada.");
+}
+
+// ============================================================
+// MAPA E LOCALIZAÇÃO
+// ============================================================
+
+/**
+ * Inicializa o mapa Leaflet
+ */
+function initMap() {
+  if (map) return true;
+
+  try {
+    if (typeof L === "undefined") {
+      console.error("Leaflet não carregado!");
+      alert("Erro ao carregar o mapa. Recarrega a página.");
+      return false;
+    }
+
+    map = L.map("map", {
+      zoomControl: true,
+      dragging: true,
+      scrollWheelZoom: false,
+      doubleClickZoom: false,
+      touchZoom: true,
+      boxZoom: false,
+      keyboard: false
+    }).setView([38.7223, -9.1393], 18);
+
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+      maxZoom: 19,
+      minZoom: 10
+    }).addTo(map);
+
+    map.on("move", updateFogOverlay);
+    map.on("zoom", updateFogOverlay);
+
+    return true;
+  } catch (error) {
+    console.error("Erro ao inicializar mapa:", error);
+    alert("Erro ao carregar o mapa.");
+    return false;
+  }
+}
+
+/**
+ * Cria ícone do jogador
+ */
+function createPlayerIcon() {
+  let inner = "JG";
+  
+  if (state.player.avatarMode === "male") inner = "♂";
+  if (state.player.avatarMode === "female") inner = "♀";
+  if (state.player.avatarMode === "photo" && state.player.avatarPhoto) {
+    inner = '<img src="' + escapeHtml(state.player.avatarPhoto) + '" alt="Avatar" onerror="this.parentElement.innerHTML=\'JG\'" />';
+  }
+
+  return L.divIcon({
+    className: "",
+    html: '<div class="player-marker">' + inner + '</div>',
+    iconSize: [28, 28],
+    iconAnchor: [14, 14]
+  });
+}
+
+/**
+ * Cria ícone de bandeira
+ */
+function createFlagIcon(color) {
+  const safeColor = sanitizeColor(color);
+  return L.divIcon({
+    className: "",
+    html: '<div class="flag-marker"><div class="flag-stick"></div><div class="flag-banner" style="background:' + safeColor + ';"></div></div>',
+    iconSize: [34, 34],
+    iconAnchor: [17, 28]
+  });
+}
+
+// ============================================================
+// GPS E MODO DE JOGO
+// ============================================================
+
+/**
+ * Ativa modo GPS
+ */
+function requestGPSMode() {
+  document.getElementById("mode-modal").classList.add("hidden");
+  document.getElementById("offline-controls").classList.add("hidden");
+  offlineMode = false;
+  gpsCenteredOnce = false;
+  renderTopBar();
+
+  if (!navigator.geolocation) {
+    alert("Este dispositivo não suporta GPS. Vais entrar em modo Offline.");
+    activateHomeMode();
+    return;
+  }
+
+  if (watchId !== null) {
+    navigator.geolocation.clearWatch(watchId);
+    watchId = null;
+  }
+
+  const geoOptions = {
+    enableHighAccuracy: true,
+    maximumAge: 5000,
+    timeout: 20000
+  };
+
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      updatePosition(pos, true);
+      watchId = navigator.geolocation.watchPosition(
+        (p) => updatePosition(p, false),
+        handleGeoError,
+        geoOptions
+      );
+    },
+    (err) => {
+      console.warn("Erro GPS:", err);
+      alert("Não foi possível ativar o GPS. Verifica a permissão ou entra em modo Offline.");
+      document.getElementById("mode-modal").classList.remove("hidden");
+    },
+    geoOptions
+  );
+}
+
+/**
+ * Ativa modo offline
+ */
+function activateHomeMode() {
+  document.getElementById("mode-modal").classList.add("hidden");
+  offlineMode = true;
+  document.getElementById("offline-controls").classList.remove("hidden");
+
+  if (!currentPosition) {
+    currentPosition = { lat: 38.7223, lng: -9.1393 };
+  }
+
+  updatePlayerLocation(currentPosition.lat, currentPosition.lng, false, true);
+  manualRefreshFlags();
+  renderTopBar();
+  announceToScreenReader("Modo offline ativado.");
+}
+
+/**
+ * Fecha modal de modo
+ */
+function closeModeModal() {
+  document.getElementById("mode-modal").classList.add("hidden");
+}
+
+/**
+ * Trata erros de GPS
+ */
+function handleGeoError(error) {
+  const msgs = {
+    1: "Permissão de localização negada.",
+    2: "Localização indisponível.",
+    3: "Tempo esgotado."
+  };
+  console.warn("Erro GPS:", msgs[error.code] || error.message);
+  alert("Erro GPS: " + (msgs[error.code] || "Erro desconhecido") + ". Modo Offline ativado.");
+  activateHomeMode();
+}
+
+/**
+ * Processa nova posição GPS
+ */
+function updatePosition(position, forceCenter = false) {
+  updatePlayerLocation(
+    position.coords.latitude,
+    position.coords.longitude,
+    true,
+    forceCenter || !gpsCenteredOnce
+  );
+  gpsCenteredOnce = true;
+}
+
+/**
+ * Atualiza localização do jogador
+ */
+function updatePlayerLocation(lat, lng, fromMovement, centerMap) {
+  currentPosition = { lat, lng };
+
+  // Calcular gasto de energia
+  if (lastPosForEnergy && fromMovement) {
+    const moved = getDistanceMeters(lastPosForEnergy.lat, lastPosForEnergy.lng, lat, lng);
+    if (moved > 0.5) {
+      movedMetersBuffer += moved;
+      lastMovementTime = Date.now();
+      while (movedMetersBuffer >= 20) {
+        movedMetersBuffer -= 20;
+        state.player.energy = Math.max(0, state.player.energy - 1);
+      }
+    }
+  }
+  lastPosForEnergy = { lat, lng };
+
+  // Atualizar marcador
+  if (!playerMarker) {
+    playerMarker = L.marker([lat, lng], { icon: createPlayerIcon(), zIndexOffset: 1000 }).addTo(map);
+  } else {
+    playerMarker.setLatLng([lat, lng]);
+    playerMarker.setIcon(createPlayerIcon());
+  }
+
+  // Atualizar círculo de visão
+  if (!visionCircle) {
+    visionCircle = L.circle([lat, lng], {
+      radius: state.player.vision,
+      color: "#00ff00",
+      fillColor: "#00ff00",
+      fillOpacity: 0.05,
+      weight: 1
+    }).addTo(map);
+  } else {
+    visionCircle.setLatLng([lat, lng]);
+    visionCircle.setRadius(state.player.vision);
+  }
+
+  // Centrar mapa
+  if (centerMap && map) {
+    map.setView([lat, lng], 18, { animate: true });
+  }
+
+  // Atualizar interface
+  updateFogOverlay();
+  refreshFlags(false);
+  updateVisibleFlags();
+  renderTopBar();
+  renderPanelIfOpen();
+  saveState();
+}
+
+/**
+ * Atualiza overlay de nevoeiro
+ */
+function updateFogOverlay() {
+  if (!map || !currentPosition) return;
+  
+  try {
+    const point = map.latLngToContainerPoint([currentPosition.lat, currentPosition.lng]);
+    const fog = document.getElementById("fog-overlay");
+    if (fog) {
+      fog.style.setProperty("--fog-x", point.x + "px");
+      fog.style.setProperty("--fog-y", point.y + "px");
+      fog.style.setProperty("--fog-r", Math.max(55, state.player.vision * 18) + "px");
+    }
+  } catch (e) {
+    console.warn("Erro fog overlay:", e);
+  }
+}
+
+/**
+ * Centra mapa no jogador
+ */
+function centerOnPlayer() {
+  if (!map || !currentPosition) return;
+  map.setView([currentPosition.lat, currentPosition.lng], 18, { animate: true });
+  announceToScreenReader("Mapa centrado.");
+}
+
+/**
+ * Move jogador no modo offline
+ */
+function moveHomePlayer(dxMeters, dyMeters) {
+  if (!offlineMode || !currentPosition) return;
+  
+  if (state.player.energy <= 0) {
+    announceToScreenReader("Sem energia!");
+    return;
+  }
+
+  const lat = currentPosition.lat + (dyMeters / 111320);
+  const lng = currentPosition.lng + (dxMeters / (111320 * Math.cos(currentPosition.lat * Math.PI / 180)));
+  
+  updatePlayerLocation(lat, lng, true, true);
+  manualRefreshFlags();
+}
+
+/**
+ * Redimensiona controlos offline
+ */
+function resizeOfflineControls(delta) {
+  const box = document.getElementById("offline-controls");
+  if (!box) return;
+
+  const currentW = parseInt(box.style.width) || 118;
+  const currentH = parseInt(box.style.height) || 138;
+
+  box.style.width = Math.max(95, Math.min(180, currentW + delta)) + "px";
+  box.style.height = Math.max(115, Math.min(200, currentH + delta)) + "px";
+}
+
+/**
+ * Torna controlos offline arrastáveis
+ */
+function makeDraggable(el, handleSelector = ".drag-handle") {
+  const handle = el.querySelector(handleSelector) || el;
+  let dragging = false;
+  let startX = 0, startY = 0, startLeft = 0, startTop = 0;
+
+  handle.style.cursor = "grab";
+
+  handle.addEventListener("pointerdown", (e) => {
+    dragging = true;
+    const rect = el.getBoundingClientRect();
+    el.style.left = rect.left + "px";
+    el.style.top = rect.top + "px";
+    el.style.right = "auto";
+    el.style.bottom = "auto";
+    startLeft = rect.left;
+    startTop = rect.top;
+    startX = e.clientX;
+    startY = e.clientY;
+    handle.setPointerCapture(e.pointerId);
+    handle.style.cursor = "grabbing";
+  });
+
+  window.addEventListener("pointermove", (e) => {
+    if (!dragging) return;
+    const dx = e.clientX - startX;
+    const dy = e.clientY - startY;
+    const maxX = window.innerWidth - el.offsetWidth;
+    const maxY = window.innerHeight - el.offsetHeight;
+    el.style.left = Math.max(0, Math.min(maxX, startLeft + dx)) + "px";
+    el.style.top = Math.max(0, Math.min(maxY, startTop + dy)) + "px";
+  });
+
+  window.addEventListener("pointerup", () => {
+    if (dragging) {
+      dragging = false;
+      handle.style.cursor = "grab";
+    }
+  });
+}
