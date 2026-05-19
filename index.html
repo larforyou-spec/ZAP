@@ -817,3 +817,526 @@
     </form>
   </section>
 </main>
+<!-- ========================================== -->
+<!-- ECRÃ DO JOGO -->
+<!-- ========================================== -->
+<section id="game-screen" class="hidden" role="application" aria-label="Área do jogo ZAP FLAGS">
+  
+  <!-- Mapa -->
+  <div id="map-wrap">
+    <div id="map"></div>
+    <div id="fog-overlay" aria-hidden="true"></div>
+  </div>
+
+  <!-- Barra Superior -->
+  <header id="top-strip" role="status" aria-live="polite" aria-label="Estado do jogador">
+    <div class="energy-bar" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" aria-label="Nível de energia">
+      <div id="energy-fill"></div>
+    </div>
+    <div id="top-strip-text">
+      <span id="energy-text">Energia: 100%</span>
+      <span id="mode-text">Modo: -</span>
+    </div>
+  </header>
+
+  <!-- Botões Flutuantes -->
+  <nav id="floating-buttons" aria-label="Menu de ações rápidas">
+    <button class="float-btn btn-dark" onclick="openPanel('progress')" aria-label="Ver progresso" title="Progresso">📈</button>
+    <button class="float-btn btn-dark" onclick="openPanel('qrs')" aria-label="Ver cupões QR" title="Cupões QR">🎫</button>
+    <button class="float-btn btn-dark" onclick="openPanel('account')" aria-label="Minha conta" title="Conta">👤</button>
+    <button class="float-btn btn-dark" onclick="centerOnPlayer()" aria-label="Centrar no jogador" title="Centrar mapa">📍</button>
+  </nav>
+
+  <!-- Controlos Offline -->
+  <aside id="offline-controls" class="hidden" role="region" aria-label="Controlos de movimento manual">
+    <div class="drag-handle" role="button" tabindex="0" aria-label="Arrastar painel">⋮⋮</div>
+    <div class="offline-size-row">
+      <button class="btn-dark btn-small" onclick="resizeOfflineControls(-10)" aria-label="Diminuir painel">A-</button>
+      <button class="btn-dark btn-small" onclick="resizeOfflineControls(10)" aria-label="Aumentar painel">A+</button>
+    </div>
+    <div class="dpad" role="group" aria-label="Controlos direcionais">
+      <div class="empty">.</div>
+      <button onclick="moveHomePlayer(0, 1)" aria-label="Mover para cima">⬆</button>
+      <div class="empty">.</div>
+      <button onclick="moveHomePlayer(-1, 0)" aria-label="Mover para esquerda">⬅</button>
+      <button onclick="manualRefreshFlags()" aria-label="Atualizar bandeiras">⟳</button>
+      <button onclick="moveHomePlayer(1, 0)" aria-label="Mover para direita">➡</button>
+      <div class="empty">.</div>
+      <button onclick="moveHomePlayer(0, -1)" aria-label="Mover para baixo">⬇</button>
+      <div class="empty">.</div>
+    </div>
+  </aside>
+
+  <!-- Painel Lateral -->
+  <aside id="side-panel" class="hidden" role="complementary" aria-labelledby="side-panel-title">
+    <header class="panel-header">
+      <h2 id="side-panel-title">Painel</h2>
+      <button class="btn-dark btn-small" onclick="closePanel()" aria-label="Fechar painel">✕</button>
+    </header>
+    <div id="side-panel-content"></div>
+  </aside>
+</section>
+
+<!-- ========================================== -->
+<!-- MODAL: SELEÇÃO DE MODO -->
+<!-- ========================================== -->
+<div id="mode-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="mode-modal-title">
+  <header class="panel-header">
+    <h2 id="mode-modal-title" style="margin:0;">🎮 Como queres jogar?</h2>
+    <button class="btn-dark btn-small" onclick="closeModeModal()" aria-label="Fechar">✕</button>
+  </header>
+  
+  <article class="item">
+    <h3>📡 GPS / Rua</h3>
+    <p>Joga a caminhar na rua com localização real. Ideal para explorar a cidade!</p>
+  </article>
+  
+  <article class="item">
+    <h3>🏠 Offline / Casa</h3>
+    <p>Joga sem GPS real, com movimento manual. Ideal para testar ou jogar em casa.</p>
+  </article>
+  
+  <div class="btn-row">
+    <button onclick="requestGPSMode()">🛰️ ATIVAR GPS</button>
+    <button class="btn-dark" onclick="activateHomeMode()">🏠 MODO OFFLINE</button>
+  </div>
+</div>
+
+<!-- ========================================== -->
+<!-- MODAL: DETALHES DA BANDEIRA -->
+<!-- ========================================== -->
+<div id="flag-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="flag-modal-title">
+  <h2 id="flag-modal-title" class="visually-hidden">Detalhes da bandeira</h2>
+  <div id="flag-modal-content"></div>
+</div>
+
+<!-- ========================================== -->
+<!-- ECRÃ PR / EMPRESA -->
+<!-- ========================================== -->
+<section id="pr-screen" class="hidden" role="main" aria-labelledby="pr-screen-title">
+  <div class="pr-box">
+    <header>
+      <h1 id="pr-screen-title">🏢 PAINEL DA EMPRESA / PR</h1>
+      <p class="small">
+        No primeiro registo o PR recebe 1 pacote mínimo grátis de 1.000 bandeiras sem ofertas.
+        Para ativar prémios, compra um pacote pago.
+      </p>
+    </header>
+
+    <nav class="btn-row" style="justify-content:flex-start; margin-bottom:16px;">
+      <button onclick="goBackToLogin()">⬅ VOLTAR AO LOGIN</button>
+      <button class="btn-danger" onclick="logoutPR()">🚪 SAIR DA CONTA</button>
+    </nav>
+
+    <main id="pr-dashboard-content" role="region" aria-label="Conteúdo do painel PR"></main>
+  </div>
+</section>
+
+<!-- ========================================== -->
+<!-- SCRIPTS -->
+<!-- ========================================== -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+// ============================================================
+// CONSTANTES E CONFIGURAÇÃO
+// ============================================================
+
+const STORAGE_KEY = "zap_flags_complete_v1";
+
+// Pacote gratuito inicial
+const FREE_PACK = {
+  key: "FREE",
+  label: "Mínimo grátis",
+  price: 0,
+  flags: 1000,
+  radiusKm: 5,
+  paid: false,
+  maxLots: 50,
+  bingos: 0
+};
+
+// Pacotes disponíveis para compra
+const PACKS = {
+  MINIMO: { key: "MINIMO", label: "Mínimo", price: 10, flags: 1000, radiusKm: 5, paid: true, maxLots: 50, bingos: 0 },
+  MEDIO:  { key: "MEDIO", label: "Médio", price: 15, flags: 2500, radiusKm: 15, paid: true, maxLots: 125, bingos: 2 },
+  GRANDE: { key: "GRANDE", label: "Grande", price: 25, flags: 10000, radiusKm: 50, paid: true, maxLots: 500, bingos: 3 },
+  ENORME: { key: "ENORME", label: "Enorme", price: 50, flags: 25000, radiusKm: Infinity, paid: true, maxLots: 1250, bingos: 5 }
+};
+
+// ============================================================
+// VARIÁVEIS GLOBAIS
+// ============================================================
+
+let selectedPackKey = null;
+let map = null;
+let playerMarker = null;
+let visionCircle = null;
+let currentPosition = null;
+let watchId = null;
+let allFlags = [];
+let offlineMode = false;
+let currentOpenPanel = null;
+let lastPosForEnergy = null;
+let movedMetersBuffer = 0;
+let lastMovementTime = Date.now();
+let lastFlagRefreshCenter = null;
+let lastFlagRefreshTime = 0;
+let lastOfflineSuggestion = 0;
+let gpsCenteredOnce = false;
+let energyInterval = null;
+
+// ============================================================
+// FUNÇÕES UTILITÁRIAS
+// ============================================================
+
+/**
+ * Gera um ID aleatório com prefixo
+ */
+function randomId(prefix) {
+  return prefix + "_" + Math.random().toString(36).slice(2, 10).toUpperCase();
+}
+
+/**
+ * Escapa HTML para prevenir XSS
+ */
+function escapeHtml(text) {
+  if (!text) return "";
+  const div = document.createElement("div");
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+/**
+ * Sanitiza uma cor CSS
+ */
+function sanitizeColor(color) {
+  if (!color || typeof color !== "string") return "#00ff00";
+  const hexPattern = /^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/;
+  if (hexPattern.test(color)) return color;
+  return "#00ff00";
+}
+
+/**
+ * Anuncia mensagem para leitores de ecrã
+ */
+function announceToScreenReader(message) {
+  const el = document.createElement("div");
+  el.setAttribute("role", "status");
+  el.setAttribute("aria-live", "polite");
+  el.className = "visually-hidden";
+  el.textContent = message;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 1000);
+}
+
+/**
+ * Calcula distância em metros entre duas coordenadas (Haversine)
+ */
+function getDistanceMeters(lat1, lng1, lat2, lng2) {
+  const R = 6371e3;
+  const phi1 = lat1 * Math.PI / 180;
+  const phi2 = lat2 * Math.PI / 180;
+  const dPhi = (lat2 - lat1) * Math.PI / 180;
+  const dLambda = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(dPhi/2) * Math.sin(dPhi/2) + Math.cos(phi1) * Math.cos(phi2) * Math.sin(dLambda/2) * Math.sin(dLambda/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+/**
+ * Gera um ponto aleatório dentro de um raio
+ */
+function randomOffset(lat, lng, radiusMeters) {
+  const angle = Math.random() * 2 * Math.PI;
+  const distance = Math.random() * radiusMeters;
+  const latOffset = (distance * Math.cos(angle)) / 111320;
+  const lngOffset = (distance * Math.sin(angle)) / (111320 * Math.cos(lat * Math.PI / 180));
+  return { lat: lat + latOffset, lng: lng + lngOffset };
+}
+
+/**
+ * Formata texto do raio de um pacote
+ */
+function packageRadiusText(radiusKm) {
+  if (radiusKm === Infinity) return "País inteiro";
+  return radiusKm + " km";
+}
+
+/**
+ * Calcula texto de expiração do QR
+ */
+function qrExpiryText(expiresAt) {
+  const now = Date.now();
+  const diff = expiresAt - now;
+  if (diff <= 0) return "Expirado";
+  const days = Math.floor(diff / (24 * 60 * 60 * 1000));
+  const hours = Math.floor((diff % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000));
+  if (days > 0) return days + " dia" + (days !== 1 ? "s" : "") + " e " + hours + "h";
+  if (hours > 0) return hours + " hora" + (hours !== 1 ? "s" : "");
+  const minutes = Math.floor(diff / (60 * 1000));
+  return minutes + " minuto" + (minutes !== 1 ? "s" : "");
+}
+
+// ============================================================
+// GESTÃO DE ESTADO (LOCALSTORAGE)
+// ============================================================
+
+/**
+ * Cria uma instância de pacote
+ */
+function createPackageInstance(packDef, source = "paid") {
+  return {
+    id: randomId("PKG"),
+    key: packDef.key,
+    label: packDef.label,
+    price: packDef.price,
+    flagsInitial: packDef.flags,
+    flagsLeft: packDef.flags,
+    radiusKm: packDef.radiusKm,
+    maxLots: packDef.maxLots,
+    bingos: packDef.bingos,
+    paid: packDef.paid,
+    source,
+    createdAt: Date.now()
+  };
+}
+
+/**
+ * Cria PRs de demonstração
+ */
+function seedPRs() {
+  const demoPack = createPackageInstance(PACKS.MEDIO, "demo");
+  return [{
+    id: "seed1",
+    ownerContact: "demo@zapflags.pt",
+    ownerPassword: "123456",
+    name: "Café Central",
+    short: "CC",
+    website: "https://cafe-central.pt",
+    contact: "913000001",
+    address: "Rua Central 123, Porto",
+    postalCode: "4000-100",
+    photo: "",
+    lat: 41.1496,
+    lng: -8.6109,
+    color: "#FF4D4F",
+    packages: [demoPack],
+    prizeLots: [],
+    campaign: {
+      rewardsEnabled: true,
+      rewardType: "discount",
+      rewardText: "5% de desconto",
+      promoLotsActive: 10,
+      promoBudgetLeft: 200,
+      bingoCountActive: 1,
+      bingoText: "Oferta surpresa na loja",
+      rewardsGiven: 0
+    }
+  }];
+}
+
+/**
+ * Estado padrão da aplicação
+ */
+function defaultState() {
+  return {
+    player: {
+      name: "",
+      contact: "",
+      password: "",
+      avatarMode: "male",
+      avatarPhoto: "",
+      energy: 100,
+      zapFlags: 0,
+      prFlags: 0,
+      totalFlags: 0,
+      skill: 1,
+      vision: 5,
+      promoProgressByPR: {},
+      totalSeenByPR: {},
+      qrs: [],
+      usedQrs: []
+    },
+    prs: seedPRs(),
+    currentPRId: null
+  };
+}
+
+/**
+ * Carrega estado do localStorage
+ */
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return defaultState();
+    
+    const parsed = JSON.parse(raw);
+    
+    // Validar estrutura
+    if (!parsed.player) parsed.player = defaultState().player;
+    if (!parsed.player.password) parsed.player.password = "";
+    if (!parsed.player.qrs) parsed.player.qrs = [];
+    if (!parsed.player.usedQrs) parsed.player.usedQrs = [];
+    if (!parsed.player.promoProgressByPR) parsed.player.promoProgressByPR = {};
+    if (!parsed.player.totalSeenByPR) parsed.player.totalSeenByPR = {};
+    if (!parsed.prs || !Array.isArray(parsed.prs)) parsed.prs = seedPRs();
+    if (!("currentPRId" in parsed)) parsed.currentPRId = null;
+    
+    // Validar cada PR
+    parsed.prs.forEach(pr => {
+      if (!pr.ownerPassword) pr.ownerPassword = "";
+      if (!pr.packages) pr.packages = [];
+      if (!pr.prizeLots) pr.prizeLots = [];
+      if (!pr.campaign) {
+        pr.campaign = {
+          rewardsEnabled: false,
+          rewardType: "none",
+          rewardText: "Sem prémio",
+          promoLotsActive: 0,
+          promoBudgetLeft: 0,
+          bingoCountActive: 0,
+          bingoText: "",
+          rewardsGiven: 0
+        };
+      }
+    });
+    
+    return parsed;
+  } catch (e) {
+    console.error("Erro ao carregar estado:", e);
+    return defaultState();
+  }
+}
+
+// Estado global
+let state = loadState();
+
+/**
+ * Guarda estado no localStorage
+ */
+function saveState() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  } catch (e) {
+    console.error("Erro ao guardar estado:", e);
+  }
+}
+
+/**
+ * Encontra um PR pelo ID
+ */
+function findPR(prId) {
+  return state.prs.find(pr => pr.id === prId) || null;
+}
+
+/**
+ * Obtém o PR atualmente gerido
+ */
+function getCurrentManagedPR() {
+  if (!state.currentPRId) return null;
+  return findPR(state.currentPRId);
+}
+
+/**
+ * Cria abreviatura do nome
+ */
+function createShortName(name) {
+  const words = name.trim().split(" ").filter(Boolean);
+  if (!words.length) return "PR";
+  if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
+  return (words[0][0] + words[1][0]).toUpperCase();
+}
+
+/**
+ * Garante dados do jogador para todos os PRs
+ */
+function ensureAllPlayerData() {
+  if (!state.player.promoProgressByPR) state.player.promoProgressByPR = {};
+  if (!state.player.totalSeenByPR) state.player.totalSeenByPR = {};
+  
+  state.prs.forEach(pr => {
+    if (!state.player.promoProgressByPR[pr.id]) {
+      state.player.promoProgressByPR[pr.id] = { current: 0, total: 0 };
+    }
+    if (typeof state.player.totalSeenByPR[pr.id] !== "number") {
+      state.player.totalSeenByPR[pr.id] = 0;
+    }
+  });
+}
+
+/**
+ * Garante dados do jogador para um PR específico
+ */
+function ensurePlayerDataForPR(prId) {
+  if (!state.player.promoProgressByPR) state.player.promoProgressByPR = {};
+  if (!state.player.totalSeenByPR) state.player.totalSeenByPR = {};
+  
+  if (!state.player.promoProgressByPR[prId]) {
+    state.player.promoProgressByPR[prId] = { current: 0, total: 0 };
+  }
+  if (typeof state.player.totalSeenByPR[prId] !== "number") {
+    state.player.totalSeenByPR[prId] = 0;
+  }
+}
+
+/**
+ * Atualiza skill e visão do jogador
+ */
+function updateSkillAndVision() {
+  const totalFlags = state.player.totalFlags || 0;
+  state.player.skill = Math.floor(1 + Math.log2(totalFlags + 1));
+  state.player.vision = Math.min(20, 5 + (state.player.skill * 0.5));
+}
+
+/**
+ * Calcula totais de pacotes de um PR
+ */
+function getPackageTotals(pr) {
+  if (!pr || !pr.packages) {
+    return { totalBought: 0, totalLeft: 0, maxRadius: 0, hasPaid: false, maxLotsPaid: 0, totalBingosPaid: 0 };
+  }
+  
+  let totalBought = 0, totalLeft = 0, maxRadius = 0, hasPaid = false, maxLotsPaid = 0, totalBingosPaid = 0;
+  
+  pr.packages.forEach(pkg => {
+    totalBought += pkg.flagsInitial || 0;
+    totalLeft += pkg.flagsLeft || 0;
+    
+    if (pkg.radiusKm === Infinity) {
+      maxRadius = Infinity;
+    } else if (maxRadius !== Infinity) {
+      maxRadius = Math.max(maxRadius, pkg.radiusKm || 0);
+    }
+    
+    if (pkg.paid) {
+      hasPaid = true;
+      maxLotsPaid += pkg.maxLots || 0;
+      totalBingosPaid += pkg.bingos || 0;
+    }
+  });
+  
+  return { totalBought, totalLeft, maxRadius, hasPaid, maxLotsPaid, totalBingosPaid };
+}
+
+/**
+ * Gera aviso de stock
+ */
+function getStockWarning(pr) {
+  const totals = getPackageTotals(pr);
+  const total = Math.max(totals.totalBought, 1);
+  const pct = (totals.totalLeft / total) * 100;
+  
+  if (totals.totalLeft === 0) {
+    return '<span class="danger">⚠️ Sem bandeiras! Compra mais pacotes.</span>';
+  }
+  if (pct <= 5) {
+    return '<span class="danger">⚠️ Restam menos de 5% das bandeiras.</span>';
+  }
+  if (pct <= 10) {
+    return '<span class="warning">⚠️ Restam menos de 10% das bandeiras.</span>';
+  }
+  if (pct <= 20) {
+    return '<span class="warning">⚠️ Restam menos de 20% das bandeiras.</span>';
+  }
+  return '<span class="ok">✓ Campanha ativa com bom stock.</span>';
+}
