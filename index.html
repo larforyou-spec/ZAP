@@ -1996,3 +1996,631 @@ function makeDraggable(el, handleSelector = ".drag-handle") {
     }
   });
 }
+// ============================================================
+// GESTÃO DE BANDEIRAS
+// ============================================================
+
+/**
+ * Remove todas as bandeiras do mapa
+ */
+function clearFlags() {
+  allFlags.forEach(flag => {
+    if (flag.marker && map) {
+      try {
+        map.removeLayer(flag.marker);
+      } catch (e) {
+        console.warn("Erro ao remover bandeira:", e);
+      }
+    }
+  });
+  allFlags = [];
+}
+
+/**
+ * Obtém todos os pacotes ativos
+ */
+function getAllActivePackages() {
+  const list = [];
+  state.prs.forEach(pr => {
+    if (!pr.packages) return;
+    pr.packages.forEach(pkg => {
+      if (pkg.flagsLeft > 0) {
+        list.push({ pr, pkg });
+      }
+    });
+  });
+  return list;
+}
+
+/**
+ * Seleciona um pacote com base em peso/probabilidade
+ */
+function weightedPackagePick() {
+  if (!currentPosition) return null;
+
+  const candidates = getAllActivePackages().map(({ pr, pkg }) => {
+    const distKm = getDistanceMeters(currentPosition.lat, currentPosition.lng, pr.lat, pr.lng) / 1000;
+    let weight = 0;
+
+    if (pkg.radiusKm === Infinity) {
+      weight = 0.4;
+    } else if (distKm <= pkg.radiusKm) {
+      const closeness = 1 - (distKm / pkg.radiusKm);
+      let radiusBonus = 1;
+      if (pkg.radiusKm <= 5) radiusBonus = 2.2;
+      else if (pkg.radiusKm <= 15) radiusBonus = 1.8;
+      else if (pkg.radiusKm <= 50) radiusBonus = 1.3;
+      weight = (1 + closeness * 4) * radiusBonus;
+    } else {
+      weight = 0.03;
+    }
+
+    const stockFactor = Math.max(0.3, Math.min(2, pkg.flagsLeft / Math.max(pkg.flagsInitial, 1)));
+    weight = weight * stockFactor;
+
+    return { pr, pkg, weight };
+  }).filter(c => c.weight > 0);
+
+  const total = candidates.reduce((acc, c) => acc + c.weight, 0);
+  if (!total || candidates.length === 0) return null;
+
+  let rnd = Math.random() * total;
+  for (const c of candidates) {
+    rnd -= c.weight;
+    if (rnd <= 0) return { pr: c.pr, pkg: c.pkg };
+  }
+  return { pr: candidates[0].pr, pkg: candidates[0].pkg };
+}
+
+/**
+ * Calcula probabilidade de bandeira promocional
+ */
+function promoChanceForPackage(pr, pkg) {
+  if (!pkg.paid) return 0;
+  if (!pr.campaign || !pr.campaign.rewardsEnabled) return 0;
+  if (pr.campaign.promoBudgetLeft <= 0) return 0;
+
+  const ratio = pr.campaign.promoBudgetLeft / Math.max(pkg.flagsLeft, 1);
+  const scaled = ratio * 500;
+  return Math.max(0.05, Math.min(0.30, scaled));
+}
+
+/**
+ * Cria uma nova bandeira
+ */
+function createFlagCandidate(type, selected = null) {
+  if (!currentPosition) return null;
+
+  let radius = type === "PR" ? 1 + Math.random() * 15 : 1 + Math.random() * 12;
+  const point = randomOffset(currentPosition.lat, currentPosition.lng, radius);
+
+  const flag = {
+    id: randomId("FLAG"),
+    type,
+    lat: point.lat,
+    lng: point.lng,
+    marker: null,
+    createdAt: Date.now()
+  };
+
+  if (type === "PR" && selected) {
+    flag.prId = selected.pr.id;
+    flag.packageId = selected.pkg.id;
+    flag.promo = Math.random() < promoChanceForPackage(selected.pr, selected.pkg);
+  }
+
+  return flag;
+}
+
+/**
+ * Atualiza bandeiras manualmente
+ */
+function manualRefreshFlags() {
+  refreshFlags(true);
+  updateVisibleFlags();
+  announceToScreenReader("Bandeiras atualizadas.");
+}
+
+/**
+ * Atualiza bandeiras se necessário
+ */
+function refreshFlags(force) {
+  if (!currentPosition) return;
+
+  const now = Date.now();
+  let shouldRefresh = force || !lastFlagRefreshCenter || now - lastFlagRefreshTime > 15000;
+
+  if (!shouldRefresh && lastFlagRefreshCenter) {
+    const moved = getDistanceMeters(lastFlagRefreshCenter.lat, lastFlagRefreshCenter.lng, currentPosition.lat, currentPosition.lng);
+    if (moved > 10) shouldRefresh = true;
+  }
+
+  if (!shouldRefresh) return;
+
+  clearFlags();
+
+  // Criar bandeira ZAP
+  const zapFlag = createFlagCandidate("ZAP");
+  if (zapFlag) allFlags.push(zapFlag);
+
+  // Criar bandeira PR
+  const selected = weightedPackagePick();
+  if (selected) {
+    const prFlag = createFlagCandidate("PR", selected);
+    if (prFlag) allFlags.push(prFlag);
+  }
+
+  lastFlagRefreshCenter = { ...currentPosition };
+  lastFlagRefreshTime = now;
+}
+
+/**
+ * Atualiza visibilidade das bandeiras
+ */
+function updateVisibleFlags() {
+  if (!currentPosition || !map) return;
+
+  allFlags.forEach(flag => {
+    const dist = getDistanceMeters(currentPosition.lat, currentPosition.lng, flag.lat, flag.lng);
+    const visible = dist <= state.player.vision;
+
+    if (visible && !flag.marker) {
+      let color = "#00BFFF";
+      if (flag.type === "PR") {
+        const pr = findPR(flag.prId);
+        color = pr ? pr.color : "#00ff00";
+      }
+
+      flag.marker = L.marker([flag.lat, flag.lng], {
+        icon: createFlagIcon(color)
+      }).addTo(map);
+
+      flag.marker.on("click", () => openFlagModal(flag.id));
+    }
+
+    if (!visible && flag.marker) {
+      try {
+        map.removeLayer(flag.marker);
+      } catch (e) {}
+      flag.marker = null;
+    }
+  });
+}
+
+/**
+ * Remove uma bandeira
+ */
+function removeFlag(flagId) {
+  const flag = allFlags.find(f => f.id === flagId);
+  if (flag && flag.marker && map) {
+    try {
+      map.removeLayer(flag.marker);
+    } catch (e) {}
+  }
+  allFlags = allFlags.filter(f => f.id !== flagId);
+}
+
+// ============================================================
+// MODAIS DE BANDEIRAS
+// ============================================================
+
+/**
+ * Abre modal de bandeira
+ */
+function openFlagModal(flagId) {
+  const flag = allFlags.find(f => f.id === flagId);
+  if (!flag || !currentPosition) return;
+
+  const dist = getDistanceMeters(currentPosition.lat, currentPosition.lng, flag.lat, flag.lng);
+  const canCollect = dist <= 5;
+  const content = document.getElementById("flag-modal-content");
+
+  if (flag.type === "ZAP") {
+    content.innerHTML = `
+      <header class="panel-header">
+        <h2 style="margin:0;">🔵 BANDEIRA ZAP</h2>
+        <button class="btn-dark btn-small" onclick="closeFlagModal()" aria-label="Fechar">✕</button>
+      </header>
+      <article class="item">
+        <p>Esta bandeira dá <strong>+10% energia</strong> e aumenta o teu <strong>skill</strong>.</p>
+      </article>
+      <article class="item">
+        <p>📏 Distância: <strong>${Math.round(dist)} m</strong></p>
+        <p>Podes recolher a até <strong>5 m</strong> de distância.</p>
+      </article>
+      <div class="btn-row">
+        <button ${canCollect ? '' : 'disabled'} onclick="collectZapFlag('${escapeHtml(flag.id)}')">
+          ${canCollect ? '✓ RECOLHER' : '📍 APROXIMA-TE'}
+        </button>
+        <button class="btn-dark" onclick="closeFlagModal()">CANCELAR</button>
+      </div>
+    `;
+  } else {
+    const pr = findPR(flag.prId);
+    if (!pr) return;
+
+    const safeColor = sanitizeColor(pr.color);
+    const safeName = escapeHtml(pr.name);
+    const safeShort = escapeHtml(pr.short);
+    const safeAddress = escapeHtml(pr.address || "Sem morada definida");
+    const safeContact = escapeHtml(pr.contact || "Sem contacto");
+    const safeWebsite = pr.website ? escapeHtml(pr.website) : "";
+
+    content.innerHTML = `
+      <header class="panel-header">
+        <h2 style="margin:0;">🚩 BANDEIRA DE EMPRESA</h2>
+        <button class="btn-dark btn-small" onclick="closeFlagModal()" aria-label="Fechar">✕</button>
+      </header>
+      
+      <div class="brand-head">
+        <div class="brand-icon" style="background:${safeColor};">${safeShort}</div>
+        <div>
+          <strong>${safeName}</strong><br>
+          <span class="small">Empresa / PR</span>
+        </div>
+      </div>
+
+      <article class="item">
+        <p><strong>📍 Morada:</strong><br>${safeAddress}</p>
+      </article>
+      
+      <article class="item">
+        <p><strong>📞 Contacto:</strong><br>${safeContact}</p>
+      </article>
+      
+      ${safeWebsite ? `
+      <article class="item">
+        <p><strong>🌐 Website:</strong><br>
+        <a href="${safeWebsite}" target="_blank" rel="noopener" style="color:#0ff;">${safeWebsite}</a></p>
+      </article>
+      ` : ''}
+
+      <article class="item">
+        <p>📏 Distância: <strong>${Math.round(dist)} m</strong></p>
+        <p>Recolhe para descobrir se conta para prémio!</p>
+      </article>
+
+      <div class="btn-row">
+        <button ${canCollect ? '' : 'disabled'} onclick="collectPRFlag('${escapeHtml(flag.id)}')">
+          ${canCollect ? '✓ RECOLHER' : '📍 APROXIMA-TE'}
+        </button>
+        <button class="btn-dark" onclick="closeFlagModal()">CANCELAR</button>
+      </div>
+    `;
+  }
+
+  document.getElementById("flag-modal").classList.remove("hidden");
+}
+
+/**
+ * Fecha modal de bandeira
+ */
+function closeFlagModal() {
+  document.getElementById("flag-modal").classList.add("hidden");
+}
+
+/**
+ * Mostra modal de resultado
+ */
+function showResultModal(html) {
+  document.getElementById("flag-modal-content").innerHTML = html;
+  document.getElementById("flag-modal").classList.remove("hidden");
+}
+
+// ============================================================
+// RECOLHA DE BANDEIRAS
+// ============================================================
+
+/**
+ * Recolhe bandeira ZAP
+ */
+function collectZapFlag(flagId) {
+  const flag = allFlags.find(f => f.id === flagId);
+  if (!flag || !currentPosition) return;
+
+  const dist = getDistanceMeters(currentPosition.lat, currentPosition.lng, flag.lat, flag.lng);
+  if (dist > 5) {
+    alert("Tens de estar a 5m ou menos para recolher.");
+    return;
+  }
+
+  // Atualizar estado
+  state.player.energy = Math.min(100, state.player.energy + 10);
+  state.player.zapFlags += 1;
+  state.player.totalFlags += 1;
+
+  updateSkillAndVision();
+  if (visionCircle) visionCircle.setRadius(state.player.vision);
+
+  // Remover e criar nova
+  removeFlag(flagId);
+  const replacement = createFlagCandidate("ZAP");
+  if (replacement) allFlags.push(replacement);
+
+  // Atualizar UI
+  renderTopBar();
+  renderPanelIfOpen();
+  updateVisibleFlags();
+  updateFogOverlay();
+  saveState();
+
+  // Mostrar resultado
+  showResultModal(`
+    <header class="panel-header">
+      <h2 style="margin:0;">🎉 BANDEIRA ZAP RECOLHIDA!</h2>
+      <button class="btn-dark btn-small" onclick="closeFlagModal()">✕</button>
+    </header>
+    <article class="item ok">
+      <p>Ganhaste <strong>+10% energia</strong>!</p>
+    </article>
+    <article class="item">
+      <p>⚡ Energia atual: <strong>${state.player.energy}%</strong></p>
+      <p>🎯 Skill atual: <strong>${state.player.skill}</strong></p>
+      <p>👁️ Visão atual: <strong>${state.player.vision.toFixed(1)}m</strong></p>
+    </article>
+    <div class="btn-row">
+      <button onclick="closeFlagModal()">CONTINUAR</button>
+    </div>
+  `);
+
+  announceToScreenReader("Bandeira ZAP recolhida. Mais 10% energia.");
+}
+
+/**
+ * Recolhe bandeira PR
+ */
+function collectPRFlag(flagId) {
+  const flag = allFlags.find(f => f.id === flagId);
+  if (!flag || !currentPosition) return;
+
+  const dist = getDistanceMeters(currentPosition.lat, currentPosition.lng, flag.lat, flag.lng);
+  if (dist > 5) {
+    alert("Tens de estar a 5m ou menos para recolher.");
+    return;
+  }
+
+  if (state.player.energy <= 0) {
+    alert("Sem energia! Procura bandeiras ZAP para recuperar.");
+    return;
+  }
+
+  const pr = findPR(flag.prId);
+  if (!pr) {
+    console.error("PR não encontrado:", flag.prId);
+    return;
+  }
+
+  // Decrementar bandeiras do pacote
+  const pkg = pr.packages.find(p => p.id === flag.packageId);
+  if (pkg && pkg.flagsLeft > 0) {
+    pkg.flagsLeft -= 1;
+  }
+
+  // Garantir dados do jogador
+  ensurePlayerDataForPR(pr.id);
+
+  // Atualizar contadores
+  state.player.prFlags += 1;
+  state.player.totalFlags += 1;
+  state.player.totalSeenByPR[pr.id] += 1;
+
+  updateSkillAndVision();
+  if (visionCircle) visionCircle.setRadius(state.player.vision);
+
+  // Variáveis para resultado
+  let title = "🚩 BANDEIRA RECOLHIDA!";
+  let resultBody = "";
+  let rewardEarned = false;
+  let rewardText = "";
+
+  // Verificar se é promocional
+  if (flag.promo && pr.campaign && pr.campaign.rewardsEnabled && pr.campaign.promoBudgetLeft > 0) {
+    pr.campaign.promoBudgetLeft -= 1;
+    pr.campaign.rewardsGiven = (pr.campaign.rewardsGiven || 0) + 1;
+
+    state.player.promoProgressByPR[pr.id].current += 1;
+    state.player.promoProgressByPR[pr.id].total += 1;
+
+    const progress = state.player.promoProgressByPR[pr.id];
+
+    // Verificar se atingiu 20
+    if (progress.current >= 20 && pr.campaign.rewardsGiven <= pr.campaign.promoLotsActive) {
+      rewardEarned = true;
+      rewardText = pr.campaign.rewardText || "Prémio especial!";
+
+      // Criar QR
+      generateQR(pr);
+
+      // Reset progresso
+      progress.current -= 20;
+
+      title = "🎉 PRÉMIO DESBLOQUEADO!";
+      resultBody = `
+        <article class="item ok" style="background: rgba(0,255,0,0.15);">
+          <p><strong>PARABÉNS!</strong> Ganhaste um prémio:</p>
+          <p style="font-size: 16px; margin: 10px 0;"><strong>${escapeHtml(rewardText)}</strong></p>
+          <p class="small">Vai aos teus <strong>Cupões QR</strong> (🎫) para usar o prémio na loja!</p>
+        </article>
+      `;
+    } else {
+      resultBody = `
+        <article class="item">
+          <p>🎯 <strong>Bandeira promocional!</strong></p>
+          <p>Progresso: <strong>${progress.current}/20</strong> para próximo prémio</p>
+          <div class="progress-bar">
+            <div class="progress-bar-fill" style="width: ${(progress.current / 20) * 100}%; background: ${sanitizeColor(pr.color)};"></div>
+          </div>
+        </article>
+      `;
+    }
+  } else {
+    const progress = state.player.promoProgressByPR[pr.id];
+    resultBody = `
+      <article class="item">
+        <p>Bandeira de <strong>${escapeHtml(pr.name)}</strong> recolhida.</p>
+        <p class="small">Total desta empresa: ${state.player.totalSeenByPR[pr.id]}</p>
+        ${progress.current > 0 ? `<p class="small">Promo acumuladas: ${progress.current}/20</p>` : ''}
+      </article>
+    `;
+  }
+
+  // Remover e criar nova
+  removeFlag(flagId);
+  const selected = weightedPackagePick();
+  if (selected) {
+    const replacement = createFlagCandidate("PR", selected);
+    if (replacement) allFlags.push(replacement);
+  }
+
+  // Atualizar UI
+  renderTopBar();
+  renderPanelIfOpen();
+  updateVisibleFlags();
+  updateFogOverlay();
+  saveState();
+
+  // Mostrar resultado
+  const safeColor = sanitizeColor(pr.color);
+  const safeName = escapeHtml(pr.name);
+  const safeShort = escapeHtml(pr.short);
+
+  showResultModal(`
+    <header class="panel-header">
+      <h2 style="margin:0;">${title}</h2>
+      <button class="btn-dark btn-small" onclick="closeFlagModal()">✕</button>
+    </header>
+    
+    <div class="brand-head">
+      <div class="brand-icon" style="background:${safeColor};">${safeShort}</div>
+      <div>
+        <strong>${safeName}</strong><br>
+        <span class="small">Empresa / PR</span>
+      </div>
+    </div>
+    
+    ${resultBody}
+    
+    <article class="item">
+      <p>🚩 Bandeiras PR total: <strong>${state.player.prFlags}</strong></p>
+      <p>🎯 Skill: <strong>${state.player.skill}</strong></p>
+    </article>
+    
+    <div class="btn-row">
+      <button onclick="closeFlagModal()">CONTINUAR</button>
+      ${rewardEarned ? '<button class="btn-dark" onclick="closeFlagModal(); openPanel(\'qrs\');">VER CUPÕES</button>' : ''}
+    </div>
+  `);
+
+  const announcement = rewardEarned ? "Prémio ganho! " + rewardText : "Bandeira de " + pr.name + " recolhida.";
+  announceToScreenReader(announcement);
+}
+
+// ============================================================
+// GESTÃO DE QR CODES
+// ============================================================
+
+/**
+ * Gera um novo QR code
+ */
+function generateQR(pr) {
+  const qrCode = {
+    id: randomId("QR"),
+    code: "ZAP-" + escapeHtml(pr.short) + "-" + Math.random().toString(36).slice(2, 8).toUpperCase(),
+    prId: pr.id,
+    prName: pr.name,
+    rewardText: pr.campaign.rewardText || "Oferta",
+    createdAt: Date.now(),
+    expiresAt: Date.now() + (15 * 24 * 60 * 60 * 1000), // 15 dias
+    status: "active"
+  };
+
+  if (!state.player.qrs) state.player.qrs = [];
+  state.player.qrs.push(qrCode);
+  saveState();
+
+  announceToScreenReader("QR code criado. Válido por 15 dias.");
+}
+
+/**
+ * Remove QRs expirados
+ */
+function expireOldQrs() {
+  const now = Date.now();
+
+  if (!state.player.qrs) state.player.qrs = [];
+  if (!state.player.usedQrs) state.player.usedQrs = [];
+
+  const active = [];
+  const expired = [];
+
+  state.player.qrs.forEach(qr => {
+    if (qr.status === "active" && qr.expiresAt > now) {
+      active.push(qr);
+    } else if (qr.status === "active") {
+      qr.status = "expired";
+      expired.push(qr);
+    }
+  });
+
+  if (expired.length > 0) {
+    state.player.usedQrs.push(...expired);
+    saveState();
+  }
+
+  state.player.qrs = active;
+}
+
+/**
+ * Marca QR como usado
+ */
+function useQR(qrId) {
+  const qr = state.player.qrs.find(q => q.id === qrId);
+  if (!qr) return;
+
+  qr.status = "used";
+  qr.usedAt = Date.now();
+
+  if (!state.player.usedQrs) state.player.usedQrs = [];
+  state.player.usedQrs.push({ ...qr });
+
+  state.player.qrs = state.player.qrs.filter(q => q.id !== qrId);
+
+  saveState();
+  renderPanelIfOpen();
+  alert("QR validado e usado com sucesso!");
+  announceToScreenReader("QR code usado.");
+}
+
+/**
+ * Valida QR manualmente
+ */
+function validateQRManual() {
+  const input = document.getElementById("qr-manual-code");
+  const result = document.getElementById("scanner-result");
+
+  if (!input || !result) return;
+
+  const code = input.value.trim().toUpperCase();
+
+  if (!code) {
+    result.innerHTML = '<span class="warning">Escreve um código QR.</span>';
+    return;
+  }
+
+  expireOldQrs();
+
+  const qr = state.player.qrs.find(q => q.code.toUpperCase() === code);
+
+  if (!qr) {
+    result.innerHTML = '<span class="danger">QR inválido, expirado ou já usado.</span>';
+    return;
+  }
+
+  useQR(qr.id);
+  result.innerHTML = '<span class="ok">✓ QR válido! Prémio entregue.</span>';
+  input.value = "";
+
+  if (typeof renderPRDashboard === "function") {
+    renderPRDashboard();
+  }
+}
