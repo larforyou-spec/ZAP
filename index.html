@@ -4,11 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>ZAP FLAGS</title>
-
   <link rel="icon" href="./icon.png" type="image/png" />
   <link rel="manifest" href="./manifest.json" />
   <meta name="theme-color" content="#000000" />
-
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
   <style>
@@ -43,6 +41,10 @@
       cursor: not-allowed;
     }
 
+    button:hover:not(:disabled) {
+      opacity: 0.9;
+    }
+
     .btn-dark {
       background: #181818;
       color: #0f0;
@@ -69,6 +71,10 @@
       background: #101010;
       color: #0f0;
       font-size: 14px;
+    }
+
+    input:focus, select:focus, textarea:focus {
+      outline: 2px solid #00ff66;
     }
 
     textarea {
@@ -98,8 +104,8 @@
     }
 
     .warning { color: #ffb347; font-weight: bold; }
-    .danger  { color: #ff8686; font-weight: bold; }
-    .ok      { color: #8fff8f; font-weight: bold; }
+    .danger { color: #ff8686; font-weight: bold; }
+    .ok { color: #8fff8f; font-weight: bold; }
 
     #login-screen,
     #game-screen,
@@ -110,7 +116,7 @@
       height: 100%;
     }
 
-    /* LOGIN */
+    /* ========== LOGIN ========== */
     #login-screen {
       background:
         radial-gradient(circle at 20% 20%, rgba(0,255,0,.12), transparent 25%),
@@ -211,7 +217,7 @@
       padding: 0;
       margin: -1px;
       overflow: hidden;
-      clip: rect(0, 0, 0, 0);
+      clip: rect(0,0,0,0);
       white-space: nowrap;
       border: 0;
     }
@@ -255,7 +261,7 @@
       color: #a7fca7;
     }
 
-    /* JOGO */
+    /* ========== JOGO / MAPA ========== */
     #map-wrap {
       position: absolute;
       inset: 0;
@@ -347,7 +353,7 @@
       box-shadow: 0 0 10px rgba(0,255,0,.15);
     }
 
-    /* OFFLINE */
+    /* ========== OFFLINE CONTROLS ========== */
     #offline-controls {
       position: absolute;
       left: 10px;
@@ -371,6 +377,11 @@
       margin-bottom: 4px;
       padding: 2px;
       border-bottom: 1px solid rgba(0,255,0,.25);
+      cursor: grab;
+    }
+
+    .drag-handle:active {
+      cursor: grabbing;
     }
 
     .offline-size-row {
@@ -398,6 +409,7 @@
       visibility: hidden;
     }
 
+    /* ========== SIDE PANEL ========== */
     #side-panel {
       position: absolute;
       left: 8px;
@@ -418,6 +430,20 @@
       border-radius: 10px;
       padding: 10px;
       margin-bottom: 8px;
+    }
+
+    .item:last-child {
+      margin-bottom: 0;
+    }
+
+    .item h3 {
+      margin: 0 0 8px 0;
+      font-size: 14px;
+      color: #0f0;
+    }
+
+    .item p {
+      margin: 4px 0;
     }
 
     .badge {
@@ -444,6 +470,12 @@
       gap: 10px;
     }
 
+    .panel-header h2 {
+      margin: 0;
+      font-size: 16px;
+    }
+
+    /* ========== MODALS ========== */
     .modal {
       position: absolute;
       top: 50%;
@@ -457,6 +489,8 @@
       border-radius: 14px;
       padding: 16px;
       box-shadow: 0 0 25px rgba(0,255,0,.22);
+      max-height: 90vh;
+      overflow-y: auto;
     }
 
     .brand-head {
@@ -476,6 +510,7 @@
       font-weight: 900;
       font-size: 13px;
       color: white;
+      flex-shrink: 0;
     }
 
     .qr-code {
@@ -488,9 +523,10 @@
       font-family: monospace;
       word-break: break-all;
       color: #fff;
+      font-size: 14px;
     }
 
-    /* PR */
+    /* ========== PR SCREEN ========== */
     #pr-screen {
       background: #000;
       z-index: 9998;
@@ -505,6 +541,11 @@
       border-radius: 14px;
       padding: 16px;
       background: rgba(0,20,0,.15);
+    }
+
+    .pr-box h1 {
+      margin-top: 0;
+      text-shadow: 0 0 10px #0f0;
     }
 
     .pack-row {
@@ -522,6 +563,11 @@
       background: rgba(0,25,0,.18);
       flex: 1;
       min-width: 200px;
+      transition: all 0.2s;
+    }
+
+    .pack-card:hover {
+      background: rgba(0,50,0,.25);
     }
 
     .pack-card.selected {
@@ -529,6 +575,12 @@
       box-shadow: 0 0 10px rgba(255,255,255,.2);
     }
 
+    .pack-card h4 {
+      margin: 0 0 8px 0;
+      color: #0f0;
+    }
+
+    /* ========== MARKERS ========== */
     .player-marker {
       width: 28px;
       height: 28px;
@@ -583,999 +635,185 @@
       background: #000;
       color: #0f0;
     }
+
+    /* ========== PROGRESS BAR ========== */
+    .progress-bar {
+      width: 100%;
+      height: 6px;
+      background: #222;
+      border-radius: 999px;
+      overflow: hidden;
+      margin-top: 8px;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      transition: width 0.3s;
+    }
+
+    /* ========== RESPONSIVE ========== */
+    @media (max-width: 480px) {
+      .pack-card {
+        min-width: 100%;
+      }
+      
+      .btn-row {
+        flex-direction: column;
+      }
+      
+      .btn-row button {
+        width: 100%;
+      }
+    }
   </style>
 </head>
 <body>
 
-  <!-- ====== ECRÃ DE LOGIN ====== -->
-  <main id="login-screen" role="main" aria-labelledby="login-title">
-    <section class="login-box">
-      <h1 id="login-title">ZAP FLAGS</h1>
-      <p class="sub">
-        Escolhe como queres entrar. O jogador é a opção principal.
-        A recuperação de senha está em modo demonstração nesta fase.
-      </p>
+<!-- ========================================== -->
+<!-- ECRÃ DE LOGIN -->
+<!-- ========================================== -->
+<main id="login-screen" role="main" aria-labelledby="login-title">
+  <section class="login-box">
+    <h1 id="login-title">⚡ ZAP FLAGS</h1>
+    <p class="sub">
+      Escolhe como queres entrar. O jogador é a opção principal.
+      A recuperação de senha está em modo demonstração nesta fase.
+    </p>
 
-      <nav class="entry-switch" role="tablist" aria-label="Tipo de conta">
-        <button id="btn-entry-jg" class="entry-jg active" role="tab" aria-selected="true" aria-controls="jg-form" onclick="switchEntryMode('JG')">
-          ENTRAR COMO JOGADOR
-        </button>
-        <button id="btn-entry-pr" class="entry-pr" role="tab" aria-selected="false" aria-controls="pr-form" onclick="switchEntryMode('PR')">
-          SOU EMPRESA / PR
-        </button>
-      </nav>
-
-      <!-- FORMULÁRIO JOGADOR -->
-      <form id="jg-form" role="tabpanel" aria-labelledby="btn-entry-jg" onsubmit="return false;">
-        <h2 class="form-title">Jogador</h2>
-
-        <div class="form-group">
-          <label for="player-name">Nome do jogador</label>
-          <input id="player-name" type="text" placeholder="Ex: João Silva" autocomplete="name" required />
-        </div>
-
-        <div class="form-group">
-          <label for="player-contact">Email ou número de telefone</label>
-          <input id="player-contact" type="text" placeholder="Ex: joao@email.com ou 912345678" autocomplete="email" required />
-        </div>
-
-        <div class="form-group">
-          <label for="player-password">Criar senha</label>
-          <input id="player-password" type="password" placeholder="Mínimo 6 caracteres" autocomplete="new-password" minlength="6" required />
-        </div>
-
-        <div class="form-group">
-          <label for="player-password-confirm">Confirmar senha</label>
-          <input id="player-password-confirm" type="password" placeholder="Repete a senha" autocomplete="new-password" minlength="6" required />
-        </div>
-
-        <div class="form-group">
-          <label for="player-avatar-mode">Tipo de avatar</label>
-          <select id="player-avatar-mode">
-            <option value="male">Avatar masculino</option>
-            <option value="female">Avatar feminino</option>
-            <option value="photo">Usar foto por URL</option>
-          </select>
-        </div>
-
-        <div class="form-group">
-          <label for="player-photo-url">URL da foto (opcional)</label>
-          <input id="player-photo-url" type="url" placeholder="https://exemplo.com/foto.jpg" />
-        </div>
-
-        <div class="btn-row">
-          <button type="button" onclick="registerAccount('JG')">REGISTAR</button>
-          <button type="button" class="btn-dark" onclick="loginAccount('JG')">ENTRAR</button>
-          <button type="button" class="btn-dark" onclick="recoverPassword('JG')">RECUPERAR SENHA</button>
-        </div>
-
-        <output id="jg-auth-msg" class="small auth-msg" aria-live="polite"></output>
-      </form>
-
-      <!-- FORMULÁRIO EMPRESA/PR -->
-      <form id="pr-form" class="hidden" role="tabpanel" aria-labelledby="btn-entry-pr" onsubmit="return false;">
-        <h2 class="form-title">Empresa / PR</h2>
-
-        <div class="form-group">
-          <label for="pr-company-name">Nome da empresa</label>
-          <input id="pr-company-name" type="text" placeholder="Ex: Café Central" autocomplete="organization" required />
-        </div>
-
-        <div class="form-group">
-          <label for="pr-contact">Email ou número de telefone</label>
-          <input id="pr-contact" type="text" placeholder="Ex: empresa@email.com ou 212345678" autocomplete="email" required />
-        </div>
-
-        <div class="form-group">
-          <label for="pr-password">Criar senha</label>
-          <input id="pr-password" type="password" placeholder="Mínimo 6 caracteres" autocomplete="new-password" minlength="6" required />
-        </div>
-
-        <div class="form-group">
-          <label for="pr-password-confirm">Confirmar senha</label>
-          <input id="pr-password-confirm" type="password" placeholder="Repete a senha" autocomplete="new-password" minlength="6" required />
-        </div>
-
-        <div class="form-group">
-          <label for="pr-postal-code">Código postal da loja</label>
-          <input id="pr-postal-code" type="text" placeholder="Ex: 1000-001" autocomplete="postal-code" pattern="[0-9]{4}-[0-9]{3}" title="Formato: 0000-000" required />
-        </div>
-
-        <div class="form-group">
-          <label for="pr-lat">Latitude da loja (opcional)</label>
-          <input id="pr-lat" type="number" step="any" min="-90" max="90" placeholder="Ex: 38.7223" inputmode="decimal" />
-        </div>
-
-        <div class="form-group">
-          <label for="pr-lng">Longitude da loja (opcional)</label>
-          <input id="pr-lng" type="number" step="any" min="-180" max="180" placeholder="Ex: -9.1393" inputmode="decimal" />
-        </div>
-
-        <div class="btn-row">
-          <button type="button" onclick="registerAccount('PR')">REGISTAR</button>
-          <button type="button" class="btn-dark" onclick="loginAccount('PR')">ENTRAR</button>
-          <button type="button" class="btn-dark" onclick="recoverPassword('PR')">RECUPERAR SENHA</button>
-        </div>
-
-        <output id="pr-auth-msg" class="small auth-msg" aria-live="polite"></output>
-
-        <aside class="pack-preview" aria-label="Informação sobre pacotes disponíveis">
-          <h4>Pacotes PR</h4>
-          <article class="pack-item">
-            <strong>Mínimo — 10€</strong>
-            <p>1.000 bandeiras · 5 km · 50 lotes</p>
-          </article>
-          <article class="pack-item">
-            <strong>Médio — 15€</strong>
-            <p>2.500 bandeiras · 15 km · 125 lotes · 2 bingos</p>
-          </article>
-          <article class="pack-item">
-            <strong>Grande — 25€</strong>
-            <p>10.000 bandeiras · 50 km · 500 lotes · 3 bingos</p>
-          </article>
-          <article class="pack-item">
-            <strong>Enorme — 50€</strong>
-            <p>25.000 bandeiras · país inteiro · 1.250 lotes · 5 bingos</p>
-          </article>
-        </aside>
-      </form>
-    </section>
-  </main>
-  <!-- ====== ECRÃ DO JOGO ====== -->
-  <section id="game-screen" class="hidden" role="application" aria-label="Área do jogo ZAP FLAGS">
-    <div id="map-wrap">
-      <div id="map"></div>
-      <div id="fog-overlay" aria-hidden="true"></div>
-    </div>
-
-    <header id="top-strip" role="status" aria-live="polite">
-      <div class="energy-bar" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" aria-label="Nível de energia">
-        <div id="energy-fill"></div>
-      </div>
-      <div id="top-strip-text">
-        <span id="energy-text">Energia: 100%</span>
-        <span id="mode-text">Modo: -</span>
-      </div>
-    </header>
-
-    <nav id="floating-buttons" aria-label="Menu de ações rápidas">
-      <button class="float-btn btn-dark" onclick="openPanel('progress')" aria-label="Ver progresso" title="Progresso">📈</button>
-      <button class="float-btn btn-dark" onclick="openPanel('qrs')" aria-label="Ver cupões QR" title="Cupões QR">🎫</button>
-      <button class="float-btn btn-dark" onclick="openPanel('account')" aria-label="Minha conta" title="Conta">👤</button>
-      <button class="float-btn btn-dark" onclick="centerOnPlayer()" aria-label="Centrar no jogador" title="Centrar mapa">📍</button>
+    <nav class="entry-switch" role="tablist" aria-label="Tipo de conta">
+      <button 
+        id="btn-entry-jg" 
+        class="entry-jg active" 
+        role="tab" 
+        aria-selected="true" 
+        aria-controls="jg-form" 
+        onclick="switchEntryMode('JG')">
+        ENTRAR COMO JOGADOR
+      </button>
+      <button 
+        id="btn-entry-pr" 
+        class="entry-pr" 
+        role="tab" 
+        aria-selected="false" 
+        aria-controls="pr-form" 
+        onclick="switchEntryMode('PR')">
+        SOU EMPRESA / PR
+      </button>
     </nav>
 
-    <aside id="offline-controls" class="hidden" role="region" aria-label="Controlos de movimento manual">
-      <div class="drag-handle" role="button" tabindex="0" aria-label="Arrastar painel">⋮⋮</div>
-      <div class="offline-size-row">
-        <button class="btn-dark btn-small" onclick="resizeOfflineControls(-10)" aria-label="Diminuir painel">A-</button>
-        <button class="btn-dark btn-small" onclick="resizeOfflineControls(10)" aria-label="Aumentar painel">A+</button>
+    <!-- FORMULÁRIO JOGADOR -->
+    <form id="jg-form" role="tabpanel" aria-labelledby="btn-entry-jg" onsubmit="return false;">
+      <h2 class="form-title">Jogador</h2>
+
+      <div class="form-group">
+        <label for="player-name">Nome do jogador</label>
+        <input id="player-name" type="text" placeholder="Ex: João Silva" autocomplete="name" required />
       </div>
-      <div class="dpad" role="group" aria-label="Controlos direcionais">
-        <div class="empty">.</div>
-        <button onclick="moveHomePlayer(0, 1)" aria-label="Mover para cima">⬆</button>
-        <div class="empty">.</div>
-        <button onclick="moveHomePlayer(-1, 0)" aria-label="Mover para esquerda">⬅</button>
-        <button onclick="manualRefreshFlags()" aria-label="Atualizar bandeiras">⟳</button>
-        <button onclick="moveHomePlayer(1, 0)" aria-label="Mover para direita">➡</button>
-        <div class="empty">.</div>
-        <button onclick="moveHomePlayer(0, -1)" aria-label="Mover para baixo">⬇</button>
-        <div class="empty">.</div>
+
+      <div class="form-group">
+        <label for="player-contact">Email ou número de telefone</label>
+        <input id="player-contact" type="text" placeholder="Ex: joao@email.com ou 912345678" autocomplete="email" required />
       </div>
-    </aside>
 
-    <aside id="side-panel" class="hidden" role="complementary" aria-labelledby="side-panel-title">
-      <header class="panel-header">
-        <h2 id="side-panel-title">Painel</h2>
-        <button class="btn-dark btn-small" onclick="closePanel()" aria-label="Fechar painel">X</button>
-      </header>
-      <div id="side-panel-content"></div>
-    </aside>
+      <div class="form-group">
+        <label for="player-password">Criar senha</label>
+        <input id="player-password" type="password" placeholder="Mínimo 6 caracteres" autocomplete="new-password" minlength="6" required />
+      </div>
+
+      <div class="form-group">
+        <label for="player-password-confirm">Confirmar senha</label>
+        <input id="player-password-confirm" type="password" placeholder="Repete a senha" autocomplete="new-password" minlength="6" required />
+      </div>
+
+      <div class="form-group">
+        <label for="player-avatar-mode">Tipo de avatar</label>
+        <select id="player-avatar-mode">
+          <option value="male">Avatar masculino</option>
+          <option value="female">Avatar feminino</option>
+          <option value="photo">Usar foto por URL</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="player-photo-url">URL da foto (opcional)</label>
+        <input id="player-photo-url" type="url" placeholder="https://exemplo.com/foto.jpg" />
+      </div>
+
+      <div class="btn-row">
+        <button type="button" onclick="registerAccount('JG')">REGISTAR</button>
+        <button type="button" class="btn-dark" onclick="loginAccount('JG')">ENTRAR</button>
+        <button type="button" class="btn-dark" onclick="recoverPassword('JG')">RECUPERAR SENHA</button>
+      </div>
+
+      <output id="jg-auth-msg" class="small auth-msg" aria-live="polite"></output>
+    </form>
+
+    <!-- FORMULÁRIO EMPRESA/PR -->
+    <form id="pr-form" class="hidden" role="tabpanel" aria-labelledby="btn-entry-pr" onsubmit="return false;">
+      <h2 class="form-title">Empresa / PR</h2>
+
+      <div class="form-group">
+        <label for="pr-company-name">Nome da empresa</label>
+        <input id="pr-company-name" type="text" placeholder="Ex: Café Central" autocomplete="organization" required />
+      </div>
+
+      <div class="form-group">
+        <label for="pr-contact">Email ou número de telefone</label>
+        <input id="pr-contact" type="text" placeholder="Ex: empresa@email.com ou 212345678" autocomplete="email" required />
+      </div>
+
+      <div class="form-group">
+        <label for="pr-password">Criar senha</label>
+        <input id="pr-password" type="password" placeholder="Mínimo 6 caracteres" autocomplete="new-password" minlength="6" required />
+      </div>
+
+      <div class="form-group">
+        <label for="pr-password-confirm">Confirmar senha</label>
+        <input id="pr-password-confirm" type="password" placeholder="Repete a senha" autocomplete="new-password" minlength="6" required />
+      </div>
+
+      <div class="form-group">
+        <label for="pr-postal-code">Código postal da loja</label>
+        <input id="pr-postal-code" type="text" placeholder="Ex: 1000-001" autocomplete="postal-code" />
+      </div>
+
+      <div class="form-group">
+        <label for="pr-lat">Latitude da loja (opcional)</label>
+        <input id="pr-lat" type="number" step="any" min="-90" max="90" placeholder="Ex: 38.7223" inputmode="decimal" />
+      </div>
+
+      <div class="form-group">
+        <label for="pr-lng">Longitude da loja (opcional)</label>
+        <input id="pr-lng" type="number" step="any" min="-180" max="180" placeholder="Ex: -9.1393" inputmode="decimal" />
+      </div>
+
+      <div class="btn-row">
+        <button type="button" onclick="registerAccount('PR')">REGISTAR</button>
+        <button type="button" class="btn-dark" onclick="loginAccount('PR')">ENTRAR</button>
+        <button type="button" class="btn-dark" onclick="recoverPassword('PR')">RECUPERAR SENHA</button>
+      </div>
+
+      <output id="pr-auth-msg" class="small auth-msg" aria-live="polite"></output>
+
+      <aside class="pack-preview" aria-label="Informação sobre pacotes disponíveis">
+        <h4>📦 Pacotes PR Disponíveis</h4>
+        <article class="pack-item">
+          <strong>Mínimo — 10€</strong>
+          <p>1.000 bandeiras · 5 km · 50 lotes</p>
+        </article>
+        <article class="pack-item">
+          <strong>Médio — 15€</strong>
+          <p>2.500 bandeiras · 15 km · 125 lotes · 2 bingos</p>
+        </article>
+        <article class="pack-item">
+          <strong>Grande — 25€</strong>
+          <p>10.000 bandeiras · 50 km · 500 lotes · 3 bingos</p>
+        </article>
+        <article class="pack-item">
+          <strong>Enorme — 50€</strong>
+          <p>25.000 bandeiras · país inteiro · 1.250 lotes · 5 bingos</p>
+        </article>
+      </aside>
+    </form>
   </section>
-
-  <!-- MODAL: SELEÇÃO DE MODO -->
-  <div id="mode-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="mode-modal-title">
-    <header class="panel-header">
-      <h2 id="mode-modal-title" style="margin:0;">Como queres jogar?</h2>
-      <button class="btn-dark btn-small" onclick="closeModeModal()" aria-label="Fechar">X</button>
-    </header>
-    <article class="item">
-      <strong>GPS / Rua</strong>
-      <p>Joga a caminhar na rua com localização real.</p>
-    </article>
-    <article class="item">
-      <strong>Offline / Casa</strong>
-      <p>Joga sem GPS real, com movimento manual.</p>
-    </article>
-    <div class="btn-row">
-      <button onclick="requestGPSMode()">ATIVAR GPS</button>
-      <button class="btn-dark" onclick="activateHomeMode()">ENTRAR OFFLINE</button>
-    </div>
-  </div>
-
-  <!-- MODAL: DETALHES DA BANDEIRA -->
-  <div id="flag-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="flag-modal-title">
-    <h2 id="flag-modal-title" class="visually-hidden">Detalhes da bandeira</h2>
-    <div id="flag-modal-content"></div>
-  </div>
-
-  <!-- ====== ECRÃ PR / EMPRESA ====== -->
-  <section id="pr-screen" class="hidden" role="main" aria-labelledby="pr-screen-title">
-    <div class="pr-box">
-      <header>
-        <h1 id="pr-screen-title">PAINEL DA EMPRESA / PR</h1>
-        <p class="small">No primeiro registo o PR recebe 1 pacote mínimo grátis de 1.000 bandeiras sem ofertas.</p>
-      </header>
-      <nav class="btn-row" style="justify-content:flex-start; margin-bottom:16px;">
-        <button onclick="goBackToLogin()">VOLTAR</button>
-      </nav>
-      <main id="pr-dashboard-content"></main>
-    </div>
-  </section>
-
-  <!-- ====== SCRIPTS ====== -->
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script>
-    // ==========================================
-    // CONSTANTES E CONFIGURAÇÃO
-    // ==========================================
-    const STORAGE_KEY = "zap_flags_v2";
-
-    const FREE_PACK = {
-      key: "FREE",
-      label: "Mínimo grátis",
-      price: 0,
-      flags: 1000,
-      radiusKm: 5,
-      paid: false,
-      maxLots: 50,
-      bingos: 0
-    };
-
-    const PACKS = {
-      MINIMO: { key: "MINIMO", label: "Mínimo", price: 10, flags: 1000, radiusKm: 5, paid: true, maxLots: 50, bingos: 0 },
-      MEDIO:  { key: "MEDIO", label: "Médio", price: 15, flags: 2500, radiusKm: 15, paid: true, maxLots: 125, bingos: 2 },
-      GRANDE: { key: "GRANDE", label: "Grande", price: 25, flags: 10000, radiusKm: 50, paid: true, maxLots: 500, bingos: 3 },
-      ENORME: { key: "ENORME", label: "Enorme", price: 50, flags: 25000, radiusKm: Infinity, paid: true, maxLots: 1250, bingos: 5 }
-    };
-
-    // ==========================================
-    // VARIÁVEIS DE ESTADO
-    // ==========================================
-    let selectedPackKey = null;
-    let map = null;
-    let playerMarker = null;
-    let visionCircle = null;
-    let currentPosition = null;
-    let watchId = null;
-    let allFlags = [];
-    let offlineMode = false;
-    let currentOpenPanel = null;
-    let lastPosForEnergy = null;
-    let movedMetersBuffer = 0;
-    let lastMovementTime = Date.now();
-    let lastFlagRefreshCenter = null;
-    let lastFlagRefreshTime = 0;
-    let lastOfflineSuggestion = 0;
-    let gpsCenteredOnce = false;
-    let energyInterval = null;
-
-    // ==========================================
-    // FUNÇÕES UTILITÁRIAS
-    // ==========================================
-    function randomId(prefix) {
-      return prefix + "_" + Math.random().toString(36).slice(2, 10).toUpperCase();
-    }
-
-    function escapeHtml(text) {
-      if (!text) return "";
-      const div = document.createElement("div");
-      div.textContent = text;
-      return div.innerHTML;
-    }
-
-    function sanitizeColor(color) {
-      if (!color || typeof color !== "string") return "#00ff00";
-      const hexPattern = /^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/;
-      if (hexPattern.test(color)) return color;
-      return "#00ff00";
-    }
-
-    function announceToScreenReader(message) {
-      const el = document.createElement("div");
-      el.setAttribute("role", "status");
-      el.setAttribute("aria-live", "polite");
-      el.className = "visually-hidden";
-      el.textContent = message;
-      document.body.appendChild(el);
-      setTimeout(() => el.remove(), 1000);
-    }
-
-    function getDistanceMeters(lat1, lng1, lat2, lng2) {
-      const R = 6371e3;
-      const phi1 = lat1 * Math.PI / 180;
-      const phi2 = lat2 * Math.PI / 180;
-      const dPhi = (lat2 - lat1) * Math.PI / 180;
-      const dLambda = (lng2 - lng1) * Math.PI / 180;
-      const a = Math.sin(dPhi/2) * Math.sin(dPhi/2) + Math.cos(phi1) * Math.cos(phi2) * Math.sin(dLambda/2) * Math.sin(dLambda/2);
-      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-      return R * c;
-    }
-
-    function randomOffset(lat, lng, radiusMeters) {
-      const angle = Math.random() * 2 * Math.PI;
-      const distance = Math.random() * radiusMeters;
-      const latOffset = (distance * Math.cos(angle)) / 111320;
-      const lngOffset = (distance * Math.sin(angle)) / (111320 * Math.cos(lat * Math.PI / 180));
-      return { lat: lat + latOffset, lng: lng + lngOffset };
-    }
-
-    // ==========================================
-    // GESTÃO DE ESTADO
-    // ==========================================
-    function createPackageInstance(packDef, source = "paid") {
-      return {
-        id: randomId("PKG"),
-        key: packDef.key,
-        label: packDef.label,
-        price: packDef.price,
-        flagsInitial: packDef.flags,
-        flagsLeft: packDef.flags,
-        radiusKm: packDef.radiusKm,
-        maxLots: packDef.maxLots,
-        bingos: packDef.bingos,
-        paid: packDef.paid,
-        source,
-        createdAt: Date.now()
-      };
-    }
-
-    function seedPRs() {
-      const demoPack = createPackageInstance(PACKS.MEDIO, "demo");
-      return [{
-        id: "seed1",
-        ownerContact: "demo1@zapflags.pt",
-        ownerPassword: "123456",
-        name: "Café Central",
-        short: "CC",
-        website: "https://cafe-central.pt",
-        contact: "913000001",
-        address: "Rua Central, Porto",
-        postalCode: "4000-100",
-        photo: "",
-        lat: 41.1496,
-        lng: -8.6109,
-        color: "#FF4D4F",
-        packages: [demoPack],
-        campaign: {
-          rewardsEnabled: true,
-          rewardType: "discount",
-          rewardText: "5% de desconto",
-          promoLotsActive: 10,
-          promoBudgetLeft: 200,
-          bingoCountActive: 1,
-          bingoText: "Oferta surpresa na loja",
-          rewardsGiven: 0
-        }
-      }];
-    }
-
-    function defaultState() {
-      return {
-        player: {
-          name: "",
-          contact: "",
-          password: "",
-          avatarMode: "male",
-          avatarPhoto: "",
-          energy: 100,
-          zapFlags: 0,
-          prFlags: 0,
-          totalFlags: 0,
-          skill: 1,
-          vision: 5,
-          promoProgressByPR: {},
-          totalSeenByPR: {},
-          qrs: [],
-          usedQrs: []
-        },
-        prs: seedPRs(),
-        currentPRId: null
-      };
-    }
-
-    function loadState() {
-      try {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        if (!raw) return defaultState();
-        const parsed = JSON.parse(raw);
-        if (!parsed.player) parsed.player = defaultState().player;
-        if (!parsed.player.password) parsed.player.password = "";
-        if (!parsed.player.qrs) parsed.player.qrs = [];
-        if (!parsed.player.usedQrs) parsed.player.usedQrs = [];
-        if (!parsed.prs || !Array.isArray(parsed.prs)) parsed.prs = seedPRs();
-        parsed.prs.forEach(pr => {
-          if (!pr.ownerPassword) pr.ownerPassword = "";
-          if (!pr.packages) pr.packages = [];
-          if (!pr.campaign) {
-            pr.campaign = { rewardsEnabled: false, rewardType: "none", rewardText: "Sem prémio", promoLotsActive: 0, promoBudgetLeft: 0, bingoCountActive: 0, bingoText: "", rewardsGiven: 0 };
-          }
-        });
-        return parsed;
-      } catch (e) {
-        console.error("Erro ao carregar estado:", e);
-        return defaultState();
-      }
-    }
-
-    let state = loadState();
-
-    function saveState() {
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-      } catch (e) {
-        console.error("Erro ao guardar estado:", e);
-      }
-    }
-
-    function findPR(prId) {
-      return state.prs.find(pr => pr.id === prId) || null;
-    }
-
-    function getCurrentManagedPR() {
-      if (!state.currentPRId) return null;
-      return findPR(state.currentPRId);
-    }
-
-    function createShortName(name) {
-      const words = name.trim().split(" ").filter(Boolean);
-      if (!words.length) return "PR";
-      if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
-      return (words[0][0] + words[1][0]).toUpperCase();
-    }
-
-    function ensureAllPlayerData() {
-      if (!state.player.promoProgressByPR) state.player.promoProgressByPR = {};
-      if (!state.player.totalSeenByPR) state.player.totalSeenByPR = {};
-      state.prs.forEach(pr => {
-        if (!state.player.promoProgressByPR[pr.id]) {
-          state.player.promoProgressByPR[pr.id] = { current: 0, total: 0 };
-        }
-        if (typeof state.player.totalSeenByPR[pr.id] !== "number") {
-          state.player.totalSeenByPR[pr.id] = 0;
-        }
-      });
-    }
-
-    function updateSkillAndVision() {
-      const totalFlags = state.player.totalFlags || 0;
-      state.player.skill = Math.floor(1 + Math.log2(totalFlags + 1));
-      state.player.vision = Math.min(20, 5 + (state.player.skill * 0.5));
-    }
-
-    function getPackageTotals(pr) {
-      if (!pr || !pr.packages) return { totalBought: 0, totalLeft: 0, maxRadius: 0, hasPaid: false, maxLotsPaid: 0, totalBingosPaid: 0 };
-      let totalBought = 0, totalLeft = 0, maxRadius = 0, hasPaid = false, maxLotsPaid = 0, totalBingosPaid = 0;
-      pr.packages.forEach(pkg => {
-        totalBought += pkg.flagsInitial || 0;
-        totalLeft += pkg.flagsLeft || 0;
-        if (pkg.radiusKm === Infinity) maxRadius = Infinity;
-        else if (maxRadius !== Infinity) maxRadius = Math.max(maxRadius, pkg.radiusKm || 0);
-        if (pkg.paid) {
-          hasPaid = true;
-          maxLotsPaid += pkg.maxLots || 0;
-          totalBingosPaid += pkg.bingos || 0;
-        }
-      });
-      return { totalBought, totalLeft, maxRadius, hasPaid, maxLotsPaid, totalBingosPaid };
-    }
-    
-    // ==========================================
-    // AUTENTICAÇÃO
-    // ==========================================
-    function switchEntryMode(mode) {
-      const jgForm = document.getElementById("jg-form");
-      const prForm = document.getElementById("pr-form");
-      const btnJG = document.getElementById("btn-entry-jg");
-      const btnPR = document.getElementById("btn-entry-pr");
-      if (!jgForm || !prForm) return;
-
-      if (mode === "JG") {
-        jgForm.classList.remove("hidden");
-        prForm.classList.add("hidden");
-        btnJG.classList.add("active");
-        btnJG.setAttribute("aria-selected", "true");
-        btnPR.classList.remove("active");
-        btnPR.setAttribute("aria-selected", "false");
-      } else {
-        prForm.classList.remove("hidden");
-        jgForm.classList.add("hidden");
-        btnPR.classList.add("active");
-        btnPR.setAttribute("aria-selected", "true");
-        btnJG.classList.remove("active");
-        btnJG.setAttribute("aria-selected", "false");
-      }
-    }
-
-    function registerAccount(type) {
-      if (type === "JG") {
-        const name = document.getElementById("player-name").value.trim();
-        const contact = document.getElementById("player-contact").value.trim();
-        const password = document.getElementById("player-password").value;
-        const passwordConfirm = document.getElementById("player-password-confirm").value;
-        const avatarMode = document.getElementById("player-avatar-mode").value;
-        const photoUrl = document.getElementById("player-photo-url").value.trim();
-        const msg = document.getElementById("jg-auth-msg");
-
-        if (!name || !contact || !password) { msg.innerHTML = '<span class="warning">Preenche todos os campos obrigatórios.</span>'; return; }
-        if (password.length < 6) { msg.innerHTML = '<span class="warning">A senha deve ter pelo menos 6 caracteres.</span>'; return; }
-        if (password !== passwordConfirm) { msg.innerHTML = '<span class="danger">As senhas não coincidem.</span>'; return; }
-
-        state.player.name = name;
-        state.player.contact = contact;
-        state.player.password = password;
-        state.player.avatarMode = avatarMode;
-        state.player.avatarPhoto = photoUrl;
-        saveState();
-        msg.innerHTML = '<span class="ok">Conta criada com sucesso!</span>';
-        setTimeout(() => { showGameScreen(); initMap(); document.getElementById("mode-modal").classList.remove("hidden"); }, 500);
-      }
-
-      if (type === "PR") {
-        const name = document.getElementById("pr-company-name").value.trim();
-        const contact = document.getElementById("pr-contact").value.trim();
-        const password = document.getElementById("pr-password").value;
-        const passwordConfirm = document.getElementById("pr-password-confirm").value;
-        const postalCode = document.getElementById("pr-postal-code").value.trim();
-        const lat = parseFloat(document.getElementById("pr-lat").value) || 38.7223;
-        const lng = parseFloat(document.getElementById("pr-lng").value) || -9.1393;
-        const msg = document.getElementById("pr-auth-msg");
-
-        if (!name || !contact || !password) { msg.innerHTML = '<span class="warning">Preenche todos os campos obrigatórios.</span>'; return; }
-        if (password.length < 6) { msg.innerHTML = '<span class="warning">A senha deve ter pelo menos 6 caracteres.</span>'; return; }
-        if (password !== passwordConfirm) { msg.innerHTML = '<span class="danger">As senhas não coincidem.</span>'; return; }
-
-        const exists = state.prs.find(p => p.ownerContact === contact);
-        if (exists) { msg.innerHTML = '<span class="danger">Já existe uma empresa com esse contacto.</span>'; return; }
-
-        const newPR = {
-          id: randomId("PR"),
-          ownerContact: contact,
-          ownerPassword: password,
-          name: name,
-          short: createShortName(name),
-          website: "",
-          contact: contact,
-          address: "",
-          postalCode: postalCode,
-          photo: "",
-          lat: lat,
-          lng: lng,
-          color: "#" + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0'),
-          packages: [createPackageInstance(FREE_PACK, "free")],
-          campaign: { rewardsEnabled: false, rewardType: "none", rewardText: "Sem prémio", promoLotsActive: 0, promoBudgetLeft: 0, bingoCountActive: 0, bingoText: "", rewardsGiven: 0 }
-        };
-
-        state.prs.push(newPR);
-        state.currentPRId = newPR.id;
-        saveState();
-        msg.innerHTML = '<span class="ok">Empresa registada com sucesso!</span>';
-        setTimeout(() => showPRDashboard(), 500);
-      }
-    }
-
-    function loginAccount(type) {
-      if (type === "JG") {
-        const contact = document.getElementById("player-contact").value.trim();
-        const password = document.getElementById("player-password").value;
-        const msg = document.getElementById("jg-auth-msg");
-
-        if (!contact || !password) { msg.innerHTML = '<span class="warning">Preenche o contacto e a senha.</span>'; return; }
-        if (state.player.contact !== contact) { msg.innerHTML = '<span class="danger">Conta não encontrada.</span>'; return; }
-        if (state.player.password !== password) { msg.innerHTML = '<span class="danger">Senha incorreta.</span>'; return; }
-
-        msg.innerHTML = '<span class="ok">Login com sucesso!</span>';
-        setTimeout(() => { showGameScreen(); initMap(); document.getElementById("mode-modal").classList.remove("hidden"); }, 500);
-      }
-
-      if (type === "PR") {
-        const contact = document.getElementById("pr-contact").value.trim();
-        const password = document.getElementById("pr-password").value;
-        const msg = document.getElementById("pr-auth-msg");
-
-        if (!contact || !password) { msg.innerHTML = '<span class="warning">Preenche o contacto e a senha.</span>'; return; }
-        const pr = state.prs.find(p => p.ownerContact === contact);
-        if (!pr) { msg.innerHTML = '<span class="danger">Empresa não encontrada.</span>'; return; }
-        if (pr.ownerPassword !== password) { msg.innerHTML = '<span class="danger">Senha incorreta.</span>'; return; }
-
-        state.currentPRId = pr.id;
-        saveState();
-        msg.innerHTML = '<span class="ok">Login com sucesso!</span>';
-        setTimeout(() => showPRDashboard(), 500);
-      }
-    }
-
-    function recoverPassword(type) {
-      const contact = document.getElementById(type === "JG" ? "player-contact" : "pr-contact").value.trim();
-      const msg = document.getElementById(type === "JG" ? "jg-auth-msg" : "pr-auth-msg");
-      if (!contact) { msg.innerHTML = '<span class="warning">Indica o contacto.</span>'; return; }
-
-      if (type === "JG") {
-        if (state.player.contact !== contact) { msg.innerHTML = '<span class="danger">Conta não encontrada.</span>'; return; }
-        alert("Modo demo: A tua senha é: " + state.player.password);
-      } else {
-        const pr = state.prs.find(p => p.ownerContact === contact);
-        if (!pr) { msg.innerHTML = '<span class="danger">Empresa não encontrada.</span>'; return; }
-        alert("Modo demo: A senha é: " + pr.ownerPassword);
-      }
-      msg.innerHTML = '<span class="ok">Recuperação em modo demo.</span>';
-    }
-
-    // ==========================================
-    // NAVEGAÇÃO
-    // ==========================================
-    function showGameScreen() {
-      document.getElementById("login-screen").classList.add("hidden");
-      document.getElementById("pr-screen").classList.add("hidden");
-      document.getElementById("game-screen").classList.remove("hidden");
-    }
-
-    function showPRDashboard() {
-      document.getElementById("login-screen").classList.add("hidden");
-      document.getElementById("game-screen").classList.add("hidden");
-      document.getElementById("pr-screen").classList.remove("hidden");
-      renderPRDashboard();
-    }
-
-    function goBackToLogin() {
-      document.getElementById("login-screen").classList.remove("hidden");
-      document.getElementById("game-screen").classList.add("hidden");
-      document.getElementById("pr-screen").classList.add("hidden");
-    }
-
-    // ==========================================
-    // MAPA
-    // ==========================================
-    function initMap() {
-      if (map) return;
-      if (typeof L === "undefined") { alert("Erro ao carregar mapa."); return; }
-      map = L.map("map", { zoomControl: true, dragging: true, scrollWheelZoom: false, doubleClickZoom: false, touchZoom: true, boxZoom: false, keyboard: false }).setView([38.7223, -9.1393], 18);
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution: "© OpenStreetMap", maxZoom: 19 }).addTo(map);
-      map.on("move", updateFogOverlay);
-      map.on("zoom", updateFogOverlay);
-    }
-
-    function createPlayerIcon() {
-      let inner = "JG";
-      if (state.player.avatarMode === "male") inner = "♂";
-      if (state.player.avatarMode === "female") inner = "♀";
-      if (state.player.avatarMode === "photo" && state.player.avatarPhoto) inner = `<img src="${escapeHtml(state.player.avatarPhoto)}" alt="Avatar" onerror="this.parentElement.innerHTML='JG'" />`;
-      return L.divIcon({ className: "", html: `<div class="player-marker">${inner}</div>`, iconSize: [28, 28], iconAnchor: [14, 14] });
-    }
-
-    function createFlagIcon(color) {
-      const safeColor = sanitizeColor(color);
-      return L.divIcon({ className: "", html: `<div class="flag-marker"><div class="flag-stick"></div><div class="flag-banner" style="background:${safeColor};"></div></div>`, iconSize: [34, 34], iconAnchor: [17, 28] });
-    }
-
-    // ==========================================
-    // GPS E MODO DE JOGO
-    // ==========================================
-    function requestGPSMode() {
-      document.getElementById("mode-modal").classList.add("hidden");
-      document.getElementById("offline-controls").classList.add("hidden");
-      offlineMode = false;
-      gpsCenteredOnce = false;
-      renderTopBar();
-
-      if (!navigator.geolocation) { alert("GPS não suportado. Modo Offline ativado."); activateHomeMode(); return; }
-      if (watchId !== null) navigator.geolocation.clearWatch(watchId);
-
-      navigator.geolocation.getCurrentPosition(
-        pos => { updatePosition(pos, true); watchId = navigator.geolocation.watchPosition(p => updatePosition(p, false), handleGeoError, { enableHighAccuracy: true, maximumAge: 5000, timeout: 20000 }); },
-        err => { alert("Não foi possível ativar GPS."); document.getElementById("mode-modal").classList.remove("hidden"); },
-        { enableHighAccuracy: true, maximumAge: 5000, timeout: 20000 }
-      );
-    }
-
-    function activateHomeMode() {
-      document.getElementById("mode-modal").classList.add("hidden");
-      offlineMode = true;
-      document.getElementById("offline-controls").classList.remove("hidden");
-      if (!currentPosition) currentPosition = { lat: 38.7223, lng: -9.1393 };
-      updatePlayerLocation(currentPosition.lat, currentPosition.lng, false, true);
-      manualRefreshFlags();
-      renderTopBar();
-    }
-
-    function closeModeModal() { document.getElementById("mode-modal").classList.add("hidden"); }
-    function handleGeoError(err) { alert("Erro GPS. Modo Offline ativado."); activateHomeMode(); }
-    function updatePosition(pos, forceCenter = false) { updatePlayerLocation(pos.coords.latitude, pos.coords.longitude, true, forceCenter || !gpsCenteredOnce); gpsCenteredOnce = true; }
-
-    function updatePlayerLocation(lat, lng, fromMovement, centerMap) {
-      currentPosition = { lat, lng };
-      if (lastPosForEnergy && fromMovement) {
-        const moved = getDistanceMeters(lastPosForEnergy.lat, lastPosForEnergy.lng, lat, lng);
-        if (moved > 0.5) { movedMetersBuffer += moved; lastMovementTime = Date.now(); while (movedMetersBuffer >= 20) { movedMetersBuffer -= 20; state.player.energy = Math.max(0, state.player.energy - 1); } }
-      }
-      lastPosForEnergy = { lat, lng };
-
-      if (!playerMarker) playerMarker = L.marker([lat, lng], { icon: createPlayerIcon() }).addTo(map);
-      else { playerMarker.setLatLng([lat, lng]); playerMarker.setIcon(createPlayerIcon()); }
-
-      if (!visionCircle) visionCircle = L.circle([lat, lng], { radius: state.player.vision, color: "#00ff00", fillOpacity: 0.05, weight: 1 }).addTo(map);
-      else { visionCircle.setLatLng([lat, lng]); visionCircle.setRadius(state.player.vision); }
-
-      if (centerMap) map.setView([lat, lng], 18);
-      updateFogOverlay();
-      refreshFlags(false);
-      updateVisibleFlags();
-      renderTopBar();
-      renderPanelIfOpen();
-      saveState();
-    }
-
-    function updateFogOverlay() {
-      if (!map || !currentPosition) return;
-      const point = map.latLngToContainerPoint([currentPosition.lat, currentPosition.lng]);
-      const fog = document.getElementById("fog-overlay");
-      fog.style.setProperty("--fog-x", point.x + "px");
-      fog.style.setProperty("--fog-y", point.y + "px");
-      fog.style.setProperty("--fog-r", Math.max(55, state.player.vision * 18) + "px");
-    }
-
-    function centerOnPlayer() { if (map && currentPosition) map.setView([currentPosition.lat, currentPosition.lng], 18); }
-
-    function moveHomePlayer(dxMeters, dyMeters) {
-      if (!offlineMode || !currentPosition) return;
-      const lat = currentPosition.lat + (dyMeters / 111320);
-      const lng = currentPosition.lng + (dxMeters / (111320 * Math.cos(currentPosition.lat * Math.PI / 180)));
-      updatePlayerLocation(lat, lng, true, true);
-    }
-
-    function resizeOfflineControls(delta) {
-      const box = document.getElementById("offline-controls");
-      box.style.width = Math.max(95, Math.min(180, (parseInt(box.style.width) || 118) + delta)) + "px";
-      box.style.height = Math.max(115, Math.min(200, (parseInt(box.style.height) || 138) + delta)) + "px";
-    }
-
-    // ==========================================
-    // BANDEIRAS
-    // ==========================================
-    function clearFlags() { allFlags.forEach(f => { if (f.marker) map.removeLayer(f.marker); }); allFlags = []; }
-
-    function getAllActivePackages() {
-      const list = [];
-      state.prs.forEach(pr => { pr.packages.forEach(pkg => { if (pkg.flagsLeft > 0) list.push({ pr, pkg }); }); });
-      return list;
-    }
-
-    function weightedPackagePick() {
-      if (!currentPosition) return null;
-      const candidates = getAllActivePackages().map(({ pr, pkg }) => {
-        const distKm = getDistanceMeters(currentPosition.lat, currentPosition.lng, pr.lat, pr.lng) / 1000;
-        let weight = 0;
-        if (pkg.radiusKm === Infinity) weight = 0.4;
-        else if (distKm <= pkg.radiusKm) { const closeness = 1 - (distKm / pkg.radiusKm); let radiusBonus = pkg.radiusKm <= 5 ? 2.2 : pkg.radiusKm <= 15 ? 1.8 : pkg.radiusKm <= 50 ? 1.3 : 1; weight = (1 + closeness * 4) * radiusBonus; }
-        else weight = 0.03;
-        weight *= Math.max(0.3, Math.min(2, pkg.flagsLeft / Math.max(pkg.flagsInitial, 1)));
-        return { pr, pkg, weight };
-      }).filter(c => c.weight > 0);
-      const total = candidates.reduce((acc, c) => acc + c.weight, 0);
-      if (!total) return null;
-      let rnd = Math.random() * total;
-      for (const c of candidates) { rnd -= c.weight; if (rnd <= 0) return c; }
-      return candidates[0];
-    }
-
-    function promoChanceForPackage(pr, pkg) {
-      if (!pkg.paid || !pr.campaign.rewardsEnabled || pr.campaign.promoBudgetLeft <= 0) return 0;
-      return Math.max(0.05, Math.min(0.30, (pr.campaign.promoBudgetLeft / Math.max(pkg.flagsLeft, 1)) * 500));
-    }
-
-    function createFlagCandidate(type, selected = null) {
-      if (!currentPosition) return null;
-      const radius = type === "PR" ? 1 + Math.random() * 15 : 1 + Math.random() * 12;
-      const point = randomOffset(currentPosition.lat, currentPosition.lng, radius);
-      const flag = { id: randomId("FLAG"), type, lat: point.lat, lng: point.lng, marker: null };
-      if (type === "PR" && selected) { flag.prId = selected.pr.id; flag.packageId = selected.pkg.id; flag.promo = Math.random() < promoChanceForPackage(selected.pr, selected.pkg); }
-      return flag;
-    }
-
-    function manualRefreshFlags() { refreshFlags(true); updateVisibleFlags(); }
-
-    function refreshFlags(force) {
-      if (!currentPosition) return;
-      const now = Date.now();
-      let shouldRefresh = force || !lastFlagRefreshCenter || now - lastFlagRefreshTime > 15000;
-      if (!shouldRefresh && lastFlagRefreshCenter && getDistanceMeters(lastFlagRefreshCenter.lat, lastFlagRefreshCenter.lng, currentPosition.lat, currentPosition.lng) > 10) shouldRefresh = true;
-      if (!shouldRefresh) return;
-
-      clearFlags();
-      const zapFlag = createFlagCandidate("ZAP");
-      if (zapFlag) allFlags.push(zapFlag);
-      const selected = weightedPackagePick();
-      if (selected) { const prFlag = createFlagCandidate("PR", selected); if (prFlag) allFlags.push(prFlag); }
-      lastFlagRefreshCenter = { ...currentPosition };
-      lastFlagRefreshTime = now;
-    }
-
-    function updateVisibleFlags() {
-      if (!currentPosition || !map) return;
-      allFlags.forEach(flag => {
-        const dist = getDistanceMeters(currentPosition.lat, currentPosition.lng, flag.lat, flag.lng);
-        const visible = dist <= state.player.vision;
-        if (visible && !flag.marker) {
-          const color = flag.type === "ZAP" ? "#00BFFF" : (findPR(flag.prId)?.color || "#0f0");
-          flag.marker = L.marker([flag.lat, flag.lng], { icon: createFlagIcon(color) }).addTo(map);
-          flag.marker.on("click", () => openFlagModal(flag.id));
-        }
-        if (!visible && flag.marker) { map.removeLayer(flag.marker); flag.marker = null; }
-      });
-    }
-
-    function removeFlag(flagId) { const flag = allFlags.find(f => f.id === flagId); if (flag?.marker) map.removeLayer(flag.marker); allFlags = allFlags.filter(f => f.id !== flagId); }
-
-    function openFlagModal(flagId) {
-      const flag = allFlags.find(f => f.id === flagId);
-      if (!flag || !currentPosition) return;
-      const dist = getDistanceMeters(currentPosition.lat, currentPosition.lng, flag.lat, flag.lng);
-      const canCollect = dist <= 5;
-
-      if (flag.type === "ZAP") {
-        document.getElementById("flag-modal-content").innerHTML = `<div class="panel-header"><h2 style="margin:0;">🔵 BANDEIRA ZAP</h2><button class="btn-dark btn-small" onclick="closeFlagModal()">X</button></div><div class="item"><p>Dá <strong>+10% energia</strong> e aumenta o teu <strong>skill</strong>.</p></div><div class="item"><p>Distância: <strong>${Math.round(dist)}m</strong> · Recolhe até <strong>5m</strong></p></div><div class="btn-row"><button ${canCollect ? "" : "disabled"} onclick="collectZapFlag('${flag.id}')">${canCollect ? "RECOLHER" : "APROXIMA-TE"}</button></div>`;
-      } else {
-        const pr = findPR(flag.prId);
-        if (!pr) return;
-        document.getElementById("flag-modal-content").innerHTML = `<div class="panel-header"><h2 style="margin:0;">🚩 ${escapeHtml(pr.name)}</h2><button class="btn-dark btn-small" onclick="closeFlagModal()">X</button></div><div class="brand-head"><div class="brand-icon" style="background:${sanitizeColor(pr.color)};">${escapeHtml(pr.short)}</div><div><strong>${escapeHtml(pr.name)}</strong><br><span class="small">Empresa / PR</span></div></div><div class="item"><p><strong>Morada:</strong> ${escapeHtml(pr.address || "N/D")}</p><p><strong>Contacto:</strong> ${escapeHtml(pr.contact || "N/D")}</p></div><div class="item"><p>Distância: <strong>${Math.round(dist)}m</strong></p></div><div class="btn-row"><button ${canCollect ? "" : "disabled"} onclick="collectPRFlag('${flag.id}')">${canCollect ? "RECOLHER" : "APROXIMA-TE"}</button></div>`;
-      }
-      document.getElementById("flag-modal").classList.remove("hidden");
-    }
-
-    function closeFlagModal() { document.getElementById("flag-modal").classList.add("hidden"); }
-
-    function collectZapFlag(flagId) {
-      const flag = allFlags.find(f => f.id === flagId);
-      if (!flag) return;
-      state.player.energy = Math.min(100, state.player.energy + 10);
-      state.player.zapFlags += 1;
-      state.player.totalFlags += 1;
-      updateSkillAndVision();
-      if (visionCircle) visionCircle.setRadius(state.player.vision);
-      removeFlag(flagId);
-      const replacement = createFlagCandidate("ZAP");
-      if (replacement) allFlags.push(replacement);
-      renderTopBar(); renderPanelIfOpen(); updateVisibleFlags(); saveState();
-      document.getElementById("flag-modal-content").innerHTML = `<div class="panel-header"><h2 style="margin:0;">🔵 RECOLHIDA!</h2><button class="btn-dark btn-small" onclick="closeFlagModal()">X</button></div><div class="item ok"><p>+10% energia · Skill: ${state.player.skill} · Visão: ${state.player.vision.toFixed(1)}m</p></div>`;
-    }
-
-    function collectPRFlag(flagId) {
-      const flag = allFlags.find(f => f.id === flagId);
-      if (!flag || state.player.energy <= 0) { alert("Sem energia!"); return; }
-      const pr = findPR(flag.prId);
-      if (!pr) return;
-      const pkg = pr.packages.find(p => p.id === flag.packageId);
-      if (pkg && pkg.flagsLeft > 0) pkg.flagsLeft -= 1;
-
-      ensureAllPlayerData();
-      state.player.prFlags += 1;
-      state.player.totalFlags += 1;
-      state.player.totalSeenByPR[pr.id] += 1;
-      updateSkillAndVision();
-      if (visionCircle) visionCircle.setRadius(state.player.vision);
-
-      let title = "🚩 RECOLHIDA!", body = "";
-      if (flag.promo && pr.campaign.rewardsEnabled && pr.campaign.promoBudgetLeft > 0) {
-        pr.campaign.promoBudgetLeft -= 1;
-        state.player.promoProgressByPR[pr.id].current += 1;
-        state.player.promoProgressByPR[pr.id].total += 1;
-        if (state.player.promoProgressByPR[pr.id].current >= 20 && pr.campaign.rewardsGiven < pr.campaign.promoLotsActive) {
-          state.player.promoProgressByPR[pr.id].current -= 20;
-          pr.campaign.rewardsGiven += 1;
-          generateQR(pr);
-          title = "🎉 PRÉMIO!";
-          body = `<div class="item ok"><p>Ganhaste: ${escapeHtml(pr.campaign.rewardText)}</p><p class="small">QR criado nos teus cupões!</p></div>`;
-        }
-      }
-      if (!body) body = `<div class="item"><p>Bandeira de ${escapeHtml(pr.name)} recolhida.</p></div>`;
-
-      removeFlag(flagId);
-      const selected = weightedPackagePick();
-      if (selected) { const replacement = createFlagCandidate("PR", selected); if (replacement) allFlags.push(replacement); }
-      renderTopBar(); renderPanelIfOpen(); updateVisibleFlags(); saveState();
-      document.getElementById("flag-modal-content").innerHTML = `<div class="panel-header"><h2 style="margin:0;">${title}</h2><button class="btn-dark btn-small" onclick="closeFlagModal()">X</button></div>${body}`;
-    }
-
-    // ==========================================
-    // QR CODES
-    // ==========================================
-    function generateQR(pr) {
-      state.player.qrs.push({ id: randomId("QR"), code: "ZAP-" + pr.short + "-" + Math.random().toString(36).slice(2, 8).toUpperCase(), prId: pr.id, prName: pr.name, rewardText: pr.campaign.rewardText || "Oferta", createdAt: Date.now(), expiresAt: Date.now() + (15 * 24 * 60 * 60 * 1000), status: "active" });
-    }
-
-    function expireOldQrs() {
-      const now = Date.now();
-      state.player.qrs = state.player.qrs.filter(qr => { if (qr.status === "active" && qr.expiresAt <= now) { qr.status = "expired"; state.player.usedQrs.push(qr); return false; } return qr.status === "active"; });
-    }
-
-    function qrExpiryText(expiresAt) {
-      const diff = expiresAt - Date.now();
-      if (diff <= 0) return "Expirado";
-      const days = Math.floor(diff / (24*60*60*1000));
-      return days > 0 ? `${days} dia${days > 1 ? 's' : ''}` : "< 1 dia";
-    }
-
-    function useQR(qrId) {
-      const qr = state.player.qrs.find(q => q.id === qrId);
-      if (!qr) return;
-      qr.status = "used"; qr.usedAt = Date.now();
-      state.player.usedQrs.push({ ...qr });
-      state.player.qrs = state.player.qrs.filter(q => q.id !== qrId);
-      saveState(); renderPanelIfOpen(); alert("QR validado!");
-    }
-
-    function validateQRManual() {
-      const input = document.getElementById("qr-manual-code");
-      const result = document.getElementById("scanner-result");
-      const code = input?.value.trim().toUpperCase();
-      if (!code) { result.innerHTML = '<span class="warning">Escreve um código.</span>'; return; }
-      expireOldQrs();
-      const qr = state.player.qrs.find(q => q.code.toUpperCase() === code);
-      if (!qr) { result.innerHTML = '<span class="danger">QR inválido ou expirado.</span>'; return; }
-      useQR(qr.id);
-      result.innerHTML = '<span class="ok">QR validado!</span>';
-      input.value = "";
-      renderPRDashboard();
-    }
-
-    // ==========================================
-    // PAINÉIS
-    // ==========================================
-    function renderTopBar() {
-      expireOldQrs();
-      document.getElementById("energy-fill").style.width = state.player.energy + "%";
-      document.getElementById("energy-text").textContent = "Energia: " + state.player.energy + "%";
-      document.getElementById("mode-text").textContent = offlineMode ? "Modo: Offline" : "Modo: GPS";
-    }
-
-    function openPanel(type) {
-      currentOpenPanel = type;
-      document.getElementById("side-panel").classList.remove("hidden");
-      const title = document.getElementById("side-panel-title");
-      const content = document.getElementById("side-panel-content");
-
-      if (type === "progress") { title.textContent = "Progresso"; content.innerHTML = renderProgressPanel(); }
-      if (type === "qrs") { title.textContent = "Cupões QR"; content.innerHTML = renderQRPanel(); }
-      if (type === "account") { title.textContent = "Conta"; content.innerHTML = renderAccountPanel(); }
-    }
-
-    function renderPanelIfOpen() { if (currentOpenPanel) openPanel(currentOpenPanel); }
-    function closePanel() { currentOpenPanel = null; document.getElementById("side-panel").classList.add("hidden"); }
-
-    function renderProgressPanel() {
-      ensureAllPlayerData();
-      let html = `<div class="item"><p><strong>Total:</strong> ${state.player.totalFlags} · <strong>ZAP:</strong> ${state.player.zapFlags} · <strong>PR:</strong> ${state.player.prFlags}</p><p><strong>Skill:</strong> ${state.player.skill} · <strong>Visão:</strong> ${state.player.vision.toFixed(1)}m</p></div>`;
-      state.prs.forEach(pr => {
-        const promo = state.player.promoProgressByPR[pr.id] || { current: 0 };
-        const total = state.player.totalSeenByPR[pr.id] || 0;
-        if (total > 0) html += `<div class="item"><span class="badge" style="background:${sanitizeColor(pr.color)};">${escapeHtml(pr.short)}</span> <strong>${escapeHtml(pr.name)}</strong><p class="small">Apanhadas: ${total} · Promo: ${promo.current}/20</p></div>`;
-      });
-      return html;
-    }
-
-    function renderQRPanel() {
-      expireOldQrs();
-      if (!state.player.qrs.length) return '<div class="item"><p>Sem cupões ativos.</p></div>';
-      return state.player.qrs.map(qr => `<div class="item"><span class="badge badge-gold">QR</span> <strong>${escapeHtml(qr.prName)}</strong><p class="small">Prémio: ${escapeHtml(qr.rewardText)} · Válido: ${qrExpiryText(qr.expiresAt)}</p><div class="qr-code">${escapeHtml(qr.code)}</div><img src="https://quickchart.io/qr?text=${encodeURIComponent(qr.code)}&size=120" alt="QR" style="margin-top:8px;background:#fff;padding:6px;border-radius:8px;" /></div>`).join("");
-    }
-
-    function renderAccountPanel() {
-      return `<div class="item"><p><strong>Nome:</strong> ${escapeHtml(state.player.name)}</p><p><strong>Contacto:</strong> ${escapeHtml(state.player.contact)}</p><p><strong>Energia:</strong> ${state.player.energy}%</p></div><div class="item"><label class="small">Avatar:</label><select id="account-avatar-mode"><option value="male" ${state.player.avatarMode === "male" ? "selected" : ""}>Masculino</option><option value="female" ${state.player.avatarMode === "female" ? "selected" : ""}>Feminino</option><option value="photo" ${state.player.avatarMode === "photo" ? "selected" : ""}>Foto URL</option></select><input id="account-avatar-photo" type="url" placeholder="URL da foto" value="${escapeHtml(state.player.avatarPhoto)}" /><button onclick="saveAvatarSettings()">GUARDAR</button></div><div class="item"><button class="btn-danger" onclick="logoutPlayer()">SAIR</button></div>`;
-    }
-
-    function saveAvatarSettings() {
-      const mode = document.getElementById("account-avatar-mode");
-      const photo = document.getElementById("account-avatar-photo");
-      if (mode) state.player.avatarMode = mode.value;
-      if (photo) state.player.avatarPhoto = photo.value.trim();
-      if (playerMarker) playerMarker.setIcon
+</main>
