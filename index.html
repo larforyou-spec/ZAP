@@ -935,3 +935,543 @@
 <!-- ========================================== -->
 <!-- SCRIPTS -->
 <!-- ========================================== -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+// ============================================================
+// CONSTANTES E CONFIGURAÇÃO
+// ============================================================
+
+const STORAGE_KEY = "zap_flags_complete_v1";
+
+const FREE_PACK = {
+  key: "FREE",
+  label: "Mínimo grátis",
+  price: 0,
+  flags: 1000,
+  radiusKm: 5,
+  paid: false,
+  maxLots: 50,
+  bingos: 0
+};
+
+const PACKS = {
+  MINIMO: { key: "MINIMO", label: "Mínimo", price: 10, flags: 1000, radiusKm: 5, paid: true, maxLots: 50, bingos: 0 },
+  MEDIO:  { key: "MEDIO", label: "Médio", price: 15, flags: 2500, radiusKm: 15, paid: true, maxLots: 125, bingos: 2 },
+  GRANDE: { key: "GRANDE", label: "Grande", price: 25, flags: 10000, radiusKm: 50, paid: true, maxLots: 500, bingos: 3 },
+  ENORME: { key: "ENORME", label: "Enorme", price: 50, flags: 25000, radiusKm: Infinity, paid: true, maxLots: 1250, bingos: 5 }
+};
+
+// ============================================================
+// VARIÁVEIS GLOBAIS
+// ============================================================
+
+let selectedPackKey = null;
+let map = null;
+let playerMarker = null;
+let visionCircle = null;
+let currentPosition = null;
+let watchId = null;
+let allFlags = [];
+let offlineMode = false;
+let currentOpenPanel = null;
+let lastPosForEnergy = null;
+let movedMetersBuffer = 0;
+let lastMovementTime = Date.now();
+let lastFlagRefreshCenter = null;
+let lastFlagRefreshTime = 0;
+let lastOfflineSuggestion = 0;
+let gpsCenteredOnce = false;
+let energyInterval = null;
+
+// ============================================================
+// FUNÇÕES UTILITÁRIAS
+// ============================================================
+
+function randomId(prefix) {
+  return prefix + "_" + Math.random().toString(36).slice(2, 10).toUpperCase();
+}
+
+function escapeHtml(text) {
+  if (!text) return "";
+  const div = document.createElement("div");
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+function sanitizeColor(color) {
+  if (!color || typeof color !== "string") return "#00ff00";
+  const hexPattern = /^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/;
+  if (hexPattern.test(color)) return color;
+  return "#00ff00";
+}
+
+function announceToScreenReader(message) {
+  const el = document.createElement("div");
+  el.setAttribute("role", "status");
+  el.setAttribute("aria-live", "polite");
+  el.className = "visually-hidden";
+  el.textContent = message;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 1000);
+}
+
+function getDistanceMeters(lat1, lng1, lat2, lng2) {
+  const R = 6371e3;
+  const phi1 = lat1 * Math.PI / 180;
+  const phi2 = lat2 * Math.PI / 180;
+  const dPhi = (lat2 - lat1) * Math.PI / 180;
+  const dLambda = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(dPhi/2) * Math.sin(dPhi/2) + Math.cos(phi1) * Math.cos(phi2) * Math.sin(dLambda/2) * Math.sin(dLambda/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+function randomOffset(lat, lng, radiusMeters) {
+  const angle = Math.random() * 2 * Math.PI;
+  const distance = Math.random() * radiusMeters;
+  const latOffset = (distance * Math.cos(angle)) / 111320;
+  const lngOffset = (distance * Math.sin(angle)) / (111320 * Math.cos(lat * Math.PI / 180));
+  return { lat: lat + latOffset, lng: lng + lngOffset };
+}
+
+function packageRadiusText(radiusKm) {
+  if (radiusKm === Infinity) return "País inteiro";
+  return radiusKm + " km";
+}
+
+function qrExpiryText(expiresAt) {
+  const now = Date.now();
+  const diff = expiresAt - now;
+  if (diff <= 0) return "Expirado";
+  const days = Math.floor(diff / (24 * 60 * 60 * 1000));
+  const hours = Math.floor((diff % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000));
+  if (days > 0) return days + " dia" + (days !== 1 ? "s" : "");
+  if (hours > 0) return hours + " hora" + (hours !== 1 ? "s" : "");
+  return "< 1 hora";
+}
+
+// ============================================================
+// GESTÃO DE ESTADO
+// ============================================================
+
+function createPackageInstance(packDef, source = "paid") {
+  return {
+    id: randomId("PKG"),
+    key: packDef.key,
+    label: packDef.label,
+    price: packDef.price,
+    flagsInitial: packDef.flags,
+    flagsLeft: packDef.flags,
+    radiusKm: packDef.radiusKm,
+    maxLots: packDef.maxLots,
+    bingos: packDef.bingos,
+    paid: packDef.paid,
+    source,
+    createdAt: Date.now()
+  };
+}
+
+function seedPRs() {
+  const demoPack = createPackageInstance(PACKS.MEDIO, "demo");
+  return [{
+    id: "seed1",
+    ownerContact: "demo@zapflags.pt",
+    ownerPassword: "123456",
+    name: "Café Central",
+    short: "CC",
+    website: "https://cafe-central.pt",
+    contact: "913000001",
+    address: "Rua Central 123, Porto",
+    postalCode: "4000-100",
+    photo: "",
+    lat: 41.1496,
+    lng: -8.6109,
+    color: "#FF4D4F",
+    packages: [demoPack],
+    prizeLots: [],
+    campaign: {
+      rewardsEnabled: true,
+      rewardType: "discount",
+      rewardText: "5% de desconto",
+      promoLotsActive: 10,
+      promoBudgetLeft: 200,
+      bingoCountActive: 1,
+      bingoText: "Oferta surpresa na loja",
+      rewardsGiven: 0
+    }
+  }];
+}
+
+function defaultState() {
+  return {
+    player: {
+      name: "",
+      contact: "",
+      password: "",
+      avatarMode: "male",
+      avatarPhoto: "",
+      energy: 100,
+      zapFlags: 0,
+      prFlags: 0,
+      totalFlags: 0,
+      skill: 1,
+      vision: 5,
+      promoProgressByPR: {},
+      totalSeenByPR: {},
+      qrs: [],
+      usedQrs: []
+    },
+    prs: seedPRs(),
+    currentPRId: null
+  };
+}
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return defaultState();
+    const parsed = JSON.parse(raw);
+    if (!parsed.player) parsed.player = defaultState().player;
+    if (!parsed.player.qrs) parsed.player.qrs = [];
+    if (!parsed.player.usedQrs) parsed.player.usedQrs = [];
+    if (!parsed.player.promoProgressByPR) parsed.player.promoProgressByPR = {};
+    if (!parsed.player.totalSeenByPR) parsed.player.totalSeenByPR = {};
+    if (!parsed.prs || !Array.isArray(parsed.prs)) parsed.prs = seedPRs();
+    parsed.prs.forEach(pr => {
+      if (!pr.ownerPassword) pr.ownerPassword = "";
+      if (!pr.packages) pr.packages = [];
+      if (!pr.prizeLots) pr.prizeLots = [];
+      if (!pr.campaign) {
+        pr.campaign = { rewardsEnabled: false, rewardType: "none", rewardText: "Sem prémio", promoLotsActive: 0, promoBudgetLeft: 0, bingoCountActive: 0, bingoText: "", rewardsGiven: 0 };
+      }
+    });
+    return parsed;
+  } catch (e) {
+    console.error("Erro ao carregar estado:", e);
+    return defaultState();
+  }
+}
+
+let state = loadState();
+
+function saveState() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  } catch (e) {
+    console.error("Erro ao guardar estado:", e);
+  }
+}
+
+function findPR(prId) {
+  return state.prs.find(pr => pr.id === prId) || null;
+}
+
+function getCurrentManagedPR() {
+  if (!state.currentPRId) return null;
+  return findPR(state.currentPRId);
+}
+
+function createShortName(name) {
+  const words = name.trim().split(" ").filter(Boolean);
+  if (!words.length) return "PR";
+  if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
+  return (words[0][0] + words[1][0]).toUpperCase();
+}
+
+function ensureAllPlayerData() {
+  if (!state.player.promoProgressByPR) state.player.promoProgressByPR = {};
+  if (!state.player.totalSeenByPR) state.player.totalSeenByPR = {};
+  state.prs.forEach(pr => {
+    if (!state.player.promoProgressByPR[pr.id]) {
+      state.player.promoProgressByPR[pr.id] = { current: 0, total: 0 };
+    }
+    if (typeof state.player.totalSeenByPR[pr.id] !== "number") {
+      state.player.totalSeenByPR[pr.id] = 0;
+    }
+  });
+}
+
+function ensurePlayerDataForPR(prId) {
+  if (!state.player.promoProgressByPR) state.player.promoProgressByPR = {};
+  if (!state.player.totalSeenByPR) state.player.totalSeenByPR = {};
+  if (!state.player.promoProgressByPR[prId]) {
+    state.player.promoProgressByPR[prId] = { current: 0, total: 0 };
+  }
+  if (typeof state.player.totalSeenByPR[prId] !== "number") {
+    state.player.totalSeenByPR[prId] = 0;
+  }
+}
+
+function updateSkillAndVision() {
+  const totalFlags = state.player.totalFlags || 0;
+  state.player.skill = Math.floor(1 + Math.log2(totalFlags + 1));
+  state.player.vision = Math.min(20, 5 + (state.player.skill * 0.5));
+}
+
+function getPackageTotals(pr) {
+  if (!pr || !pr.packages) {
+    return { totalBought: 0, totalLeft: 0, maxRadius: 0, hasPaid: false, maxLotsPaid: 0, totalBingosPaid: 0 };
+  }
+  let totalBought = 0, totalLeft = 0, maxRadius = 0, hasPaid = false, maxLotsPaid = 0, totalBingosPaid = 0;
+  pr.packages.forEach(pkg => {
+    totalBought += pkg.flagsInitial || 0;
+    totalLeft += pkg.flagsLeft || 0;
+    if (pkg.radiusKm === Infinity) maxRadius = Infinity;
+    else if (maxRadius !== Infinity) maxRadius = Math.max(maxRadius, pkg.radiusKm || 0);
+    if (pkg.paid) {
+      hasPaid = true;
+      maxLotsPaid += pkg.maxLots || 0;
+      totalBingosPaid += pkg.bingos || 0;
+    }
+  });
+  return { totalBought, totalLeft, maxRadius, hasPaid, maxLotsPaid, totalBingosPaid };
+}
+
+function getStockWarning(pr) {
+  const totals = getPackageTotals(pr);
+  const total = Math.max(totals.totalBought, 1);
+  const pct = (totals.totalLeft / total) * 100;
+  if (totals.totalLeft === 0) return '<span class="danger">⚠️ Sem bandeiras!</span>';
+  if (pct <= 5) return '<span class="danger">⚠️ Menos de 5% restante.</span>';
+  if (pct <= 20) return '<span class="warning">⚠️ Menos de 20% restante.</span>';
+  return '<span class="ok">✓ Stock OK</span>';
+}
+
+// ============================================================
+// AUTENTICAÇÃO
+// ============================================================
+
+function switchEntryMode(mode) {
+  const jgForm = document.getElementById("jg-form");
+  const prForm = document.getElementById("pr-form");
+  const btnJG = document.getElementById("btn-entry-jg");
+  const btnPR = document.getElementById("btn-entry-pr");
+  if (!jgForm || !prForm) return;
+
+  if (mode === "JG") {
+    jgForm.classList.remove("hidden");
+    prForm.classList.add("hidden");
+    btnJG.classList.add("active");
+    btnJG.setAttribute("aria-selected", "true");
+    btnPR.classList.remove("active");
+    btnPR.setAttribute("aria-selected", "false");
+  } else {
+    prForm.classList.remove("hidden");
+    jgForm.classList.add("hidden");
+    btnPR.classList.add("active");
+    btnPR.setAttribute("aria-selected", "true");
+    btnJG.classList.remove("active");
+    btnJG.setAttribute("aria-selected", "false");
+  }
+}
+
+function registerAccount(type) {
+  if (type === "JG") {
+    const name = document.getElementById("player-name").value.trim();
+    const contact = document.getElementById("player-contact").value.trim();
+    const password = document.getElementById("player-password").value;
+    const passwordConfirm = document.getElementById("player-password-confirm").value;
+    const avatarMode = document.getElementById("player-avatar-mode").value;
+    const photoUrl = document.getElementById("player-photo-url").value.trim();
+    const msg = document.getElementById("jg-auth-msg");
+
+    if (!name || !contact || !password) {
+      msg.innerHTML = '<span class="warning">Preenche todos os campos.</span>';
+      return;
+    }
+    if (password.length < 6) {
+      msg.innerHTML = '<span class="warning">Senha mínimo 6 caracteres.</span>';
+      return;
+    }
+    if (password !== passwordConfirm) {
+      msg.innerHTML = '<span class="danger">Senhas não coincidem.</span>';
+      return;
+    }
+
+    state.player.name = name;
+    state.player.contact = contact;
+    state.player.password = password;
+    state.player.avatarMode = avatarMode;
+    state.player.avatarPhoto = photoUrl;
+    saveState();
+
+    msg.innerHTML = '<span class="ok">✓ Conta criada!</span>';
+    setTimeout(() => {
+      showGameScreen();
+      initMap();
+      document.getElementById("mode-modal").classList.remove("hidden");
+    }, 800);
+  }
+
+  if (type === "PR") {
+    const name = document.getElementById("pr-company-name").value.trim();
+    const contact = document.getElementById("pr-contact").value.trim();
+    const password = document.getElementById("pr-password").value;
+    const passwordConfirm = document.getElementById("pr-password-confirm").value;
+    const postalCode = document.getElementById("pr-postal-code").value.trim();
+    const lat = parseFloat(document.getElementById("pr-lat").value) || 38.7223;
+    const lng = parseFloat(document.getElementById("pr-lng").value) || -9.1393;
+    const msg = document.getElementById("pr-auth-msg");
+
+    if (!name || !contact || !password) {
+      msg.innerHTML = '<span class="warning">Preenche todos os campos.</span>';
+      return;
+    }
+    if (password.length < 6) {
+      msg.innerHTML = '<span class="warning">Senha mínimo 6 caracteres.</span>';
+      return;
+    }
+    if (password !== passwordConfirm) {
+      msg.innerHTML = '<span class="danger">Senhas não coincidem.</span>';
+      return;
+    }
+    if (state.prs.find(p => p.ownerContact === contact)) {
+      msg.innerHTML = '<span class="danger">Já existe empresa com este contacto.</span>';
+      return;
+    }
+
+    const newPR = {
+      id: randomId("PR"),
+      ownerContact: contact,
+      ownerPassword: password,
+      name: name,
+      short: createShortName(name),
+      website: "",
+      contact: contact,
+      address: "",
+      postalCode: postalCode,
+      photo: "",
+      lat: lat,
+      lng: lng,
+      color: "#" + Math.floor(Math.random() * 16777215).toString(16).padStart(6, "0"),
+      packages: [createPackageInstance(FREE_PACK, "free")],
+      prizeLots: [],
+      campaign: { rewardsEnabled: false, rewardType: "none", rewardText: "Sem prémio", promoLotsActive: 0, promoBudgetLeft: 0, bingoCountActive: 0, bingoText: "", rewardsGiven: 0 }
+    };
+
+    state.prs.push(newPR);
+    state.currentPRId = newPR.id;
+    saveState();
+
+    msg.innerHTML = '<span class="ok">✓ Empresa registada!</span>';
+    setTimeout(() => showPRDashboard(), 800);
+  }
+}
+
+function loginAccount(type) {
+  if (type === "JG") {
+    const contact = document.getElementById("player-contact").value.trim();
+    const password = document.getElementById("player-password").value;
+    const msg = document.getElementById("jg-auth-msg");
+
+    if (!contact || !password) {
+      msg.innerHTML = '<span class="warning">Preenche contacto e senha.</span>';
+      return;
+    }
+    if (state.player.contact !== contact) {
+      msg.innerHTML = '<span class="danger">Conta não encontrada.</span>';
+      return;
+    }
+    if (state.player.password !== password) {
+      msg.innerHTML = '<span class="danger">Senha incorreta.</span>';
+      return;
+    }
+
+    msg.innerHTML = '<span class="ok">✓ Login OK!</span>';
+    setTimeout(() => {
+      showGameScreen();
+      initMap();
+      document.getElementById("mode-modal").classList.remove("hidden");
+    }, 500);
+  }
+
+  if (type === "PR") {
+    const contact = document.getElementById("pr-contact").value.trim();
+    const password = document.getElementById("pr-password").value;
+    const msg = document.getElementById("pr-auth-msg");
+
+    if (!contact || !password) {
+      msg.innerHTML = '<span class="warning">Preenche contacto e senha.</span>';
+      return;
+    }
+    const pr = state.prs.find(p => p.ownerContact === contact);
+    if (!pr) {
+      msg.innerHTML = '<span class="danger">Empresa não encontrada.</span>';
+      return;
+    }
+    if (pr.ownerPassword !== password) {
+      msg.innerHTML = '<span class="danger">Senha incorreta.</span>';
+      return;
+    }
+
+    state.currentPRId = pr.id;
+    saveState();
+    msg.innerHTML = '<span class="ok">✓ Login OK!</span>';
+    setTimeout(() => showPRDashboard(), 500);
+  }
+}
+
+function recoverPassword(type) {
+  const contact = document.getElementById(type === "JG" ? "player-contact" : "pr-contact").value.trim();
+  const msg = document.getElementById(type === "JG" ? "jg-auth-msg" : "pr-auth-msg");
+
+  if (!contact) {
+    msg.innerHTML = '<span class="warning">Indica o contacto.</span>';
+    return;
+  }
+
+  if (type === "JG") {
+    if (state.player.contact !== contact) {
+      msg.innerHTML = '<span class="danger">Conta não encontrada.</span>';
+      return;
+    }
+    alert("Demo: Senha = " + state.player.password);
+  } else {
+    const pr = state.prs.find(p => p.ownerContact === contact);
+    if (!pr) {
+      msg.innerHTML = '<span class="danger">Empresa não encontrada.</span>';
+      return;
+    }
+    alert("Demo: Senha = " + pr.ownerPassword);
+  }
+  msg.innerHTML = '<span class="ok">Recuperação enviada (demo).</span>';
+}
+
+// ============================================================
+// NAVEGAÇÃO
+// ============================================================
+
+function showGameScreen() {
+  document.getElementById("login-screen").classList.add("hidden");
+  document.getElementById("pr-screen").classList.add("hidden");
+  document.getElementById("game-screen").classList.remove("hidden");
+}
+
+function showPRDashboard() {
+  document.getElementById("login-screen").classList.add("hidden");
+  document.getElementById("game-screen").classList.add("hidden");
+  document.getElementById("pr-screen").classList.remove("hidden");
+  renderPRDashboard();
+}
+
+function goBackToLogin() {
+  document.getElementById("login-screen").classList.remove("hidden");
+  document.getElementById("game-screen").classList.add("hidden");
+  document.getElementById("pr-screen").classList.add("hidden");
+}
+
+function logoutPR() {
+  if (!confirm("Sair da conta?")) return;
+  state.currentPRId = null;
+  saveState();
+  goBackToLogin();
+}
+
+function logoutPlayer() {
+  if (!confirm("Sair da conta?")) return;
+  if (watchId !== null) {
+    navigator.geolocation.clearWatch(watchId);
+    watchId = null;
+  }
+  goBackToLogin();
+}
