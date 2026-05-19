@@ -2624,3 +2624,913 @@ function validateQRManual() {
     renderPRDashboard();
   }
 }
+// ============================================================
+// PAINÉIS DO JOGADOR
+// ============================================================
+
+/**
+ * Atualiza barra superior
+ */
+function renderTopBar() {
+  expireOldQrs();
+  
+  const energyFill = document.getElementById("energy-fill");
+  const energyText = document.getElementById("energy-text");
+  const modeText = document.getElementById("mode-text");
+  const energyBar = energyFill?.parentElement;
+
+  if (energyFill) {
+    energyFill.style.width = state.player.energy + "%";
+  }
+  if (energyText) {
+    energyText.textContent = "Energia: " + state.player.energy + "%";
+  }
+  if (modeText) {
+    modeText.textContent = offlineMode ? "Modo: Offline 🏠" : "Modo: GPS 📡";
+  }
+  if (energyBar) {
+    energyBar.setAttribute("aria-valuenow", state.player.energy);
+  }
+}
+
+/**
+ * Abre painel lateral
+ */
+function openPanel(type) {
+  currentOpenPanel = type;
+  
+  const panel = document.getElementById("side-panel");
+  const title = document.getElementById("side-panel-title");
+  const content = document.getElementById("side-panel-content");
+
+  if (!panel || !title || !content) return;
+
+  panel.classList.remove("hidden");
+
+  switch (type) {
+    case "progress":
+      title.textContent = "📈 Progresso";
+      content.innerHTML = renderProgressPanel();
+      break;
+    case "qrs":
+      title.textContent = "🎫 Cupões QR";
+      content.innerHTML = renderQRPanel();
+      break;
+    case "account":
+      title.textContent = "👤 Minha Conta";
+      content.innerHTML = renderAccountPanel();
+      break;
+    default:
+      console.warn("Tipo de painel desconhecido:", type);
+  }
+}
+
+/**
+ * Atualiza painel se aberto
+ */
+function renderPanelIfOpen() {
+  if (currentOpenPanel) {
+    openPanel(currentOpenPanel);
+  }
+}
+
+/**
+ * Fecha painel lateral
+ */
+function closePanel() {
+  currentOpenPanel = null;
+  const panel = document.getElementById("side-panel");
+  if (panel) {
+    panel.classList.add("hidden");
+  }
+}
+
+/**
+ * Renderiza painel de progresso
+ */
+function renderProgressPanel() {
+  ensureAllPlayerData();
+
+  let html = `
+    <article class="item">
+      <h3>📊 Estatísticas Gerais</h3>
+      <p>🚩 Total bandeiras: <strong>${state.player.totalFlags}</strong></p>
+      <p>🔵 Bandeiras ZAP: <strong>${state.player.zapFlags}</strong></p>
+      <p>🏢 Bandeiras PR: <strong>${state.player.prFlags}</strong></p>
+      <p>🎯 Skill: <strong>${state.player.skill}</strong></p>
+      <p>👁️ Visão: <strong>${state.player.vision.toFixed(1)}m</strong></p>
+    </article>
+  `;
+
+  // Progresso por empresa
+  let hasProgress = false;
+  state.prs.forEach(pr => {
+    const promo = state.player.promoProgressByPR[pr.id] || { current: 0, total: 0 };
+    const total = state.player.totalSeenByPR[pr.id] || 0;
+
+    if (total === 0 && promo.total === 0) return;
+    hasProgress = true;
+
+    const safeColor = sanitizeColor(pr.color);
+    const safeName = escapeHtml(pr.name);
+    const safeShort = escapeHtml(pr.short);
+    const safeReward = pr.campaign && pr.campaign.rewardsEnabled 
+      ? escapeHtml(pr.campaign.rewardText) 
+      : "Sem prémio ativo";
+
+    html += `
+      <article class="item">
+        <div class="brand-head">
+          <div class="brand-icon" style="background:${safeColor};">${safeShort}</div>
+          <div>
+            <strong>${safeName}</strong><br>
+            <span class="small">Empresa / PR</span>
+          </div>
+        </div>
+        <p>🚩 Total apanhadas: <strong>${total}</strong></p>
+        <p>🎯 Promocionais: <strong>${promo.current}/20</strong> para prémio</p>
+        <p>🏆 Prémios ganhos: <strong>${promo.total >= 20 ? Math.floor(promo.total / 20) : 0}</strong></p>
+        <p class="small">🎁 Oferta: <em>${safeReward}</em></p>
+        
+        <div class="progress-bar">
+          <div class="progress-bar-fill" style="width: ${Math.min(100, (promo.current / 20) * 100)}%; background: ${safeColor};"></div>
+        </div>
+      </article>
+    `;
+  });
+
+  if (!hasProgress) {
+    html += `
+      <article class="item">
+        <p class="small">Ainda não recolheste bandeiras de empresas. Explora o mapa! 🗺️</p>
+      </article>
+    `;
+  }
+
+  return html;
+}
+
+/**
+ * Renderiza painel de QR codes
+ */
+function renderQRPanel() {
+  expireOldQrs();
+
+  if (!state.player.qrs || state.player.qrs.length === 0) {
+    return `
+      <article class="item">
+        <p>Ainda não tens cupões QR ativos. 🎫</p>
+        <p class="small">Recolhe 20 bandeiras promocionais de uma empresa para ganhar prémios!</p>
+      </article>
+    `;
+  }
+
+  let html = `
+    <p class="small" style="margin-bottom: 12px;">
+      Tens <strong>${state.player.qrs.length}</strong> cupão(ões) ativo(s). Mostra na loja para usar!
+    </p>
+  `;
+
+  state.player.qrs.forEach(qr => {
+    const safeName = escapeHtml(qr.prName);
+    const safeReward = escapeHtml(qr.rewardText);
+    const safeCode = escapeHtml(qr.code);
+    const expiryText = qrExpiryText(qr.expiresAt);
+    const isExpiringSoon = (qr.expiresAt - Date.now()) < (2 * 24 * 60 * 60 * 1000);
+
+    html += `
+      <article class="item">
+        <header style="display: flex; justify-content: space-between; align-items: center;">
+          <span class="badge badge-gold">🎫 QR</span>
+          <span class="small ${isExpiringSoon ? 'warning' : 'ok'}">${expiryText}</span>
+        </header>
+        
+        <p style="margin-top: 10px;"><strong>${safeName}</strong></p>
+        <p>🎁 Prémio: <strong>${safeReward}</strong></p>
+        
+        <div class="qr-code">${safeCode}</div>
+        
+        <img 
+          src="https://quickchart.io/qr?text=${encodeURIComponent(qr.code)}&size=150" 
+          alt="QR Code" 
+          style="margin-top: 10px; background: #fff; padding: 8px; border-radius: 10px; display: block; max-width: 100%;"
+          loading="lazy" />
+        
+        <p class="small" style="margin-top: 8px;">
+          📱 Mostra este QR na loja para receber o prémio!
+        </p>
+      </article>
+    `;
+  });
+
+  // Histórico
+  if (state.player.usedQrs && state.player.usedQrs.length > 0) {
+    const recent = state.player.usedQrs.slice(-5).reverse();
+    
+    html += `
+      <details style="margin-top: 16px;">
+        <summary class="small" style="cursor: pointer; color: #a7fca7;">
+          📜 Histórico (${state.player.usedQrs.length} usados/expirados)
+        </summary>
+        <div style="margin-top: 8px;">
+    `;
+    
+    recent.forEach(qr => {
+      const statusText = qr.status === "used" ? "✓ Usado" : "⏰ Expirado";
+      const statusClass = qr.status === "used" ? "ok" : "warning";
+      html += `
+        <div class="item small">
+          <strong>${escapeHtml(qr.prName)}</strong> - 
+          <span class="${statusClass}">${statusText}</span>
+        </div>
+      `;
+    });
+    
+    html += `</div></details>`;
+  }
+
+  return html;
+}
+
+/**
+ * Renderiza painel de conta
+ */
+function renderAccountPanel() {
+  const safeName = escapeHtml(state.player.name);
+  const safeContact = escapeHtml(state.player.contact);
+  const safePhoto = escapeHtml(state.player.avatarPhoto || "");
+
+  return `
+    <article class="item">
+      <h3>👤 Informações</h3>
+      <p><strong>Nome:</strong> ${safeName}</p>
+      <p><strong>Contacto:</strong> ${safeContact}</p>
+      <p><strong>Energia:</strong> ${state.player.energy}%</p>
+      <p><strong>Modo:</strong> ${offlineMode ? "Offline 🏠" : "GPS 📡"}</p>
+    </article>
+
+    <article class="item">
+      <h3>🎭 Avatar</h3>
+      <div class="form-group">
+        <label for="account-avatar-mode">Tipo de avatar</label>
+        <select id="account-avatar-mode">
+          <option value="male" ${state.player.avatarMode === "male" ? "selected" : ""}>♂ Masculino</option>
+          <option value="female" ${state.player.avatarMode === "female" ? "selected" : ""}>♀ Feminino</option>
+          <option value="photo" ${state.player.avatarMode === "photo" ? "selected" : ""}>📷 Foto URL</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="account-avatar-photo">URL da foto</label>
+        <input id="account-avatar-photo" type="url" placeholder="https://..." value="${safePhoto}" />
+      </div>
+      <button onclick="saveAvatarSettings()">💾 GUARDAR AVATAR</button>
+    </article>
+
+    <article class="item">
+      <h3>📊 Estatísticas</h3>
+      <p>🚩 Total bandeiras: <strong>${state.player.totalFlags}</strong></p>
+      <p>🎫 QRs ativos: <strong>${state.player.qrs?.length || 0}</strong></p>
+      <p>✓ QRs usados: <strong>${state.player.usedQrs?.length || 0}</strong></p>
+      <p>🎯 Skill: <strong>${state.player.skill}</strong></p>
+      <p>👁️ Visão: <strong>${state.player.vision.toFixed(1)}m</strong></p>
+    </article>
+
+    <article class="item">
+      <h3>⚙️ Ações</h3>
+      <div class="btn-row" style="flex-direction: column;">
+        <button class="btn-dark" onclick="closePanel(); document.getElementById('mode-modal').classList.remove('hidden');">🎮 MUDAR MODO DE JOGO</button>
+        <button class="btn-danger" onclick="logoutPlayer()">🚪 SAIR DA CONTA</button>
+      </div>
+    </article>
+  `;
+}
+
+/**
+ * Guarda configurações de avatar
+ */
+function saveAvatarSettings() {
+  const modeSelect = document.getElementById("account-avatar-mode");
+  const photoInput = document.getElementById("account-avatar-photo");
+
+  if (modeSelect) state.player.avatarMode = modeSelect.value;
+  if (photoInput) state.player.avatarPhoto = photoInput.value.trim();
+
+  if (playerMarker) {
+    playerMarker.setIcon(createPlayerIcon());
+  }
+
+  saveState();
+  renderPanelIfOpen();
+  alert("Avatar atualizado com sucesso!");
+  announceToScreenReader("Avatar guardado.");
+}
+
+// ============================================================
+// DASHBOARD PR / EMPRESA
+// ============================================================
+
+/**
+ * Seleciona pacote para compra
+ */
+function selectPackage(packKey) {
+  selectedPackKey = packKey;
+  renderPRDashboard();
+  announceToScreenReader("Pacote " + (PACKS[packKey]?.label || packKey) + " selecionado.");
+}
+
+/**
+ * Compra pacote selecionado
+ */
+function purchaseSelectedPackage(method) {
+  const pr = getCurrentManagedPR();
+  if (!pr) {
+    alert("Erro: Nenhuma empresa autenticada.");
+    return;
+  }
+
+  if (!selectedPackKey || !PACKS[selectedPackKey]) {
+    alert("Seleciona primeiro um pacote.");
+    return;
+  }
+
+  const packDef = PACKS[selectedPackKey];
+  const newPackage = createPackageInstance(packDef, method);
+
+  if (!pr.packages) pr.packages = [];
+  pr.packages.push(newPackage);
+
+  saveState();
+
+  alert("✓ Pagamento por " + method + " simulado com sucesso!\nPacote \"" + packDef.label + "\" ativado com " + packDef.flags.toLocaleString() + " bandeiras.");
+  announceToScreenReader("Pacote " + packDef.label + " comprado.");
+
+  selectedPackKey = null;
+  renderPRDashboard();
+}
+
+/**
+ * Guarda configurações do PR
+ */
+function savePRSettings() {
+  const pr = getCurrentManagedPR();
+  if (!pr) {
+    alert("Erro: Nenhuma empresa autenticada.");
+    return;
+  }
+
+  // Dados básicos
+  const websiteInput = document.getElementById("pr-edit-website");
+  const contactInput = document.getElementById("pr-edit-contact");
+  const addressInput = document.getElementById("pr-edit-address");
+  const photoInput = document.getElementById("pr-edit-photo");
+
+  if (websiteInput) pr.website = websiteInput.value.trim();
+  if (contactInput) pr.contact = contactInput.value.trim();
+  if (addressInput) pr.address = addressInput.value.trim();
+  if (photoInput) pr.photo = photoInput.value.trim();
+
+  // Configurações de campanha
+  const totals = getPackageTotals(pr);
+
+  const enableRewardsCheckbox = document.getElementById("pr-enable-rewards");
+  const rewardTypeSelect = document.getElementById("pr-reward-type");
+  const rewardTextInput = document.getElementById("pr-reward20");
+  const promoLotsInput = document.getElementById("pr-promo-lots");
+  const bingoCountInput = document.getElementById("pr-bingo-count");
+  const bingoTextInput = document.getElementById("pr-bingo-text");
+
+  const wantsRewards = enableRewardsCheckbox?.checked || false;
+  const rewardType = rewardTypeSelect?.value || "none";
+  const rewardText = rewardTextInput?.value.trim() || "Sem prémio";
+  const promoLotsActive = parseInt(promoLotsInput?.value || "0", 10);
+  const bingoCountActive = parseInt(bingoCountInput?.value || "0", 10);
+  const bingoText = bingoTextInput?.value.trim() || "";
+
+  if (!pr.campaign) {
+    pr.campaign = {
+      rewardsEnabled: false,
+      rewardType: "none",
+      rewardText: "Sem prémio",
+      promoLotsActive: 0,
+      promoBudgetLeft: 0,
+      bingoCountActive: 0,
+      bingoText: "",
+      rewardsGiven: 0
+    };
+  }
+
+  if (!totals.hasPaid) {
+    pr.campaign.rewardsEnabled = false;
+    pr.campaign.rewardType = "none";
+    pr.campaign.rewardText = "Sem prémio";
+    pr.campaign.promoLotsActive = 0;
+    pr.campaign.promoBudgetLeft = 0;
+    pr.campaign.bingoCountActive = 0;
+    pr.campaign.bingoText = "";
+  } else {
+    pr.campaign.rewardsEnabled = wantsRewards;
+    pr.campaign.rewardType = wantsRewards ? rewardType : "none";
+    pr.campaign.rewardText = wantsRewards ? rewardText : "Sem prémio";
+    pr.campaign.promoLotsActive = wantsRewards ? Math.max(0, Math.min(totals.maxLotsPaid, promoLotsActive)) : 0;
+    pr.campaign.promoBudgetLeft = pr.campaign.promoLotsActive * 20;
+    pr.campaign.bingoCountActive = Math.max(0, Math.min(totals.totalBingosPaid, bingoCountActive));
+    pr.campaign.bingoText = pr.campaign.bingoCountActive > 0 ? bingoText : "";
+  }
+
+  saveState();
+  renderPRDashboard();
+  alert("✓ Configuração da empresa atualizada!");
+  announceToScreenReader("Configurações guardadas.");
+}
+
+/**
+ * Cria lotes de prémios
+ */
+function createPRPrizeLots() {
+  const pr = getCurrentManagedPR();
+  if (!pr) return;
+
+  const descInput = document.getElementById("pr-prize-description");
+  const qtyInput = document.getElementById("pr-prize-qty");
+  const resultDiv = document.getElementById("pr-prize-lots-result");
+
+  const description = descInput?.value.trim() || "";
+  const qty = parseInt(qtyInput?.value || "1", 10);
+
+  if (!description) {
+    if (resultDiv) resultDiv.innerHTML = '<span class="warning">Indica a descrição do prémio.</span>';
+    return;
+  }
+
+  if (qty < 1 || qty > 100) {
+    if (resultDiv) resultDiv.innerHTML = '<span class="warning">Quantidade entre 1 e 100.</span>';
+    return;
+  }
+
+  const totals = getPackageTotals(pr);
+  const flagsNeeded = qty * 20;
+
+  if (flagsNeeded > totals.totalLeft) {
+    if (resultDiv) resultDiv.innerHTML = '<span class="danger">Bandeiras insuficientes. Precisas de ' + flagsNeeded + ' mas tens ' + totals.totalLeft + '.</span>';
+    return;
+  }
+
+  // Criar lotes
+  if (!pr.prizeLots) pr.prizeLots = [];
+
+  for (let i = 0; i < qty; i++) {
+    pr.prizeLots.push({
+      id: randomId("LOT"),
+      rewardText: description,
+      createdAt: Date.now(),
+      claimed: false
+    });
+  }
+
+  // Atualizar campanha
+  pr.campaign.promoLotsActive = (pr.campaign.promoLotsActive || 0) + qty;
+  pr.campaign.promoBudgetLeft = (pr.campaign.promoBudgetLeft || 0) + flagsNeeded;
+  pr.campaign.rewardText = description;
+  pr.campaign.rewardsEnabled = true;
+
+  saveState();
+  
+  if (descInput) descInput.value = "";
+  if (qtyInput) qtyInput.value = "1";
+  if (resultDiv) resultDiv.innerHTML = '<span class="ok">✓ ' + qty + ' lote(s) criado(s) com sucesso!</span>';
+
+  renderPRDashboard();
+  announceToScreenReader(qty + " lotes de prémio criados.");
+}
+
+/**
+ * Renderiza lista de lotes de prémios
+ */
+function renderPRPrizeLotsList() {
+  const pr = getCurrentManagedPR();
+  const listBox = document.getElementById("pr-prize-lots-list");
+
+  if (!pr || !listBox) return;
+
+  const lots = Array.isArray(pr.prizeLots) ? pr.prizeLots : [];
+
+  if (lots.length === 0) {
+    listBox.innerHTML = '<p class="small">Ainda não existem lotes de prémio criados.</p>';
+    return;
+  }
+
+  const latest = lots.slice(-10).reverse();
+
+  let html = '<div style="margin-top: 10px;">';
+  latest.forEach((lot, index) => {
+    const statusClass = lot.claimed ? 'badge' : 'badge badge-gold';
+    const statusText = lot.claimed ? 'Usado' : 'Disponível';
+    const date = lot.createdAt ? new Date(lot.createdAt).toLocaleDateString('pt-PT') : 'N/A';
+
+    html += `
+      <div class="item small">
+        <span class="${statusClass}">${statusText}</span>
+        <strong>${escapeHtml(lot.rewardText || 'Sem descrição')}</strong>
+        <br><span style="color: #888;">Criado: ${date}</span>
+      </div>
+    `;
+  });
+
+  if (lots.length > 10) {
+    html += '<p class="small">A mostrar os últimos 10 de ' + lots.length + ' lotes.</p>';
+  }
+
+  html += '</div>';
+  listBox.innerHTML = html;
+}
+
+/**
+ * Renderiza dashboard do PR
+ */
+function renderPRDashboard() {
+  const content = document.getElementById("pr-dashboard-content");
+  const pr = getCurrentManagedPR();
+
+  if (!content) return;
+
+  if (!pr) {
+    content.innerHTML = '<article class="item danger"><p>Nenhuma empresa autenticada.</p></article>';
+    return;
+  }
+
+  const totals = getPackageTotals(pr);
+
+  const safeName = escapeHtml(pr.name);
+  const safeOwnerContact = escapeHtml(pr.ownerContact);
+  const safePostalCode = escapeHtml(pr.postalCode || "—");
+  const safeWebsite = escapeHtml(pr.website || "");
+  const safeContact = escapeHtml(pr.contact || "");
+  const safeAddress = escapeHtml(pr.address || "");
+  const safePhoto = escapeHtml(pr.photo || "");
+  const safeRewardText = escapeHtml(pr.campaign?.rewardText || "");
+  const safeBingoText = escapeHtml(pr.campaign?.bingoText || "");
+
+  // Cards de pacotes disponíveis
+  const packCards = Object.values(PACKS).map(pack => {
+    const isSelected = selectedPackKey === pack.key;
+    return `
+      <article class="pack-card ${isSelected ? 'selected' : ''}">
+        <h4>${escapeHtml(pack.label)} ${isSelected ? '✓' : ''}</h4>
+        <p><strong>${pack.price}€</strong></p>
+        <p class="small">
+          🚩 ${pack.flags.toLocaleString()} bandeiras<br>
+          📍 ${packageRadiusText(pack.radiusKm)}<br>
+          🎁 ${pack.maxLots} lotes<br>
+          🎰 ${pack.bingos} bingos
+        </p>
+        <button class="${isSelected ? '' : 'btn-dark'}" onclick="selectPackage('${pack.key}')">
+          ${isSelected ? '✓ SELECIONADO' : 'SELECIONAR'}
+        </button>
+      </article>
+    `;
+  }).join("");
+
+  // Lista de pacotes comprados
+  const purchasedList = pr.packages && pr.packages.length > 0
+    ? pr.packages.map(pkg => {
+        const pct = pkg.flagsInitial > 0 ? (pkg.flagsLeft / pkg.flagsInitial) * 100 : 0;
+        const barColor = pct > 20 ? '#00ff66' : pct > 5 ? '#ffb347' : '#ff6b6b';
+        return `
+          <div class="item">
+            <strong>${escapeHtml(pkg.label)}</strong> ${pkg.paid ? '' : '<span class="badge">Grátis</span>'}
+            <p class="small">
+              Restam: <strong>${pkg.flagsLeft.toLocaleString()}</strong> / ${pkg.flagsInitial.toLocaleString()} bandeiras<br>
+              Área: ${packageRadiusText(pkg.radiusKm)}
+            </p>
+            <div class="progress-bar">
+              <div class="progress-bar-fill" style="width: ${pct}%; background: ${barColor};"></div>
+            </div>
+          </div>
+        `;
+      }).join("")
+    : '<p class="small">Nenhum pacote comprado.</p>';
+
+  content.innerHTML = `
+    <!-- Informações da Empresa -->
+    <article class="item">
+      <h3>🏢 Informações da Empresa</h3>
+      <p><strong>Nome:</strong> ${safeName}</p>
+      <p><strong>Contacto dono:</strong> ${safeOwnerContact}</p>
+      <p><strong>Código postal:</strong> ${safePostalCode}</p>
+      <p><strong>Coordenadas:</strong> ${pr.lat.toFixed(5)}, ${pr.lng.toFixed(5)}</p>
+      <hr style="border-color: #0f03; margin: 10px 0;">
+      <p>🚩 <strong>Total comprado:</strong> ${totals.totalBought.toLocaleString()} bandeiras</p>
+      <p>📦 <strong>Restantes:</strong> ${totals.totalLeft.toLocaleString()} bandeiras</p>
+      <p>📍 <strong>Área máxima:</strong> ${packageRadiusText(totals.maxRadius)}</p>
+      <p>${getStockWarning(pr)}</p>
+    </article>
+
+    <!-- Pacote Grátis Info -->
+    <article class="item">
+      <h3>🎁 Pacote Inicial Grátis</h3>
+      <p class="small">
+        1.000 bandeiras · 5 km · 50 lotes · <strong>sem ofertas</strong><br>
+        Para ativar prémios para jogadores, compra um pacote pago.
+      </p>
+    </article>
+
+    <!-- Comprar Pacotes -->
+    <article class="item">
+      <h3>🛒 Comprar Pacotes</h3>
+      <p class="small">Seleciona um pacote e escolhe a forma de pagamento.</p>
+      <div class="pack-row">${packCards}</div>
+      <div class="btn-row" style="margin-top: 12px;">
+        <button ${selectedPackKey ? '' : 'disabled'} onclick="purchaseSelectedPackage('QR')">💳 Pagar por QR</button>
+        <button class="btn-dark" ${selectedPackKey ? '' : 'disabled'} onclick="purchaseSelectedPackage('Referência')">📄 Referência</button>
+        <button class="btn-dark" ${selectedPackKey ? '' : 'disabled'} onclick="purchaseSelectedPackage('Transferência')">🏦 Transferência</button>
+      </div>
+    </article>
+
+    <!-- Pacotes Comprados -->
+    <article class="item">
+      <h3>📦 Pacotes Comprados</h3>
+      ${purchasedList}
+    </article>
+
+    <!-- Editar Dados -->
+    <article class="item">
+      <h3>✏️ Editar Dados da Empresa</h3>
+      <div class="form-group">
+        <label for="pr-edit-website">Website</label>
+        <input id="pr-edit-website" type="url" placeholder="https://..." value="${safeWebsite}" />
+      </div>
+      <div class="form-group">
+        <label for="pr-edit-contact">Contacto público</label>
+        <input id="pr-edit-contact" type="text" placeholder="Telefone ou email" value="${safeContact}" />
+      </div>
+      <div class="form-group">
+        <label for="pr-edit-address">Morada</label>
+        <input id="pr-edit-address" type="text" placeholder="Rua, número, cidade" value="${safeAddress}" />
+      </div>
+      <div class="form-group">
+        <label for="pr-edit-photo">URL da foto da loja</label>
+        <input id="pr-edit-photo" type="url" placeholder="https://..." value="${safePhoto}" />
+      </div>
+    </article>
+
+    <!-- Configuração da Campanha -->
+    <article class="item">
+      <h3>🎯 Configuração da Campanha</h3>
+      
+      <div class="form-group">
+        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+          <input type="checkbox" id="pr-enable-rewards" ${pr.campaign?.rewardsEnabled ? "checked" : ""} ${totals.hasPaid ? "" : "disabled"} />
+          <span>Ativar ofertas nesta campanha</span>
+        </label>
+        <p class="small ${totals.hasPaid ? '' : 'warning'}">
+          ${totals.hasPaid ? '✓ Podes configurar prémios.' : '⚠️ Compra um pacote pago para ativar.'}
+        </p>
+      </div>
+
+      <div class="form-group">
+        <label for="pr-reward-type">Tipo de recompensa</label>
+        <select id="pr-reward-type" ${totals.hasPaid ? "" : "disabled"}>
+          <option value="discount" ${pr.campaign?.rewardType === "discount" ? "selected" : ""}>Desconto %</option>
+          <option value="gift" ${pr.campaign?.rewardType === "gift" ? "selected" : ""}>Oferta física</option>
+          <option value="none" ${pr.campaign?.rewardType === "none" ? "selected" : ""}>Sem prémio</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="pr-reward20">Descrição do prémio</label>
+        <input id="pr-reward20" type="text" value="${safeRewardText !== 'Sem prémio' ? safeRewardText : ''}" ${totals.hasPaid ? "" : "disabled"} placeholder="Ex: 5% desconto, 1 café grátis..." />
+      </div>
+
+      <div class="form-group">
+        <label for="pr-promo-lots">Lotes promocionais ativos</label>
+        <input id="pr-promo-lots" type="number" min="0" max="${totals.maxLotsPaid}" value="${pr.campaign?.promoLotsActive || 0}" ${totals.hasPaid ? "" : "disabled"} />
+        <p class="small">Máx: ${totals.maxLotsPaid} lotes · Cada lote = 20 bandeiras promo</p>
+      </div>
+
+      <div class="form-group">
+        <label for="pr-bingo-count">Bingos ativos</label>
+        <input id="pr-bingo-count" type="number" min="0" max="${totals.totalBingosPaid}" value="${pr.campaign?.bingoCountActive || 0}" ${totals.totalBingosPaid > 0 ? "" : "disabled"} />
+        <p class="small">Disponíveis: ${totals.totalBingosPaid} bingos</p>
+      </div>
+
+      <div class="form-group">
+        <label for="pr-bingo-text">Texto do bingo</label>
+        <input id="pr-bingo-text" type="text" value="${safeBingoText}" ${totals.totalBingosPaid > 0 ? "" : "disabled"} placeholder="Oferta surpresa..." />
+      </div>
+
+      <button onclick="savePRSettings()">💾 GUARDAR CONFIGURAÇÃO</button>
+    </article>
+
+    <!-- Criar Lotes de Prémios -->
+    <article class="item">
+      <h3>🎁 Criar Lotes de Prémio</h3>
+      <p class="small">Cada lote consome 20 bandeiras. Ex: 10 lotes = 200 bandeiras.</p>
+      
+      <div class="form-group">
+        <label for="pr-prize-description">Descrição do prémio</label>
+        <textarea id="pr-prize-description" placeholder="Ex: 1 café grátis, 10% desconto, almoço até 30€..."></textarea>
+      </div>
+      
+      <div class="form-group">
+        <label for="pr-prize-qty">Quantidade de lotes</label>
+        <input id="pr-prize-qty" type="number" min="1" max="100" value="1" />
+      </div>
+      
+      <button onclick="createPRPrizeLots()">➕ CRIAR LOTES</button>
+      
+      <div id="pr-prize-lots-result" class="small" style="margin-top: 10px;"></div>
+      <div id="pr-prize-lots-list"></div>
+    </article>
+
+    <!-- Validar QR -->
+    <article class="item">
+      <h3>📱 Validar QR de Jogador</h3>
+      <p class="small">Cola o código QR que o jogador te mostrar.</p>
+      
+      <div class="form-group">
+        <label for="qr-manual-code">Código QR</label>
+        <input id="qr-manual-code" type="text" placeholder="Ex: ZAP-CC-ABC123" style="text-transform: uppercase;" />
+      </div>
+      
+      <button onclick="validateQRManual()">✓ VALIDAR QR</button>
+      
+      <div id="scanner-result" class="small" style="margin-top: 10px;"></div>
+    </article>
+
+    <!-- Estatísticas -->
+    <article class="item">
+      <h3>📊 Estatísticas da Campanha</h3>
+      <p>🎁 Prémios entregues: <strong>${pr.campaign?.rewardsGiven || 0}</strong></p>
+      <p>🚩 Budget promo restante: <strong>${pr.campaign?.promoBudgetLeft || 0}</strong> bandeiras</p>
+      <p>🎰 Bingos ativos: <strong>${pr.campaign?.bingoCountActive || 0}</strong></p>
+      <p>📦 Lotes criados: <strong>${pr.prizeLots?.length || 0}</strong></p>
+    </article>
+  `;
+
+  // Renderizar lista de lotes
+  setTimeout(renderPRPrizeLotsList, 100);
+}
+
+// ============================================================
+// REGENERAÇÃO DE ENERGIA
+// ============================================================
+
+/**
+ * Inicia regeneração de energia
+ */
+function startEnergyRegeneration() {
+  if (energyInterval) clearInterval(energyInterval);
+
+  energyInterval = setInterval(() => {
+    const now = Date.now();
+
+    // Regenerar energia se parado há 1 minuto
+    if (now - lastMovementTime >= 60000 && state.player.energy < 100) {
+      state.player.energy = Math.min(100, state.player.energy + 1);
+      renderTopBar();
+      saveState();
+    }
+
+    // Sugerir modo offline se parado há 2 minutos
+    if (!offlineMode && currentPosition && now - lastMovementTime >= 120000) {
+      if (now - lastOfflineSuggestion > 180000) {
+        lastOfflineSuggestion = now;
+        const wantsOffline = confirm("Pareces parado há algum tempo.\n\nQueres mudar para modo Offline para poupar bateria?");
+        if (wantsOffline) {
+          if (watchId !== null) {
+            navigator.geolocation.clearWatch(watchId);
+            watchId = null;
+          }
+          activateHomeMode();
+        }
+      }
+    }
+  }, 30000);
+}
+
+/**
+ * Para regeneração de energia
+ */
+function stopEnergyRegeneration() {
+  if (energyInterval) {
+    clearInterval(energyInterval);
+    energyInterval = null;
+  }
+}
+
+// ============================================================
+// INICIALIZAÇÃO
+// ============================================================
+
+/**
+ * Preenche campos do jogador
+ */
+function initPlayerFormFields() {
+  if (!state.player.name) return;
+
+  const fields = {
+    "player-name": state.player.name || "",
+    "player-contact": state.player.contact || "",
+    "player-password": state.player.password || "",
+    "player-avatar-mode": state.player.avatarMode || "male",
+    "player-photo-url": state.player.avatarPhoto || ""
+  };
+
+  Object.entries(fields).forEach(([id, value]) => {
+    const el = document.getElementById(id);
+    if (el) el.value = value;
+  });
+}
+
+/**
+ * Preenche campos do PR
+ */
+function initPRFormFields() {
+  const pr = getCurrentManagedPR();
+  if (!pr) return;
+
+  const fields = {
+    "pr-company-name": pr.name || "",
+    "pr-contact": pr.ownerContact || "",
+    "pr-password": pr.ownerPassword || "",
+    "pr-postal-code": pr.postalCode || "",
+    "pr-lat": pr.lat || "",
+    "pr-lng": pr.lng || ""
+  };
+
+  Object.entries(fields).forEach(([id, value]) => {
+    const el = document.getElementById(id);
+    if (el) el.value = value;
+  });
+}
+
+/**
+ * Inicializa a aplicação
+ */
+function initApp() {
+  console.log("⚡ ZAP FLAGS - Inicialização...");
+
+  try {
+    // Garantir dados
+    ensureAllPlayerData();
+    updateSkillAndVision();
+
+    // Renderizar
+    renderTopBar();
+    switchEntryMode("JG");
+
+    // Preencher campos
+    initPlayerFormFields();
+    initPRFormFields();
+
+    // Configurar drag & drop
+    const offlineControls = document.getElementById("offline-controls");
+    if (offlineControls) {
+      makeDraggable(offlineControls);
+    }
+
+    // Iniciar regeneração
+    startEnergyRegeneration();
+
+    console.log("✓ ZAP FLAGS - Pronto!");
+  } catch (error) {
+    console.error("Erro na inicialização:", error);
+  }
+}
+
+/**
+ * Cleanup
+ */
+function cleanup() {
+  stopEnergyRegeneration();
+  if (watchId !== null) {
+    navigator.geolocation.clearWatch(watchId);
+    watchId = null;
+  }
+  saveState();
+}
+
+// ============================================================
+// EXECUTAR
+// ============================================================
+
+// Iniciar quando DOM pronto
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", initApp);
+} else {
+  initApp();
+}
+
+// Cleanup ao fechar
+window.addEventListener("beforeunload", cleanup);
+
+// Guardar ao perder foco
+window.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "hidden") {
+    saveState();
+  }
+});
+
+</script>
+</body>
+</html>
