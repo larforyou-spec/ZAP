@@ -1859,14 +1859,16 @@ function showPRDashboard() {
 }
 
 function goBackToLogin() {
-  showStartScreen();
+  document.getElementById("login-screen").classList.remove("hidden");
+  document.getElementById("game-screen").classList.add("hidden");
+  document.getElementById("pr-screen").classList.add("hidden");
 }
 
 function logoutPR() {
   if (!confirm("Sair da conta?")) return;
   state.currentPRId = null;
   saveState();
-  showStartScreen();
+  goBackToLogin();
 }
 
 function logoutPlayer() {
@@ -2440,58 +2442,7 @@ function savePRSettings() {
   renderPRDashboard();
   alert("Configuração guardada!");
 }
-// ============================================================
-// GESTOR DE PACOTE INDIVIDUAL
-// ============================================================
 
-let currentPackageId = null;
-let packageConfirmTimer = null;
-let packageConfirmDeadline = null;
-
-function openPackageManager(packageId) {
-  const pr = getCurrentManagedPR();
-  if (!pr) return;
-  
-  const pkg = pr.packages.find(p => p.id === packageId);
-  if (!pkg) {
-    alert("Pacote não encontrado.");
-    return;
-  }
-  
-  currentPackageId = packageId;
-  renderPackageManager(pkg, pr);
-}
-
-function renderPackageManager(pkg, pr) {
-  const content = document.getElementById("pr-dashboard-content");
-  if (!content) return;
-  
-  const diasRestantes = pkg.purchaseDate ? Math.max(0, Math.ceil((pkg.purchaseDate + (pkg.daysActive * 24 * 60 * 60 * 1000) - Date.now()) / (24 * 60 * 60 * 1000))) : pkg.daysActive || 0;
-  const statusTexto = pkg.active ? '<span class="ok">✓ ATIVO</span>' : '<span class="warning">○ INATIVO</span>';
-  
-  // Calcular bandeiras usadas em lotes
-  const lotesAtivos = pkg.lotesConfig?.quantidade || 0;
-  const bandeirasUsadasLotes = lotesAtivos * 20;
-  const premiosDisponiveis = lotesAtivos;
-  
-  // Calcular bingos
-  const bingosAtivos = pkg.bingosConfig?.quantidade || 0;
-  const bingosRestantes = pkg.bingos - (pkg.bingosUsed || 0);
-  
-  // Prazo máximo para levantar prémio (máximo dobro do tempo do pacote)
-  const prazoMaximo = (pkg.daysActive || 30) * 2;
-  const prazoAtual = pkg.prazoLevantamento || pkg.daysActive || 30;
-  
-  content.innerHTML = `
-    <div class="item">
-      <div style="display:flex;justify-content:space-between;align-items:center;">
-        <h2 style="margin:0;">📦 ${escapeHtml(pkg.label)}</h2>
-        <button class="btn-dark btn-small" onclick="renderPRDashboard()">⬅ VOLTAR</button>
-      </div>
-    </div>
-    
-    <!-- STATUS E ATIVAÇÃO -->
-    <div 
 function renderPRDashboard() {
   const content = document.getElementById("pr-dashboard-content");
   const pr = getCurrentManagedPR();
@@ -2505,11 +2456,7 @@ function renderPRDashboard() {
 
  const packCards = Object.values(PACKS).map(p => '<div class="pack-card ' + (selectedPackKey === p.key ? 'selected' : '') + '"><strong>' + p.label + '</strong> <span class="ok">' + p.price + '€</span><p class="small">🚩 ' + p.flags.toLocaleString() + ' bandeiras<br>📍 ' + packageRadiusText(p.radiusKm) + '<br>🎰 ' + p.bingos + ' bingos<br>📅 ' + p.daysActive + ' dias ativos</p><button class="btn-small" onclick="selectPackage(\'' + p.key + '\')">' + (selectedPackKey === p.key ? '✓' : 'Selecionar') + '</button></div>').join("");
 
- const pkgList = pr.packages.map(p => {
-    const diasRestantes = p.purchaseDate ? Math.max(0, Math.ceil((p.purchaseDate + (p.daysActive * 24 * 60 * 60 * 1000) - Date.now()) / (24 * 60 * 60 * 1000))) : p.daysActive || 0;
-    const statusTexto = p.active ? '<span class="ok">ATIVO</span>' : '<span class="warning">INATIVO</span>';
-    return '<div class="item"><div style="display:flex;justify-content:space-between;align-items:center;"><div><strong>' + p.label + '</strong> ' + (p.paid ? statusTexto : '(grátis)') + '</div><button class="btn-small" onclick="openPackageManager(\'' + p.id + '\')">⚙️ GERIR</button></div><p class="small">🚩 Restam: ' + p.flagsLeft + '/' + p.flagsInitial + '<br>📍 Raio: ' + packageRadiusText(p.radiusKm) + '<br>🎰 Bingos: ' + (p.bingosUsed || 0) + '/' + p.bingos + '<br>📅 Dias restantes: ' + diasRestantes + '</p></div>';
-  }).join("");
+  const pkgList = pr.packages.map(p => '<div class="item"><strong>' + p.label + '</strong> ' + (p.paid ? '' : '(grátis)') + '<p class="small">Restam: ' + p.flagsLeft + '/' + p.flagsInitial + '</p></div>').join("");
 
   content.innerHTML = `
     <div class="item">
