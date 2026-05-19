@@ -2440,7 +2440,58 @@ function savePRSettings() {
   renderPRDashboard();
   alert("Configuração guardada!");
 }
+// ============================================================
+// GESTOR DE PACOTE INDIVIDUAL
+// ============================================================
 
+let currentPackageId = null;
+let packageConfirmTimer = null;
+let packageConfirmDeadline = null;
+
+function openPackageManager(packageId) {
+  const pr = getCurrentManagedPR();
+  if (!pr) return;
+  
+  const pkg = pr.packages.find(p => p.id === packageId);
+  if (!pkg) {
+    alert("Pacote não encontrado.");
+    return;
+  }
+  
+  currentPackageId = packageId;
+  renderPackageManager(pkg, pr);
+}
+
+function renderPackageManager(pkg, pr) {
+  const content = document.getElementById("pr-dashboard-content");
+  if (!content) return;
+  
+  const diasRestantes = pkg.purchaseDate ? Math.max(0, Math.ceil((pkg.purchaseDate + (pkg.daysActive * 24 * 60 * 60 * 1000) - Date.now()) / (24 * 60 * 60 * 1000))) : pkg.daysActive || 0;
+  const statusTexto = pkg.active ? '<span class="ok">✓ ATIVO</span>' : '<span class="warning">○ INATIVO</span>';
+  
+  // Calcular bandeiras usadas em lotes
+  const lotesAtivos = pkg.lotesConfig?.quantidade || 0;
+  const bandeirasUsadasLotes = lotesAtivos * 20;
+  const premiosDisponiveis = lotesAtivos;
+  
+  // Calcular bingos
+  const bingosAtivos = pkg.bingosConfig?.quantidade || 0;
+  const bingosRestantes = pkg.bingos - (pkg.bingosUsed || 0);
+  
+  // Prazo máximo para levantar prémio (máximo dobro do tempo do pacote)
+  const prazoMaximo = (pkg.daysActive || 30) * 2;
+  const prazoAtual = pkg.prazoLevantamento || pkg.daysActive || 30;
+  
+  content.innerHTML = `
+    <div class="item">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <h2 style="margin:0;">📦 ${escapeHtml(pkg.label)}</h2>
+        <button class="btn-dark btn-small" onclick="renderPRDashboard()">⬅ VOLTAR</button>
+      </div>
+    </div>
+    
+    <!-- STATUS E ATIVAÇÃO -->
+    <div 
 function renderPRDashboard() {
   const content = document.getElementById("pr-dashboard-content");
   const pr = getCurrentManagedPR();
