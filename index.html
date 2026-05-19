@@ -1475,3 +1475,685 @@ function logoutPlayer() {
   }
   goBackToLogin();
 }
+// ============================================================
+// MAPA E GPS
+// ============================================================
+
+function initMap() {
+  if (map) return true;
+  if (typeof L === "undefined") {
+    alert("Erro ao carregar mapa.");
+    return false;
+  }
+
+  map = L.map("map", {
+    zoomControl: true,
+    dragging: true,
+    scrollWheelZoom: false,
+    doubleClickZoom: false,
+    touchZoom: true,
+    boxZoom: false,
+    keyboard: false
+  }).setView([38.7223, -9.1393], 18);
+
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    attribution: "© OpenStreetMap",
+    maxZoom: 19
+  }).addTo(map);
+
+  map.on("move", updateFogOverlay);
+  map.on("zoom", updateFogOverlay);
+  return true;
+}
+
+function createPlayerIcon() {
+  let inner = "JG";
+  if (state.player.avatarMode === "male") inner = "♂";
+  if (state.player.avatarMode === "female") inner = "♀";
+  if (state.player.avatarMode === "photo" && state.player.avatarPhoto) {
+    inner = '<img src="' + escapeHtml(state.player.avatarPhoto) + '" onerror="this.outerHTML=\'JG\'" />';
+  }
+  return L.divIcon({
+    className: "",
+    html: '<div class="player-marker">' + inner + '</div>',
+    iconSize: [28, 28],
+    iconAnchor: [14, 14]
+  });
+}
+
+function createFlagIcon(color) {
+  const c = sanitizeColor(color);
+  return L.divIcon({
+    className: "",
+    html: '<div class="flag-marker"><div class="flag-stick"></div><div class="flag-banner" style="background:' + c + ';"></div></div>',
+    iconSize: [34, 34],
+    iconAnchor: [17, 28]
+  });
+}
+
+function requestGPSMode() {
+  document.getElementById("mode-modal").classList.add("hidden");
+  document.getElementById("offline-controls").classList.add("hidden");
+  offlineMode = false;
+  gpsCenteredOnce = false;
+  renderTopBar();
+
+  if (!navigator.geolocation) {
+    alert("GPS não suportado.");
+    activateHomeMode();
+    return;
+  }
+
+  if (watchId !== null) navigator.geolocation.clearWatch(watchId);
+
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      updatePosition(pos, true);
+      watchId = navigator.geolocation.watchPosition(
+        p => updatePosition(p, false),
+        () => { alert("Erro GPS."); activateHomeMode(); },
+        { enableHighAccuracy: true, maximumAge: 5000, timeout: 20000 }
+      );
+    },
+    () => {
+      alert("GPS falhou.");
+      document.getElementById("mode-modal").classList.remove("hidden");
+    },
+    { enableHighAccuracy: true, maximumAge: 5000, timeout: 20000 }
+  );
+}
+
+function activateHomeMode() {
+  document.getElementById("mode-modal").classList.add("hidden");
+  offlineMode = true;
+  document.getElementById("offline-controls").classList.remove("hidden");
+  if (!currentPosition) currentPosition = { lat: 38.7223, lng: -9.1393 };
+  updatePlayerLocation(currentPosition.lat, currentPosition.lng, false, true);
+  manualRefreshFlags();
+  renderTopBar();
+}
+
+function closeModeModal() {
+  document.getElementById("mode-modal").classList.add("hidden");
+}
+
+function updatePosition(pos, forceCenter) {
+  updatePlayerLocation(pos.coords.latitude, pos.coords.longitude, true, forceCenter || !gpsCenteredOnce);
+  gpsCenteredOnce = true;
+}
+
+function updatePlayerLocation(lat, lng, fromMovement, centerMap) {
+  currentPosition = { lat, lng };
+
+  if (lastPosForEnergy && fromMovement) {
+    const moved = getDistanceMeters(lastPosForEnergy.lat, lastPosForEnergy.lng, lat, lng);
+    if (moved > 0.5) {
+      movedMetersBuffer += moved;
+      lastMovementTime = Date.now();
+      while (movedMetersBuffer >= 20) {
+        movedMetersBuffer -= 20;
+        state.player.energy = Math.max(0, state.player.energy - 1);
+      }
+    }
+  }
+  lastPosForEnergy = { lat, lng };
+
+  if (!playerMarker) {
+    playerMarker = L.marker([lat, lng], { icon: createPlayerIcon() }).addTo(map);
+  } else {
+    playerMarker.setLatLng([lat, lng]);
+    playerMarker.setIcon(createPlayerIcon());
+  }
+
+  if (!visionCircle) {
+    visionCircle = L.circle([lat, lng], { radius: state.player.vision, color: "#00ff00", fillOpacity: 0.05, weight: 1 }).addTo(map);
+  } else {
+    visionCircle.setLatLng([lat, lng]);
+    visionCircle.setRadius(state.player.vision);
+  }
+
+  if (centerMap) map.setView([lat, lng], 18);
+
+  updateFogOverlay();
+  refreshFlags(false);
+  updateVisibleFlags();
+  renderTopBar();
+  renderPanelIfOpen();
+  saveState();
+}
+
+function updateFogOverlay() {
+  if (!map || !currentPosition) return;
+  const pt = map.latLngToContainerPoint([currentPosition.lat, currentPosition.lng]);
+  const fog = document.getElementById("fog-overlay");
+  if (fog) {
+    fog.style.setProperty("--fog-x", pt.x + "px");
+    fog.style.setProperty("--fog-y", pt.y + "px");
+    fog.style.setProperty("--fog-r", Math.max(55, state.player.vision * 18) + "px");
+  }
+}
+
+function centerOnPlayer() {
+  if (map && currentPosition) map.setView([currentPosition.lat, currentPosition.lng], 18);
+}
+
+function moveHomePlayer(dx, dy) {
+  if (!offlineMode || !currentPosition) return;
+  const lat = currentPosition.lat + (dy / 111320);
+  const lng = currentPosition.lng + (dx / (111320 * Math.cos(currentPosition.lat * Math.PI / 180)));
+  updatePlayerLocation(lat, lng, true, true);
+}
+
+function resizeOfflineControls(delta) {
+  const box = document.getElementById("offline-controls");
+  if (!box) return;
+  const w = parseInt(box.style.width) || 118;
+  const h = parseInt(box.style.height) || 138;
+  box.style.width = Math.max(95, Math.min(180, w + delta)) + "px";
+  box.style.height = Math.max(115, Math.min(200, h + delta)) + "px";
+}
+
+function makeDraggable(el, handleSelector = ".drag-handle") {
+  const handle = el.querySelector(handleSelector) || el;
+  let dragging = false, startX = 0, startY = 0, startLeft = 0, startTop = 0;
+
+  handle.addEventListener("pointerdown", e => {
+    dragging = true;
+    const rect = el.getBoundingClientRect();
+    el.style.left = rect.left + "px";
+    el.style.top = rect.top + "px";
+    el.style.right = "auto";
+    el.style.bottom = "auto";
+    startLeft = rect.left;
+    startTop = rect.top;
+    startX = e.clientX;
+    startY = e.clientY;
+    handle.setPointerCapture(e.pointerId);
+  });
+
+  window.addEventListener("pointermove", e => {
+    if (!dragging) return;
+    el.style.left = Math.max(0, startLeft + e.clientX - startX) + "px";
+    el.style.top = Math.max(0, startTop + e.clientY - startY) + "px";
+  });
+
+  window.addEventListener("pointerup", () => { dragging = false; });
+}
+
+// ============================================================
+// BANDEIRAS
+// ============================================================
+
+function clearFlags() {
+  allFlags.forEach(f => { if (f.marker && map) map.removeLayer(f.marker); });
+  allFlags = [];
+}
+
+function getAllActivePackages() {
+  const list = [];
+  state.prs.forEach(pr => {
+    (pr.packages || []).forEach(pkg => {
+      if (pkg.flagsLeft > 0) list.push({ pr, pkg });
+    });
+  });
+  return list;
+}
+
+function weightedPackagePick() {
+  if (!currentPosition) return null;
+  const candidates = getAllActivePackages().map(({ pr, pkg }) => {
+    const distKm = getDistanceMeters(currentPosition.lat, currentPosition.lng, pr.lat, pr.lng) / 1000;
+    let weight = 0;
+    if (pkg.radiusKm === Infinity) weight = 0.4;
+    else if (distKm <= pkg.radiusKm) {
+      const closeness = 1 - (distKm / pkg.radiusKm);
+      const bonus = pkg.radiusKm <= 5 ? 2.2 : pkg.radiusKm <= 15 ? 1.8 : 1.3;
+      weight = (1 + closeness * 4) * bonus;
+    } else weight = 0.03;
+    weight *= Math.max(0.3, Math.min(2, pkg.flagsLeft / Math.max(pkg.flagsInitial, 1)));
+    return { pr, pkg, weight };
+  }).filter(c => c.weight > 0);
+
+  const total = candidates.reduce((a, c) => a + c.weight, 0);
+  if (!total) return null;
+  let r = Math.random() * total;
+  for (const c of candidates) { r -= c.weight; if (r <= 0) return { pr: c.pr, pkg: c.pkg }; }
+  return candidates[0] ? { pr: candidates[0].pr, pkg: candidates[0].pkg } : null;
+}
+
+function promoChanceForPackage(pr, pkg) {
+  if (!pkg.paid || !pr.campaign?.rewardsEnabled || pr.campaign.promoBudgetLeft <= 0) return 0;
+  return Math.max(0.05, Math.min(0.30, (pr.campaign.promoBudgetLeft / Math.max(pkg.flagsLeft, 1)) * 500));
+}
+
+function createFlagCandidate(type, selected = null) {
+  if (!currentPosition) return null;
+  const radius = type === "PR" ? 1 + Math.random() * 15 : 1 + Math.random() * 12;
+  const pt = randomOffset(currentPosition.lat, currentPosition.lng, radius);
+  const flag = { id: randomId("FLAG"), type, lat: pt.lat, lng: pt.lng, marker: null };
+  if (type === "PR" && selected) {
+    flag.prId = selected.pr.id;
+    flag.packageId = selected.pkg.id;
+    flag.promo = Math.random() < promoChanceForPackage(selected.pr, selected.pkg);
+  }
+  return flag;
+}
+
+function manualRefreshFlags() {
+  refreshFlags(true);
+  updateVisibleFlags();
+}
+
+function refreshFlags(force) {
+  if (!currentPosition) return;
+  const now = Date.now();
+  let should = force || !lastFlagRefreshCenter || now - lastFlagRefreshTime > 15000;
+  if (!should && lastFlagRefreshCenter && getDistanceMeters(lastFlagRefreshCenter.lat, lastFlagRefreshCenter.lng, currentPosition.lat, currentPosition.lng) > 10) should = true;
+  if (!should) return;
+
+  clearFlags();
+  const zf = createFlagCandidate("ZAP");
+  if (zf) allFlags.push(zf);
+  const sel = weightedPackagePick();
+  if (sel) {
+    const pf = createFlagCandidate("PR", sel);
+    if (pf) allFlags.push(pf);
+  }
+  lastFlagRefreshCenter = { ...currentPosition };
+  lastFlagRefreshTime = now;
+}
+
+function updateVisibleFlags() {
+  if (!currentPosition || !map) return;
+  allFlags.forEach(flag => {
+    const dist = getDistanceMeters(currentPosition.lat, currentPosition.lng, flag.lat, flag.lng);
+    const visible = dist <= state.player.vision;
+    if (visible && !flag.marker) {
+      const color = flag.type === "ZAP" ? "#00BFFF" : (findPR(flag.prId)?.color || "#0f0");
+      flag.marker = L.marker([flag.lat, flag.lng], { icon: createFlagIcon(color) }).addTo(map);
+      flag.marker.on("click", () => openFlagModal(flag.id));
+    }
+    if (!visible && flag.marker) {
+      map.removeLayer(flag.marker);
+      flag.marker = null;
+    }
+  });
+}
+
+function removeFlag(flagId) {
+  const f = allFlags.find(x => x.id === flagId);
+  if (f?.marker && map) map.removeLayer(f.marker);
+  allFlags = allFlags.filter(x => x.id !== flagId);
+}
+
+function openFlagModal(flagId) {
+  const flag = allFlags.find(f => f.id === flagId);
+  if (!flag || !currentPosition) return;
+  const dist = getDistanceMeters(currentPosition.lat, currentPosition.lng, flag.lat, flag.lng);
+  const canCollect = dist <= 5;
+  const content = document.getElementById("flag-modal-content");
+
+  if (flag.type === "ZAP") {
+    content.innerHTML = '<div class="panel-header"><h2 style="margin:0">🔵 BANDEIRA ZAP</h2><button class="btn-dark btn-small" onclick="closeFlagModal()">X</button></div><div class="item"><p>+10% energia · +skill</p></div><div class="item"><p>Distância: ' + Math.round(dist) + 'm</p></div><div class="btn-row"><button ' + (canCollect ? '' : 'disabled') + ' onclick="collectZapFlag(\'' + flag.id + '\')">' + (canCollect ? 'RECOLHER' : 'APROXIMA-TE') + '</button></div>';
+  } else {
+    const pr = findPR(flag.prId);
+    if (!pr) return;
+    content.innerHTML = '<div class="panel-header"><h2 style="margin:0">🚩 ' + escapeHtml(pr.name) + '</h2><button class="btn-dark btn-small" onclick="closeFlagModal()">X</button></div><div class="brand-head"><div class="brand-icon" style="background:' + sanitizeColor(pr.color) + '">' + escapeHtml(pr.short) + '</div><div><strong>' + escapeHtml(pr.name) + '</strong></div></div><div class="item"><p>Distância: ' + Math.round(dist) + 'm</p></div><div class="btn-row"><button ' + (canCollect ? '' : 'disabled') + ' onclick="collectPRFlag(\'' + flag.id + '\')">' + (canCollect ? 'RECOLHER' : 'APROXIMA-TE') + '</button></div>';
+  }
+  document.getElementById("flag-modal").classList.remove("hidden");
+}
+
+function closeFlagModal() {
+  document.getElementById("flag-modal").classList.add("hidden");
+}
+
+function collectZapFlag(flagId) {
+  const flag = allFlags.find(f => f.id === flagId);
+  if (!flag) return;
+  state.player.energy = Math.min(100, state.player.energy + 10);
+  state.player.zapFlags++;
+  state.player.totalFlags++;
+  updateSkillAndVision();
+  if (visionCircle) visionCircle.setRadius(state.player.vision);
+  removeFlag(flagId);
+  const nf = createFlagCandidate("ZAP");
+  if (nf) allFlags.push(nf);
+  renderTopBar();
+  renderPanelIfOpen();
+  updateVisibleFlags();
+  saveState();
+  document.getElementById("flag-modal-content").innerHTML = '<div class="panel-header"><h2 style="margin:0">🔵 RECOLHIDA!</h2><button class="btn-dark btn-small" onclick="closeFlagModal()">X</button></div><div class="item ok"><p>+10% energia · Skill: ' + state.player.skill + '</p></div>';
+}
+
+function collectPRFlag(flagId) {
+  const flag = allFlags.find(f => f.id === flagId);
+  if (!flag) return;
+  if (state.player.energy <= 0) { alert("Sem energia!"); return; }
+  const pr = findPR(flag.prId);
+  if (!pr) return;
+
+  const pkg = pr.packages.find(p => p.id === flag.packageId);
+  if (pkg && pkg.flagsLeft > 0) pkg.flagsLeft--;
+
+  ensurePlayerDataForPR(pr.id);
+  state.player.prFlags++;
+  state.player.totalFlags++;
+  state.player.totalSeenByPR[pr.id]++;
+  updateSkillAndVision();
+  if (visionCircle) visionCircle.setRadius(state.player.vision);
+
+  let title = "🚩 RECOLHIDA!", body = '<div class="item"><p>Bandeira de ' + escapeHtml(pr.name) + '</p></div>';
+
+  if (flag.promo && pr.campaign?.rewardsEnabled && pr.campaign.promoBudgetLeft > 0) {
+    pr.campaign.promoBudgetLeft--;
+    state.player.promoProgressByPR[pr.id].current++;
+    state.player.promoProgressByPR[pr.id].total++;
+
+    if (state.player.promoProgressByPR[pr.id].current >= 20 && pr.campaign.rewardsGiven < pr.campaign.promoLotsActive) {
+      state.player.promoProgressByPR[pr.id].current -= 20;
+      pr.campaign.rewardsGiven++;
+      generateQR(pr);
+      title = "🎉 PRÉMIO!";
+      body = '<div class="item ok"><p>Ganhaste: ' + escapeHtml(pr.campaign.rewardText) + '</p><p class="small">QR nos teus cupões!</p></div>';
+    }
+  }
+
+  removeFlag(flagId);
+  const sel = weightedPackagePick();
+  if (sel) { const nf = createFlagCandidate("PR", sel); if (nf) allFlags.push(nf); }
+  renderTopBar();
+  renderPanelIfOpen();
+  updateVisibleFlags();
+  saveState();
+  document.getElementById("flag-modal-content").innerHTML = '<div class="panel-header"><h2 style="margin:0">' + title + '</h2><button class="btn-dark btn-small" onclick="closeFlagModal()">X</button></div>' + body;
+}
+
+// ============================================================
+// QR CODES
+// ============================================================
+
+function generateQR(pr) {
+  state.player.qrs.push({
+    id: randomId("QR"),
+    code: "ZAP-" + pr.short + "-" + Math.random().toString(36).slice(2, 8).toUpperCase(),
+    prId: pr.id,
+    prName: pr.name,
+    rewardText: pr.campaign.rewardText || "Oferta",
+    createdAt: Date.now(),
+    expiresAt: Date.now() + 15 * 24 * 60 * 60 * 1000,
+    status: "active"
+  });
+}
+
+function expireOldQrs() {
+  const now = Date.now();
+  state.player.qrs = state.player.qrs.filter(q => {
+    if (q.status === "active" && q.expiresAt <= now) {
+      q.status = "expired";
+      state.player.usedQrs.push(q);
+      return false;
+    }
+    return q.status === "active";
+  });
+}
+
+function validateQRManual() {
+  const input = document.getElementById("qr-manual-code");
+  const result = document.getElementById("scanner-result");
+  const code = (input?.value || "").trim().toUpperCase();
+
+  if (!code) { result.innerHTML = '<span class="warning">Escreve o código.</span>'; return; }
+  expireOldQrs();
+  const qr = state.player.qrs.find(q => q.code.toUpperCase() === code);
+  if (!qr) { result.innerHTML = '<span class="danger">QR inválido.</span>'; return; }
+
+  qr.status = "used";
+  qr.usedAt = Date.now();
+  state.player.usedQrs.push({ ...qr });
+  state.player.qrs = state.player.qrs.filter(q => q.id !== qr.id);
+  saveState();
+  result.innerHTML = '<span class="ok">✓ QR validado!</span>';
+  input.value = "";
+  renderPRDashboard();
+}
+
+// ============================================================
+// PAINÉIS
+// ============================================================
+
+function renderTopBar() {
+  expireOldQrs();
+  document.getElementById("energy-fill").style.width = state.player.energy + "%";
+  document.getElementById("energy-text").textContent = "Energia: " + state.player.energy + "%";
+  document.getElementById("mode-text").textContent = offlineMode ? "Modo: Offline" : "Modo: GPS";
+}
+
+function openPanel(type) {
+  currentOpenPanel = type;
+  document.getElementById("side-panel").classList.remove("hidden");
+  const title = document.getElementById("side-panel-title");
+  const content = document.getElementById("side-panel-content");
+
+  if (type === "progress") {
+    title.textContent = "Progresso";
+    content.innerHTML = renderProgressPanel();
+  } else if (type === "qrs") {
+    title.textContent = "Cupões QR";
+    content.innerHTML = renderQRPanel();
+  } else if (type === "account") {
+    title.textContent = "Conta";
+    content.innerHTML = renderAccountPanel();
+  }
+}
+
+function renderPanelIfOpen() {
+  if (currentOpenPanel) openPanel(currentOpenPanel);
+}
+
+function closePanel() {
+  currentOpenPanel = null;
+  document.getElementById("side-panel").classList.add("hidden");
+}
+
+function renderProgressPanel() {
+  ensureAllPlayerData();
+  let h = '<div class="item"><p><strong>Total:</strong> ' + state.player.totalFlags + ' · <strong>ZAP:</strong> ' + state.player.zapFlags + ' · <strong>PR:</strong> ' + state.player.prFlags + '</p><p><strong>Skill:</strong> ' + state.player.skill + ' · <strong>Visão:</strong> ' + state.player.vision.toFixed(1) + 'm</p></div>';
+  state.prs.forEach(pr => {
+    const t = state.player.totalSeenByPR[pr.id] || 0;
+    const p = state.player.promoProgressByPR[pr.id] || { current: 0 };
+    if (t > 0) h += '<div class="item"><span class="badge" style="background:' + sanitizeColor(pr.color) + '">' + escapeHtml(pr.short) + '</span> <strong>' + escapeHtml(pr.name) + '</strong><p class="small">Apanhadas: ' + t + ' · Promo: ' + p.current + '/20</p></div>';
+  });
+  return h;
+}
+
+function renderQRPanel() {
+  expireOldQrs();
+  if (!state.player.qrs.length) return '<div class="item"><p>Sem cupões.</p></div>';
+  return state.player.qrs.map(q => '<div class="item"><span class="badge badge-gold">QR</span> <strong>' + escapeHtml(q.prName) + '</strong><p class="small">Prémio: ' + escapeHtml(q.rewardText) + ' · Válido: ' + qrExpiryText(q.expiresAt) + '</p><div class="qr-code">' + escapeHtml(q.code) + '</div><img src="https://quickchart.io/qr?text=' + encodeURIComponent(q.code) + '&size=100" style="margin-top:8px;background:#fff;padding:4px;border-radius:6px;" /></div>').join("");
+}
+
+function renderAccountPanel() {
+  return '<div class="item"><p><strong>Nome:</strong> ' + escapeHtml(state.player.name) + '</p><p><strong>Contacto:</strong> ' + escapeHtml(state.player.contact) + '</p><p><strong>Energia:</strong> ' + state.player.energy + '%</p></div><div class="item"><label class="small">Avatar:</label><select id="account-avatar-mode"><option value="male" ' + (state.player.avatarMode === "male" ? "selected" : "") + '>Masculino</option><option value="female" ' + (state.player.avatarMode === "female" ? "selected" : "") + '>Feminino</option><option value="photo" ' + (state.player.avatarMode === "photo" ? "selected" : "") + '>Foto</option></select><input id="account-avatar-photo" type="url" placeholder="URL foto" value="' + escapeHtml(state.player.avatarPhoto) + '" /><button onclick="saveAvatarSettings()">GUARDAR</button></div><div class="item"><button class="btn-danger" onclick="logoutPlayer()">SAIR</button></div>';
+}
+
+function saveAvatarSettings() {
+  const m = document.getElementById("account-avatar-mode");
+  const p = document.getElementById("account-avatar-photo");
+  if (m) state.player.avatarMode = m.value;
+  if (p) state.player.avatarPhoto = p.value.trim();
+  if (playerMarker) playerMarker.setIcon(createPlayerIcon());
+  saveState();
+  renderPanelIfOpen();
+  alert("Avatar guardado!");
+}
+
+// ============================================================
+// PR DASHBOARD
+// ============================================================
+
+function selectPackage(key) {
+  selectedPackKey = key;
+  renderPRDashboard();
+}
+
+function purchaseSelectedPackage(method) {
+  const pr = getCurrentManagedPR();
+  if (!pr || !selectedPackKey || !PACKS[selectedPackKey]) {
+    alert("Seleciona um pacote.");
+    return;
+  }
+  const def = PACKS[selectedPackKey];
+  pr.packages.push(createPackageInstance(def, method));
+  saveState();
+  alert("Pacote " + def.label + " ativado!");
+  selectedPackKey = null;
+  renderPRDashboard();
+}
+
+function savePRSettings() {
+  const pr = getCurrentManagedPR();
+  if (!pr) return;
+
+  pr.website = document.getElementById("pr-edit-website")?.value.trim() || "";
+  pr.contact = document.getElementById("pr-edit-contact")?.value.trim() || "";
+  pr.address = document.getElementById("pr-edit-address")?.value.trim() || "";
+  pr.photo = document.getElementById("pr-edit-photo")?.value.trim() || "";
+
+  const totals = getPackageTotals(pr);
+  const wantsRewards = document.getElementById("pr-enable-rewards")?.checked || false;
+
+  if (!totals.hasPaid) {
+    pr.campaign.rewardsEnabled = false;
+  } else {
+    pr.campaign.rewardsEnabled = wantsRewards;
+    pr.campaign.rewardType = document.getElementById("pr-reward-type")?.value || "none";
+    pr.campaign.rewardText = document.getElementById("pr-reward20")?.value.trim() || "Sem prémio";
+    pr.campaign.promoLotsActive = Math.min(totals.maxLotsPaid, parseInt(document.getElementById("pr-promo-lots")?.value || "0", 10));
+    pr.campaign.promoBudgetLeft = pr.campaign.promoLotsActive * 20;
+    pr.campaign.bingoCountActive = Math.min(totals.totalBingosPaid, parseInt(document.getElementById("pr-bingo-count")?.value || "0", 10));
+    pr.campaign.bingoText = document.getElementById("pr-bingo-text")?.value.trim() || "";
+  }
+
+  saveState();
+  renderPRDashboard();
+  alert("Configuração guardada!");
+}
+
+function renderPRDashboard() {
+  const content = document.getElementById("pr-dashboard-content");
+  const pr = getCurrentManagedPR();
+  if (!content) return;
+  if (!pr) {
+    content.innerHTML = '<div class="item danger">Sem empresa.</div>';
+    return;
+  }
+
+  const t = getPackageTotals(pr);
+
+  const packCards = Object.values(PACKS).map(p => '<div class="pack-card ' + (selectedPackKey === p.key ? 'selected' : '') + '"><strong>' + p.label + '</strong> ' + p.price + '€<p class="small">' + p.flags.toLocaleString() + ' bandeiras · ' + packageRadiusText(p.radiusKm) + '</p><button class="btn-small" onclick="selectPackage(\'' + p.key + '\')">' + (selectedPackKey === p.key ? '✓' : 'Selecionar') + '</button></div>').join("");
+
+  const pkgList = pr.packages.map(p => '<div class="item"><strong>' + p.label + '</strong> ' + (p.paid ? '' : '(grátis)') + '<p class="small">Restam: ' + p.flagsLeft + '/' + p.flagsInitial + '</p></div>').join("");
+
+  content.innerHTML = `
+    <div class="item">
+      <p><strong>Empresa:</strong> ${escapeHtml(pr.name)}</p>
+      <p><strong>Bandeiras:</strong> ${t.totalLeft}/${t.totalBought}</p>
+      <p>${getStockWarning(pr)}</p>
+    </div>
+    <div class="item">
+      <h3>Comprar Pacotes</h3>
+      <div class="pack-row">${packCards}</div>
+      <div class="btn-row" style="margin-top:10px;">
+        <button ${selectedPackKey ? '' : 'disabled'} onclick="purchaseSelectedPackage('QR')">Pagar QR</button>
+        <button class="btn-dark" ${selectedPackKey ? '' : 'disabled'} onclick="purchaseSelectedPackage('Ref')">Referência</button>
+      </div>
+    </div>
+    <div class="item">
+      <h3>Pacotes Comprados</h3>
+      ${pkgList || '<p class="small">Nenhum.</p>'}
+    </div>
+    <div class="item">
+      <h3>Dados da Empresa</h3>
+      <input id="pr-edit-website" placeholder="Website" value="${escapeHtml(pr.website || '')}" />
+      <input id="pr-edit-contact" placeholder="Contacto" value="${escapeHtml(pr.contact || '')}" />
+      <input id="pr-edit-address" placeholder="Morada" value="${escapeHtml(pr.address || '')}" />
+      <input id="pr-edit-photo" placeholder="URL foto" value="${escapeHtml(pr.photo || '')}" />
+    </div>
+    <div class="item">
+      <h3>Campanha</h3>
+      <label><input type="checkbox" id="pr-enable-rewards" ${pr.campaign?.rewardsEnabled ? 'checked' : ''} ${t.hasPaid ? '' : 'disabled'} /> Ativar ofertas</label>
+      <select id="pr-reward-type" ${t.hasPaid ? '' : 'disabled'}>
+        <option value="discount" ${pr.campaign?.rewardType === 'discount' ? 'selected' : ''}>Desconto</option>
+        <option value="gift" ${pr.campaign?.rewardType === 'gift' ? 'selected' : ''}>Oferta</option>
+      </select>
+      <input id="pr-reward20" placeholder="Texto do prémio" value="${escapeHtml(pr.campaign?.rewardText || '')}" ${t.hasPaid ? '' : 'disabled'} />
+      <input id="pr-promo-lots" type="number" min="0" max="${t.maxLotsPaid}" value="${pr.campaign?.promoLotsActive || 0}" ${t.hasPaid ? '' : 'disabled'} placeholder="Lotes promo" />
+      <input id="pr-bingo-count" type="number" min="0" max="${t.totalBingosPaid}" value="${pr.campaign?.bingoCountActive || 0}" ${t.totalBingosPaid ? '' : 'disabled'} placeholder="Bingos" />
+      <input id="pr-bingo-text" placeholder="Texto bingo" value="${escapeHtml(pr.campaign?.bingoText || '')}" ${t.totalBingosPaid ? '' : 'disabled'} />
+      <button onclick="savePRSettings()">GUARDAR</button>
+    </div>
+    <div class="item">
+      <h3>Validar QR</h3>
+      <input id="qr-manual-code" placeholder="Código QR" />
+      <button onclick="validateQRManual()">VALIDAR</button>
+      <div id="scanner-result" class="small"></div>
+    </div>
+    <div class="item">
+      <p><strong>Prémios dados:</strong> ${pr.campaign?.rewardsGiven || 0}</p>
+    </div>
+  `;
+}
+
+// ============================================================
+// INICIALIZAÇÃO
+// ============================================================
+
+function startEnergyRegeneration() {
+  if (energyInterval) clearInterval(energyInterval);
+  energyInterval = setInterval(() => {
+    if (Date.now() - lastMovementTime >= 60000 && state.player.energy < 100) {
+      state.player.energy = Math.min(100, state.player.energy + 1);
+      renderTopBar();
+      saveState();
+    }
+  }, 30000);
+}
+
+function initApp() {
+  console.log("ZAP FLAGS - Init");
+  ensureAllPlayerData();
+  updateSkillAndVision();
+  renderTopBar();
+  switchEntryMode("JG");
+
+  if (state.player.name) {
+    document.getElementById("player-name").value = state.player.name;
+    document.getElementById("player-contact").value = state.player.contact;
+  }
+
+  const pr = getCurrentManagedPR();
+  if (pr) {
+    document.getElementById("pr-company-name").value = pr.name || "";
+    document.getElementById("pr-contact").value = pr.ownerContact || "";
+  }
+
+  const offlineBox = document.getElementById("offline-controls");
+  if (offlineBox) makeDraggable(offlineBox);
+
+  startEnergyRegeneration();
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", initApp);
+} else {
+  initApp();
+}
+
+window.addEventListener("beforeunload", () => {
+  if (energyInterval) clearInterval(energyInterval);
+  if (watchId) navigator.geolocation.clearWatch(watchId);
+  saveState();
+});
+</script>
+</body>
+</html>
