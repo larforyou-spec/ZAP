@@ -2438,7 +2438,6 @@ function savePRSettings() {
   renderPRDashboard();
   alert("Configuração guardada!");
 }
-
 function renderPRDashboard() {
   try {
     const content = document.getElementById("pr-dashboard-content");
@@ -2557,60 +2556,7 @@ function renderPRDashboard() {
   } catch (e) {
     console.error("Erro ao renderizar dashboard PR:", e);
   }
-}
-    // ===== HTML final =====
-    content.innerHTML = `
-      <div class="item">
-        <p><strong>Empresa:</strong> ${escapeHtml(pr.name || '')}</p>
-        <p><strong>Bandeiras:</strong> ${t.totalLeft.toLocaleString()}/${t.totalBought.toLocaleString()}</p>
-        <p>${getStockWarning(pr)}</p>
-      </div>
-      <div class="item">
-        <h3>Comprar Pacotes</h3>
-        <div class="pack-row">${packCards}</div>
-        <div class="btn-row" style="margin-top:10px;">
-          <button ${selectedPackKey ? '' : 'disabled'} onclick="purchaseSelectedPackage('QR')">Pagar QR</button>
-          <button class="btn-dark" ${selectedPackKey ? '' : 'disabled'} onclick="purchaseSelectedPackage('Ref')">Referência</button>
-        </div>
-      </div>
-      <div class="item">
-        <h3>Pacotes Comprados</h3>
-        ${pkgList || '<p class="small">Nenhum pacote ativo.</p>'}
-      </div>
-      <div class="item">
-        <h3>Dados da Empresa</h3>
-        <input id="pr-edit-website" placeholder="Website" value="${escapeHtml(pr.website || '')}" />
-        <input id="pr-edit-contact" placeholder="Contacto" value="${escapeHtml(pr.contact || '')}" />
-        <input id="pr-edit-address" placeholder="Morada" value="${escapeHtml(pr.address || '')}" />
-        <input id="pr-edit-photo" placeholder="URL foto" value="${escapeHtml(pr.photo || '')}" />
-      </div>
-      <div class="item">
-        <h3>Campanha</h3>
-        <label><input type="checkbox" id="pr-enable-rewards" ${pr.campaign?.rewardsEnabled ? 'checked' : ''} ${t.hasPaid ? '' : 'disabled'} /> Ativar ofertas</label>
-        <select id="pr-reward-type" ${t.hasPaid ? '' : 'disabled'}>
-          <option value="discount" ${pr.campaign?.rewardType === 'discount' ? 'selected' : ''}>Desconto</option>
-          <option value="gift" ${pr.campaign?.rewardType === 'gift' ? 'selected' : ''}>Oferta</option>
-        </select>
-        <input id="pr-reward20" placeholder="Texto do prémio" value="${escapeHtml(pr.campaign?.rewardText || '')}" ${t.hasPaid ? '' : 'disabled'} />
-        <input id="pr-promo-lots" type="number" min="0" max="${t.maxLotsPaid}" value="${pr.campaign?.promoLotsActive || 0}" ${t.hasPaid ? '' : 'disabled'} placeholder="Lotes promo" />
-        <input id="pr-bingo-count" type="number" min="0" max="${t.totalBingosPaid}" value="${pr.campaign?.bingoCountActive || 0}" ${t.totalBingosPaid ? '' : 'disabled'} placeholder="Bingos" />
-        <input id="pr-bingo-text" placeholder="Texto bingo" value="${escapeHtml(pr.campaign?.bingoText || '')}" ${t.totalBingosPaid ? '' : 'disabled'} />
-        <button onclick="savePRSettings()">GUARDAR</button>
-      </div>
-      <div class="item">
-        <h3>Validar QR</h3>
-        <input id="qr-manual-code" placeholder="Código QR" />
-        <button onclick="validateQRManual()">VALIDAR</button>
-        <div id="scanner-result" class="small"></div>
-      </div>
-      <div class="item">
-        <p><strong>Prémios dados:</strong> ${pr.campaign?.rewardsGiven || 0}</p>
-      </div>
-    `;
-  } catch (e) {
-    console.error("Erro ao renderizar dashboard PR:", e);
-  }
-}
+} // 👈 ESTE CHAVETA FINAL FALTAVA E TRAVAVA TUDO
 // ===== Pacotes comprados/atribuídos =====
 const pkgList = (pr?.packages || []).map(p => {
   ensurePackageState?.(p);
