@@ -2456,25 +2456,60 @@ function renderPRDashboard() {
     const t = getPackageTotals(pr);
 
     // ===== Pacotes disponíveis para compra =====
-    const packCards = Object.values(PACKS).map(p => {
-      const selected = (selectedPackKey === p.key);
-      const radiusText = (p.radiusKm === Infinity) ? "Ilimitado" : `${p.radiusKm} km`;
-      const bingosText = `${p.bingos ?? 0} bingos`;
-      const daysText   = (!p.days || p.days === 0) ? "sem expiração" : `${p.days} dias`;
+const packCards = Object.values(PACKS || {}).map(p => {
+  const selected = (selectedPackKey === p.key);
+  const radiusText = (p.radiusKm === Infinity) ? "Ilimitado" : `${p.radiusKm ?? 0} km`;
+  const bingosText = `${p.bingos ?? 0} bingos`;
+  const daysText   = (!p.days || p.days === 0) ? "sem expiração" : `${p.days} dias`;
+  const flagsCount = p.flags ?? 0;
 
-      return `
-        <div class="pack-card ${selected ? 'selected' : ''}">
-          <strong>${escapeHtml(p.label)}</strong> ${p.price}€
-          <p class="small">
-            ${p.flags.toLocaleString()} bandeiras · ${radiusText}<br>
-            ${bingosText} · ${daysText}
-          </p>
-          <button class="btn-small" onclick="selectPackage('${p.key}')">
-            ${selected ? '✓' : 'Selecionar'}
-          </button>
-        </div>
-      `;
-    }).join("");
+  return `
+    <div class="pack-card ${selected ? 'selected' : ''}">
+      <strong>${escapeHtml(p.label)}</strong> ${escapeHtml(String(p.price ?? '0'))}€
+      <p class="small">
+        ${flagsCount.toLocaleString()} bandeiras · ${radiusText}<br>
+        ${bingosText} · ${daysText}
+      </p>
+      <button class="btn-small" onclick="selectPackage('${String(p.key ?? '').replace(/'/g, "\\'")}')">
+        ${selected ? '✓' : 'Selecionar'}
+      </button>
+    </div>
+  `;
+}).join("");
+
+// ===== Pacotes comprados/atribuídos =====
+const pkgList = (pr?.packages || []).map(p => {
+  ensurePackageState?.(p);
+  const radiusText = (p.radiusKm === Infinity) ? "Ilimitado" : `${p.radiusKm ?? 0} km`;
+  const bingosText = `${p.bingos ?? 0} bingos`;
+  const daysText   = (!p.days || p.days === 0) ? "sem expiração" : `${p.days} dias`;
+  const flagsLeft  = p.flagsLeft ?? p.flagsInitial ?? 0;
+  const flagsInit  = p.flagsInitial ?? 0;
+  const expiresDate = p.expiresAt ? new Date(p.expiresAt) : null;
+  const expiresText = (expiresDate && !isNaN(expiresDate.getTime())) ? expiresDate.toLocaleDateString() : '';
+
+  return `
+    <div class="item">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+        <strong>${escapeHtml(p.label || p.key)}</strong>
+        <span class="badge ${p.active ? 'ok' : 'warning'}">${p.active ? 'Ativo' : 'Inativo'}</span>
+      </div>
+      <p class="small">
+        Restam: ${flagsLeft.toLocaleString()} / ${flagsInit.toLocaleString()}<br>
+        Raio: ${radiusText}<br>
+        Bingos: ${bingosText}<br>
+        Tempo ativo: ${daysText}
+        ${expiresText ? `<br>Expira em: ${expiresText}` : ''}
+      </p>
+      <div class="btn-row">
+        <button class="btn-dark" onclick="openPackageManager('${String(pr?.id ?? '').replace(/'/g, "\\'")}','${String(p.id ?? '').replace(/'/g, "\\'")}')">⚙️ Gerir</button>
+        <button onclick="togglePackageActive('${String(pr?.id ?? '').replace(/'/g, "\\'")}','${String(p.id ?? '').replace(/'/g, "\\'")}')">${p.active ? 'Desativar' : 'Ativar'}</button>
+      </div>
+    </div>
+  `;
+}).join("");
+
+// ===== HTML final =====
 
     // ===== Pacotes comprados/atribuídos =====
     const pkgList = (pr.packages || []).map(p => {
