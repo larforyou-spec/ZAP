@@ -2456,7 +2456,34 @@ function renderPRDashboard() {
 
  const packCards = Object.values(PACKS).map(p => '<div class="pack-card ' + (selectedPackKey === p.key ? 'selected' : '') + '"><strong>' + p.label + '</strong> <span class="ok">' + p.price + '€</span><p class="small">🚩 ' + p.flags.toLocaleString() + ' bandeiras<br>📍 ' + packageRadiusText(p.radiusKm) + '<br>🎰 ' + p.bingos + ' bingos<br>📅 ' + p.daysActive + ' dias ativos</p><button class="btn-small" onclick="selectPackage(\'' + p.key + '\')">' + (selectedPackKey === p.key ? '✓' : 'Selecionar') + '</button></div>').join("");
 
-  const pkgList = pr.packages.map(p => '<div class="item"><strong>' + p.label + '</strong> ' + (p.paid ? '' : '(grátis)') + '<p class="small">Restam: ' + p.flagsLeft + '/' + p.flagsInitial + '</p></div>').join("");
+const pkgList = (pr.packages || []).map(p => {
+  ensurePackageState?.(p);
+  const radiusText = (p.radiusKm === Infinity) ? "Ilimitado" : `${p.radiusKm} km`;
+  const bingosText = `${p.bingos ?? 0} bingos`;
+  const daysText   = (!p.days || p.days === 0) ? "sem expiração" : `${p.days} dias`;
+  const flagsLeft  = (p.flagsLeft ?? p.flagsInitial ?? 0);
+  const flagsInit  = (p.flagsInitial ?? 0);
+
+  return `
+    <div class="item">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+        <strong>${escapeHtml(p.label || p.key)}</strong>
+        <span class="badge ${p.active ? 'ok' : 'warning'}">${p.active ? 'Ativo' : 'Inativo'}</span>
+      </div>
+      <p class="small">
+        Restam: ${flagsLeft.toLocaleString()} / ${flagsInit.toLocaleString()}<br>
+        Raio: ${radiusText}<br>
+        Bingos: ${bingosText}<br>
+        Tempo ativo: ${daysText}
+        ${p.expiresAt ? `<br>Expira em: ${new Date(p.expiresAt).toLocaleDateString()}` : ''}
+      </p>
+      <div class="btn-row">
+        <button class="btn-dark" onclick="openPackageManager('${pr.id}','${p.id}')">⚙️ Gerir</button>
+        <button onclick="togglePackageActive('${pr.id}','${p.id}')">${p.active ? 'Desativar' : 'Ativar'}</button>
+      </div>
+    </div>
+  `;
+}).join("");
 
   content.innerHTML = `
     <div class="item">
