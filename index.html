@@ -2444,13 +2444,84 @@ function savePRSettings() {
 }
 
 function renderPRDashboard() {
-  const content = document.getElementById("pr-dashboard-content");
-  const pr = getCurrentManagedPR();
-  if (!content) return;
-  if (!pr) {
-    content.innerHTML = '<div class="item danger">Sem empresa.</div>';
-    return;
-  }
+  try {
+    const content = document.getElementById("pr-dashboard-content");
+    const pr = getCurrentManagedPR();
+    if (!content) return;
+    if (!pr) {
+      content.innerHTML = '<div class="item danger">Sem empresa.</div>';
+      return;
+    }
+
+    const t = getPackageTotals(pr);
+
+    // ===== Pacotes disponíveis para compra =====
+    const packCards = Object.values(PACKS).map(p => {
+      const selected = (selectedPackKey === p.key);
+      const radiusText = (p.radiusKm === Infinity) ? "Ilimitado" : `${p.radiusKm} km`;
+      const bingosText = `${p.bingos ?? 0} bingos`;
+      const daysText   = (!p.days || p.days === 0) ? "sem expiração" : `${p.days} dias`;
+
+      return `
+        <div class="pack-card ${selected ? 'selected' : ''}">
+          <strong>${escapeHtml(p.label)}</strong> ${p.price}€
+          <p class="small">
+            ${p.flags.toLocaleString()} bandeiras · ${radiusText}<br>
+            ${bingosText} · ${daysText}
+          </p>
+          <button class="btn-small" onclick="selectPackage('${p.key}')">
+            ${selected ? '✓' : 'Selecionar'}
+          </button>
+        </div>
+      `;
+    }).join("");
+
+    // ===== Pacotes comprados/atribuídos =====
+    const pkgList = (pr.packages || []).map(p => {
+      ensurePackageState?.(p);
+      const radiusText = (p.radiusKm === Infinity) ? "Ilimitado" : `${p.radiusKm} km`;
+      const bingosText = `${p.bingos ?? 0} bingos`;
+      const daysText   = (!p.days || p.days === 0) ? "sem expiração" : `${p.days} dias`;
+      const flagsLeft  = (p.flagsLeft ?? p.flagsInitial ?? 0);
+      const flagsInit  = (p.flagsInitial ?? 0);
+
+      return `
+        <div class="item">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+            <strong>${escapeHtml(p.label || p.key)}</strong>
+            <span class="badge ${p.active ? 'ok' : 'warning'}">${p.active ? 'Ativo' : 'Inativo'}</span>
+          </div>
+          <p class="small">
+            Restam: ${flagsLeft.toLocaleString()} / ${flagsInit.toLocaleString()}<br>
+            Raio: ${radiusText}<br>
+            Bingos: ${bingosText}<br>
+            Tempo ativo: ${daysText}
+            ${p.expiresAt ? `<br>Expira em: ${new Date(p.expiresAt).toLocaleDateString()}` : ''}
+          </p>
+          <div class="btn-row">
+            <button class="btn-dark" onclick="openPackageManager('${pr.id}','${p.id}')">⚙️ Gerir</button>
+            <button onclick="togglePackageActive('${pr.id}','${p.id}')">${p.active ? 'Desativar' : 'Ativar'}</button>
+          </div>
+        </div>
+      `;
+    }).join("");
+
+    // ===== HTML final =====
+    content.innerHTML = `
+      <div class="item">
+        <p><strong>Empresa:</strong> ${escapeHtml(pr.name || '')}</p>
+        <p><strong>Bandeiras:</strong> ${t.totalLeft.toLocaleString()}/${t.totalBought.toLocaleString()}</p>
+        <p>${getStockWarning(pr)}</p>
+      </div>
+      <div class="item">
+        <h3>Comprar Pacotes</h3>
+        <div class="pack-row">${packCards}</div>
+        <div class="btn-row" style="margin-top:10px;">
+          <button ${selectedPackKey ? '' : 'disabled'} onclick="purchaseSelectedPackage('QR')">Pagar QR</button>
+          <button class="btn-dark" ${selectedPackKey ? '' : 'disabled'} onclick="purchaseSelectedPackage('Ref')">Referência</button>
+        </div>
+      </div>
+      <div class="item
 
   const t = getPackageTotals(pr);
 
