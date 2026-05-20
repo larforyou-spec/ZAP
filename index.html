@@ -2473,6 +2473,41 @@ function renderPRDashboard() {
       `;
     }).join("");
 
+    function renderPRDashboard() {
+  try {
+    const content = document.getElementById("pr-dashboard-content");
+    const pr = getCurrentManagedPR();
+    if (!content) return;
+    if (!pr) {
+      content.innerHTML = '<div class="item danger">Sem empresa selecionada.</div>';
+      return;
+    }
+
+    const t = getPackageTotals(pr);
+    const escapeAttr = (val) => String(val ?? '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+
+    // ===== Pacotes disponíveis =====
+    const packCards = Object.values(PACKS || {}).map(p => {
+      const selected = (selectedPackKey === p.key);
+      const radiusText = (p.radiusKm === Infinity) ? "Ilimitado" : `${p.radiusKm ?? 0} km`;
+      const bingosText = `${p.bingos ?? 0} bingos`;
+      const daysText = (!p.daysActive || p.daysActive === 0) ? "sem expiração" : `${p.daysActive} dias`;
+      const flagsCount = p.flags ?? 0;
+
+      return `
+        <div class="pack-card ${selected ? 'selected' : ''}">
+          <strong>${escapeHtml(p.label)}</strong> ${escapeHtml(String(p.price ?? '0'))}€
+          <p class="small">
+            ${flagsCount.toLocaleString()} bandeiras · ${radiusText}<br>
+            ${bingosText} · ${daysText}
+          </p>
+          <button class="btn-small" onclick="selectPackage('${escapeAttr(p.key)}')">
+            ${selected ? '✓' : 'Selecionar'}
+          </button>
+        </div>
+      `;
+    }).join("");
+
     // ===== Pacotes comprados =====
     const pkgList = (pr.packages || []).map(p => {
       const radiusText = (p.radiusKm === Infinity) ? "Ilimitado" : `${p.radiusKm ?? 0} km`;
@@ -2556,6 +2591,7 @@ function renderPRDashboard() {
   } catch (e) {
     console.error("Erro ao renderizar dashboard PR:", e);
   }
+}
 } // 👈 ESTE CHAVETA FINAL FALTAVA E TRAVAVA TUDO
 // ===== Pacotes comprados/atribuídos =====
 const pkgList = (pr?.packages || []).map(p => {
