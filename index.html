@@ -142,5 +142,215 @@
 
     console.log('✅ ZAP FLAGS v2 inicializado com sucesso');
   </script>
+<body>
+  <!-- MARCA DE ÁGUA -->
+  <div class="watermark">LARFORYOU®</div>
+
+  <!-- ECRÃ INICIAL -->
+  <section id="screen-welcome" class="screen active">
+    <h1>⚡ ZAP FLAGS</h1>
+    <p class="sub">Bem-vindo! Como queres entrar?</p>
+    <button class="btn" data-screen="screen-player-login">🎮 SOU JOGADOR</button>
+    <button class="btn btn-dark" data-screen="screen-company-login">🏢 SOU EMPRESA</button>
+    <button class="btn btn-dark" data-screen="screen-admin-login">🔒 ADMIN</button>
+  </section>
+
+  <!-- LOGIN JOGADOR -->
+  <section id="screen-player-login" class="screen">
+    <h1>🎮 JOGADOR</h1>
+    <p class="sub">Entra com o teu email e senha.</p>
+    <form id="form-player-login">
+      <div class="form-group"><label>Email</label><input type="email" id="pl-email" required></div>
+      <div class="form-group"><label>Senha</label><input type="password" id="pl-pass" required></div>
+      <button type="submit" class="btn">ENTRAR</button>
+    </form>
+    <div id="msg-player-login" class="msg"></div>
+    <button class="btn btn-dark" style="margin-top:15px" data-screen="screen-welcome">VOLTAR</button>
+  </section>
+
+  <!-- LOGIN EMPRESA -->
+  <section id="screen-company-login" class="screen">
+    <h1>🏢 EMPRESA</h1>
+    <p class="sub">Entra com o NIF e senha.</p>
+    <form id="form-company-login">
+      <div class="form-group"><label>NIF</label><input type="text" id="co-nif" maxlength="9" required></div>
+      <div class="form-group"><label>Senha</label><input type="password" id="co-pass" required></div>
+      <button type="submit" class="btn">ENTRAR</button>
+    </form>
+    <div id="msg-company-login" class="msg"></div>
+    <button class="btn btn-dark" style="margin-top:15px" data-screen="screen-welcome">VOLTAR</button>
+  </section>
+
+  <!-- LOGIN ADMIN -->
+  <section id="screen-admin-login" class="screen">
+    <h1>🔒 ADMIN</h1>
+    <p class="sub">Acesso restrito ao gestor.</p>
+    <form id="form-admin-login">
+      <div class="form-group"><label>Email</label><input type="text" id="ad-email" required></div>
+      <div class="form-group"><label>Senha</label><input type="password" id="ad-pass" required></div>
+      <button type="submit" class="btn">ENTRAR</button>
+    </form>
+    <div id="msg-admin-login" class="msg"></div>
+    <button class="btn btn-dark" style="margin-top:15px" data-screen="screen-welcome">VOLTAR</button>
+  </section>
+
+  <!-- ECRÃ JOGO (Placeholder Fase 1) -->
+  <section id="screen-game" class="screen">
+    <h1>🗺️ MAPA DO JOGO</h1>
+    <p class="sub">Energia: <span id="ui-energy">100%</span> | Skill: <span id="ui-skill">5m</span> | Modo: <span id="ui-mode">GPS</span></p>
+    <div id="map-container" style="width:100%;height:300px;background:#111;border:1px solid #0f0;border-radius:10px;display:flex;align-items:center;justify-content:center;">Mapa Leaflet (Fase 2)</div>
+    <button class="btn btn-dark" style="margin-top:15px" data-screen="screen-welcome">SAIR</button>
+  </section>
+
+  <!-- ECRÃ DASHBOARD EMPRESA (Placeholder Fase 1) -->
+  <section id="screen-company-dashboard" class="screen">
+    <h1>🏢 PAINEL DA EMPRESA</h1>
+    <p class="sub">Métricas e gestão de lotes (Fase 2)</p>
+    <button class="btn btn-dark" data-screen="screen-welcome">VOLTAR</button>
+  </section>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    // ============================================================
+    // FASE 1: BASE + NAVEGAÇÃO + DADOS FANTASMA + MARCA DE ÁGUA
+    // ============================================================
+
+    // 🟢 INÍCIO DA FUNÇÃO: initApp()
+    function initApp() {
+      console.log("🟢 ZAP FLAGS v2 - Inicialização");
+      loadState();
+      injectTestDataIfFirstRun();
+      setupNavigation();
+      setupForms();
+      setupWatermark();
+      console.log("✅ Base carregada. Aguardando FASE 2.");
+    }
+    // 🔴 FIM DA FUNÇÃO: initApp()
+
+    // 🟢 INÍCIO DA FUNÇÃO: loadState()
+    function loadState() {
+      try {
+        const raw = localStorage.getItem("zap_flags_v2");
+        window.state = raw ? JSON.parse(raw) : getDefaultState();
+      } catch (e) {
+        console.error("Erro ao carregar estado:", e);
+        window.state = getDefaultState();
+      }
+    }
+    // 🔴 FIM DA FUNÇÃO: loadState()
+
+    // 🟢 INÍCIO DA FUNÇÃO: saveState()
+    function saveState() {
+      try {
+        localStorage.setItem("zap_flags_v2", JSON.stringify(window.state));
+      } catch (e) {
+        console.error("Erro ao guardar estado:", e);
+      }
+    }
+    // 🔴 FIM DA FUNÇÃO: saveState()
+
+    // 🟢 INÍCIO DA FUNÇÃO: getDefaultState()
+    function getDefaultState() {
+      return {
+        player: { email: "", pass: "", name: "", flags: 0, energy: 100, skillRadius: 5, skillTier: 0, coins: 0, qrs: [], usedQrs: [] },
+        companies: [],
+        admin: { email: "ovo@ovo", pass: "258258258" },
+        firstRun: true
+      };
+    }
+    // 🔴 FIM DA FUNÇÃO: getDefaultState()
+
+    // 🟢 INÍCIO DA FUNÇÃO: injectTestDataIfFirstRun()
+    function injectTestDataIfFirstRun() {
+      if (!window.state.firstRun) return;
+
+      // 10 Jogadores Fantasma
+      for (let i = 0; i < 10; i++) {
+        window.state.companies.push({
+          id: `bit${i}`,
+          name: `bit${i}`,
+          nif: `12345678${i}`,
+          pass: "123456",
+          packages: [
+            { tier: "free", flags: 1000, price: 0, bingos: 0 },
+            { tier: "medium", flags: 5000, price: 15, bingos: 5 },
+            { tier: "large", flags: 15000, price: 25, bingos: 15 },
+            { tier: "xl", flags: 30000, price: 35, bingos: 30 },
+            { tier: "xxl", flags: 60000, price: 50, bingos: 60 },
+            { tier: "mega", flags: 100000, price: 75, bingos: 100 }
+          ]
+        });
+      }
+
+      window.state.firstRun = false;
+      saveState();
+      console.log("👻 Dados fantasma injetados (10 empresas + pacotes)");
+    }
+    // 🔴 FIM DA FUNÇÃO: injectTestDataIfFirstRun()
+
+    // 🟢 INÍCIO DA FUNÇÃO: setupNavigation()
+    function setupNavigation() {
+      document.querySelectorAll("[data-screen]").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const target = btn.getAttribute("data-screen");
+          document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+          const el = document.getElementById(target);
+          if (el) el.classList.add("active");
+        });
+      });
+    }
+    // 🔴 FIM DA FUNÇÃO: setupNavigation()
+
+    // 🟢 INÍCIO DA FUNÇÃO: setupForms()
+    function setupForms() {
+      document.getElementById("form-player-login").addEventListener("submit", e => {
+        e.preventDefault();
+        const email = document.getElementById("pl-email").value.trim();
+        const pass = document.getElementById("pl-pass").value;
+        const msg = document.getElementById("msg-player-login");
+        if (email && pass) {
+          msg.innerHTML = '<span class="ok">✓ Login OK! (Redirecionando...)</span>';
+          setTimeout(() => document.querySelector('[data-screen="screen-game"]').click(), 500);
+        } else msg.innerHTML = '<span class="danger">Preenche os campos.</span>';
+      });
+
+      document.getElementById("form-company-login").addEventListener("submit", e => {
+        e.preventDefault();
+        const nif = document.getElementById("co-nif").value.trim();
+        const pass = document.getElementById("co-pass").value;
+        const msg = document.getElementById("msg-company-login");
+        const co = window.state.companies.find(c => c.nif === nif && c.pass === pass);
+        if (co) {
+          msg.innerHTML = '<span class="ok">✓ Login OK! (Redirecionando...)</span>';
+          setTimeout(() => document.querySelector('[data-screen="screen-company-dashboard"]').click(), 500);
+        } else msg.innerHTML = '<span class="danger">NIF ou senha incorretos.</span>';
+      });
+
+      document.getElementById("form-admin-login").addEventListener("submit", e => {
+        e.preventDefault();
+        const email = document.getElementById("ad-email").value.trim();
+        const pass = document.getElementById("ad-pass").value;
+        const msg = document.getElementById("msg-admin-login");
+        if (email === window.state.admin.email && pass === window.state.admin.pass) {
+          msg.innerHTML = '<span class="ok">✓ Acesso Admin! (Em desenvolvimento)</span>';
+        } else msg.innerHTML = '<span class="danger">Credenciais inválidas.</span>';
+      });
+    }
+    // 🔴 FIM DA FUNÇÃO: setupForms()
+
+    // 🟢 INÍCIO DA FUNÇÃO: setupWatermark()
+    function setupWatermark() {
+      const wm = document.querySelector(".watermark");
+      if (wm) wm.style.opacity = "0.15";
+    }
+    // 🔴 FIM DA FUNÇÃO: setupWatermark()
+
+    // Inicialização segura
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", initApp);
+    } else {
+      initApp();
+    }
+  </script>
 </body>
 </html>
