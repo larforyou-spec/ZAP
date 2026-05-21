@@ -255,9 +255,11 @@ function validateClientQR() {
       document.getElementById('msg-player').innerHTML = '<span class="ok">✓ Login OK!</span>';
       setTimeout(() => goTo('screen-game'), 300);
     });
-    // 🟢 INÍCIO: LOGIN EMPRESA (COM REDIRECIONAMENTO PARA DASHBOARD)
+ // 🟢 INÍCIO: LOGIN EMPRESA (VERSÃO FINAL FASE 4)
 document.getElementById('form-company').addEventListener('submit', e => {
   e.preventDefault();
+  console.log("🏢 [DEBUG] Formulário empresa submetido");
+  
   const nif = document.getElementById('c-nif').value.trim();
   const pass = document.getElementById('c-pass').value;
   const msg = document.getElementById('msg-company');
@@ -265,14 +267,36 @@ document.getElementById('form-company').addEventListener('submit', e => {
 
   if (company) {
     msg.innerHTML = '<span class="ok">✓ Login OK! (A entrar...)</span>';
-    setTimeout(() => {
-      goTo('screen-company-dashboard');
-      initCompanyDashboard(company);
-    }, 400);
+    console.log("✅ [DEBUG] Empresa encontrada:", company.name);
+    
+    // Esconde todos os ecrãs
+    document.querySelectorAll('.screen').forEach(s => {
+      s.classList.remove('active');
+      s.style.display = 'none';
+    });
+    
+    // Mostra o dashboard diretamente
+    const dashboard = document.getElementById('screen-company-dashboard');
+    if (dashboard) {
+      dashboard.classList.add('active');
+      dashboard.style.display = 'flex';
+      console.log("✅ [DEBUG] Dashboard ativado!");
+      
+      if (typeof initCompanyDashboard === "function") {
+        console.log("🗺️ [DEBUG] A chamar initCompanyDashboard()...");
+        initCompanyDashboard(company);
+      }
+    } else {
+      console.error("❌ [DEBUG] #screen-company-dashboard NÃO ENCONTRADO NO HTML!");
+      msg.innerHTML += '<br><span class="danger">Erro: Estrutura do painel em falta.</span>';
+    }
+
   } else {
     msg.innerHTML = '<span class="danger">NIF ou senha incorretos.</span>';
+    console.warn("⚠️ [DEBUG] Empresa não encontrada para NIF:", nif);
   }
 });
+// 🔴 FIM
 // 🔴 FIM
 
     // 3. JOGO
