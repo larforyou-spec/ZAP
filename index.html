@@ -273,31 +273,146 @@ function publishOffer() {
     <button class="btn btn-dark" style="margin-top:10px" onclick="goTo('screen-welcome')">SAIR</button>
   </section>
 
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script>
-    // 🟢 NAVEGAÇÃO ÚNICA E SEGURA
-    function goTo(screenId) {
-      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-      document.getElementById(screenId).classList.add('active');
+// 1️⃣ ESTADO & STORAGE
+window.state = JSON.parse(localStorage.getItem("zap_flags_v2")) || {
+  player: { email:"", pass:"", name:"", flags:0, energy:100, skillRadius:5, skillFlags:0, skillTier:0, coins:0, qrFragments:0, qrs:[] },
+  companies: [], admin: { email:"ovo@ovo", pass:"258258258" }, firstRun:true
+};
+function saveState() { localStorage.setItem("zap_flags_v2", JSON.stringify(window.state)); }
+if (window.state.firstRun) {
+  for(let i=1; i<=10; i++) window.state.companies.push({ id:`bit${i}`, name:`Bit${i}`, nif:`12345678${i}`, pass:"123456" });
+  window.state.firstRun = false; saveState();
+}
+
+// 2️⃣ NAVEGAÇÃO
+function goTo(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  const el = document.getElementById(id);
+  if (el) { el.classList.add('active'); el.style.display = 'flex'; }
+}
+
+// 3️⃣ FORMULÁRIOS
+document.getElementById('form-player').addEventListener('submit', e => {
+  e.preventDefault();
+  document.getElementById('msg-player').innerHTML = '<span class="ok">✓ Login OK!</span>';
+  setTimeout(() => { goTo('screen-game'); initGamePhase2(); initGameUI(); }, 400);
+});
+document.getElementById('form-company').addEventListener('submit', e => {
+  e.preventDefault();
+  document.getElementById('msg-company').innerHTML = '<span class="ok">✓ Login OK!</span>';
+  setTimeout(() => goTo('screen-game'), 400);
+});
+
+// 4️⃣ FASE 2: MAPA & BANDEIRAS
+function initGamePhase2() {
+  if (window.mapReady) return; window.mapReady = true;
+  window.map = L.map('map', { zoomControl:false }).setView([38.7223, -9.1393], 18);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom:19 }).addTo(window.map);
+  window.playerMarker = L.marker([38.7223, -9.1393], { icon: L.divIcon({ className:'player-marker', html:'JG', iconSize:[28,28] }) }).addTo(window.map);
+  window.flags = []; generateFlags();
+  if (navigator.geolocation) navigator.geolocation.watchPosition(p => updatePlayerPos(p.coords.latitude, p.coords.longitude), null, { enableHighAccuracy:true });
+  else document.getElementById('ui-mode').textContent = 'MANUAL';
+  window.map.on('click', e => { if(document.getElementById('ui-mode').textContent==='MANUAL') updatePlayerPos(e.latlng.lat, e.latlng.lng); });
+  startEnergyRegen(); updateSkillUI(); updateEnergyUI();
+}
+function updatePlayerPos(lat, lng) {
+  window.playerPos = {lat, lng}; window.playerMarker.setLatLng([lat,lng]); renderFlags();
+}
+function generateFlags() {
+  for(let i=0; i<12; i++) {
+    const off = getRandomOffset(window.playerPos?.lat||38.7223, window.playerPos?.lng||-9.1393, window.state.player.skillRadius||5);
+    window.flags.push({ id:`f${i}`, lat:off.lat, lng:off.lng, marker:null, collected:false });
+  }
+}
+function renderFlags() {
+  window.flags.forEach(f => { if(f.marker) window.map.removeLayer(f.marker); });
+  window.flags.forEach(f => {
+    if(f.collected) return;
+    const d = getDistance(window.playerPos.lat, window.playerPos.lng, f.lat, f.lng);
+    if(d <= (window.state.player.skillRadius||5)) {
+      f.marker = L.marker([f.lat, f.lng], { icon: L.divIcon({ className:'flag-marker', iconSize:[24,24] }) }).addTo(window.map);
+      f.marker.on('click', () => openCollectModal(f));
     }
+  });
+}
+function openCollectModal(flag) {
+  const d = getDistance(window.playerPos.lat, window.playerPos.lng, flag.lat, flag.lng);
+  const btn = document.getElementById('btn-collect') || document.createElement('button');
+  if(d <= 2.5) { btn.disabled=false; btn.textContent='RECOLHER'; btn.onclick=()=>collectFlag(flag); }
+  else { btn.disabled=true; btn.textContent='APROXIMA-TE (≤2.5m)'; }
+  alert(`Bandeira a ${d.toFixed(1)}m. ${btn.disabled ? btn.textContent : 'Clica para recolher.'}`);
+}
+function collectFlag(flag) {
+  flag.collected = true; if(flag.marker) window.map.removeLayer(flag.marker);
+  const r = determineReward(); applyReward(r);
+  setTimeout(() => { const o=getRandomOffset(window.playerPos.lat, window.playerPos.lng, window.state.player.skillRadius||5); window.flags.push({id:`f${Date.now()}`, lat:o.lat, lng:o.lng, marker:null, collected:false}); renderFlags(); }, 800);
+}
+function determineReward() { const r=Math.random(); return r<0.25?'energy':r<0.45?'skill':r<0.6?'coin':r<0.7?'bingo':r<0.8?'qr':'nothing'; }
+function applyReward(type) {
+  const p = window.state.player;
+  if(type==='energy') p.energy=Math.min(100, p.energy+10);
+  if(type==='skill') { p.skillFlags=(p.skillFlags||0)+1; checkSkill(); }
+  if(type==='coin') p.coins=(p.coins||0)+1;
+  if(type==='qr') p.qrFragments=(p.qrFragments||0)+1;
+  updateEnergyUI(); updateSkillUI(); updateCoinUI(); saveState();
+  alert(`🎁 Recompensa: ${type.toUpperCase()}`);
+}
+function checkSkill() {
+  const f = window.state.player.skillFlags||0; const t = [100,200,400,800,1600]; let nt=0;
+  t.forEach((v,i)=>{ if(f>=v) nt=i+1; });
+  window.state.player.skillTier = nt; window.state.player.skillRadius = Math.min(50, 5+(nt*5));
+}
+function startEnergyRegen() { setInterval(()=>{ if(window.state.player.energy<100){ window.state.player.energy=Math.min(100, window.state.player.energy+10); updateEnergyUI(); saveState(); } }, 15*60*1000); }
+function updateEnergyUI() { document.getElementById('ui-energy').textContent = window.state.player.energy+'%'; }
+function updateSkillUI() { document.getElementById('ui-skill').textContent = (window.state.player.skillRadius||5)+'m'; }
+function updateCoinUI() { const el=document.getElementById('ui-coins'); if(el) el.textContent = window.state.player.coins||0; }
+function getDistance(lat1,lng1,lat2,lng2) { const R=6371e3, φ1=lat1*Math.PI/180, φ2=lat2*Math.PI/180, Δφ=(lat2-lat1)*Math.PI/180, Δλ=(lng2-lng1)*Math.PI/180; const a=Math.sin(Δφ/2)**2+Math.cos(φ1)*Math.cos(φ2)*Math.sin(Δλ/2)**2; return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a)); }
+function getRandomOffset(lat,lng,rad) { const a=Math.random()*2*Math.PI, d=Math.random()*rad; return { lat:lat+(d*Math.cos(a))/111320, lng:lng+(d*Math.sin(a))/(111320*Math.cos(lat*Math.PI/180)) }; }
 
-    // 🟢 FORMULÁRIO JOGADOR
-    document.getElementById('form-player').addEventListener('submit', e => {
-      e.preventDefault();
-      const msg = document.getElementById('msg-player');
-      msg.innerHTML = '<span class="ok">✓ Login OK! (A entrar...)</span>';
-      setTimeout(() => goTo('screen-game'), 500);
-    });
+// 5️⃣ FASE 3: UI, QR, CHAT, BINGO
+function initGameUI() {
+  makeDraggable(document.getElementById("panel-chat"));
+  makeDraggable(document.getElementById("panel-inventory"));
+  makeDraggable(document.getElementById("panel-trade"));
+  updateCoinUI(); renderQRInventory(); startBingoTicker(); initChat();
+}
+function makeDraggable(el) {
+  if(!el) return; const h=el.querySelector(".panel-header"); let drag=false, ox=0, oy=0;
+  h.addEventListener("pointerdown", e=>{ drag=true; const r=el.getBoundingClientRect(); ox=e.clientX-r.left; oy=e.clientY-r.top; el.setPointerCapture(e.pointerId); });
+  window.addEventListener("pointermove", e=>{ if(!drag)return; el.style.left=(e.clientX-ox)+"px"; el.style.top=(e.clientY-oy)+"px"; });
+  window.addEventListener("pointerup", ()=>{ drag=false; });
+}
+function togglePanel(name) { const p=document.getElementById(`panel-${name}`); if(p) p.classList.toggle("active"); }
+function assembleQR() {
+  const f=window.state.player.qrFragments||0;
+  if(f<20) return alert(`Faltam ${20-f} fragmentos.`);
+  window.state.player.qrFragments -= 20;
+  const qr = { id:`qr_${Date.now()}`, code:`ZAP-${Date.now().toString(36).toUpperCase()}`, company:"Bit1", prize:"10% Desconto", validUntil:Date.now()+2592000000, status:"active" };
+  if(!window.state.player.qrs) window.state.player.qrs=[];
+  window.state.player.qrs.push(qr); saveState(); renderQRInventory(); alert("✅ QR gerado!");
+}
+function renderQRInventory() {
+  const l=document.getElementById("qr-list"); if(!l) return;
+  const q=window.state.player.qrs||[];
+  l.innerHTML = q.length ? q.map(x=>`<div class="qr-item"><strong>${x.company}</strong><br><span class="qr-code">${x.code}</span><br><small>${x.prize} · ${new Date(x.validUntil).toLocaleDateString()}</small></div>`).join("") : '<p class="small">Sem QRs.</p>';
+}
+function startBingoTicker() {
+  const t=document.getElementById("bingo-ticker"); if(!t) return;
+  t.innerHTML = `<span>🎟️ BINGO ATIVO: Café Central · Prémio: Jantar para 2 · Expira em 14h ••• 🏆 GANHADOR: max3 apanhou o Bingo da Bit5! ••• 📢 Nova campanha: Bit2 lançou 500 bandeiras!</span>`;
+}
+function initChat() {
+  const inp=document.getElementById("chat-input"), msgs=document.getElementById("chat-messages");
+  if(!inp||!msgs) return;
+  inp.addEventListener("keydown", e=>{ if(e.key==="Enter"&&inp.value.trim()){ addChat("Tu", inp.value.trim()); inp.value=""; } });
+  setTimeout(()=>addChat("Sistema", "Chat ativo. Arrasta os painéis para mover."), 1500);
+}
+function addChat(u,t) {
+  const m=document.getElementById("chat-messages"); if(!m) return;
+  const d=document.createElement("div"); d.style.marginBottom="4px"; d.innerHTML=`<strong style="color:#0f0">${u}:</strong> ${t}`; m.appendChild(d); m.scrollTop=m.scrollHeight;
+}
+function publishOffer() { alert("📢 Oferta publicada no mercado local."); }
 
-    // 🟢 FORMULÁRIO EMPRESA
-    document.getElementById('form-company').addEventListener('submit', e => {
-      e.preventDefault();
-      const msg = document.getElementById('msg-company');
-      msg.innerHTML = '<span class="ok">✓ Login OK! (A entrar...)</span>';
-      setTimeout(() => goTo('screen-game'), 500);
-    });
-
-    console.log('✅ ZAP FLAGS v2 carregado. Sem duplicações.');
-  </script>
+console.log("✅ ZAP FLAGS v2 (Fase 1+2+3) carregado com sucesso.");
+</script>
 </body>
 </html>
