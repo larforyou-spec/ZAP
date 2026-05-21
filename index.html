@@ -400,7 +400,113 @@ function validateClientQR() {
   }
   
   console.log("✅ ZAP FLAGS v2.3 Carregado. Limpo e funcional.");
-  
+  // ============================================================
+// FASE FINAL: PAINEL ADMIN
+// ============================================================
+
+// 🟢 INÍCIO: showAdminTab(tab)
+function showAdminTab(tab) {
+  const content = document.getElementById('admin-content');
+  if (tab === 'dashboard') content.innerHTML = renderAdminDashboard();
+  if (tab === 'players') content.innerHTML = renderAdminPlayers();
+  if (tab === 'companies') content.innerHTML = renderAdminCompanies();
+  if (tab === 'messages') content.innerHTML = renderAdminMessages();
+  if (tab === 'banner') content.innerHTML = renderAdminBanner();
+}
+// 🔴 FIM
+
+// 🟢 INÍCIO: renderAdminDashboard()
+function renderAdminDashboard() {
+  const totalPlayers = STATE.player.email ? 1 : 0;
+  return `
+    <div class="item-module">
+      <h3>📊 Estatísticas</h3>
+      <p>Jogadores: ${totalPlayers} | Empresas: ${STATE.companies.length}</p>
+    </div>
+    <div class="item-module">
+      <h3>⚠️ Ações de Risco</h3>
+      <input id="admin-pass-confirm" type="password" placeholder="Senha admin para confirmar" />
+      <button class="btn btn-danger" onclick="adminResetAll()">RESET TOTAL</button>
+      <div id="admin-reset-msg" class="msg"></div>
+    </div>`;
+}
+// 🔴 FIM
+
+// 🟢 INÍCIO: renderAdminPlayers()
+function renderAdminPlayers() {
+  if (!STATE.player.email) return '<div class="item-module"><p>Nenhum jogador registado.</p></div>';
+  return `
+    <div class="item-module" style="overflow-x:auto;">
+      <table class="admin-table">
+        <tr><th>Email</th><th>Senha</th><th>Ações</th></tr>
+        <tr><td>${STATE.player.email}</td><td>${STATE.player.pass}</td><td><button class="btn btn-danger" onclick="adminDeletePlayer()">Apagar</button></td></tr>
+      </table>
+    </div>`;
+}
+// 🔴 FIM
+
+// 🟢 INÍCIO: renderAdminCompanies()
+function renderAdminCompanies() {
+  const rows = STATE.companies.map(c => `
+    <tr><td>${c.name}</td><td>${c.nif}</td><td>${c.packages.length}</td><td><button class="btn btn-danger" onclick="adminDeleteCompany('${c.id}')">Apagar</button></td></tr>
+  `).join('');
+  return `
+    <div class="item-module" style="overflow-x:auto;">
+      <table class="admin-table">
+        <tr><th>Nome</th><th>NIF</th><th>Pacotes</th><th>Ações</th></tr>
+        ${rows}
+      </table>
+    </div>`;
+}
+// 🔴 FIM
+
+// 🟢 INÍCIO: renderAdminMessages()
+function renderAdminMessages() { return `<div class="item-module"><p>Módulo de mensagens (em desenvolvimento).</p></div>`; }
+// 🔴 FIM
+
+// 🟢 INÍCIO: renderAdminBanner()
+function renderAdminBanner() {
+  return `
+    <div class="item-module">
+      <h3>📢 Banner</h3>
+      <input id="banner-text" placeholder="Texto para o banner" />
+      <button class="btn" onclick="showGameBanner()">MOSTRAR</button>
+      <button class="btn btn-dark" onclick="hideGameBanner()">ESCONDER</button>
+    </div>
+    <div class="item-module">
+      <h3>📜 Ticker</h3>
+      <input id="ticker-text" placeholder="Texto para o ticker" />
+      <button class="btn" onclick="showTicker()">MOSTRAR</button>
+      <button class="btn btn-dark" onclick="hideTicker()">ESCONDER</button>
+    </div>`;
+}
+// 🔴 FIM
+
+// 🟢 INÍCIO: Funções de Ação Admin
+function confirmAdminPass() {
+  return document.getElementById('admin-pass-confirm')?.value === STATE.admin.pass;
+}
+function adminResetAll() {
+  if (!confirmAdminPass()) return alert("Senha admin incorreta!");
+  if (!confirm("Apagar TODOS os dados? Ação irreversível!")) return;
+  localStorage.removeItem("zap_flags_v2");
+  location.reload();
+}
+function adminDeletePlayer() { alert("Ação de apagar jogador desativada em demo."); }
+function adminDeleteCompany(id) { alert("Ação de apagar empresa desativada em demo."); }
+function showGameBanner() {
+  const banner = document.getElementById('game-banner');
+  banner.textContent = document.getElementById('banner-text')?.value || "Bem-vindo ao ZAP FLAGS!";
+  banner.classList.add('active');
+}
+function hideGameBanner() { document.getElementById('game-banner')?.classList.remove('active'); }
+function showTicker() {
+  const ticker = document.getElementById('game-ticker');
+  ticker.innerHTML = `<span>${document.getElementById('ticker-text')?.value || "ZAP FLAGS"}</span>`;
+  ticker.classList.add('active');
+}
+function hideTicker() { document.getElementById('game-ticker')?.classList.remove('active'); }
+// 🔴 FIM
 </script>
 </body>
 </html>
