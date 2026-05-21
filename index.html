@@ -27,76 +27,57 @@
     h1 { margin-bottom: 10px; text-shadow: 0 0 8px #0f0; }
     .sub { color: #a7fca7; margin-bottom: 20px; }
     .btn { background: #0f0; color: #000; border: none; padding: 12px 20px; border-radius: 10px; font-weight: 800; cursor: pointer; margin: 8px; font-size: 14px; }
-    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
     .btn-dark { background: #181818; color: #0f0; border: 1px solid #0f0; }
     .form-group { margin: 12px 0; text-align: left; width: 100%; }
     .form-group label { display: block; font-size: 12px; color: #a7fca7; margin-bottom: 4px; }
-    input { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #0f0; background: #101010; color: #0f0; font-size: 14px; }
+    input { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #0f0; background: #101010; color: #0f0; font-size: 14px; margin-bottom: 8px; }
     .msg { min-height: 20px; margin-top: 8px; font-size: 12px; }
     .ok { color: #8fff8f; } .danger { color: #ff8686; }
 
-    /* FASE 2: JOGO */
+    /* JOGO */
     .game-screen { padding: 0; max-width: 100%; height: 100vh; position: relative; }
     #top-bar { position: fixed; top: 10px; left: 10px; right: 10px; z-index: 1000; background: rgba(0,0,0,0.85); border: 1px solid #0f0; border-radius: 10px; padding: 8px 12px; display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; }
     #map { width: 100%; height: 100vh; z-index: 1; }
-    .modal { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 2000; background: #000; border: 2px solid #0f0; border-radius: 12px; padding: 20px; width: 90%; max-width: 320px; text-align: center; }
-    .modal.hidden { display: none; }
-    .flag-marker { width: 24px; height: 24px; background: #ff0000; border: 2px solid #fff; border-radius: 50%; box-shadow: 0 0 6px #ff0000; cursor: pointer; }
-    .player-marker { width: 28px; height: 28px; border: 3px solid #fff; border-radius: 50%; box-shadow: 0 0 10px rgba(255,255,255,0.5); display: flex; align-items: center; justify-content: center; color: #000; font-weight: 900; font-size: 12px; }
   </style>
 </head>
 <body>
   <div class="watermark">LARFORYOU®</div>
 
-  <!-- ECRÃ INICIAL -->
+  <!-- 1. ECRÃ INICIAL (APENAS 1) -->
   <section id="screen-welcome" class="screen active">
     <h1>⚡ ZAP FLAGS</h1>
     <p class="sub">Bem-vindo! Como queres entrar?</p>
-    <button class="btn" data-screen="screen-player-login">🎮 SOU JOGADOR</button>
-    <button class="btn btn-dark" data-screen="screen-company-login">🏢 SOU EMPRESA</button>
-    <button class="btn btn-dark" data-screen="screen-admin-login">🔒 ADMIN</button>
+    <button class="btn" onclick="goTo('screen-player')">🎮 SOU JOGADOR</button>
+    <button class="btn btn-dark" onclick="goTo('screen-company')">🏢 SOU EMPRESA</button>
   </section>
 
-  <!-- LOGIN JOGADOR -->
-  <section id="screen-player-login" class="screen">
+  <!-- 2. LOGIN JOGADOR (APENAS 1) -->
+  <section id="screen-player" class="screen">
     <h1>🎮 JOGADOR</h1>
     <p class="sub">Entra com o teu email e senha.</p>
-    <form id="form-player-login">
-      <div class="form-group"><label>Email</label><input type="email" id="pl-email" required></div>
-      <div class="form-group"><label>Senha</label><input type="password" id="pl-pass" required></div>
+    <form id="form-player">
+      <div class="form-group"><label>Email</label><input type="email" id="p-email" required></div>
+      <div class="form-group"><label>Senha</label><input type="password" id="p-pass" required></div>
       <button type="submit" class="btn">ENTRAR</button>
     </form>
-    <div id="msg-player-login" class="msg"></div>
-    <button class="btn btn-dark" style="margin-top:15px" data-screen="screen-welcome">VOLTAR</button>
+    <div id="msg-player" class="msg"></div>
+    <button class="btn btn-dark" style="margin-top:15px" onclick="goTo('screen-welcome')">VOLTAR</button>
   </section>
 
-  <!-- LOGIN EMPRESA -->
-  <section id="screen-company-login" class="screen">
+  <!-- 3. LOGIN EMPRESA (APENAS 1) -->
+  <section id="screen-company" class="screen">
     <h1>🏢 EMPRESA</h1>
     <p class="sub">Entra com o NIF e senha.</p>
-    <form id="form-company-login">
-      <div class="form-group"><label>NIF</label><input type="text" id="co-nif" maxlength="9" required></div>
-      <div class="form-group"><label>Senha</label><input type="password" id="co-pass" required></div>
+    <form id="form-company">
+      <div class="form-group"><label>NIF</label><input type="text" id="c-nif" maxlength="9" required></div>
+      <div class="form-group"><label>Senha</label><input type="password" id="c-pass" required></div>
       <button type="submit" class="btn">ENTRAR</button>
     </form>
-    <div id="msg-company-login" class="msg"></div>
-    <button class="btn btn-dark" style="margin-top:15px" data-screen="screen-welcome">VOLTAR</button>
+    <div id="msg-company" class="msg"></div>
+    <button class="btn btn-dark" style="margin-top:15px" onclick="goTo('screen-welcome')">VOLTAR</button>
   </section>
 
-  <!-- LOGIN ADMIN -->
-  <section id="screen-admin-login" class="screen">
-    <h1>🔒 ADMIN</h1>
-    <p class="sub">Acesso restrito ao gestor.</p>
-    <form id="form-admin-login">
-      <div class="form-group"><label>Email</label><input type="text" id="ad-email" required></div>
-      <div class="form-group"><label>Senha</label><input type="password" id="ad-pass" required></div>
-      <button type="submit" class="btn">ENTRAR</button>
-    </form>
-    <div id="msg-admin-login" class="msg"></div>
-    <button class="btn btn-dark" style="margin-top:15px" data-screen="screen-welcome">VOLTAR</button>
-  </section>
-
-  <!-- ECRÃ JOGO (FASE 2) -->
+  <!-- 4. ECRÃ DO JOGO (APENAS 1) -->
   <section id="screen-game" class="screen game-screen">
     <div id="top-bar">
       <span>⚡ <span id="ui-energy">100%</span></span>
@@ -104,585 +85,34 @@
       <span>📡 <span id="ui-mode">GPS</span></span>
     </div>
     <div id="map"></div>
-    <div id="collection-modal" class="modal hidden">
-      <h3 id="col-title">🚩 BANDEIRA</h3>
-      <p id="col-dist">Distância: --</p>
-      <p id="col-reward" class="ok"></p>
-      <button id="btn-collect" class="btn" disabled>RECOLHER</button>
-      <button id="btn-close-col" class="btn btn-dark">FECHAR</button>
-    </div>
-    <button class="btn btn-dark" style="margin-top:10px" data-screen="screen-welcome">SAIR</button>
+    <button class="btn btn-dark" style="margin-top:10px" onclick="goTo('screen-welcome')">SAIR</button>
   </section>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
-
-
-    // ============================================================
-    // NAVEGAÇÃO SEGURA (zero onclick inline)
-    // ============================================================
-    document.querySelectorAll('[data-target]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-        document.getElementById(btn.dataset.target).classList.add('active');
-      });
-    });
-
-    // ============================================================
-    // ESTADO & STORAGE
-    // ============================================================
-    const STORAGE_KEY = 'zap_flags_v2';
-    const defaultState = {
-      player: { email: '', pass: '', name: '', flags: 0, energy: 100 },
-      companies: [],
-      admin: { email: 'ovo@ovo', pass: '258258258' }
-    };
-
-    function loadState() {
-      try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || defaultState; }
-      catch { return defaultState; }
+    // 🟢 NAVEGAÇÃO ÚNICA E SEGURA
+    function goTo(screenId) {
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      document.getElementById(screenId).classList.add('active');
     }
-    function saveState() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
-    let state = loadState();
 
-    // ============================================================
-    // FORMULÁRIOS
-    // ============================================================
-    document.getElementById('form-player-login').addEventListener('submit', e => {
+    // 🟢 FORMULÁRIO JOGADOR
+    document.getElementById('form-player').addEventListener('submit', e => {
       e.preventDefault();
-      const email = document.getElementById('pl-email').value.trim();
-      const pass  = document.getElementById('pl-pass').value;
-      const msg   = document.getElementById('msg-player-login');
-      if (email === state.player.email && pass === state.player.pass) {
-        msg.innerHTML = '<span class="ok">✓ Login OK!</span>';
-        setTimeout(() => alert('🎮 Bem-vindo ao jogo! (Ecrã do jogo em breve)'), 500);
-      } else msg.innerHTML = '<span class="danger">Credenciais inválidas.</span>';
+      const msg = document.getElementById('msg-player');
+      msg.innerHTML = '<span class="ok">✓ Login OK! (A entrar...)</span>';
+      setTimeout(() => goTo('screen-game'), 500);
     });
 
-    document.getElementById('form-company-login').addEventListener('submit', e => {
+    // 🟢 FORMULÁRIO EMPRESA
+    document.getElementById('form-company').addEventListener('submit', e => {
       e.preventDefault();
-      const nif  = document.getElementById('co-nif').value.trim();
-      const pass = document.getElementById('co-pass').value;
-      const msg  = document.getElementById('msg-company-login');
-      const co = state.companies.find(c => c.nif === nif);
-      if (co && co.pass === pass) {
-        msg.innerHTML = '<span class="ok">✓ Login OK!</span>';
-        setTimeout(() => alert('🏢 Painel da empresa (em breve)'), 500);
-      } else msg.innerHTML = '<span class="danger">NIF ou senha incorretos.</span>';
+      const msg = document.getElementById('msg-company');
+      msg.innerHTML = '<span class="ok">✓ Login OK! (A entrar...)</span>';
+      setTimeout(() => goTo('screen-game'), 500);
     });
 
-    document.getElementById('form-admin-login').addEventListener('submit', e => {
-      e.preventDefault();
-      const email = document.getElementById('ad-email').value.trim();
-      const pass  = document.getElementById('ad-pass').value;
-      const msg   = document.getElementById('msg-admin-login');
-      if (email === state.admin.email && pass === state.admin.pass) {
-        msg.innerHTML = '<span class="ok">✓ Acesso Admin!</span>';
-        setTimeout(() => alert('🛡️ Painel Admin (em breve)'), 500);
-      } else msg.innerHTML = '<span class="danger">Credenciais inválidas.</span>';
-    });
-
-    console.log('✅ ZAP FLAGS v2 inicializado com sucesso');
-  </script>
-<body>
-  <!-- MARCA DE ÁGUA -->
-  <div class="watermark">LARFORYOU®</div>
-
-  <!-- ECRÃ INICIAL -->
-  <section id="screen-welcome" class="screen active">
-    <h1>⚡ ZAP FLAGS</h1>
-    <p class="sub">Bem-vindo! Como queres entrar?</p>
-    <button class="btn" data-screen="screen-player-login">🎮 SOU JOGADOR</button>
-    <button class="btn btn-dark" data-screen="screen-company-login">🏢 SOU EMPRESA</button>
-    <button class="btn btn-dark" data-screen="screen-admin-login">🔒 ADMIN</button>
-  </section>
-
-  <!-- LOGIN JOGADOR -->
-  <section id="screen-player-login" class="screen">
-    <h1>🎮 JOGADOR</h1>
-    <p class="sub">Entra com o teu email e senha.</p>
-    <form id="form-player-login">
-      <div class="form-group"><label>Email</label><input type="email" id="pl-email" required></div>
-      <div class="form-group"><label>Senha</label><input type="password" id="pl-pass" required></div>
-      <button type="submit" class="btn">ENTRAR</button>
-    </form>
-    <div id="msg-player-login" class="msg"></div>
-    <button class="btn btn-dark" style="margin-top:15px" data-screen="screen-welcome">VOLTAR</button>
-  </section>
-
-  <!-- LOGIN EMPRESA -->
-  <section id="screen-company-login" class="screen">
-    <h1>🏢 EMPRESA</h1>
-    <p class="sub">Entra com o NIF e senha.</p>
-    <form id="form-company-login">
-      <div class="form-group"><label>NIF</label><input type="text" id="co-nif" maxlength="9" required></div>
-      <div class="form-group"><label>Senha</label><input type="password" id="co-pass" required></div>
-      <button type="submit" class="btn">ENTRAR</button>
-    </form>
-    <div id="msg-company-login" class="msg"></div>
-    <button class="btn btn-dark" style="margin-top:15px" data-screen="screen-welcome">VOLTAR</button>
-  </section>
-
-  <!-- LOGIN ADMIN -->
-  <section id="screen-admin-login" class="screen">
-    <h1>🔒 ADMIN</h1>
-    <p class="sub">Acesso restrito ao gestor.</p>
-    <form id="form-admin-login">
-      <div class="form-group"><label>Email</label><input type="text" id="ad-email" required></div>
-      <div class="form-group"><label>Senha</label><input type="password" id="ad-pass" required></div>
-      <button type="submit" class="btn">ENTRAR</button>
-    </form>
-    <div id="msg-admin-login" class="msg"></div>
-    <button class="btn btn-dark" style="margin-top:15px" data-screen="screen-welcome">VOLTAR</button>
-  </section>
-
-  <!-- ECRÃ JOGO (Placeholder Fase 1) -->
-  <section id="screen-game" class="screen">
-    <h1>🗺️ MAPA DO JOGO</h1>
-    <p class="sub">Energia: <span id="ui-energy">100%</span> | Skill: <span id="ui-skill">5m</span> | Modo: <span id="ui-mode">GPS</span></p>
-    <div id="map-container" style="width:100%;height:300px;background:#111;border:1px solid #0f0;border-radius:10px;display:flex;align-items:center;justify-content:center;">Mapa Leaflet (Fase 2)</div>
-    <button class="btn btn-dark" style="margin-top:15px" data-screen="screen-welcome">SAIR</button>
-  </section>
-
-  <!-- ECRÃ DASHBOARD EMPRESA (Placeholder Fase 1) -->
-  <section id="screen-company-dashboard" class="screen">
-    <h1>🏢 PAINEL DA EMPRESA</h1>
-    <p class="sub">Métricas e gestão de lotes (Fase 2)</p>
-    <button class="btn btn-dark" data-screen="screen-welcome">VOLTAR</button>
-  </section>
-
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script>
-    // ============================================================
-    // FASE 1: BASE + NAVEGAÇÃO + DADOS FANTASMA + MARCA DE ÁGUA
-    // ============================================================
-
-    // 🟢 INÍCIO DA FUNÇÃO: initApp()
-    function initApp() {
-      console.log("🟢 ZAP FLAGS v2 - Inicialização");
-      loadState();
-      injectTestDataIfFirstRun();
-      setupNavigation();
-      setupForms();
-      setupWatermark();
-      console.log("✅ Base carregada. Aguardando FASE 2.");
-    }
-    // 🔴 FIM DA FUNÇÃO: initApp()
-
-    // 🟢 INÍCIO DA FUNÇÃO: loadState()
-    function loadState() {
-      try {
-        const raw = localStorage.getItem("zap_flags_v2");
-        window.state = raw ? JSON.parse(raw) : getDefaultState();
-      } catch (e) {
-        console.error("Erro ao carregar estado:", e);
-        window.state = getDefaultState();
-      }
-    }
-    // 🔴 FIM DA FUNÇÃO: loadState()
-
-    // 🟢 INÍCIO DA FUNÇÃO: saveState()
-    function saveState() {
-      try {
-        localStorage.setItem("zap_flags_v2", JSON.stringify(window.state));
-      } catch (e) {
-        console.error("Erro ao guardar estado:", e);
-      }
-    }
-    // 🔴 FIM DA FUNÇÃO: saveState()
-
-    // 🟢 INÍCIO DA FUNÇÃO: getDefaultState()
-    function getDefaultState() {
-      return {
-        player: { email: "", pass: "", name: "", flags: 0, energy: 100, skillRadius: 5, skillTier: 0, coins: 0, qrs: [], usedQrs: [] },
-        companies: [],
-        admin: { email: "ovo@ovo", pass: "258258258" },
-        firstRun: true
-      };
-    }
-    // 🔴 FIM DA FUNÇÃO: getDefaultState()
-
-    // 🟢 INÍCIO DA FUNÇÃO: injectTestDataIfFirstRun()
-    function injectTestDataIfFirstRun() {
-      if (!window.state.firstRun) return;
-
-      // 10 Jogadores Fantasma
-      for (let i = 0; i < 10; i++) {
-        window.state.companies.push({
-          id: `bit${i}`,
-          name: `bit${i}`,
-          nif: `12345678${i}`,
-          pass: "123456",
-          packages: [
-            { tier: "free", flags: 1000, price: 0, bingos: 0 },
-            { tier: "medium", flags: 5000, price: 15, bingos: 5 },
-            { tier: "large", flags: 15000, price: 25, bingos: 15 },
-            { tier: "xl", flags: 30000, price: 35, bingos: 30 },
-            { tier: "xxl", flags: 60000, price: 50, bingos: 60 },
-            { tier: "mega", flags: 100000, price: 75, bingos: 100 }
-          ]
-        });
-      }
-
-      window.state.firstRun = false;
-      saveState();
-      console.log("👻 Dados fantasma injetados (10 empresas + pacotes)");
-    }
-    // 🔴 FIM DA FUNÇÃO: injectTestDataIfFirstRun()
-
-    // 🟢 INÍCIO DA FUNÇÃO: setupNavigation()
-    function setupNavigation() {
-      document.querySelectorAll("[data-screen]").forEach(btn => {
-        btn.addEventListener("click", () => {
-          const target = btn.getAttribute("data-screen");
-          document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
-          const el = document.getElementById(target);
-          if (el) el.classList.add("active");
-        });
-      });
-    }
-    // 🔴 FIM DA FUNÇÃO: setupNavigation()
-
-    // 🟢 INÍCIO DA FUNÇÃO: setupForms()
-    function setupForms() {
-// 🟢 INÍCIO: LOGIN JOGADOR (DIRETO + DEBUG)
-document.getElementById("form-player-login").addEventListener("submit", e => {
-  e.preventDefault();
-  console.log("🟢 [DEBUG] Formulário submetido");
-  
-  const email = document.getElementById("pl-email").value.trim();
-  const pass = document.getElementById("pl-pass").value;
-  const msg = document.getElementById("msg-player-login");
-
-  if (!email || !pass) {
-    msg.innerHTML = '<span class="danger">Preenche os campos.</span>';
-    return;
-  }
-
-  msg.innerHTML = '<span class="ok">✓ Login OK! (A entrar...)</span>';
-  console.log("🟢 [DEBUG] Credenciais válidas. A mudar ecrã...");
-
-  // 1. Esconde TODOS os ecrãs
-  document.querySelectorAll(".screen").forEach(s => {
-    s.classList.remove("active");
-    s.style.display = "none";
-  });
-
-  // 2. Mostra o ecrã do jogo
-  const game = document.getElementById("screen-game");
-  if (game) {
-    game.classList.add("active");
-    game.style.display = "flex";
-    console.log("✅ [DEBUG] #screen-game ativado!");
-    
-    // 3. Inicia mapa/bandeiras
-    if (typeof initGamePhase2 === "function") {
-      console.log("🗺️ [DEBUG] A chamar initGamePhase2()...");
-      initGamePhase2();
-    }
-  } else {
-    console.error("❌ [DEBUG] #screen-game NÃO ENCONTRADO NO HTML!");
-    msg.innerHTML += '<br><span class="danger">Erro: Estrutura do jogo em falta.</span>';
-  }
-});
-// 🔴 FIM
-});
-// 🔴 FIM
-});
-// 🔴 FIM DA CORREÇÃO
-        e.preventDefault();
-        const email = document.getElementById("pl-email").value.trim();
-        const pass = document.getElementById("pl-pass").value;
-        const msg = document.getElementById("msg-player-login");
-        if (email && pass) {
-          msg.innerHTML = '<span class="ok">✓ Login OK! (Redirecionando...)</span>';
-         setTimeout(() => { document.querySelector('[data-screen="screen-game"]').click(); initGamePhase2(); }, 500);
-        } else msg.innerHTML = '<span class="danger">Preenche os campos.</span>';
-      });
-
-      document.getElementById("form-company-login").addEventListener("submit", e => {
-        e.preventDefault();
-        const nif = document.getElementById("co-nif").value.trim();
-        const pass = document.getElementById("co-pass").value;
-        const msg = document.getElementById("msg-company-login");
-        const co = window.state.companies.find(c => c.nif === nif && c.pass === pass);
-        if (co) {
-          msg.innerHTML = '<span class="ok">✓ Login OK! (Redirecionando...)</span>';
-          setTimeout(() => document.querySelector('[data-screen="screen-company-dashboard"]').click(), 500);
-        } else msg.innerHTML = '<span class="danger">NIF ou senha incorretos.</span>';
-      });
-
-      document.getElementById("form-admin-login").addEventListener("submit", e => {
-        e.preventDefault();
-        const email = document.getElementById("ad-email").value.trim();
-        const pass = document.getElementById("ad-pass").value;
-        const msg = document.getElementById("msg-admin-login");
-        if (email === window.state.admin.email && pass === window.state.admin.pass) {
-          msg.innerHTML = '<span class="ok">✓ Acesso Admin! (Em desenvolvimento)</span>';
-        } else msg.innerHTML = '<span class="danger">Credenciais inválidas.</span>';
-      });
-    }
-    // 🔴 FIM DA FUNÇÃO: setupForms()
-
-    // 🟢 INÍCIO DA FUNÇÃO: setupWatermark()
-    function setupWatermark() {
-      const wm = document.querySelector(".watermark");
-      if (wm) wm.style.opacity = "0.15";
-    }
-    // 🔴 FIM DA FUNÇÃO: setupWatermark()
-
-    // Inicialização segura
-    if (document.readyState === "loading") {
-      document.addEventListener("DOMContentLoaded", initApp);
-    } else {
-      initApp();
-    }
-  // ============================================================
-// FASE 2: MAPA + BANDEIRAS + ENERGIA/SKILL + RECOMPENSAS
-// ============================================================
-
-// 🟢 INÍCIO DA FUNÇÃO: initGamePhase2()
-function initGamePhase2() {
-  if (window.gamePhase2Initialized) return;
-  window.gamePhase2Initialized = true;
-  console.log("🗺️ Fase 2: Inicializando Mapa e Mecânicas");
-  initMap();
-  startEnergyRegen();
-  setupCollectionModal();
-  generateFlags();
-  updateSkillUI();
-  updateEnergyUI();
-}
-// 🔴 FIM DA FUNÇÃO: initGamePhase2()
-
-// 🟢 INÍCIO DA FUNÇÃO: initMap()
-function initMap() {
-  if (window.gameMap) return;
-  window.gameMap = L.map('map', { zoomControl: false }).setView([38.7223, -9.1393], 18);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '© OpenStreetMap', maxZoom: 19
-  }).addTo(window.gameMap);
-
-  window.playerMarker = L.marker([38.7223, -9.1393], {
-    icon: L.divIcon({ className: 'player-marker skill-tier-0', html: 'JG', iconSize: [28, 28] })
-  }).addTo(window.gameMap);
-
-  if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition(pos => {
-      updatePlayerPosition(pos.coords.latitude, pos.coords.longitude);
-      window.watchId = navigator.geolocation.watchPosition(
-        p => updatePlayerPosition(p.coords.latitude, p.coords.longitude),
-        () => console.warn("⚠️ GPS falhou. Modo manual ativo."),
-        { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 }
-      );
-      document.getElementById('ui-mode').textContent = 'GPS';
-    }, () => {
-      console.warn("⚠️ GPS negado. Modo manual ativo.");
-      document.getElementById('ui-mode').textContent = 'MANUAL';
-    });
-  } else {
-    document.getElementById('ui-mode').textContent = 'MANUAL';
-  }
-
-  window.gameMap.on('click', e => {
-    if (document.getElementById('ui-mode').textContent === 'MANUAL') {
-      updatePlayerPosition(e.latlng.lat, e.latlng.lng);
-    }
-  });
-}
-// 🔴 FIM DA FUNÇÃO: initMap()
-
-// 🟢 INÍCIO DA FUNÇÃO: updatePlayerPosition(lat, lng)
-function updatePlayerPosition(lat, lng) {
-  window.playerPos = { lat, lng };
-  window.playerMarker.setLatLng([lat, lng]);
-  checkFlagProximity();
-}
-// 🔴 FIM DA FUNÇÃO: updatePlayerPosition(lat, lng)
-
-// 🟢 INÍCIO DA FUNÇÃO: generateFlags()
-function generateFlags() {
-  window.flags = [];
-  const count = 15;
-  for (let i = 0; i < count; i++) {
-    const offset = getRandomOffset(window.playerPos.lat, window.playerPos.lng, window.state.player.skillRadius || 5);
-    window.flags.push({ id: `flag_${i}`, lat: offset.lat, lng: offset.lng, type: null, marker: null, collected: false });
-  }
-  renderFlags();
-}
-// 🔴 FIM DA FUNÇÃO: generateFlags()
-
-// 🟢 INÍCIO DA FUNÇÃO: renderFlags()
-function renderFlags() {
-  if (!window.gameMap) return;
-  window.flags.forEach(f => { if (f.marker) window.gameMap.removeLayer(f.marker); });
-
-  window.flags.forEach(f => {
-    if (f.collected) return;
-    const dist = getDistance(window.playerPos.lat, window.playerPos.lng, f.lat, f.lng);
-    if (dist <= (window.state.player.skillRadius || 5)) {
-      f.marker = L.marker([f.lat, f.lng], {
-        icon: L.divIcon({ className: 'flag-marker', iconSize: [24, 24] })
-      }).addTo(window.gameMap);
-      f.marker.on('click', () => openCollectionModal(f));
-    }
-  });
-}
-// 🔴 FIM DA FUNÇÃO: renderFlags()
-
-// 🟢 INÍCIO DA FUNÇÃO: openCollectionModal(flag)
-function openCollectionModal(flag) {
-  const dist = getDistance(window.playerPos.lat, window.playerPos.lng, flag.lat, flag.lng);
-  const modal = document.getElementById('collection-modal');
-  const btn = document.getElementById('btn-collect');
-
-  document.getElementById('col-dist').textContent = `Distância: ${dist.toFixed(1)}m`;
-  document.getElementById('col-reward').textContent = '';
-  modal.classList.remove('hidden');
-
-  if (dist <= 2.5) {
-    btn.disabled = false;
-    btn.textContent = 'RECOLHER';
-    btn.onclick = () => collectFlag(flag);
-  } else {
-    btn.disabled = true;
-    btn.textContent = 'APROXIMA-TE (≤2.5m)';
-  }
-}
-// 🔴 FIM DA FUNÇÃO: openCollectionModal(flag)
-
-// 🟢 INÍCIO DA FUNÇÃO: collectFlag(flag)
-function collectFlag(flag) {
-  flag.collected = true;
-  window.gameMap.removeLayer(flag.marker);
-  document.getElementById('collection-modal').classList.add('hidden');
-
-  const reward = determineReward();
-  applyReward(reward);
-
-  setTimeout(() => {
-    const offset = getRandomOffset(window.playerPos.lat, window.playerPos.lng, window.state.player.skillRadius || 5);
-    window.flags.push({ id: `flag_${Date.now()}`, lat: offset.lat, lng: offset.lng, type: null, marker: null, collected: false });
-    renderFlags();
-  }, 1000);
-}
-// 🔴 FIM DA FUNÇÃO: collectFlag(flag)
-
-// 🟢 INÍCIO DA FUNÇÃO: determineReward()
-function determineReward() {
-  const rand = Math.random();
-  if (rand < 0.25) return 'energy';
-  if (rand < 0.45) return 'skill';
-  if (rand < 0.60) return 'coin';
-  if (rand < 0.70) return 'bingo';
-  if (rand < 0.80) return 'qr_fragment';
-  return 'nothing';
-}
-// 🔴 FIM DA FUNÇÃO: determineReward()
-
-// 🟢 INÍCIO DA FUNÇÃO: applyReward(type)
-function applyReward(type) {
-  const msg = document.getElementById('col-reward');
-  switch(type) {
-    case 'energy':
-      window.state.player.energy = Math.min(100, window.state.player.energy + 10);
-      msg.textContent = '🔋 +10% Energia';
-      break;
-    case 'skill':
-      window.state.player.skillFlags = (window.state.player.skillFlags || 0) + 1;
-      checkSkillProgression();
-      msg.textContent = '🎯 +1 Band. Skill';
-      break;
-    case 'coin':
-      window.state.player.coins = (window.state.player.coins || 0) + 1;
-      msg.textContent = '🪙 +1 Moeda';
-      break;
-    case 'bingo':
-      msg.textContent = '🎟️ Entrada no Bingo!';
-      break;
-    case 'qr_fragment':
-      window.state.player.qrFragments = (window.state.player.qrFragments || 0) + 1;
-      msg.textContent = `📦 Fragmento QR (${window.state.player.qrFragments}/20)`;
-      break;
-    case 'nothing':
-      msg.textContent = '❌ Nada desta vez...';
-      break;
-  }
-  updateEnergyUI();
-  updateSkillUI();
-  saveState();
-}
-// 🔴 FIM DA FUNÇÃO: applyReward(type)
-
-// 🟢 INÍCIO DA FUNÇÃO: checkSkillProgression()
-function checkSkillProgression() {
-  const flags = window.state.player.skillFlags || 0;
-  const tiers = [100, 200, 400, 800, 1600, 3200];
-  let newTier = 0;
-  for (let i = 0; i < tiers.length; i++) {
-    if (flags >= tiers[i]) newTier = i + 1;
-  }
-  window.state.player.skillTier = newTier;
-  window.state.player.skillRadius = Math.min(50, 5 + (newTier * 5));
-
-  const tierClass = `skill-tier-${Math.min(newTier, 4)}`;
-  window.playerMarker.getElement().className.baseVal = `player-marker ${tierClass}`;
-}
-// 🔴 FIM DA FUNÇÃO: checkSkillProgression()
-
-// 🟢 INÍCIO DA FUNÇÃO: startEnergyRegen()
-function startEnergyRegen() {
-  setInterval(() => {
-    if (window.state.player.energy < 100) {
-      window.state.player.energy = Math.min(100, window.state.player.energy + 10);
-      updateEnergyUI();
-      saveState();
-    }
-  }, 15 * 60 * 1000);
-}
-// 🔴 FIM DA FUNÇÃO: startEnergyRegen()
-
-// 🟢 INÍCIO DA FUNÇÃO: updateEnergyUI()
-function updateEnergyUI() {
-  document.getElementById('ui-energy').textContent = `${window.state.player.energy}%`;
-}
-// 🔴 FIM DA FUNÇÃO: updateEnergyUI()
-
-// 🟢 INÍCIO DA FUNÇÃO: updateSkillUI()
-function updateSkillUI() {
-  document.getElementById('ui-skill').textContent = `${window.state.player.skillRadius || 5}m`;
-}
-// 🔴 FIM DA FUNÇÃO: updateSkillUI()
-
-// 🟢 INÍCIO DA FUNÇÃO: setupCollectionModal()
-function setupCollectionModal() {
-  document.getElementById('btn-close-col').addEventListener('click', () => {
-    document.getElementById('collection-modal').classList.add('hidden');
-  });
-}
-// 🔴 FIM DA FUNÇÃO: setupCollectionModal()
-
-// 🟢 INÍCIO DA FUNÇÃO: getDistance(lat1, lng1, lat2, lng2)
-function getDistance(lat1, lng1, lat2, lng2) {
-  const R = 6371e3;
-  const φ1 = lat1 * Math.PI/180;
-  const φ2 = lat2 * Math.PI/180;
-  const Δφ = (lat2-lat1) * Math.PI/180;
-  const Δλ = (lng2-lng1) * Math.PI/180;
-  const a = Math.sin(Δφ/2)**2 + Math.cos(φ1)*Math.cos(φ2)*Math.sin(Δλ/2)**2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-}
-// 🔴 FIM DA FUNÇÃO: getDistance(lat1, lng1, lat2, lng2)
-
-// 🟢 INÍCIO DA FUNÇÃO: getRandomOffset(lat, lng, radiusMeters)
-function getRandomOffset(lat, lng, radiusMeters) {
-  const angle = Math.random() * 2 * Math.PI;
-  const dist = Math.random() * radiusMeters;
-  const dLat = (dist * Math.cos(angle)) / 111320;
-  const dLng = (dist * Math.sin(angle)) / (111320 * Math.cos(lat * Math.PI / 180));
-  return { lat: lat + dLat, lng: lng + dLng };
-}
-// 🔴 FIM DA FUNÇÃO: getRandomOffset(lat, lng, radiusMeters)
+    console.log('✅ ZAP FLAGS v2 carregado. Sem duplicações.');
   </script>
 </body>
 </html>
