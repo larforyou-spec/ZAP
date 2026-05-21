@@ -319,7 +319,43 @@ input { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #0f0; 
 
     // 🟢 INÍCIO DA FUNÇÃO: setupForms()
     function setupForms() {
-      document.getElementById("form-player-login").addEventListener("submit", e => {
+     // 🟢 INÍCIO DA CORREÇÃO: Redirecionamento Jogador (Direto)
+document.getElementById("form-player-login").addEventListener("submit", e => {
+  e.preventDefault();
+  const email = document.getElementById("pl-email").value.trim();
+  const pass = document.getElementById("pl-pass").value;
+  const msg = document.getElementById("msg-player-login");
+
+  if (!email || !pass) {
+    msg.innerHTML = '<span class="danger">Preenche os campos.</span>';
+    return;
+  }
+
+  msg.innerHTML = '<span class="ok">✓ Login OK! (A entrar...)</span>';
+
+  setTimeout(() => {
+    console.log("🔄 A tentar mudar para o ecrã do jogo...");
+    
+    // 1. Esconde TODOS os ecrãs
+    document.querySelectorAll(".screen").forEach(el => el.classList.remove("active"));
+    
+    // 2. Mostra o ecrã do jogo
+    const gameEl = document.getElementById("screen-game");
+    if (gameEl) {
+      gameEl.classList.add("active");
+      console.log("✅ Ecrã do jogo ativado!");
+      
+      // 3. Inicia o mapa e bandeiras
+      if (typeof initGamePhase2 === "function") {
+        initGamePhase2();
+      }
+    } else {
+      console.error("❌ ERRO CRÍTICO: #screen-game não existe no HTML!");
+      msg.innerHTML += '<br><span class="danger">Erro: Ecrã do jogo não encontrado.</span>';
+    }
+  }, 500);
+});
+// 🔴 FIM DA CORREÇÃO
         e.preventDefault();
         const email = document.getElementById("pl-email").value.trim();
         const pass = document.getElementById("pl-pass").value;
