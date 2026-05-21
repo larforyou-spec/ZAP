@@ -319,9 +319,11 @@ input { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #0f0; 
 
     // 🟢 INÍCIO DA FUNÇÃO: setupForms()
     function setupForms() {
-// 🟢 INÍCIO: LOGIN JOGADOR (SEM .CLICK())
+// 🟢 INÍCIO: LOGIN JOGADOR (DIRETO + DEBUG)
 document.getElementById("form-player-login").addEventListener("submit", e => {
   e.preventDefault();
+  console.log("🟢 [DEBUG] Formulário submetido");
+  
   const email = document.getElementById("pl-email").value.trim();
   const pass = document.getElementById("pl-pass").value;
   const msg = document.getElementById("msg-player-login");
@@ -332,22 +334,32 @@ document.getElementById("form-player-login").addEventListener("submit", e => {
   }
 
   msg.innerHTML = '<span class="ok">✓ Login OK! (A entrar...)</span>';
-  
-  setTimeout(() => {
-    // Esconde todos os ecrãs
-    document.querySelectorAll(".screen").forEach(s => {
-      s.classList.remove("active");
-      s.style.display = "none";
-    });
+  console.log("🟢 [DEBUG] Credenciais válidas. A mudar ecrã...");
+
+  // 1. Esconde TODOS os ecrãs
+  document.querySelectorAll(".screen").forEach(s => {
+    s.classList.remove("active");
+    s.style.display = "none";
+  });
+
+  // 2. Mostra o ecrã do jogo
+  const game = document.getElementById("screen-game");
+  if (game) {
+    game.classList.add("active");
+    game.style.display = "flex";
+    console.log("✅ [DEBUG] #screen-game ativado!");
     
-    // Mostra o jogo diretamente
-    const game = document.getElementById("screen-game");
-    if (game) {
-      game.classList.add("active");
-      game.style.display = "flex";
-      if (typeof initGamePhase2 === "function") initGamePhase2();
+    // 3. Inicia mapa/bandeiras
+    if (typeof initGamePhase2 === "function") {
+      console.log("🗺️ [DEBUG] A chamar initGamePhase2()...");
+      initGamePhase2();
     }
-  }, 300);
+  } else {
+    console.error("❌ [DEBUG] #screen-game NÃO ENCONTRADO NO HTML!");
+    msg.innerHTML += '<br><span class="danger">Erro: Estrutura do jogo em falta.</span>';
+  }
+});
+// 🔴 FIM
 });
 // 🔴 FIM
 });
