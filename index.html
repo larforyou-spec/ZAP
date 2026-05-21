@@ -328,7 +328,7 @@ function validateClientQR() {
   }
   
   function saveState(){ localStorage.setItem("zap_flags_v2", JSON.stringify(window.state)); }
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
   // 1. ESTADO
   window.state = JSON.parse(localStorage.getItem("zap_flags_v2")) || {
@@ -336,114 +336,80 @@ function validateClientQR() {
     companies: Array.from({length:10}, (_,i)=>({id:`bit${i+1}`,name:`Bit${i+1}`,nif:`12345678${i+1}`,pass:"123456",packages:[]})),
     firstRun: false
   };
+  function saveState(){ localStorage.setItem("zap_flags_v2", JSON.stringify(window.state)); }
+
+  // 2. NAVEGAÇÃO
+  function goTo(screenId) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    const el = document.getElementById(screenId);
+    if(el) {
+      el.classList.add('active');
+      if(screenId === 'screen-game') initGame();
+      if(screenId === 'screen-company-dashboard') initCompanyDashboard(window.currentCompany);
+    }
+  }
+
+  // 3. FORMULÁRIOS
+  document.getElementById('form-player').addEventListener('submit', e => {
+    e.preventDefault();
+    const p = window.state.player;
+    if (document.getElementById('p-email').value === p.email && document.getElementById('p-pass').value === p.pass) {
+      document.getElementById('msg-player').innerHTML = '<span class="ok">✓ Login OK!</span>';
+      setTimeout(() => goTo('screen-game'), 300);
+    } else { document.getElementById('msg-player').innerHTML = '<span class="danger">Credenciais inválidas.</span>'; }
+  });
+  document.getElementById('form-company').addEventListener('submit', e => {
+    e.preventDefault();
+    const co = window.state.companies.find(c => c.nif === document.getElementById('c-nif').value && c.pass === document.getElementById('c-pass').value);
+    if (co) {
+      window.currentCompany = co;
+      document.getElementById('msg-company').innerHTML = '<span class="ok">✓ Login OK!</span>';
+      setTimeout(() => goTo('screen-company-dashboard'), 300);
+    } else { document.getElementById('msg-company').innerHTML = '<span class="danger">NIF ou senha inválidos.</span>'; }
+  });
+  
+  // 4. JOGO
+  function initGame() {
+    if(window.map) return window.map.invalidateSize();
+    window.map = L.map('map', {zoomControl:false}).setView([38.7223,-9.1393],16);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(window.map);
+    setTimeout(()=>window.map.invalidateSize(),150);
+  }
+
+  // 5. PAINEL EMPRESA
+  function initCompanyDashboard(co) {
+    if(!co) return goTo('screen-company');
+    document.getElementById('company-name-ui').textContent = co.name;
+    const PACKAGES = [{n:"Médio",p:15,f:5000,b:5},{n:"Grande",p:25,f:15000,b:15},{n:"XL",p:35,f:30000,b:30}];
+    
+    document.getElementById('buy-packages-list').innerHTML = PACKAGES.map(p=>`<div class="package-item" data-name="${p.n}"><strong>${p.n} - ${p.p}€</strong><p>🚩 ${p.f.toLocaleString()} · 🎟️ ${p.b}</p></div>`).join('');
+    document.querySelectorAll('#buy-packages-list .package-item').forEach(item => item.addEventListener('click', ()=>{
+      document.querySelectorAll('#buy-packages-list .package-item').forEach(el=>el.classList.remove('selected'));
+      item.classList.add('selected'); document.getElementById('btn-buy-package').disabled=false;
+    }));
+    
+    function renderActive() {
+      const list=document.getElementById('active-packages-list');
+      list.innerHTML = co.packages.length ? co.packages.map(p=>`<div class="package-item"><strong>${p.n}</strong><p>🚩 Restantes: ${(p.fLeft||p.f).toLocaleString()}</p></div>`).join('') : '<p class="small">Nenhum pacote ativo.</p>';
+    }
+    
+    document.getElementById('btn-buy-package').onclick = ()=>{
+      const sel=document.querySelector('#buy-packages-list .selected'); if(!sel) return;
+      const pkgDef = PACKAGES.find(p=>p.n===sel.dataset.name);
+      co.packages.push({...pkgDef, fLeft:pkgDef.f}); saveState();
+      renderActive(); document.getElementById('buy-msg').innerHTML=`<span class="ok">✓ ${pkgDef.n} comprado!</span>`;
+      alert(`📢 Tem 30 minutos para cancelar.`);
+    };
+
+    function validateQR(){
+      const inp=document.getElementById('qr-validation-input'), msg=document.getElementById('validation-msg');
+      msg.innerHTML = inp.value ? `<span class="ok">✓ QR validado!</span>` : `<span class="danger">Insira um QR.</span>`;
+    }
+    document.querySelector('#screen-company-dashboard button[onclick="validateClientQR()"]').onclick = validateQR;
+    renderActive();
+  }
   
   console.log("✅ ZAP FLAGS v2.3 Carregado. Limpo e funcional.");
-  // ============================================================
-// FASE FINAL: PAINEL ADMIN
-// ============================================================
-// 🟢 INÍCIO: showAdminTab(tab)
-function showAdminTab(tab) {
-  const content = document.getElementById('admin-content');
-  if (tab === 'dashboard') content.innerHTML = renderAdminDashboard();
-  if (tab === 'players') content.innerHTML = renderAdminPlayers();
-  if (tab === 'companies') content.innerHTML = renderAdminCompanies();
-  if (tab === 'messages') content.innerHTML = renderAdminMessages();
-  if (tab === 'banner') content.innerHTML = renderAdminBanner();
-}
-// 🔴 FIM
-
-// 🟢 INÍCIO: renderAdminDashboard()
-function renderAdminDashboard() {
-  const totalPlayers = STATE.player.email ? 1 : 0;
-  return `
-    <div class="item-module">
-      <h3>📊 Estatísticas</h3>
-      <p>Jogadores: ${totalPlayers} | Empresas: ${STATE.companies.length}</p>
-    </div>
-    <div class="item-module">
-      <h3>⚠️ Ações de Risco</h3>
-      <input id="admin-pass-confirm" type="password" placeholder="Senha admin para confirmar" />
-      <button class="btn btn-danger" onclick="adminResetAll()">RESET TOTAL</button>
-      <div id="admin-reset-msg" class="msg"></div>
-    </div>`;
-}
-// 🔴 FIM
-
-// 🟢 INÍCIO: renderAdminPlayers()
-function renderAdminPlayers() {
-  if (!STATE.player.email) return '<div class="item-module"><p>Nenhum jogador registado.</p></div>';
-  return `
-    <div class="item-module" style="overflow-x:auto;">
-      <table class="admin-table">
-        <tr><th>Email</th><th>Senha</th><th>Ações</th></tr>
-        <tr><td>${STATE.player.email}</td><td>${STATE.player.pass}</td><td><button class="btn btn-danger" onclick="adminDeletePlayer()">Apagar</button></td></tr>
-      </table>
-    </div>`;
-}
-// 🔴 FIM
-
-// 🟢 INÍCIO: renderAdminCompanies()
-function renderAdminCompanies() {
-  const rows = STATE.companies.map(c => `
-    <tr><td>${c.name}</td><td>${c.nif}</td><td>${c.packages.length}</td><td><button class="btn btn-danger" onclick="adminDeleteCompany('${c.id}')">Apagar</button></td></tr>
-  `).join('');
-  return `
-    <div class="item-module" style="overflow-x:auto;">
-      <table class="admin-table">
-        <tr><th>Nome</th><th>NIF</th><th>Pacotes</th><th>Ações</th></tr>
-        ${rows}
-      </table>
-    </div>`;
-}
-// 🔴 FIM
-
-// 🟢 INÍCIO: renderAdminMessages()
-function renderAdminMessages() { return `<div class="item-module"><p>Módulo de mensagens (em desenvolvimento).</p></div>`; }
-// 🔴 FIM
-
-// 🟢 INÍCIO: renderAdminBanner()
-function renderAdminBanner() {
-  return `
-    <div class="item-module">
-      <h3>📢 Banner</h3>
-      <input id="banner-text" placeholder="Texto para o banner" />
-      <button class="btn" onclick="showGameBanner()">MOSTRAR</button>
-      <button class="btn btn-dark" onclick="hideGameBanner()">ESCONDER</button>
-    </div>
-    <div class="item-module">
-      <h3>📜 Ticker</h3>
-      <input id="ticker-text" placeholder="Texto para o ticker" />
-      <button class="btn" onclick="showTicker()">MOSTRAR</button>
-      <button class="btn btn-dark" onclick="hideTicker()">ESCONDER</button>
-    </div>`;
-}
-// 🔴 FIM
-
-// 🟢 INÍCIO: Funções de Ação Admin
-function confirmAdminPass() {
-  return document.getElementById('admin-pass-confirm')?.value === STATE.admin.pass;
-}
-function adminResetAll() {
-  if (!confirmAdminPass()) return alert("Senha admin incorreta!");
-  if (!confirm("Apagar TODOS os dados? Ação irreversível!")) return;
-  localStorage.removeItem("zap_flags_v2");
-  location.reload();
-}
-function adminDeletePlayer() { alert("Ação de apagar jogador desativada em demo."); }
-function adminDeleteCompany(id) { alert("Ação de apagar empresa desativada em demo."); }
-function showGameBanner() {
-  const banner = document.getElementById('game-banner');
-  banner.textContent = document.getElementById('banner-text')?.value || "Bem-vindo ao ZAP FLAGS!";
-  banner.classList.add('active');
-}
-function hideGameBanner() { document.getElementById('game-banner')?.classList.remove('active'); }
-function showTicker() {
-  const ticker = document.getElementById('game-ticker');
-  ticker.innerHTML = `<span>${document.getElementById('ticker-text')?.value || "ZAP FLAGS"}</span>`;
-  ticker.classList.add('active');
-}
-function hideTicker() { document.getElementById('game-ticker')?.classList.remove('active'); }
-// 🔴 FIM
 </script>
 </body>
 </html>
