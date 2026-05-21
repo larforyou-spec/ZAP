@@ -7,189 +7,95 @@
   <link rel="icon" href="./icon.png" type="image/png">
   <link rel="manifest" href="./manifest.json">
   <meta name="theme-color" content="#000000">
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: Arial, sans-serif; background: #000; color: #0f0; min-height: 100vh; position: relative; overflow-x: hidden; }
-    
-    /* ECRÃS */
-    .screen { display: none; padding: 20px; max-width: 600px; margin: 0 auto; text-align: center; min-height: 100vh; }
-    .screen.active { display: flex !important; flex-direction: column; justify-content: center; align-items: center; }
-    
-    /* MARCA DE ÁGUA */
-    .watermark {
-      position: fixed !important; top: 50% !important; left: 50% !important;
-      transform: translate(-50%, -50%) rotate(-45deg) !important;
-      font-size: clamp(2rem, 8vw, 5rem) !important; font-weight: 900 !important;
-      color: rgba(0, 255, 0, 0.12) !important; pointer-events: none !important;
-      z-index: 0 !important; white-space: nowrap !important; user-select: none !important;
-    }
+ <style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Arial, sans-serif; background: #000; color: #0f0; overflow: hidden; }
 
-    h1 { margin-bottom: 10px; text-shadow: 0 0 8px #0f0; }
-    .sub { color: #a7fca7; margin-bottom: 20px; }
-    .btn { background: #0f0; color: #000; border: none; padding: 12px 20px; border-radius: 10px; font-weight: 800; cursor: pointer; margin: 8px; font-size: 14px; }
-    .btn-dark { background: #181818; color: #0f0; border: 1px solid #0f0; }
-    .form-group { margin: 12px 0; text-align: left; width: 100%; }
-    .form-group label { display: block; font-size: 12px; color: #a7fca7; margin-bottom: 4px; }
-    input { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #0f0; background: #101010; color: #0f0; font-size: 14px; margin-bottom: 8px; }
-    .msg { min-height: 20px; margin-top: 8px; font-size: 12px; }
-    .ok { color: #8fff8f; } .danger { color: #ff8686; }
-
-    /* JOGO */
-    .game-screen { padding: 0; max-width: 100%; height: 100vh; position: relative; }
-    #top-bar { position: fixed; top: 10px; left: 10px; right: 10px; z-index: 1000; background: rgba(0,0,0,0.85); border: 1px solid #0f0; border-radius: 10px; padding: 8px 12px; display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; }
-    #map { width: 100%; height: 100vh; z-index: 1; }
-  .draggable-panel { position:absolute; width:260px; background:rgba(0,0,0,0.92); border:1px solid #0f0; border-radius:10px; padding:10px; pointer-events:auto; display:none; box-shadow:0 4px 12px rgba(0,0,0,0.5); }
-.draggable-panel.active { display:block; }
-.panel-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; font-weight:bold; cursor:move; }
-.btn-close { background:#8b0000; color:#fff; border:none; border-radius:50%; width:22px; height:22px; cursor:pointer; font-size:12px; }
-#chat-messages { height:140px; overflow-y:auto; background:#111; padding:6px; margin-bottom:6px; font-size:12px; border:1px solid #333; }
-#chat-input { width:100%; padding:6px; background:#222; border:1px solid #0f0; color:#0f0; border-radius:6px; }
-.qr-item { background:#1a1a1a; border:1px solid #0f0; padding:8px; margin:5px 0; border-radius:6px; position:relative; }
-.qr-code { font-family:monospace; background:#000; color:#0f0; padding:4px; border-radius:4px; user-select:none; -webkit-user-select:none; filter:blur(1px); transition:filter 0.2s; cursor:default; }
-.qr-code:hover { filter:none; }
-.ticker { position:fixed; bottom:0; left:0; right:0; background:#002200; color:#0f0; padding:6px 10px; overflow:hidden; white-space:nowrap; font-size:13px; z-index:900; border-top:1px solid #0f0; }
-.ticker span { display:inline-block; padding-left:100%; animation:scroll 25s linear infinite; }
-@keyframes scroll { 0% { transform:translateX(0); } 100% { transform:translateX(-100%); } }
-  // ============================================================
-// FASE 3: QRS, BINGO, TROCA/VENDA, CHAT, PAINÉIS ARRASTÁVEIS
-// ============================================================
-
-// 🟢 INÍCIO DA FUNÇÃO: initGameUI()
-function initGameUI() {
-  console.log("🎒 Fase 3: Inicializando UI, QRs, Chat e Bingo");
-  makeDraggable(document.getElementById("panel-chat"));
-  makeDraggable(document.getElementById("panel-inventory"));
-  makeDraggable(document.getElementById("panel-trade"));
-  updateCoinUI();
-  renderQRInventory();
-  startBingoTicker();
-  initChat();
-}
-// 🔴 FIM DA FUNÇÃO: initGameUI()
-
-// 🟢 INÍCIO DA FUNÇÃO: makeDraggable(el)
-function makeDraggable(el) {
-  if (!el) return;
-  const header = el.querySelector(".panel-header");
-  let isDragging = false, offsetX = 0, offsetY = 0;
-  header.addEventListener("pointerdown", e => {
-    isDragging = true;
-    const rect = el.getBoundingClientRect();
-    offsetX = e.clientX - rect.left;
-    offsetY = e.clientY - rect.top;
-    el.setPointerCapture(e.pointerId);
-  });
-  window.addEventListener("pointermove", e => {
-    if (!isDragging) return;
-    el.style.left = (e.clientX - offsetX) + "px";
-    el.style.top = (e.clientY - offsetY) + "px";
-  });
-  window.addEventListener("pointerup", () => { isDragging = false; });
-}
-// 🔴 FIM DA FUNÇÃO: makeDraggable(el)
-
-// 🟢 INÍCIO DA FUNÇÃO: togglePanel(name)
-function togglePanel(name) {
-  const panel = document.getElementById(`panel-${name}`);
-  if (panel) panel.classList.toggle("active");
-}
-// 🔴 FIM DA FUNÇÃO: togglePanel(name)
-
-// 🟢 INÍCIO DA FUNÇÃO: updateCoinUI()
-function updateCoinUI() {
-  const coins = window.state.player.coins || 0;
-  const el = document.getElementById("ui-coins");
-  if (el) el.textContent = coins;
-}
-// 🔴 FIM DA FUNÇÃO: updateCoinUI()
-
-// 🟢 INÍCIO DA FUNÇÃO: assembleQR()
-function assembleQR() {
-  const frags = window.state.player.qrFragments || 0;
-  if (frags < 20) {
-    alert(`Faltam ${20 - frags} fragmentos.`);
-    return;
+  /* ISOLAMENTO TOTAL DE ECRÃS */
+  .screen { 
+    display: none; 
+    position: fixed; top: 0; left: 0; 
+    width: 100vw; height: 100vh; 
+    background: #000; z-index: 10; 
   }
-  window.state.player.qrFragments -= 20;
-  const qrCode = `ZAP-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).slice(2,6).toUpperCase()}`;
-  const newQR = {
-    id: `qr_${Date.now()}`,
-    code: qrCode,
-    company: "Demo Bit1",
-    prize: "Desconto 10%",
-    validUntil: Date.now() + (30 * 24 * 60 * 60 * 1000),
-    status: "active"
-  };
-  if (!window.state.player.qrs) window.state.player.qrs = [];
-  window.state.player.qrs.push(newQR);
-  saveState();
-  renderQRInventory();
-  alert("✅ QR gerado com sucesso! Válido por 30 dias.");
-}
-// 🔴 FIM DA FUNÇÃO: assembleQR()
+  .screen.active { display: flex !important; }
 
-// 🟢 INÍCIO DA FUNÇÃO: renderQRInventory()
-function renderQRInventory() {
-  const list = document.getElementById("qr-list");
-  if (!list) return;
-  const qrs = window.state.player.qrs || [];
-  if (!qrs.length) { list.innerHTML = '<p class="small">Sem QRs ativos.</p>'; return; }
-  list.innerHTML = qrs.map(q => `
-    <div class="qr-item">
-      <strong>${q.company}</strong><br>
-      <span class="qr-code">${q.code}</span><br>
-      <small>Prémio: ${q.prize} · Expira: ${new Date(q.validUntil).toLocaleDateString()}</small>
-    </div>
-  `).join("");
-}
-// 🔴 FIM DA FUNÇÃO: renderQRInventory()
+  /* ECRÃS DE LOGIN/CENTRADOS */
+  #screen-welcome, #screen-player, #screen-company { 
+    flex-direction: column; justify-content: center; align-items: center; padding: 20px; 
+  }
 
-// 🟢 INÍCIO DA FUNÇÃO: startBingoTicker()
-function startBingoTicker() {
-  const ticker = document.getElementById("bingo-ticker");
-  if (!ticker) return;
-  const messages = [
-    "🎟️ BINGO ATIVO: Café Central · Prémio: Jantar para 2 · Expira em 14h",
-    "🏆 GANHADOR: max3 apanhou o Bingo da Bit5! Prémio entregue.",
-    "📢 Nova campanha: Bit2 lançou 500 bandeiras com prémios surpresa!"
-  ];
-  ticker.innerHTML = `<span>${messages.join(" ••• ")}</span>`;
-}
-// 🔴 FIM DA FUNÇÃO: startBingoTicker()
+  /* ECRÃ DO JOGO (SEM CENTRAGEM) */
+  #screen-game { 
+    flex-direction: column; padding: 0; overflow: hidden; 
+  }
 
-// 🟢 INÍCIO DA FUNÇÃO: initChat()
-function initChat() {
-  const input = document.getElementById("chat-input");
-  const msgs = document.getElementById("chat-messages");
-  if (!input || !msgs) return;
-  input.addEventListener("keydown", e => {
-    if (e.key === "Enter" && input.value.trim()) {
-      addChatMessage("Tu", input.value.trim());
-      input.value = "";
-    }
-  });
-  setTimeout(() => addChatMessage("Sistema", "Chat ativo. Arrasta o painel para mover."), 2000);
-}
-// 🔴 FIM DA FUNÇÃO: initChat()
+  /* MARCA DE ÁGUA */
+  .watermark { 
+    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-45deg); 
+    font-size: clamp(2rem, 8vw, 5rem); font-weight: 900; color: rgba(0,255,0,0.12); 
+    pointer-events: none; z-index: 0; white-space: nowrap; user-select: none; 
+  }
 
-// 🟢 INÍCIO DA FUNÇÃO: addChatMessage(user, text)
-function addChatMessage(user, text) {
-  const msgs = document.getElementById("chat-messages");
-  if (!msgs) return;
-  const div = document.createElement("div");
-  div.style.marginBottom = "4px";
-  div.innerHTML = `<strong style="color:#0f0">${user}:</strong> ${text}`;
-  msgs.appendChild(div);
-  msgs.scrollTop = msgs.scrollHeight;
-}
-// 🔴 FIM DA FUNÇÃO: addChatMessage(user, text)
+  /* UI DO JOGO */
+  #top-bar { 
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100; 
+    background: rgba(0,0,0,0.9); border-bottom: 1px solid #0f0; 
+    padding: 10px 15px; display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; 
+  }
+  #map { flex: 1; width: 100%; height: 100%; z-index: 1; }
+  
+  #game-ui { 
+    position: fixed; top: 50px; left: 0; right: 0; bottom: 0; 
+    pointer-events: none; z-index: 50; 
+  }
+  .draggable-panel { 
+    position: absolute; width: 260px; max-height: 70vh; 
+    background: rgba(0,0,0,0.92); border: 1px solid #0f0; border-radius: 10px; 
+    padding: 10px; pointer-events: auto; display: none; 
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5); overflow-y: auto; 
+  }
+  .draggable-panel.active { display: block; }
+  .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-weight: bold; cursor: move; }
+  .btn-close { background: #8b0000; color: #fff; border: none; border-radius: 50%; width: 22px; height: 22px; cursor: pointer; font-size: 12px; }
+  #chat-messages { height: 140px; overflow-y: auto; background: #111; padding: 6px; margin-bottom: 6px; font-size: 12px; border: 1px solid #333; }
+  #chat-input { width: 100%; padding: 6px; background: #222; border: 1px solid #0f0; color: #0f0; border-radius: 6px; }
+  .qr-item { background: #1a1a1a; border: 1px solid #0f0; padding: 8px; margin: 5px 0; border-radius: 6px; }
+  .qr-code { font-family: monospace; background: #000; color: #0f0; padding: 4px; border-radius: 4px; user-select: none; filter: blur(1px); transition: filter 0.2s; cursor: default; display: inline-block; }
+  .qr-code:hover { filter: none; }
 
-// 🟢 INÍCIO DA FUNÇÃO: publishOffer()
-function publishOffer() {
-  alert("📢 Oferta publicada no mercado local. (Simulação Fase 3)");
-}
-// 🔴 FIM DA FUNÇÃO: publishOffer()
-  </style>
+  /* POSIÇÕES INICIAIS */
+  #panel-chat { top: 10px; left: 10px; }
+  #panel-inventory { top: 10px; left: 280px; }
+  #panel-trade { top: 10px; left: 550px; }
+
+  /* TICKER */
+  .ticker { 
+    position: fixed; bottom: 0; left: 0; right: 0; background: #002200; color: #0f0; 
+    padding: 6px 10px; overflow: hidden; white-space: nowrap; font-size: 13px; 
+    z-index: 90; border-top: 1px solid #0f0; 
+  }
+  .ticker span { display: inline-block; padding-left: 100%; animation: scroll 25s linear infinite; }
+  @keyframes scroll { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }
+
+  /* BOTÕES & FORMULÁRIOS */
+  .btn { background: #0f0; color: #000; border: none; padding: 12px 20px; border-radius: 10px; font-weight: 800; cursor: pointer; margin: 8px; font-size: 14px; }
+  .btn-dark { background: #181818; color: #0f0; border: 1px solid #0f0; }
+  .form-group { margin: 12px 0; text-align: left; width: 100%; max-width: 300px; }
+  .form-group label { display: block; font-size: 12px; color: #a7fca7; margin-bottom: 4px; }
+  input { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #0f0; background: #101010; color: #0f0; font-size: 14px; margin-bottom: 8px; }
+  .msg { min-height: 20px; margin-top: 8px; font-size: 12px; }
+  .ok { color: #8fff8f; } .danger { color: #ff8686; }
+
+  h1 { margin-bottom: 10px; text-shadow: 0 0 8px #0f0; }
+  .sub { color: #a7fca7; margin-bottom: 20px; text-align: center; }
+
+  @media (max-width: 768px) {
+    #panel-inventory, #panel-trade { left: 10px; top: auto; bottom: 10px; }
+    #panel-chat { top: 10px; left: 10px; }
+    .draggable-panel { width: 90%; max-width: 280px; }
+  }
+</style>
 </head>
 <body>
   <div class="watermark">LARFORYOU®</div>
