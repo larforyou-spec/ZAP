@@ -367,6 +367,252 @@ input { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #0f0; 
     } else {
       initApp();
     }
+  // ============================================================
+// FASE 2: MAPA + BANDEIRAS + ENERGIA/SKILL + RECOMPENSAS
+// ============================================================
+
+// 🟢 INÍCIO DA FUNÇÃO: initGamePhase2()
+function initGamePhase2() {
+  if (window.gamePhase2Initialized) return;
+  window.gamePhase2Initialized = true;
+  console.log("🗺️ Fase 2: Inicializando Mapa e Mecânicas");
+  initMap();
+  startEnergyRegen();
+  setupCollectionModal();
+  generateFlags();
+  updateSkillUI();
+  updateEnergyUI();
+}
+// 🔴 FIM DA FUNÇÃO: initGamePhase2()
+
+// 🟢 INÍCIO DA FUNÇÃO: initMap()
+function initMap() {
+  if (window.gameMap) return;
+  window.gameMap = L.map('map', { zoomControl: false }).setView([38.7223, -9.1393], 18);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap', maxZoom: 19
+  }).addTo(window.gameMap);
+
+  window.playerMarker = L.marker([38.7223, -9.1393], {
+    icon: L.divIcon({ className: 'player-marker skill-tier-0', html: 'JG', iconSize: [28, 28] })
+  }).addTo(window.gameMap);
+
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(pos => {
+      updatePlayerPosition(pos.coords.latitude, pos.coords.longitude);
+      window.watchId = navigator.geolocation.watchPosition(
+        p => updatePlayerPosition(p.coords.latitude, p.coords.longitude),
+        () => console.warn("⚠️ GPS falhou. Modo manual ativo."),
+        { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 }
+      );
+      document.getElementById('ui-mode').textContent = 'GPS';
+    }, () => {
+      console.warn("⚠️ GPS negado. Modo manual ativo.");
+      document.getElementById('ui-mode').textContent = 'MANUAL';
+    });
+  } else {
+    document.getElementById('ui-mode').textContent = 'MANUAL';
+  }
+
+  window.gameMap.on('click', e => {
+    if (document.getElementById('ui-mode').textContent === 'MANUAL') {
+      updatePlayerPosition(e.latlng.lat, e.latlng.lng);
+    }
+  });
+}
+// 🔴 FIM DA FUNÇÃO: initMap()
+
+// 🟢 INÍCIO DA FUNÇÃO: updatePlayerPosition(lat, lng)
+function updatePlayerPosition(lat, lng) {
+  window.playerPos = { lat, lng };
+  window.playerMarker.setLatLng([lat, lng]);
+  checkFlagProximity();
+}
+// 🔴 FIM DA FUNÇÃO: updatePlayerPosition(lat, lng)
+
+// 🟢 INÍCIO DA FUNÇÃO: generateFlags()
+function generateFlags() {
+  window.flags = [];
+  const count = 15;
+  for (let i = 0; i < count; i++) {
+    const offset = getRandomOffset(window.playerPos.lat, window.playerPos.lng, window.state.player.skillRadius || 5);
+    window.flags.push({ id: `flag_${i}`, lat: offset.lat, lng: offset.lng, type: null, marker: null, collected: false });
+  }
+  renderFlags();
+}
+// 🔴 FIM DA FUNÇÃO: generateFlags()
+
+// 🟢 INÍCIO DA FUNÇÃO: renderFlags()
+function renderFlags() {
+  if (!window.gameMap) return;
+  window.flags.forEach(f => { if (f.marker) window.gameMap.removeLayer(f.marker); });
+
+  window.flags.forEach(f => {
+    if (f.collected) return;
+    const dist = getDistance(window.playerPos.lat, window.playerPos.lng, f.lat, f.lng);
+    if (dist <= (window.state.player.skillRadius || 5)) {
+      f.marker = L.marker([f.lat, f.lng], {
+        icon: L.divIcon({ className: 'flag-marker', iconSize: [24, 24] })
+      }).addTo(window.gameMap);
+      f.marker.on('click', () => openCollectionModal(f));
+    }
+  });
+}
+// 🔴 FIM DA FUNÇÃO: renderFlags()
+
+// 🟢 INÍCIO DA FUNÇÃO: openCollectionModal(flag)
+function openCollectionModal(flag) {
+  const dist = getDistance(window.playerPos.lat, window.playerPos.lng, flag.lat, flag.lng);
+  const modal = document.getElementById('collection-modal');
+  const btn = document.getElementById('btn-collect');
+
+  document.getElementById('col-dist').textContent = `Distância: ${dist.toFixed(1)}m`;
+  document.getElementById('col-reward').textContent = '';
+  modal.classList.remove('hidden');
+
+  if (dist <= 2.5) {
+    btn.disabled = false;
+    btn.textContent = 'RECOLHER';
+    btn.onclick = () => collectFlag(flag);
+  } else {
+    btn.disabled = true;
+    btn.textContent = 'APROXIMA-TE (≤2.5m)';
+  }
+}
+// 🔴 FIM DA FUNÇÃO: openCollectionModal(flag)
+
+// 🟢 INÍCIO DA FUNÇÃO: collectFlag(flag)
+function collectFlag(flag) {
+  flag.collected = true;
+  window.gameMap.removeLayer(flag.marker);
+  document.getElementById('collection-modal').classList.add('hidden');
+
+  const reward = determineReward();
+  applyReward(reward);
+
+  setTimeout(() => {
+    const offset = getRandomOffset(window.playerPos.lat, window.playerPos.lng, window.state.player.skillRadius || 5);
+    window.flags.push({ id: `flag_${Date.now()}`, lat: offset.lat, lng: offset.lng, type: null, marker: null, collected: false });
+    renderFlags();
+  }, 1000);
+}
+// 🔴 FIM DA FUNÇÃO: collectFlag(flag)
+
+// 🟢 INÍCIO DA FUNÇÃO: determineReward()
+function determineReward() {
+  const rand = Math.random();
+  if (rand < 0.25) return 'energy';
+  if (rand < 0.45) return 'skill';
+  if (rand < 0.60) return 'coin';
+  if (rand < 0.70) return 'bingo';
+  if (rand < 0.80) return 'qr_fragment';
+  return 'nothing';
+}
+// 🔴 FIM DA FUNÇÃO: determineReward()
+
+// 🟢 INÍCIO DA FUNÇÃO: applyReward(type)
+function applyReward(type) {
+  const msg = document.getElementById('col-reward');
+  switch(type) {
+    case 'energy':
+      window.state.player.energy = Math.min(100, window.state.player.energy + 10);
+      msg.textContent = '🔋 +10% Energia';
+      break;
+    case 'skill':
+      window.state.player.skillFlags = (window.state.player.skillFlags || 0) + 1;
+      checkSkillProgression();
+      msg.textContent = '🎯 +1 Band. Skill';
+      break;
+    case 'coin':
+      window.state.player.coins = (window.state.player.coins || 0) + 1;
+      msg.textContent = '🪙 +1 Moeda';
+      break;
+    case 'bingo':
+      msg.textContent = '🎟️ Entrada no Bingo!';
+      break;
+    case 'qr_fragment':
+      window.state.player.qrFragments = (window.state.player.qrFragments || 0) + 1;
+      msg.textContent = `📦 Fragmento QR (${window.state.player.qrFragments}/20)`;
+      break;
+    case 'nothing':
+      msg.textContent = '❌ Nada desta vez...';
+      break;
+  }
+  updateEnergyUI();
+  updateSkillUI();
+  saveState();
+}
+// 🔴 FIM DA FUNÇÃO: applyReward(type)
+
+// 🟢 INÍCIO DA FUNÇÃO: checkSkillProgression()
+function checkSkillProgression() {
+  const flags = window.state.player.skillFlags || 0;
+  const tiers = [100, 200, 400, 800, 1600, 3200];
+  let newTier = 0;
+  for (let i = 0; i < tiers.length; i++) {
+    if (flags >= tiers[i]) newTier = i + 1;
+  }
+  window.state.player.skillTier = newTier;
+  window.state.player.skillRadius = Math.min(50, 5 + (newTier * 5));
+
+  const tierClass = `skill-tier-${Math.min(newTier, 4)}`;
+  window.playerMarker.getElement().className.baseVal = `player-marker ${tierClass}`;
+}
+// 🔴 FIM DA FUNÇÃO: checkSkillProgression()
+
+// 🟢 INÍCIO DA FUNÇÃO: startEnergyRegen()
+function startEnergyRegen() {
+  setInterval(() => {
+    if (window.state.player.energy < 100) {
+      window.state.player.energy = Math.min(100, window.state.player.energy + 10);
+      updateEnergyUI();
+      saveState();
+    }
+  }, 15 * 60 * 1000);
+}
+// 🔴 FIM DA FUNÇÃO: startEnergyRegen()
+
+// 🟢 INÍCIO DA FUNÇÃO: updateEnergyUI()
+function updateEnergyUI() {
+  document.getElementById('ui-energy').textContent = `${window.state.player.energy}%`;
+}
+// 🔴 FIM DA FUNÇÃO: updateEnergyUI()
+
+// 🟢 INÍCIO DA FUNÇÃO: updateSkillUI()
+function updateSkillUI() {
+  document.getElementById('ui-skill').textContent = `${window.state.player.skillRadius || 5}m`;
+}
+// 🔴 FIM DA FUNÇÃO: updateSkillUI()
+
+// 🟢 INÍCIO DA FUNÇÃO: setupCollectionModal()
+function setupCollectionModal() {
+  document.getElementById('btn-close-col').addEventListener('click', () => {
+    document.getElementById('collection-modal').classList.add('hidden');
+  });
+}
+// 🔴 FIM DA FUNÇÃO: setupCollectionModal()
+
+// 🟢 INÍCIO DA FUNÇÃO: getDistance(lat1, lng1, lat2, lng2)
+function getDistance(lat1, lng1, lat2, lng2) {
+  const R = 6371e3;
+  const φ1 = lat1 * Math.PI/180;
+  const φ2 = lat2 * Math.PI/180;
+  const Δφ = (lat2-lat1) * Math.PI/180;
+  const Δλ = (lng2-lng1) * Math.PI/180;
+  const a = Math.sin(Δφ/2)**2 + Math.cos(φ1)*Math.cos(φ2)*Math.sin(Δλ/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+// 🔴 FIM DA FUNÇÃO: getDistance(lat1, lng1, lat2, lng2)
+
+// 🟢 INÍCIO DA FUNÇÃO: getRandomOffset(lat, lng, radiusMeters)
+function getRandomOffset(lat, lng, radiusMeters) {
+  const angle = Math.random() * 2 * Math.PI;
+  const dist = Math.random() * radiusMeters;
+  const dLat = (dist * Math.cos(angle)) / 111320;
+  const dLng = (dist * Math.sin(angle)) / (111320 * Math.cos(lat * Math.PI / 180));
+  return { lat: lat + dLat, lng: lng + dLng };
+}
+// 🔴 FIM DA FUNÇÃO: getRandomOffset(lat, lng, radiusMeters)
   </script>
 </body>
 </html>
