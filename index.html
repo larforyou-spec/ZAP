@@ -50,6 +50,145 @@
 .ticker { position:fixed; bottom:0; left:0; right:0; background:#002200; color:#0f0; padding:6px 10px; overflow:hidden; white-space:nowrap; font-size:13px; z-index:900; border-top:1px solid #0f0; }
 .ticker span { display:inline-block; padding-left:100%; animation:scroll 25s linear infinite; }
 @keyframes scroll { 0% { transform:translateX(0); } 100% { transform:translateX(-100%); } }
+  // ============================================================
+// FASE 3: QRS, BINGO, TROCA/VENDA, CHAT, PAINÉIS ARRASTÁVEIS
+// ============================================================
+
+// 🟢 INÍCIO DA FUNÇÃO: initGameUI()
+function initGameUI() {
+  console.log("🎒 Fase 3: Inicializando UI, QRs, Chat e Bingo");
+  makeDraggable(document.getElementById("panel-chat"));
+  makeDraggable(document.getElementById("panel-inventory"));
+  makeDraggable(document.getElementById("panel-trade"));
+  updateCoinUI();
+  renderQRInventory();
+  startBingoTicker();
+  initChat();
+}
+// 🔴 FIM DA FUNÇÃO: initGameUI()
+
+// 🟢 INÍCIO DA FUNÇÃO: makeDraggable(el)
+function makeDraggable(el) {
+  if (!el) return;
+  const header = el.querySelector(".panel-header");
+  let isDragging = false, offsetX = 0, offsetY = 0;
+  header.addEventListener("pointerdown", e => {
+    isDragging = true;
+    const rect = el.getBoundingClientRect();
+    offsetX = e.clientX - rect.left;
+    offsetY = e.clientY - rect.top;
+    el.setPointerCapture(e.pointerId);
+  });
+  window.addEventListener("pointermove", e => {
+    if (!isDragging) return;
+    el.style.left = (e.clientX - offsetX) + "px";
+    el.style.top = (e.clientY - offsetY) + "px";
+  });
+  window.addEventListener("pointerup", () => { isDragging = false; });
+}
+// 🔴 FIM DA FUNÇÃO: makeDraggable(el)
+
+// 🟢 INÍCIO DA FUNÇÃO: togglePanel(name)
+function togglePanel(name) {
+  const panel = document.getElementById(`panel-${name}`);
+  if (panel) panel.classList.toggle("active");
+}
+// 🔴 FIM DA FUNÇÃO: togglePanel(name)
+
+// 🟢 INÍCIO DA FUNÇÃO: updateCoinUI()
+function updateCoinUI() {
+  const coins = window.state.player.coins || 0;
+  const el = document.getElementById("ui-coins");
+  if (el) el.textContent = coins;
+}
+// 🔴 FIM DA FUNÇÃO: updateCoinUI()
+
+// 🟢 INÍCIO DA FUNÇÃO: assembleQR()
+function assembleQR() {
+  const frags = window.state.player.qrFragments || 0;
+  if (frags < 20) {
+    alert(`Faltam ${20 - frags} fragmentos.`);
+    return;
+  }
+  window.state.player.qrFragments -= 20;
+  const qrCode = `ZAP-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).slice(2,6).toUpperCase()}`;
+  const newQR = {
+    id: `qr_${Date.now()}`,
+    code: qrCode,
+    company: "Demo Bit1",
+    prize: "Desconto 10%",
+    validUntil: Date.now() + (30 * 24 * 60 * 60 * 1000),
+    status: "active"
+  };
+  if (!window.state.player.qrs) window.state.player.qrs = [];
+  window.state.player.qrs.push(newQR);
+  saveState();
+  renderQRInventory();
+  alert("✅ QR gerado com sucesso! Válido por 30 dias.");
+}
+// 🔴 FIM DA FUNÇÃO: assembleQR()
+
+// 🟢 INÍCIO DA FUNÇÃO: renderQRInventory()
+function renderQRInventory() {
+  const list = document.getElementById("qr-list");
+  if (!list) return;
+  const qrs = window.state.player.qrs || [];
+  if (!qrs.length) { list.innerHTML = '<p class="small">Sem QRs ativos.</p>'; return; }
+  list.innerHTML = qrs.map(q => `
+    <div class="qr-item">
+      <strong>${q.company}</strong><br>
+      <span class="qr-code">${q.code}</span><br>
+      <small>Prémio: ${q.prize} · Expira: ${new Date(q.validUntil).toLocaleDateString()}</small>
+    </div>
+  `).join("");
+}
+// 🔴 FIM DA FUNÇÃO: renderQRInventory()
+
+// 🟢 INÍCIO DA FUNÇÃO: startBingoTicker()
+function startBingoTicker() {
+  const ticker = document.getElementById("bingo-ticker");
+  if (!ticker) return;
+  const messages = [
+    "🎟️ BINGO ATIVO: Café Central · Prémio: Jantar para 2 · Expira em 14h",
+    "🏆 GANHADOR: max3 apanhou o Bingo da Bit5! Prémio entregue.",
+    "📢 Nova campanha: Bit2 lançou 500 bandeiras com prémios surpresa!"
+  ];
+  ticker.innerHTML = `<span>${messages.join(" ••• ")}</span>`;
+}
+// 🔴 FIM DA FUNÇÃO: startBingoTicker()
+
+// 🟢 INÍCIO DA FUNÇÃO: initChat()
+function initChat() {
+  const input = document.getElementById("chat-input");
+  const msgs = document.getElementById("chat-messages");
+  if (!input || !msgs) return;
+  input.addEventListener("keydown", e => {
+    if (e.key === "Enter" && input.value.trim()) {
+      addChatMessage("Tu", input.value.trim());
+      input.value = "";
+    }
+  });
+  setTimeout(() => addChatMessage("Sistema", "Chat ativo. Arrasta o painel para mover."), 2000);
+}
+// 🔴 FIM DA FUNÇÃO: initChat()
+
+// 🟢 INÍCIO DA FUNÇÃO: addChatMessage(user, text)
+function addChatMessage(user, text) {
+  const msgs = document.getElementById("chat-messages");
+  if (!msgs) return;
+  const div = document.createElement("div");
+  div.style.marginBottom = "4px";
+  div.innerHTML = `<strong style="color:#0f0">${user}:</strong> ${text}`;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+// 🔴 FIM DA FUNÇÃO: addChatMessage(user, text)
+
+// 🟢 INÍCIO DA FUNÇÃO: publishOffer()
+function publishOffer() {
+  alert("📢 Oferta publicada no mercado local. (Simulação Fase 3)");
+}
+// 🔴 FIM DA FUNÇÃO: publishOffer()
   </style>
 </head>
 <body>
