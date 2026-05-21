@@ -255,11 +255,25 @@ function validateClientQR() {
       document.getElementById('msg-player').innerHTML = '<span class="ok">✓ Login OK!</span>';
       setTimeout(() => goTo('screen-game'), 300);
     });
-    document.getElementById('form-company').addEventListener('submit', e => {
-      e.preventDefault();
-      document.getElementById('msg-company').innerHTML = '<span class="ok">✓ Login OK!</span>';
-      setTimeout(() => goTo('screen-game'), 300);
-    });
+    // 🟢 INÍCIO: LOGIN EMPRESA (COM REDIRECIONAMENTO PARA DASHBOARD)
+document.getElementById('form-company').addEventListener('submit', e => {
+  e.preventDefault();
+  const nif = document.getElementById('c-nif').value.trim();
+  const pass = document.getElementById('c-pass').value;
+  const msg = document.getElementById('msg-company');
+  const company = window.state.companies.find(c => c.nif === nif && c.pass === pass);
+
+  if (company) {
+    msg.innerHTML = '<span class="ok">✓ Login OK! (A entrar...)</span>';
+    setTimeout(() => {
+      goTo('screen-company-dashboard');
+      initCompanyDashboard(company);
+    }, 400);
+  } else {
+    msg.innerHTML = '<span class="danger">NIF ou senha incorretos.</span>';
+  }
+});
+// 🔴 FIM
 
     // 3. JOGO
     function initGame() {
