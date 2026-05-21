@@ -49,6 +49,115 @@
   .package-item { background: #111; padding: 10px; border-radius: 8px; margin-bottom: 8px; border: 1px solid #333; cursor: pointer; }
   .package-item.selected { border-color: #fff; box-shadow: 0 0 8px rgba(255,255,255,0.3); }
   .package-item p { font-size: 13px; color: #a7fca7; margin-top: 5px; }
+  // ============================================================
+// FASE 4: PAINEL EMPRESA
+// ============================================================
+
+// 🟢 INÍCIO DA FUNÇÃO: initCompanyDashboard(company)
+function initCompanyDashboard(company) {
+  if (!company) return goTo('screen-company');
+  console.log("🏢 Fase 4: Inicializando Painel da Empresa para", company.name);
+  window.currentCompany = company;
+
+  document.getElementById('company-name-ui').textContent = `Empresa: ${company.name}`;
+  renderBuyablePackages();
+  renderActivePackages();
+
+  const buyBtn = document.getElementById('btn-buy-package');
+  buyBtn.onclick = () => purchaseSelectedPackage();
+}
+// 🔴 FIM DA FUNÇÃO: initCompanyDashboard(company)
+
+// 🟢 INÍCIO DA FUNÇÃO: renderBuyablePackages()
+function renderBuyablePackages() {
+  const list = document.getElementById('buy-packages-list');
+  const packages = [
+    { tier: "free", name: "Registo Grátis", price: 0, flags: 1000, bingos: 0 },
+    { tier: "medium", name: "Médio", price: 15, flags: 5000, bingos: 5 },
+    { tier: "large", name: "Grande", price: 25, flags: 15000, bingos: 15 },
+    { tier: "xl", name: "XL", price: 35, flags: 30000, bingos: 30 },
+    { tier: "xxl", name: "XXL", price: 50, flags: 60000, bingos: 60 },
+    { tier: "mega", name: "Mega", price: 75, flags: 100000, bingos: 100 }
+  ];
+
+  list.innerHTML = packages.map(p => `
+    <div class="package-item" data-tier="${p.tier}">
+      <strong>${p.name} - ${p.price}€</strong>
+      <p>🚩 ${p.flags.toLocaleString()} bandeiras · 🎟️ ${p.bingos} bingos</p>
+    </div>
+  `).join('');
+
+  list.querySelectorAll('.package-item').forEach(item => {
+    item.addEventListener('click', () => {
+      list.querySelectorAll('.package-item').forEach(el => el.classList.remove('selected'));
+      item.classList.add('selected');
+      document.getElementById('btn-buy-package').disabled = false;
+    });
+  });
+}
+// 🔴 FIM DA FUNÇÃO: renderBuyablePackages()
+
+// 🟢 INÍCIO DA FUNÇÃO: renderActivePackages()
+function renderActivePackages() {
+  const list = document.getElementById('active-packages-list');
+  const company = window.currentCompany;
+  if (!company || !company.packages || company.packages.length === 0) {
+    list.innerHTML = '<p class="small">Nenhum pacote ativo.</p>';
+    return;
+  }
+  list.innerHTML = company.packages.map(p => `
+    <div class="package-item">
+      <strong>${p.name} (Ativo)</strong>
+      <p>🚩 Restantes: ${(p.flagsLeft || p.flags).toLocaleString()} / ${p.flags.toLocaleString()}</p>
+    </div>
+  `).join('');
+}
+// 🔴 FIM DA FUNÇÃO: renderActivePackages()
+
+// 🟢 INÍCIO DA FUNÇÃO: purchaseSelectedPackage()
+function purchaseSelectedPackage() {
+  const selectedEl = document.querySelector('#buy-packages-list .selected');
+  if (!selectedEl) return alert("Selecione um pacote.");
+
+  const tier = selectedEl.dataset.tier;
+  const packages = [
+    { tier: "free", name: "Registo Grátis", price: 0, flags: 1000, bingos: 0 },
+    { tier: "medium", name: "Médio", price: 15, flags: 5000, bingos: 5 },
+    { tier: "large", name: "Grande", price: 25, flags: 15000, bingos: 15 },
+    { tier: "xl", name: "XL", price: 35, flags: 30000, bingos: 30 },
+    { tier: "xxl", name: "XXL", price: 50, flags: 60000, bingos: 60 },
+    { tier: "mega", name: "Mega", price: 75, flags: 100000, bingos: 100 }
+  ];
+  const pkgDef = packages.find(p => p.tier === tier);
+
+  const company = window.currentCompany;
+  if (!company.packages) company.packages = [];
+  
+  const newPackage = { ...pkgDef, flagsLeft: pkgDef.flags, id: `pkg_${Date.now()}` };
+  company.packages.push(newPackage);
+  
+  saveState();
+  renderActivePackages();
+
+  const buyMsg = document.getElementById('buy-msg');
+  buyMsg.innerHTML = `<span class="ok">✓ Pacote ${pkgDef.name} comprado!</span>`;
+  alert(`📢 JANELA DE SEGURANÇA: Tem 30 minutos para cancelar esta compra. (Simulação Fase 4)`);
+  setTimeout(() => buyMsg.innerHTML = "", 3000);
+}
+// 🔴 FIM DA FUNÇÃO: purchaseSelectedPackage()
+
+// 🟢 INÍCIO DA FUNÇÃO: validateClientQR()
+function validateClientQR() {
+  const input = document.getElementById('qr-validation-input');
+  const msg = document.getElementById('validation-msg');
+  if (!input.value.trim()) {
+    msg.innerHTML = '<span class="danger">Insira o código do QR.</span>';
+    return;
+  }
+  msg.innerHTML = `<span class="ok">✓ QR ${input.value} validado com sucesso. Prémio entregue. (Simulação Fase 4)</span>`;
+  input.value = "";
+}
+// 🔴 FIM DA FUNÇÃO: validateClientQR()
   </style>
 </head>
 <body>
