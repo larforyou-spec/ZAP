@@ -7,329 +7,138 @@
   <link rel="icon" href="./icon.png" type="image/png">
   <link rel="manifest" href="./manifest.json">
   <meta name="theme-color" content="#000000">
- <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: Arial, sans-serif; background: #000; color: #0f0; overflow: hidden; }
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, sans-serif; background: #000; color: #0f0; overflow: hidden; }
 
-  /* ISOLAMENTO TOTAL DE ECRÃS */
-  .screen { 
-    display: none; 
-    position: fixed; top: 0; left: 0; 
-    width: 100vw; height: 100vh; 
-    background: #000; z-index: 10; 
-  }
-  .screen.active { display: flex !important; }
+    /* ISOLAMENTO DE ECRÃS */
+    .screen { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #000; z-index: 10; }
+    .screen.active { display: flex !important; }
+    #screen-welcome, #screen-player, #screen-company { flex-direction: column; justify-content: center; align-items: center; padding: 20px; }
+    #screen-game { flex-direction: column; padding: 0; overflow: hidden; }
 
-  /* ECRÃS DE LOGIN/CENTRADOS */
-  #screen-welcome, #screen-player, #screen-company { 
-    flex-direction: column; justify-content: center; align-items: center; padding: 20px; 
-  }
-
-  /* ECRÃ DO JOGO (SEM CENTRAGEM) */
-  #screen-game { 
-    flex-direction: column; padding: 0; overflow: hidden; 
-  }
-
-  /* MARCA DE ÁGUA */
-  .watermark { 
-    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-45deg); 
-    font-size: clamp(2rem, 8vw, 5rem); font-weight: 900; color: rgba(0,255,0,0.12); 
-    pointer-events: none; z-index: 0; white-space: nowrap; user-select: none; 
-  }
-
-  /* UI DO JOGO */
-  #top-bar { 
-    position: fixed; top: 0; left: 0; right: 0; z-index: 100; 
-    background: rgba(0,0,0,0.9); border-bottom: 1px solid #0f0; 
-    padding: 10px 15px; display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; 
-  }
-  #map { flex: 1; width: 100%; height: 100%; z-index: 1; }
-  
-  #game-ui { 
-    position: fixed; top: 50px; left: 0; right: 0; bottom: 0; 
-    pointer-events: none; z-index: 50; 
-  }
-  .draggable-panel { 
-    position: absolute; width: 260px; max-height: 70vh; 
-    background: rgba(0,0,0,0.92); border: 1px solid #0f0; border-radius: 10px; 
-    padding: 10px; pointer-events: auto; display: none; 
-    box-shadow: 0 4px 12px rgba(0,0,0,0.5); overflow-y: auto; 
-  }
-  .draggable-panel.active { display: block; }
-  .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-weight: bold; cursor: move; }
-  .btn-close { background: #8b0000; color: #fff; border: none; border-radius: 50%; width: 22px; height: 22px; cursor: pointer; font-size: 12px; }
-  #chat-messages { height: 140px; overflow-y: auto; background: #111; padding: 6px; margin-bottom: 6px; font-size: 12px; border: 1px solid #333; }
-  #chat-input { width: 100%; padding: 6px; background: #222; border: 1px solid #0f0; color: #0f0; border-radius: 6px; }
-  .qr-item { background: #1a1a1a; border: 1px solid #0f0; padding: 8px; margin: 5px 0; border-radius: 6px; }
-  .qr-code { font-family: monospace; background: #000; color: #0f0; padding: 4px; border-radius: 4px; user-select: none; filter: blur(1px); transition: filter 0.2s; cursor: default; display: inline-block; }
-  .qr-code:hover { filter: none; }
-
-  /* POSIÇÕES INICIAIS */
-  #panel-chat { top: 10px; left: 10px; }
-  #panel-inventory { top: 10px; left: 280px; }
-  #panel-trade { top: 10px; left: 550px; }
-
-  /* TICKER */
-  .ticker { 
-    position: fixed; bottom: 0; left: 0; right: 0; background: #002200; color: #0f0; 
-    padding: 6px 10px; overflow: hidden; white-space: nowrap; font-size: 13px; 
-    z-index: 90; border-top: 1px solid #0f0; 
-  }
-  .ticker span { display: inline-block; padding-left: 100%; animation: scroll 25s linear infinite; }
-  @keyframes scroll { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }
-
-  /* BOTÕES & FORMULÁRIOS */
-  .btn { background: #0f0; color: #000; border: none; padding: 12px 20px; border-radius: 10px; font-weight: 800; cursor: pointer; margin: 8px; font-size: 14px; }
-  .btn-dark { background: #181818; color: #0f0; border: 1px solid #0f0; }
-  .form-group { margin: 12px 0; text-align: left; width: 100%; max-width: 300px; }
-  .form-group label { display: block; font-size: 12px; color: #a7fca7; margin-bottom: 4px; }
-  input { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #0f0; background: #101010; color: #0f0; font-size: 14px; margin-bottom: 8px; }
-  .msg { min-height: 20px; margin-top: 8px; font-size: 12px; }
-  .ok { color: #8fff8f; } .danger { color: #ff8686; }
-
-  h1 { margin-bottom: 10px; text-shadow: 0 0 8px #0f0; }
-  .sub { color: #a7fca7; margin-bottom: 20px; text-align: center; }
-
-  @media (max-width: 768px) {
-    #panel-inventory, #panel-trade { left: 10px; top: auto; bottom: 10px; }
-    #panel-chat { top: 10px; left: 10px; }
-    .draggable-panel { width: 90%; max-width: 280px; }
-  }
-</style>
+    /* MARCA DE ÁGUA */
+    .watermark { position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%) rotate(-45deg); font-size: clamp(2rem, 8vw, 5rem); font-weight: 900; color: rgba(0,255,0,0.12); pointer-events: none; z-index: 0; user-select: none; }
+    
+    /* COMPONENTES GERAIS */
+    h1 { margin-bottom: 10px; text-shadow: 0 0 8px #0f0; } .sub { color: #a7fca7; margin-bottom: 20px; text-align: center; }
+    .btn { background: #0f0; color: #000; border: none; padding: 12px 20px; border-radius: 10px; font-weight: 800; cursor: pointer; margin: 8px; font-size: 14px; }
+    .btn-dark { background: #181818; color: #0f0; border: 1px solid #0f0; }
+    .form-group { margin: 12px 0; text-align: left; width: 100%; max-width: 300px; } input { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #0f0; background: #101010; color: #0f0; font-size: 14px; margin-bottom: 8px; }
+    .msg { min-height: 20px; margin-top: 8px; font-size: 12px; } .ok { color: #8fff8f; } .danger { color: #ff8686; }
+    
+    /* JOGO */
+    #top-bar { position: fixed; top: 0; left: 0; right: 0; z-index: 100; background: rgba(0,0,0,0.9); border-bottom: 1px solid #0f0; padding: 10px 15px; display: flex; justify-content: space-between; font-weight: bold; }
+    #map { flex: 1; width: 100%; height: 100%; z-index: 1; }
+    #game-ui { position: fixed; top: 50px; left: 0; right: 0; bottom: 0; pointer-events: none; z-index: 50; }
+    .draggable-panel { position: absolute; width: 260px; max-height: 70vh; background: rgba(0,0,0,0.92); border: 1px solid #0f0; border-radius: 10px; padding: 10px; pointer-events: auto; display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.5); }
+    .draggable-panel.active { display: block; }
+    .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-weight: bold; cursor: move; }
+    .btn-close { background: #8b0000; color: #fff; border: none; border-radius: 50%; width: 22px; height: 22px; cursor: pointer; }
+    #panel-chat { top: 10px; left: 10px; } #panel-inventory { top: 10px; left: 280px; } #panel-trade { top: 10px; left: 550px; }
+    .ticker { position: fixed; bottom: 0; left: 0; right: 0; background: #002200; color: #0f0; padding: 6px; z-index: 90; border-top: 1px solid #0f0; overflow:hidden; white-space:nowrap; }
+    .ticker span { display: inline-block; padding-left: 100%; animation: scroll 25s linear infinite; }
+    @keyframes scroll { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }
+  </style>
 </head>
 <body>
   <div class="watermark">LARFORYOU®</div>
 
-  <!-- 1. ECRÃ INICIAL (APENAS 1) -->
+  <!-- ECRÃ INICIAL -->
   <section id="screen-welcome" class="screen active">
-    <h1>⚡ ZAP FLAGS</h1>
-    <p class="sub">Bem-vindo! Como queres entrar?</p>
+    <h1>⚡ ZAP FLAGS</h1> <p class="sub">Bem-vindo! Como queres entrar?</p>
     <button class="btn" onclick="goTo('screen-player')">🎮 SOU JOGADOR</button>
     <button class="btn btn-dark" onclick="goTo('screen-company')">🏢 SOU EMPRESA</button>
   </section>
 
-  <!-- 2. LOGIN JOGADOR (APENAS 1) -->
+  <!-- LOGIN JOGADOR -->
   <section id="screen-player" class="screen">
-    <h1>🎮 JOGADOR</h1>
-    <p class="sub">Entra com o teu email e senha.</p>
+    <h1>🎮 JOGADOR</h1> <p class="sub">Entra com o teu email e senha.</p>
     <form id="form-player">
-      <div class="form-group"><label>Email</label><input type="email" id="p-email" required></div>
-      <div class="form-group"><label>Senha</label><input type="password" id="p-pass" required></div>
+      <div class="form-group"><input type="email" id="p-email" required placeholder="Email"></div>
+      <div class="form-group"><input type="password" id="p-pass" required placeholder="Senha"></div>
       <button type="submit" class="btn">ENTRAR</button>
     </form>
-    <div id="msg-player" class="msg"></div>
-    <button class="btn btn-dark" style="margin-top:15px" onclick="goTo('screen-welcome')">VOLTAR</button>
+    <div id="msg-player" class="msg"></div> <button class="btn btn-dark" onclick="goTo('screen-welcome')">VOLTAR</button>
   </section>
 
-  <!-- 3. LOGIN EMPRESA (APENAS 1) -->
+  <!-- LOGIN EMPRESA -->
   <section id="screen-company" class="screen">
-    <h1>🏢 EMPRESA</h1>
-    <p class="sub">Entra com o NIF e senha.</p>
+    <h1>🏢 EMPRESA</h1> <p class="sub">Entra com o NIF e senha.</p>
     <form id="form-company">
-      <div class="form-group"><label>NIF</label><input type="text" id="c-nif" maxlength="9" required></div>
-      <div class="form-group"><label>Senha</label><input type="password" id="c-pass" required></div>
+      <div class="form-group"><input type="text" id="c-nif" maxlength="9" required placeholder="NIF"></div>
+      <div class="form-group"><input type="password" id="c-pass" required placeholder="Senha"></div>
       <button type="submit" class="btn">ENTRAR</button>
     </form>
-    <div id="msg-company" class="msg"></div>
-    <button class="btn btn-dark" style="margin-top:15px" onclick="goTo('screen-welcome')">VOLTAR</button>
+    <div id="msg-company" class="msg"></div> <button class="btn btn-dark" onclick="goTo('screen-welcome')">VOLTAR</button>
   </section>
 
-  <!-- 4. ECRÃ DO JOGO (APENAS 1) -->
-  <section id="screen-game" class="screen game-screen">
+  <!-- ECRÃ DO JOGO -->
+  <section id="screen-game" class="screen">
     <div id="top-bar">
-      <span>⚡ <span id="ui-energy">100%</span></span>
-      <span>🎯 <span id="ui-skill">5m</span></span>
-      <span>📡 <span id="ui-mode">GPS</span></span>
+      <span>⚡ <span id="ui-energy">100%</span></span> <span>🎯 <span id="ui-skill">5m</span></span>
+      <button class="btn-close" onclick="togglePanel('chat')">💬</button>
+      <button class="btn-close" onclick="togglePanel('inventory')">🎒</button>
     </div>
     <div id="map"></div>
-        <span>📡 <span id="ui-mode">GPS</span></span>
-  </div>
-  <div id="map"></div>
-
-  <!-- 👇 COLE AQUI O BLOCO DA FASE 3 👇 -->
-  <div id="game-ui" style="position:absolute;top:60px;left:10px;right:10px;bottom:10px;pointer-events:none;">
-    <!-- Chat -->
-    <div id="panel-chat" class="draggable-panel">
-      <div class="panel-header">💬 Chat <button class="btn-close" onclick="togglePanel('chat')">✕</button></div>
-      <div id="chat-messages"></div>
-      <input id="chat-input" placeholder="Escreve..." />
+    <div id="game-ui">
+      <div id="panel-chat" class="draggable-panel"><div class="panel-header">Chat</div></div>
+      <div id="panel-inventory" class="draggable-panel"><div class="panel-header">Inventário</div></div>
     </div>
-
-    <!-- Inventário / QR -->
-    <div id="panel-inventory" class="draggable-panel" style="left:300px;">
-      <div class="panel-header">🎒 Inventário <button class="btn-close" onclick="togglePanel('inventory')">✕</button></div>
-      <div id="qr-list"></div>
-      <div id="coin-display" style="margin:8px 0;">🪙 <span id="ui-coins">0</span></div>
-      <button id="btn-assemble-qr" class="btn" onclick="assembleQR()">Juntar 20 Fragmentos</button>
-    </div>
-
-    <!-- Troca/Venda -->
-    <div id="panel-trade" class="draggable-panel" style="left:600px;">
-      <div class="panel-header">🔄 Troca/Venda <button class="btn-close" onclick="togglePanel('trade')">✕</button></div>
-      <div id="trade-offers">
-        <p class="small">Arrasta QRs ou moedas para criar oferta pública.</p>
-        <button class="btn btn-dark" onclick="publishOffer()">📢 PUBLICAR OFERTA</button>
-      </div>
-    </div>
-  </div>
-  <!-- 👆 FIM DO BLOCO 👆 -->
-
-  <button class="btn btn-dark" style="margin-top:10px" onclick="goTo('screen-welcome')">SAIR</button>
-</section>
-    <button class="btn btn-dark" style="margin-top:10px" onclick="goTo('screen-welcome')">SAIR</button>
+    <div class="ticker"><span>🎟️ BINGO ATIVO: Café Central · Prémio: Jantar para 2!</span></div>
   </section>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script>
-// ============================================================
-// 🟢 SCRIPT COMPLETO: FASE 1 + 2 + 3 (Navegação, Mapa, UI)
-// ============================================================
-
-// 1️⃣ ESTADO & STORAGE
-window.state = JSON.parse(localStorage.getItem("zap_flags_v2")) || {
-  player: { email:"", pass:"", name:"", flags:0, energy:100, skillRadius:5, skillFlags:0, skillTier:0, coins:0, qrFragments:0, qrs:[] },
-  companies: [], admin: { email:"ovo@ovo", pass:"258258258" }, firstRun:true
-};
-function saveState() { localStorage.setItem("zap_flags_v2", JSON.stringify(window.state)); }
-if (window.state.firstRun) {
-  for(let i=1; i<=10; i++) window.state.companies.push({ id:`bit${i}`, name:`Bit${i}`, nif:`12345678${i}`, pass:"123456" });
-  window.state.firstRun = false; saveState();
-}
-
-function goTo(id) {
-  document.querySelectorAll('.screen').forEach(s => {
-    s.classList.remove('active');
-    s.style.display = 'none';
-  });
-  const target = document.getElementById(id);
-  if (target) {
-    target.classList.add('active');
-    target.style.display = 'flex';
-  }
-}
-
-// 3️⃣ FORMULÁRIOS
-document.getElementById('form-player').addEventListener('submit', e => {
-  e.preventDefault();
-  document.getElementById('msg-player').innerHTML = '<span class="ok">✓ Login OK!</span>';
-  setTimeout(() => { goTo('screen-game'); initGamePhase2(); initGameUI(); }, 400);
-});
-document.getElementById('form-company').addEventListener('submit', e => {
-  e.preventDefault();
-  document.getElementById('msg-company').innerHTML = '<span class="ok">✓ Login OK!</span>';
-  setTimeout(() => goTo('screen-game'), 400);
-});
-
-// 4️⃣ FASE 2: MAPA & BANDEIRAS
-function initGamePhase2() {
-  if (window.mapReady) return; window.mapReady = true;
-  window.map = L.map('map', { zoomControl:false }).setView([38.7223, -9.1393], 18);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom:19 }).addTo(window.map);
-  window.playerMarker = L.marker([38.7223, -9.1393], { icon: L.divIcon({ className:'player-marker', html:'JG', iconSize:[28,28] }) }).addTo(window.map);
-  window.flags = []; generateFlags();
-  if (navigator.geolocation) navigator.geolocation.watchPosition(p => updatePlayerPos(p.coords.latitude, p.coords.longitude), null, { enableHighAccuracy:true });
-  else document.getElementById('ui-mode').textContent = 'MANUAL';
-  window.map.on('click', e => { if(document.getElementById('ui-mode').textContent==='MANUAL') updatePlayerPos(e.latlng.lat, e.latlng.lng); });
-  startEnergyRegen(); updateSkillUI(); updateEnergyUI();
-}
-function updatePlayerPos(lat, lng) {
-  window.playerPos = {lat, lng}; window.playerMarker.setLatLng([lat,lng]); renderFlags();
-}
-function generateFlags() {
-  for(let i=0; i<12; i++) {
-    const off = getRandomOffset(window.playerPos?.lat||38.7223, window.playerPos?.lng||-9.1393, window.state.player.skillRadius||5);
-    window.flags.push({ id:`f${i}`, lat:off.lat, lng:off.lng, marker:null, collected:false });
-  }
-}
-function renderFlags() {
-  window.flags.forEach(f => { if(f.marker) window.map.removeLayer(f.marker); });
-  window.flags.forEach(f => {
-    if(f.collected) return;
-    const d = getDistance(window.playerPos.lat, window.playerPos.lng, f.lat, f.lng);
-    if(d <= (window.state.player.skillRadius||5)) {
-      f.marker = L.marker([f.lat, f.lng], { icon: L.divIcon({ className:'flag-marker', iconSize:[24,24] }) }).addTo(window.map);
-      f.marker.on('click', () => openCollectModal(f));
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    // 1. NAVEGAÇÃO
+    function goTo(screenId) {
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      const el = document.getElementById(screenId);
+      if (el) {
+        el.classList.add('active');
+        if (screenId === 'screen-game') initGame();
+      }
     }
-  });
-}
-function openCollectModal(flag) {
-  const d = getDistance(window.playerPos.lat, window.playerPos.lng, flag.lat, flag.lng);
-  const btn = document.getElementById('btn-collect') || document.createElement('button');
-  if(d <= 2.5) { btn.disabled=false; btn.textContent='RECOLHER'; btn.onclick=()=>collectFlag(flag); }
-  else { btn.disabled=true; btn.textContent='APROXIMA-TE (≤2.5m)'; }
-  alert(`Bandeira a ${d.toFixed(1)}m. ${btn.disabled ? btn.textContent : 'Clica para recolher.'}`);
-}
-function collectFlag(flag) {
-  flag.collected = true; if(flag.marker) window.map.removeLayer(flag.marker);
-  const r = determineReward(); applyReward(r);
-  setTimeout(() => { const o=getRandomOffset(window.playerPos.lat, window.playerPos.lng, window.state.player.skillRadius||5); window.flags.push({id:`f${Date.now()}`, lat:o.lat, lng:o.lng, marker:null, collected:false}); renderFlags(); }, 800);
-}
-function determineReward() { const r=Math.random(); return r<0.25?'energy':r<0.45?'skill':r<0.6?'coin':r<0.7?'bingo':r<0.8?'qr':'nothing'; }
-function applyReward(type) {
-  const p = window.state.player;
-  if(type==='energy') p.energy=Math.min(100, p.energy+10);
-  if(type==='skill') { p.skillFlags=(p.skillFlags||0)+1; checkSkill(); }
-  if(type==='coin') p.coins=(p.coins||0)+1;
-  if(type==='qr') p.qrFragments=(p.qrFragments||0)+1;
-  updateEnergyUI(); updateSkillUI(); updateCoinUI(); saveState();
-  alert(`🎁 Recompensa: ${type.toUpperCase()}`);
-}
-function checkSkill() {
-  const f = window.state.player.skillFlags||0; const t = [100,200,400,800,1600]; let nt=0;
-  t.forEach((v,i)=>{ if(f>=v) nt=i+1; });
-  window.state.player.skillTier = nt; window.state.player.skillRadius = Math.min(50, 5+(nt*5));
-}
-function startEnergyRegen() { setInterval(()=>{ if(window.state.player.energy<100){ window.state.player.energy=Math.min(100, window.state.player.energy+10); updateEnergyUI(); saveState(); } }, 15*60*1000); }
-function updateEnergyUI() { document.getElementById('ui-energy').textContent = window.state.player.energy+'%'; }
-function updateSkillUI() { document.getElementById('ui-skill').textContent = (window.state.player.skillRadius||5)+'m'; }
-function updateCoinUI() { const el=document.getElementById('ui-coins'); if(el) el.textContent = window.state.player.coins||0; }
-function getDistance(lat1,lng1,lat2,lng2) { const R=6371e3, φ1=lat1*Math.PI/180, φ2=lat2*Math.PI/180, Δφ=(lat2-lat1)*Math.PI/180, Δλ=(lng2-lng1)*Math.PI/180; const a=Math.sin(Δφ/2)**2+Math.cos(φ1)*Math.cos(φ2)*Math.sin(Δλ/2)**2; return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a)); }
-function getRandomOffset(lat,lng,rad) { const a=Math.random()*2*Math.PI, d=Math.random()*rad; return { lat:lat+(d*Math.cos(a))/111320, lng:lng+(d*Math.sin(a))/(111320*Math.cos(lat*Math.PI/180)) }; }
 
-// 5️⃣ FASE 3: UI, QR, CHAT, BINGO
-function initGameUI() {
-  makeDraggable(document.getElementById("panel-chat"));
-  makeDraggable(document.getElementById("panel-inventory"));
-  makeDraggable(document.getElementById("panel-trade"));
-  updateCoinUI(); renderQRInventory(); startBingoTicker(); initChat();
-}
-function makeDraggable(el) {
-  if(!el) return; const h=el.querySelector(".panel-header"); let drag=false, ox=0, oy=0;
-  h.addEventListener("pointerdown", e=>{ drag=true; const r=el.getBoundingClientRect(); ox=e.clientX-r.left; oy=e.clientY-r.top; el.setPointerCapture(e.pointerId); });
-  window.addEventListener("pointermove", e=>{ if(!drag)return; el.style.left=(e.clientX-ox)+"px"; el.style.top=(e.clientY-oy)+"px"; });
-  window.addEventListener("pointerup", ()=>{ drag=false; });
-}
-function togglePanel(name) { const p=document.getElementById(`panel-${name}`); if(p) p.classList.toggle("active"); }
-function assembleQR() {
-  const f=window.state.player.qrFragments||0;
-  if(f<20) return alert(`Faltam ${20-f} fragmentos.`);
-  window.state.player.qrFragments -= 20;
-  const qr = { id:`qr_${Date.now()}`, code:`ZAP-${Date.now().toString(36).toUpperCase()}`, company:"Bit1", prize:"10% Desconto", validUntil:Date.now()+2592000000, status:"active" };
-  if(!window.state.player.qrs) window.state.player.qrs=[];
-  window.state.player.qrs.push(qr); saveState(); renderQRInventory(); alert("✅ QR gerado!");
-}
-function renderQRInventory() {
-  const l=document.getElementById("qr-list"); if(!l) return;
-  const q=window.state.player.qrs||[];
-  l.innerHTML = q.length ? q.map(x=>`<div class="qr-item"><strong>${x.company}</strong><br><span class="qr-code">${x.code}</span><br><small>${x.prize} · ${new Date(x.validUntil).toLocaleDateString()}</small></div>`).join("") : '<p class="small">Sem QRs.</p>';
-}
-function startBingoTicker() {
-  const t=document.getElementById("bingo-ticker"); if(!t) return;
-  t.innerHTML = `<span>🎟️ BINGO ATIVO: Café Central · Prémio: Jantar para 2 · Expira em 14h ••• 🏆 GANHADOR: max3 apanhou o Bingo da Bit5! ••• 📢 Nova campanha: Bit2 lançou 500 bandeiras!</span>`;
-}
-function initChat() {
-  const inp=document.getElementById("chat-input"), msgs=document.getElementById("chat-messages");
-  if(!inp||!msgs) return;
-  inp.addEventListener("keydown", e=>{ if(e.key==="Enter"&&inp.value.trim()){ addChat("Tu", inp.value.trim()); inp.value=""; } });
-  setTimeout(()=>addChat("Sistema", "Chat ativo. Arrasta os painéis para mover."), 1500);
-}
-function addChat(u,t) {
-  const m=document.getElementById("chat-messages"); if(!m) return;
-  const d=document.createElement("div"); d.style.marginBottom="4px"; d.innerHTML=`<strong style="color:#0f0">${u}:</strong> ${t}`; m.appendChild(d); m.scrollTop=m.scrollHeight;
-}
-function publishOffer() { alert("📢 Oferta publicada no mercado local."); }
+    // 2. FORMULÁRIOS
+    document.getElementById('form-player').addEventListener('submit', e => {
+      e.preventDefault();
+      document.getElementById('msg-player').innerHTML = '<span class="ok">✓ Login OK!</span>';
+      setTimeout(() => goTo('screen-game'), 300);
+    });
+    document.getElementById('form-company').addEventListener('submit', e => {
+      e.preventDefault();
+      document.getElementById('msg-company').innerHTML = '<span class="ok">✓ Login OK!</span>';
+      setTimeout(() => goTo('screen-game'), 300);
+    });
 
-console.log("✅ ZAP FLAGS v2 (Fase 1+2+3) carregado com sucesso.");
-</script>
+    // 3. JOGO
+    function initGame() {
+      if (window.map) {
+        window.map.invalidateSize();
+        return;
+      }
+      window.map = L.map('map', { zoomControl: false }).setView([38.7223, -9.1393], 16);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(window.map);
+      setTimeout(() => window.map.invalidateSize(), 150);
+    }
+    
+    // 4. PAINÉIS
+    function togglePanel(name) {
+      const panel = document.getElementById(`panel-${name}`);
+      if (panel) panel.classList.toggle('active');
+    }
+    function makeDraggable(el) {
+      if(!el) return; const h=el.querySelector(".panel-header"); let d=false, ox=0, oy=0;
+      h.addEventListener("pointerdown", e=>{ d=true; const r=el.getBoundingClientRect(); ox=e.clientX-r.left; oy=e.clientY-r.top; el.setPointerCapture(e.pointerId); });
+      window.addEventListener("pointermove", e=>{ if(!d)return; el.style.left=(e.clientX-ox)+"px"; el.style.top=(e.clientY-oy)+"px"; });
+      window.addEventListener("pointerup", ()=>{ d=false; });
+    }
+    makeDraggable(document.getElementById('panel-chat'));
+    makeDraggable(document.getElementById('panel-inventory'));
+
+    console.log("✅ ZAP FLAGS v2.1 Carregado. Sem duplicações.");
+  </script>
 </body>
 </html>
