@@ -82,87 +82,88 @@ HTML
     <button class="btn btn-dark" onclick="goTo('screen-welcome')">SAIR</button>
   </section>
 
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script>
-// ESTADO (VERSÃO CORRIGIDA)
-window.state = JSON.parse(localStorage.getItem("zap_flags_v2")) || {
-  player: { email: "max@test.com", pass: "123456" },
-  companies: Array.from({length:10}, (_,i)=>({id:`bit${i+1}`,name:`Bit${i+1}`,nif:`12345678${i+1}`,pass:"123456",packages:[]})),
-  firstRun: false
-};
-function saveState(){ localStorage.setItem("zap_flags_v2", JSON.stringify(window.state)); }
-    function saveState(){ localStorage.setItem("zap_flags_v2", JSON.stringify(STATE)); }
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+  // 1. ESTADO
+  window.state = JSON.parse(localStorage.getItem("zap_flags_v2")) || {
+    player: { email: "max@test.com", pass: "123456" },
+    companies: Array.from({length:10}, (_,i)=>({id:`bit${i+1}`,name:`Bit${i+1}`,nif:`12345678${i+1}`,pass:"123456",packages:[]})),
+    firstRun: false
+  };
+  function saveState(){ localStorage.setItem("zap_flags_v2", JSON.stringify(window.state)); }
 
-    // NAVEGAÇÃO
-    function goTo(id) {
-      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-      const el = document.getElementById(id);
-      if(el) {
-        el.classList.add('active');
-        if(id === 'screen-game' && typeof initGame === 'function') initGame();
-        if(id === 'screen-company-dashboard' && typeof initCompanyDashboard === 'function') initCompanyDashboard(window.currentCompany);
-      }
+  // 2. NAVEGAÇÃO
+  function goTo(screenId) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    const el = document.getElementById(screenId);
+    if(el) {
+      el.classList.add('active');
+      if(screenId === 'screen-game') initGame();
+      if(screenId === 'screen-company-dashboard') initCompanyDashboard(window.currentCompany);
     }
+  }
 
-    // FORMULÁRIOS
-    document.getElementById('form-player').addEventListener('submit', e => {
-      e.preventDefault();
-      const p = STATE.player;
-      if (document.getElementById('p-email').value === p.email && document.getElementById('p-pass').value === p.pass) {
-        document.getElementById('msg-player').innerHTML = '<span class="ok">✓ Login OK!</span>';
-        setTimeout(() => goTo('screen-game'), 300);
-      } else { document.getElementById('msg-player').innerHTML = '<span class="danger">Credenciais inválidas.</span>'; }
-    });
-    document.getElementById('form-company').addEventListener('submit', e => {
-      e.preventDefault();
-      const co = STATE.companies.find(c => c.nif === document.getElementById('c-nif').value && c.pass === document.getElementById('c-pass').value);
-      if (co) {
-        window.currentCompany = co;
-        document.getElementById('msg-company').innerHTML = '<span class="ok">✓ Login OK!</span>';
-        setTimeout(() => goTo('screen-company-dashboard'), 300);
-      } else { document.getElementById('msg-company').innerHTML = '<span class="danger">NIF ou senha inválidos.</span>'; }
-    });
-    
-    // JOGO
-    function initGame() {
-      if(window.map) return window.map.invalidateSize();
-      window.map = L.map('map', {zoomControl:false}).setView([38.7223,-9.1393],16);
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(window.map);
-      setTimeout(()=>window.map.invalidateSize(),150);
-    }
+  // 3. FORMULÁRIOS
+  document.getElementById('form-player').addEventListener('submit', e => {
+    e.preventDefault();
+    const p = window.state.player;
+    if (document.getElementById('p-email').value === p.email && document.getElementById('p-pass').value === p.pass) {
+      document.getElementById('msg-player').innerHTML = '<span class="ok">✓ Login OK!</span>';
+      setTimeout(() => goTo('screen-game'), 300);
+    } else { document.getElementById('msg-player').innerHTML = '<span class="danger">Credenciais inválidas.</span>'; }
+  });
+  document.getElementById('form-company').addEventListener('submit', e => {
+    e.preventDefault();
+    const co = window.state.companies.find(c => c.nif === document.getElementById('c-nif').value && c.pass === document.getElementById('c-pass').value);
+    if (co) {
+      window.currentCompany = co;
+      document.getElementById('msg-company').innerHTML = '<span class="ok">✓ Login OK!</span>';
+      setTimeout(() => goTo('screen-company-dashboard'), 300);
+    } else { document.getElementById('msg-company').innerHTML = '<span class="danger">NIF ou senha inválidos.</span>'; }
+  });
+  
+  // 4. JOGO
+  function initGame() {
+    if(window.map) return window.map.invalidateSize();
+    window.map = L.map('map', {zoomControl:false}).setView([38.7223,-9.1393],16);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(window.map);
+    setTimeout(()=>window.map.invalidateSize(),150);
+  }
 
-    // PAINEL EMPRESA
-    function initCompanyDashboard(co) {
-      if(!co) return goTo('screen-company');
-      document.getElementById('company-name-ui').textContent = co.name;
-      renderBuyablePackages(); renderActivePackages(co);
-      document.getElementById('btn-buy-package').onclick = ()=>purchasePackage(co);
-    }
+  // 5. PAINEL EMPRESA
+  function initCompanyDashboard(co) {
+    if(!co) return goTo('screen-company');
+    document.getElementById('company-name-ui').textContent = co.name;
     const PACKAGES = [{n:"Médio",p:15,f:5000,b:5},{n:"Grande",p:25,f:15000,b:15},{n:"XL",p:35,f:30000,b:30}];
-    function renderBuyablePackages() {
-      document.getElementById('buy-packages-list').innerHTML = PACKAGES.map(p=>`<div class="package-item" data-name="${p.n}"><strong>${p.n} - ${p.p}€</strong><p>🚩 ${p.f.toLocaleString()} · 🎟️ ${p.b}</p></div>`).join('');
-      document.querySelectorAll('#buy-packages-list .package-item').forEach(item => item.addEventListener('click', ()=>{
-        document.querySelectorAll('#buy-packages-list .package-item').forEach(el=>el.classList.remove('selected'));
-        item.classList.add('selected'); document.getElementById('btn-buy-package').disabled=false;
-      }));
-    }
-    function renderActivePackages(co){
+    
+    document.getElementById('buy-packages-list').innerHTML = PACKAGES.map(p=>`<div class="package-item" data-name="${p.n}"><strong>${p.n} - ${p.p}€</strong><p>🚩 ${p.f.toLocaleString()} · 🎟️ ${p.b}</p></div>`).join('');
+    document.querySelectorAll('#buy-packages-list .package-item').forEach(item => item.addEventListener('click', ()=>{
+      document.querySelectorAll('#buy-packages-list .package-item').forEach(el=>el.classList.remove('selected'));
+      item.classList.add('selected'); document.getElementById('btn-buy-package').disabled=false;
+    }));
+    
+    function renderActive() {
       const list=document.getElementById('active-packages-list');
       list.innerHTML = co.packages.length ? co.packages.map(p=>`<div class="package-item"><strong>${p.n}</strong><p>🚩 Restantes: ${(p.fLeft||p.f).toLocaleString()}</p></div>`).join('') : '<p class="small">Nenhum pacote ativo.</p>';
     }
-    function purchasePackage(co){
+    
+    document.getElementById('btn-buy-package').onclick = ()=>{
       const sel=document.querySelector('#buy-packages-list .selected'); if(!sel) return;
       const pkgDef = PACKAGES.find(p=>p.n===sel.dataset.name);
       co.packages.push({...pkgDef, fLeft:pkgDef.f}); saveState();
-      renderActivePackages(co); document.getElementById('buy-msg').innerHTML=`<span class="ok">✓ ${pkgDef.n} comprado!</span>`;
+      renderActive(); document.getElementById('buy-msg').innerHTML=`<span class="ok">✓ ${pkgDef.n} comprado!</span>`;
       alert(`📢 Tem 30 minutos para cancelar.`);
-    }
-    function validateClientQR(){
+    };
+
+    function validateQR(){
       const inp=document.getElementById('qr-validation-input'), msg=document.getElementById('validation-msg');
       msg.innerHTML = inp.value ? `<span class="ok">✓ QR validado!</span>` : `<span class="danger">Insira um QR.</span>`;
     }
-
-    console.log("✅ ZAP FLAGS v2.2 Carregado. Limpo e funcional.");
-  </script>
+    document.querySelector('#screen-company-dashboard button[onclick="validateClientQR()"]').onclick = validateQR;
+    renderActive();
+  }
+  
+  console.log("✅ ZAP FLAGS v2.3 Carregado. Limpo e funcional.");
+</script>
 </body>
 </html>
