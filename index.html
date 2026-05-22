@@ -1,5 +1,3 @@
-HTML
-
 <!DOCTYPE html>
 <html lang="pt">
 <head>
@@ -13,16 +11,17 @@ HTML
 
     .screen { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #000; z-index: 10; }
     .screen.active { display: flex !important; }
-    #screen-welcome, #screen-player, #screen-company { flex-direction: column; justify-content: center; align-items: center; padding: 20px; }
-    #screen-game, #screen-company-dashboard { flex-direction: column; padding: 0; overflow: hidden; }
-    #screen-company-dashboard { justify-content: flex-start; padding-top: 50px; overflow-y: auto; align-items: center; }
+    #screen-welcome, #screen-player, #screen-company, #screen-admin-login { flex-direction: column; justify-content: center; align-items: center; padding: 20px; }
+    #screen-game, #screen-company-dashboard, #screen-admin-dashboard { flex-direction: column; padding: 0; overflow: hidden; align-items: center; }
+    #screen-company-dashboard, #screen-admin-dashboard { justify-content: flex-start; padding-top: 20px; overflow-y: auto; }
 
-    .watermark { position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%) rotate(-45deg); font-size: clamp(2rem, 8vw, 5rem); font-weight: 900; color: rgba(0,255,0,0.12); pointer-events: none; z-index: 0; user-select: none; }
+    .watermark { position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%) rotate(-45deg); font-size: clamp(2rem, 8vw, 5rem); font-weight: 900; color: rgba(0,255,0,0.12); pointer-events: none; z-index: 0; }
     
     h1 { margin-bottom: 10px; text-shadow: 0 0 8px #0f0; } .sub { color: #a7fca7; margin-bottom: 20px; text-align: center; }
     .btn { background: #0f0; color: #000; border: none; padding: 12px 20px; border-radius: 10px; font-weight: 800; cursor: pointer; margin: 8px; }
-    .btn:disabled { opacity:0.5; } .btn-dark { background: #181818; color: #0f0; border: 1px solid #0f0; }
-    .form-group { margin: 12px 0; text-align: left; width: 100%; max-width: 300px; }
+    .btn:disabled { opacity:0.5; } .btn-dark { background: #181818; color: #0f0; border: 1px solid #0f0; } .btn-danger { background: #8b0000; color: #fff; }
+    .btn-row { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; width:100%; max-width: 320px; }
+    .form-group { margin: 12px 0; text-align: left; width: 100%; max-width: 320px; }
     input { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #0f0; background: #101010; color: #0f0; margin-bottom: 8px; }
     .msg { min-height: 20px; margin-top: 8px; font-size: 12px; } .ok { color: #8fff8f; } .danger { color: #ff8686; }
     
@@ -30,318 +29,100 @@ HTML
     #map { flex: 1; width: 100%; height: 100%; z-index: 1; }
     
     .dashboard-grid { display: grid; grid-template-columns: 1fr; gap: 20px; width: 100%; max-width: 800px; padding: 20px; }
-    .item-module { background: rgba(0,25,0,0.16); border: 1px solid #0f0; border-radius: 10px; padding: 15px; }
-    .item-module h3 { margin-bottom: 10px; }
+    .item-module { background: rgba(0,25,0,0.16); border: 1px solid #0f0; border-radius: 10px; padding: 15px; } .item-module h3 { margin-bottom: 10px; }
     .item-list { max-height: 200px; overflow-y: auto; margin-bottom: 10px; }
     .package-item { background: #111; padding: 10px; border-radius: 8px; margin-bottom: 8px; border: 1px solid #333; cursor: pointer; }
-    .package-item.selected { border-color: #fff; box-shadow: 0 0 8px rgba(255,255,255,0.3); }
-    .package-item p { font-size: 13px; color: #a7fca7; margin-top: 5px; }
-    /* PAINEL ADMIN (FASE FINAL) */
-  #screen-admin-dashboard { justify-content: flex-start; padding-top: 20px; overflow-y: auto; align-items: center; }
-  .admin-table { width:100%; border-collapse:collapse; margin-top:8px; table-layout: fixed; }
-  .admin-table th, .admin-table td { border:1px solid #0f0; padding:6px; text-align:left; font-size:12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .btn-row { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
-  
-  /* BANNER/TICKER */
-  #game-banner { position: fixed; top: -50px; left: 0; right: 0; background: #003300; color: #0f0; text-align: center; padding: 8px; z-index: 9999; transition: top 0.3s; }
-  #game-banner.active { top: 0; }
-  .ticker { position: fixed; bottom: -50px; left: 0; right: 0; background: #002200; color: #0f0; padding: 6px; z-index: 90; overflow: hidden; white-space: nowrap; transition: bottom 0.3s; }
-  .ticker.active { bottom: 0; }
-  .ticker span { display: inline-block; padding-left: 100%; animation: scroll 25s linear infinite; }
-  // ============================================================
-// FASE FINAL: PAINEL ADMIN
-// ============================================================
-
-// 🟢 INÍCIO: showAdminTab(tab)
-function showAdminTab(tab) {
-  const content = document.getElementById('admin-content');
-  if (tab === 'dashboard') content.innerHTML = renderAdminDashboard();
-  if (tab === 'players') content.innerHTML = renderAdminPlayers();
-  if (tab === 'companies') content.innerHTML = renderAdminCompanies();
-  if (tab === 'messages') content.innerHTML = renderAdminMessages();
-  if (tab === 'banner') content.innerHTML = renderAdminBanner();
-}
-// 🔴 FIM
-
-// 🟢 INÍCIO: renderAdminDashboard()
-function renderAdminDashboard() {
-  const totalPlayers = STATE.player.email ? 1 : 0;
-  return `
-    <div class="item-module">
-      <h3>📊 Estatísticas</h3>
-      <p>Jogadores: ${totalPlayers} | Empresas: ${STATE.companies.length}</p>
-    </div>
-    <div class="item-module">
-      <h3>⚠️ Ações de Risco</h3>
-      <input id="admin-pass-confirm" type="password" placeholder="Senha admin para confirmar" />
-      <button class="btn btn-danger" onclick="adminResetAll()">RESET TOTAL</button>
-      <div id="admin-reset-msg" class="msg"></div>
-    </div>`;
-}
-// 🔴 FIM
-
-// 🟢 INÍCIO: renderAdminPlayers()
-function renderAdminPlayers() {
-  if (!STATE.player.email) return '<div class="item-module"><p>Nenhum jogador registado.</p></div>';
-  return `
-    <div class="item-module" style="overflow-x:auto;">
-      <table class="admin-table">
-        <tr><th>Email</th><th>Senha</th><th>Ações</th></tr>
-        <tr><td>${STATE.player.email}</td><td>${STATE.player.pass}</td><td><button class="btn btn-danger" onclick="adminDeletePlayer()">Apagar</button></td></tr>
-      </table>
-    </div>`;
-}
-// 🔴 FIM
-
-// 🟢 INÍCIO: renderAdminCompanies()
-function renderAdminCompanies() {
-  const rows = STATE.companies.map(c => `
-    <tr><td>${c.name}</td><td>${c.nif}</td><td>${c.packages.length}</td><td><button class="btn btn-danger" onclick="adminDeleteCompany('${c.id}')">Apagar</button></td></tr>
-  `).join('');
-  return `
-    <div class="item-module" style="overflow-x:auto;">
-      <table class="admin-table">
-        <tr><th>Nome</th><th>NIF</th><th>Pacotes</th><th>Ações</th></tr>
-        ${rows}
-      </table>
-    </div>`;
-}
-// 🔴 FIM
-
-// 🟢 INÍCIO: renderAdminMessages()
-function renderAdminMessages() { return `<div class="item-module"><p>Módulo de mensagens (em desenvolvimento).</p></div>`; }
-// 🔴 FIM
-
-// 🟢 INÍCIO: renderAdminBanner()
-function renderAdminBanner() {
-  return `
-    <div class="item-module">
-      <h3>📢 Banner</h3>
-      <input id="banner-text" placeholder="Texto para o banner" />
-      <button class="btn" onclick="showGameBanner()">MOSTRAR</button>
-      <button class="btn btn-dark" onclick="hideGameBanner()">ESCONDER</button>
-    </div>
-    <div class="item-module">
-      <h3>📜 Ticker</h3>
-      <input id="ticker-text" placeholder="Texto para o ticker" />
-      <button class="btn" onclick="showTicker()">MOSTRAR</button>
-      <button class="btn btn-dark" onclick="hideTicker()">ESCONDER</button>
-    </div>`;
-}
-// 🔴 FIM
-
-// 🟢 INÍCIO: Funções de Ação Admin
-function confirmAdminPass() {
-  return document.getElementById('admin-pass-confirm')?.value === STATE.admin.pass;
-}
-function adminResetAll() {
-  if (!confirmAdminPass()) return alert("Senha admin incorreta!");
-  if (!confirm("Apagar TODOS os dados? Ação irreversível!")) return;
-  localStorage.removeItem("zap_flags_v2");
-  location.reload();
-}
-function adminDeletePlayer() { alert("Ação de apagar jogador desativada em demo."); }
-function adminDeleteCompany(id) { alert("Ação de apagar empresa desativada em demo."); }
-function showGameBanner() {
-  const banner = document.getElementById('game-banner');
-  banner.textContent = document.getElementById('banner-text')?.value || "Bem-vindo ao ZAP FLAGS!";
-  banner.classList.add('active');
-}
-function hideGameBanner() { document.getElementById('game-banner')?.classList.remove('active'); }
-function showTicker() {
-  const ticker = document.getElementById('game-ticker');
-  ticker.innerHTML = `<span>${document.getElementById('ticker-text')?.value || "ZAP FLAGS"}</span>`;
-  ticker.classList.add('active');
-}
-function hideTicker() { document.getElementById('game-ticker')?.classList.remove('active'); }
-// 🔴 FIM
+    .package-item.selected { border-color: #fff; } .package-item p { font-size: 13px; color: #a7fca7; margin-top: 5px; }
+    .admin-table { width:100%; border-collapse:collapse; table-layout: fixed; } .admin-table td, .admin-table th { border:1px solid #0f0; padding:6px; font-size:12px; }
   </style>
 </head>
 <body>
   <div class="watermark">LARFORYOU®</div>
 
-   <!-- ECRÃ INICIAL (COM BOTÃO ADMIN) -->
+  <!-- ECRÃS -->
   <section id="screen-welcome" class="screen active">
-    <h1>⚡ ZAP FLAGS</h1>
-    <p class="sub">Bem-vindo! Como queres entrar?</p>
-    <button class="btn" onclick="goTo('screen-player')">🎮 SOU JOGADOR</button>
-    <button class="btn btn-dark" onclick="goTo('screen-company')">🏢 SOU EMPRESA</button>
-    <button class="btn btn-dark" onclick="goTo('screen-admin-login')">🔒 ADMIN</button>
+    <h1>⚡ ZAP FLAGS</h1> <p class="sub">Bem-vindo!</p>
+    <div class="btn-row">
+      <button class="btn" onclick="goTo('screen-player')">🎮 SOU JOGADOR</button>
+      <button class="btn btn-dark" onclick="goTo('screen-company')">🏢 SOU EMPRESA</button>
+      <button class="btn btn-dark" onclick="goTo('screen-admin-login')">🔒 ADMIN</button>
+    </div>
   </section>
 
   <section id="screen-player" class="screen">
     <h1>🎮 JOGADOR</h1> <p class="sub">Entra com email e senha.</p>
-    <form id="form-player">
-      <div class="form-group"><input type="email" id="p-email" required placeholder="Email (ex: max@test.com)"></div>
-      <div class="form-group"><input type="password" id="p-pass" required placeholder="Senha (ex: 123456)"></div>
-      <button type="submit" class="btn">ENTRAR</button>
-    </form>
+    <form id="form-player"><div class="form-group"><input type="email" id="p-email" required placeholder="Email (ex: max@test.com)"></div><div class="form-group"><input type="password" id="p-pass" required placeholder="Senha (ex: 123456)"></div><button type="submit" class="btn">ENTRAR</button></form>
     <div id="msg-player" class="msg"></div> <button class="btn btn-dark" onclick="goTo('screen-welcome')">VOLTAR</button>
   </section>
 
   <section id="screen-company" class="screen">
     <h1>🏢 EMPRESA</h1> <p class="sub">Entra com NIF e senha.</p>
-    <form id="form-company">
-      <div class="form-group"><input type="text" id="c-nif" maxlength="9" required placeholder="NIF (ex: 123456781)"></div>
-      <div class="form-group"><input type="password" id="c-pass" required placeholder="Senha (ex: 123456)"></div>
-      <button type="submit" class="btn">ENTRAR</button>
-    </form>
+    <form id="form-company"><div class="form-group"><input type="text" id="c-nif" maxlength="9" required placeholder="NIF (ex: 123456781)"></div><div class="form-group"><input type="password" id="c-pass" required placeholder="Senha (ex: 123456)"></div><button type="submit" class="btn">ENTRAR</button></form>
     <div id="msg-company" class="msg"></div> <button class="btn btn-dark" onclick="goTo('screen-welcome')">VOLTAR</button>
   </section>
 
-  <section id="screen-game" class="screen">
-    <div id="top-bar"><span>⚡ 100%</span> <span>🎯 5m</span></div> <div id="map"></div>
+  <section id="screen-admin-login" class="screen">
+    <h1>🔒 ADMIN</h1><p class="sub">Acesso restrito.</p>
+    <form id="form-admin-login"><div class="form-group"><input type="email" id="ad-email" required placeholder="Email (ovo@ovo)"></div><div class="form-group"><input type="password" id="ad-pass" required placeholder="Senha (258258258)"></div><button type="submit" class="btn">ENTRAR</button></form>
+    <div id="msg-admin-login" class="msg"></div><button class="btn btn-dark" onclick="goTo('screen-welcome')">VOLTAR</button>
   </section>
+
+  <section id="screen-game" class="screen"><div id="top-bar"><span>⚡ 100%</span> <span>🎯 5m</span></div> <div id="map"></div></section>
 
   <section id="screen-company-dashboard" class="screen">
     <h1 id="company-name-ui">PAINEL DA EMPRESA</h1>
-    <div class="dashboard-grid">
-      <div class="item-module"> <h3>🛒 Comprar Pacotes</h3> <div id="buy-packages-list" class="item-list"></div> <button id="btn-buy-package" class="btn" disabled>COMPRAR</button> <div id="buy-msg" class="msg"></div> </div>
-      <div class="item-module"> <h3>📦 Pacotes Ativos</h3> <div id="active-packages-list" class="item-list"></div> </div>
-      <div class="item-module"> <h3>🔍 Validar QR</h3> <input id="qr-validation-input" placeholder="Código QR" /> <button class="btn btn-dark" onclick="validateClientQR()">VALIDAR</button> <div id="validation-msg" class="msg"></div> </div>
-    </div>
+    <div class="dashboard-grid"><div class="item-module"><h3>🛒 Comprar</h3> <div id="buy-packages-list" class="item-list"></div> <button id="btn-buy-package" class="btn" disabled>COMPRAR</button></div><div class="item-module"><h3>📦 Ativos</h3><div id="active-packages-list" class="item-list"></div></div><div class="item-module"><h3>🔍 Validar</h3><input id="qr-validation-input" placeholder="Código QR" /><button class="btn btn-dark" onclick="validateClientQR()">VALIDAR</button><div id="validation-msg" class="msg"></div></div></div>
     <button class="btn btn-dark" onclick="goTo('screen-welcome')">SAIR</button>
   </section>
-    <!-- LOGIN ADMIN (FASE FINAL) -->
-  <section id="screen-admin-login" class="screen">
-    <h1>🔒 ADMIN</h1>
-    <p class="sub">Acesso restrito.</p>
-    <form id="form-admin-login">
-      <div class="form-group"><input type="email" id="ad-email" required placeholder="Email (ovo@ovo)"></div>
-      <div class="form-group"><input type="password" id="ad-pass" required placeholder="Senha (258258258)"></div>
-      <button type="submit" class="btn">ENTRAR</button>
-    </form>
-    <div id="msg-admin-login" class="msg"></div>
-    <button class="btn btn-dark" onclick="goTo('screen-welcome')">VOLTAR</button>
-  </section>
-
-  <!-- DASHBOARD ADMIN (FASE FINAL) -->
-  <section id="screen-admin-dashboard" class="screen">
-    <h1>🛡️ PAINEL ADMIN</h1>
-    <nav class="btn-row" style="margin-bottom:15px; flex-wrap:wrap;">
-      <button class="btn-dark" onclick="showAdminTab('dashboard')">📊 Dashboard</button>
-      <button class="btn-dark" onclick="showAdminTab('players')">👥 Jogadores</button>
-      <button class="btn-dark" onclick="showAdminTab('companies')">🏢 Empresas</button>
-      <button class="btn-dark" onclick="showAdminTab('messages')">✉️ Mensagens</button>
-      <button class="btn-dark" onclick="showAdminTab('banner')">📢 Banner/Ticker</button>
-    </nav>
-    <div id="admin-content" class="dashboard-grid"></div>
-    <button class="btn btn-danger" style="margin-top:20px" onclick="goTo('screen-welcome')">🚪 SAIR</button>
-  </section>
-
-  <!-- BANNER E TICKER GLOBAIS -->
-  <div id="game-banner"></div>
-  <div id="game-ticker" class="ticker"></div>
-  </section>
-
-  <!-- DASHBOARD ADMIN (FASE FINAL) -->
-  <section id="screen-admin-dashboard" class="screen">
-    <h1>🛡️ PAINEL ADMIN</h1>
-    <nav class="btn-row" style="margin-bottom:15px; flex-wrap:wrap;">
-      <button class="btn-dark" onclick="showAdminTab('dashboard')">📊 Dashboard</button>
-      <button class="btn-dark" onclick="showAdminTab('players')">👥 Jogadores</button>
-      <button class="btn-dark" onclick="showAdminTab('companies')">🏢 Empresas</button>
-      <button class="btn-dark" onclick="showAdminTab('messages')">✉️ Mensagens</button>
-      <button class="btn-dark" onclick="showAdminTab('banner')">📢 Banner/Ticker</button>
-    </nav>
-    <div id="admin-content" class="dashboard-grid"></div>
-    <button class="btn btn-danger" style="margin-top:20px" onclick="goTo('screen-welcome')">🚪 SAIR</button>
-  </section>
-
-  <!-- BANNER E TICKER GLOBAIS -->
-  <div id="game-banner"></div>
-  <div id="game-ticker" class="ticker"></div>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script>
-  // 1. ESTADO
-  window.state = JSON.parse(localStorage.getItem("zap_flags_v2")) || {
-    player: { email: "max@test.com", pass: "123456" },
-    companies: Array.from({length:10}, (_,i)=>({id:`bit${i+1}`,name:`Bit${i+1}`,nif:`12345678${i+1}`,pass:"123456",packages:[]})),
-    firstRun: false
-  };
-  function saveState(){ localStorage.setItem("zap_flags_v2", JSON.stringify(window.state)); }
-
-  // 2. NAVEGAÇÃO
-  function goTo(screenId) {
-    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-    const el = document.getElementById(screenId);
-    if(el) {
-      el.classList.add('active');
-      if(screenId === 'screen-game') initGame();
-      if(screenId === 'screen-company-dashboard') initCompanyDashboard(window.currentCompany);
-    }
-  }
-
-  // 3. FORMULÁRIOS
-  document.getElementById('form-admin-login').addEventListener('submit', e => {
-  e.preventDefault();
-  const email = document.getElementById('ad-email').value, pass = document.getElementById('ad-pass').value;
-  const msg = document.getElementById('msg-admin-login');
-  if (email === STATE.admin.email && pass === STATE.admin.pass) {
-    msg.innerHTML = '<span class="ok">✓ Acesso Admin!</span>';
-    setTimeout(() => goTo('screen-admin-dashboard'), 300);
-  } else { msg.innerHTML = '<span class="danger">Credenciais inválidas.</span>'; }
-});
-  document.getElementById('form-player').addEventListener('submit', e => {
-    e.preventDefault();
-    const p = window.state.player;
-    if (document.getElementById('p-email').value === p.email && document.getElementById('p-pass').value === p.pass) {
-      document.getElementById('msg-player').innerHTML = '<span class="ok">✓ Login OK!</span>';
-      setTimeout(() => goTo('screen-game'), 300);
-    } else { document.getElementById('msg-player').innerHTML = '<span class="danger">Credenciais inválidas.</span>'; }
-  });
-  document.getElementById('form-company').addEventListener('submit', e => {
-    e.preventDefault();
-    const co = window.state.companies.find(c => c.nif === document.getElementById('c-nif').value && c.pass === document.getElementById('c-pass').value);
-    if (co) {
-      window.currentCompany = co;
-      document.getElementById('msg-company').innerHTML = '<span class="ok">✓ Login OK!</span>';
-      setTimeout(() => goTo('screen-company-dashboard'), 300);
-    } else { document.getElementById('msg-company').innerHTML = '<span class="danger">NIF ou senha inválidos.</span>'; }
-  });
   
-  // 4. JOGO
-  function initGame() {
-    if(window.map) return window.map.invalidateSize();
-    window.map = L.map('map', {zoomControl:false}).setView([38.7223,-9.1393],16);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(window.map);
-    setTimeout(()=>window.map.invalidateSize(),150);
-  }
+  <section id="screen-admin-dashboard" class="screen">
+    <h1>🛡️ PAINEL ADMIN</h1>
+    <div class="btn-row" style="margin-bottom:15px;"><button class="btn-dark" onclick="showAdminTab('dashboard')">📊</button><button class="btn-dark" onclick="showAdminTab('players')">👥</button><button class="btn-dark" onclick="showAdminTab('companies')">🏢</button></div>
+    <div id="admin-content" class="dashboard-grid"></div><button class="btn btn-danger" onclick="goTo('screen-welcome')">🚪 SAIR</button>
+  </section>
 
-  // 5. PAINEL EMPRESA
-  function initCompanyDashboard(co) {
-    if(!co) return goTo('screen-company');
-    document.getElementById('company-name-ui').textContent = co.name;
-    const PACKAGES = [{n:"Médio",p:15,f:5000,b:5},{n:"Grande",p:25,f:15000,b:15},{n:"XL",p:35,f:30000,b:30}];
-    
-    document.getElementById('buy-packages-list').innerHTML = PACKAGES.map(p=>`<div class="package-item" data-name="${p.n}"><strong>${p.n} - ${p.p}€</strong><p>🚩 ${p.f.toLocaleString()} · 🎟️ ${p.b}</p></div>`).join('');
-    document.querySelectorAll('#buy-packages-list .package-item').forEach(item => item.addEventListener('click', ()=>{
-      document.querySelectorAll('#buy-packages-list .package-item').forEach(el=>el.classList.remove('selected'));
-      item.classList.add('selected'); document.getElementById('btn-buy-package').disabled=false;
-    }));
-    
-    function renderActive() {
-      const list=document.getElementById('active-packages-list');
-      list.innerHTML = co.packages.length ? co.packages.map(p=>`<div class="package-item"><strong>${p.n}</strong><p>🚩 Restantes: ${(p.fLeft||p.f).toLocaleString()}</p></div>`).join('') : '<p class="small">Nenhum pacote ativo.</p>';
-    }
-    
-    document.getElementById('btn-buy-package').onclick = ()=>{
-      const sel=document.querySelector('#buy-packages-list .selected'); if(!sel) return;
-      const pkgDef = PACKAGES.find(p=>p.n===sel.dataset.name);
-      co.packages.push({...pkgDef, fLeft:pkgDef.f}); saveState();
-      renderActive(); document.getElementById('buy-msg').innerHTML=`<span class="ok">✓ ${pkgDef.n} comprado!</span>`;
-      alert(`📢 Tem 30 minutos para cancelar.`);
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    // ESTADO
+    const STATE = JSON.parse(localStorage.getItem("zap_flags_v2")) || {
+      player: { email: "max@test.com", pass: "123456" },
+      companies: Array.from({length:10}, (_,i)=>({id:`bit${i+1}`,name:`Bit${i+1}`,nif:`12345678${i+1}`,pass:"123456",packages:[]})),
+      admin: { email: "ovo@ovo", pass: "258258258" }
     };
+    function saveState(){ localStorage.setItem("zap_flags_v2", JSON.stringify(STATE)); }
 
-    function validateQR(){
-      const inp=document.getElementById('qr-validation-input'), msg=document.getElementById('validation-msg');
-      msg.innerHTML = inp.value ? `<span class="ok">✓ QR validado!</span>` : `<span class="danger">Insira um QR.</span>`;
+    // NAVEGAÇÃO
+    function goTo(id) {
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      const el = document.getElementById(id);
+      if(el) {
+        el.classList.add('active');
+        if(id === 'screen-game') initGame();
+        if(id === 'screen-company-dashboard') initCompanyDashboard(window.currentCompany);
+        if(id === 'screen-admin-dashboard') showAdminTab('dashboard');
+      }
     }
-    document.querySelector('#screen-company-dashboard button[onclick="validateClientQR()"]').onclick = validateQR;
-    renderActive();
-  }
-  
-  console.log("✅ ZAP FLAGS v2.3 Carregado. Limpo e funcional.");
-</script>
+
+    // FORMULÁRIOS
+    document.getElementById('form-player').addEventListener('submit',e=>{e.preventDefault(); if(document.getElementById('p-email').value===STATE.player.email&&document.getElementById('p-pass').value===STATE.player.pass){document.getElementById('msg-player').innerHTML='<span class="ok">✓ Login OK!</span>';setTimeout(()=>goTo('screen-game'),300);}else{document.getElementById('msg-player').innerHTML='<span class="danger">Inválido.</span>';}});
+    document.getElementById('form-company').addEventListener('submit',e=>{e.preventDefault(); const co=STATE.companies.find(c=>c.nif===document.getElementById('c-nif').value&&c.pass===document.getElementById('c-pass').value); if(co){window.currentCompany=co;document.getElementById('msg-company').innerHTML='<span class="ok">✓ Login OK!</span>';setTimeout(()=>goTo('screen-company-dashboard'),300);}else{document.getElementById('msg-company').innerHTML='<span class="danger">Inválido.</span>';}});
+    document.getElementById('form-admin-login').addEventListener('submit',e=>{e.preventDefault(); if(document.getElementById('ad-email').value===STATE.admin.email&&document.getElementById('ad-pass').value===STATE.admin.pass){document.getElementById('msg-admin-login').innerHTML='<span class="ok">✓ Acesso!</span>';setTimeout(()=>goTo('screen-admin-dashboard'),300);}else{document.getElementById('msg-admin-login').innerHTML='<span class="danger">Inválido.</span>';}});
+    
+    // JOGO
+    function initGame(){if(window.map)return window.map.invalidateSize(); window.map=L.map('map',{zoomControl:false}).setView([38.7223,-9.1393],16); L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(window.map); setTimeout(()=>window.map.invalidateSize(),150);}
+    
+    // EMPRESA
+    function initCompanyDashboard(co){if(!co)return goTo('screen-company'); document.getElementById('company-name-ui').textContent=co.name; const PKGS=[{n:"Médio",p:15,f:5000},{n:"Grande",p:25,f:15000},{n:"XL",p:35,f:30000}]; document.getElementById('buy-packages-list').innerHTML=PKGS.map(p=>`<div class="package-item" data-name="${p.n}"><strong>${p.n} - ${p.p}€</strong><p>🚩 ${p.f.toLocaleString()}</p></div>`).join(''); document.querySelectorAll('#buy-packages-list .package-item').forEach(i=>i.addEventListener('click',()=>{document.querySelectorAll('#buy-packages-list .package-item').forEach(el=>el.classList.remove('selected')); i.classList.add('selected'); document.getElementById('btn-buy-package').disabled=false;})); function renderActive(){document.getElementById('active-packages-list').innerHTML=co.packages.length?co.packages.map(p=>`<div class="package-item"><strong>${p.n}</strong><p>🚩 Restantes: ${(p.fLeft||p.f).toLocaleString()}</p></div>`).join(''):'<p>Nenhum.</p>';} document.getElementById('btn-buy-package').onclick=()=>{const sel=document.querySelector('#buy-packages-list .selected'); if(!sel)return; const pDef=PKGS.find(p=>p.n===sel.dataset.name); co.packages.push({...pDef,fLeft:pDef.f}); saveState(); renderActive();}; renderActive();}
+    function validateClientQR(){const i=document.getElementById('qr-validation-input'); alert(i.value?`✓ QR validado!`:`Insira QR.`);}
+    
+    // ADMIN
+    function showAdminTab(tab){const c=document.getElementById('admin-content'); if(tab==='dashboard')c.innerHTML=rAdminDash(); if(tab==='players')c.innerHTML=rAdminPlayers(); if(tab==='companies')c.innerHTML=rAdminComps();}
+    function rAdminDash(){return`<div class="item-module"><h3>📊 Stats</h3><p>Jogadores: ${STATE.player.email?1:0} | Empresas: ${STATE.companies.length}</p></div><div class="item-module"><h3>⚠️ Reset</h3><input id="admin-pass" type="password" placeholder="Senha admin" /><button class="btn btn-danger" onclick="adminReset()">RESET</button></div>`;}
+    function rAdminPlayers(){if(!STATE.player.email)return'<p>Nenhum.</p>'; return`<div style="overflow-x:auto;"><table class="admin-table"><tr><th>Email</th><th>Senha</th></tr><tr><td>${STATE.player.email}</td><td>${STATE.player.pass}</td></tr></table></div>`;}
+    function rAdminComps(){const r=STATE.companies.map(c=>`<tr><td>${c.name}</td><td>${c.nif}</td><td>${c.packages.length}</td></tr>`).join(''); return`<div style="overflow-x:auto;"><table class="admin-table"><tr><th>Nome</th><th>NIF</th><th>Pacotes</th></tr>${r}</table></div>`;}
+    function adminReset(){if(document.getElementById('admin-pass').value===STATE.admin.pass&&confirm("Apagar TUDO?")){localStorage.removeItem("zap_flags_v2");location.reload();}}
+    
+    console.log("✅ ZAP FLAGS v2.5 Carregado. Pronto.");
+  </script>
 </body>
 </html>
