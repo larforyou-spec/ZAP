@@ -11,22 +11,33 @@
 
     .screen { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #000; z-index: 10; }
     .screen.active { display: flex !important; }
-    #screen-welcome, #screen-player, #screen-company, #screen-admin-login { flex-direction: column; justify-content: center; align-items: center; padding: 20px; }
-    #screen-game, #screen-company-dashboard, #screen-admin-dashboard { flex-direction: column; padding: 0; overflow: hidden; align-items: center; }
-    #screen-company-dashboard, #screen-admin-dashboard { justify-content: flex-start; padding-top: 20px; overflow-y: auto; }
+    #landing, #auth-screen, #backoffice { flex-direction: column; justify-content: center; align-items: center; padding: 20px; }
+    #game-screen, #pr-screen { flex-direction: column; padding: 0; overflow: hidden; align-items: center; }
+    #pr-screen, #backoffice { justify-content: flex-start; padding-top: 20px; overflow-y: auto; }
 
     .watermark { position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%) rotate(-45deg); font-size: clamp(2rem, 8vw, 5rem); font-weight: 900; color: rgba(0,255,0,0.12); pointer-events: none; z-index: 0; }
     
     h1 { margin-bottom: 10px; text-shadow: 0 0 8px #0f0; } .sub { color: #a7fca7; margin-bottom: 20px; text-align: center; }
-    .btn { background: #0f0; color: #000; border: none; padding: 12px 20px; border-radius: 10px; font-weight: 800; cursor: pointer; margin: 8px; }
+    .btn { background: #0f0; color: #000; border: none; padding: 12px 20px; border-radius: 10px; font-weight: 800; cursor: pointer; margin: 8px; min-width: 120px; }
     .btn:disabled { opacity:0.5; } .btn-dark { background: #181818; color: #0f0; border: 1px solid #0f0; } .btn-danger { background: #8b0000; color: #fff; }
-    .btn-row { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; width:100%; max-width: 320px; }
+    .btn-row { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; width:100%; max-width: 400px; }
     .form-group { margin: 12px 0; text-align: left; width: 100%; max-width: 320px; }
-    input { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #0f0; background: #101010; color: #0f0; margin-bottom: 8px; }
+    input, select { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #0f0; background: #101010; color: #0f0; margin-bottom: 8px; }
     .msg { min-height: 20px; margin-top: 8px; font-size: 12px; } .ok { color: #8fff8f; } .danger { color: #ff8686; }
     
     #top-bar { position: fixed; top: 0; left: 0; right: 0; z-index: 100; background: rgba(0,0,0,0.9); border-bottom: 1px solid #0f0; padding: 10px 15px; display: flex; justify-content: space-between; font-weight: bold; }
     #map { flex: 1; width: 100%; height: 100%; z-index: 1; }
+    
+    /* Joystick */
+    #joystick-container { position: fixed; bottom: 30px; left: 30px; width: 120px; height: 120px; z-index: 200; }
+    #joystick-base { width: 100%; height: 100%; background: rgba(0,255,0,0.2); border: 2px solid #0f0; border-radius: 50%; position: relative; }
+    #joystick-stick { width: 50px; height: 50px; background: #0f0; border-radius: 50%; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); cursor: pointer; }
+    
+    /* Flag Marker */
+    .flag-marker { background: #ff0; border: 2px solid #000; border-radius: 50%; width: 20px; height: 20px; }
+    
+    /* Player Marker */
+    .player-marker { background: #0f0; border: 2px solid #000; border-radius: 50%; width: 15px; height: 15px; }
     
     .dashboard-grid { display: grid; grid-template-columns: 1fr; gap: 20px; width: 100%; max-width: 800px; padding: 20px; }
     .item-module { background: rgba(0,25,0,0.16); border: 1px solid #0f0; border-radius: 10px; padding: 15px; } .item-module h3 { margin-bottom: 10px; }
@@ -34,95 +45,739 @@
     .package-item { background: #111; padding: 10px; border-radius: 8px; margin-bottom: 8px; border: 1px solid #333; cursor: pointer; }
     .package-item.selected { border-color: #fff; } .package-item p { font-size: 13px; color: #a7fca7; margin-top: 5px; }
     .admin-table { width:100%; border-collapse:collapse; table-layout: fixed; } .admin-table td, .admin-table th { border:1px solid #0f0; padding:6px; font-size:12px; }
+
+    /* Auth Tabs */
+    .auth-tabs { display: flex; gap: 10px; margin-bottom: 20px; }
+    .auth-tab { padding: 10px 20px; background: #181818; border: 1px solid #333; cursor: pointer; border-radius: 8px; }
+    .auth-tab.active { border-color: #0f0; background: rgba(0,255,0,0.1); }
+    .auth-form { display: none; } .auth-form.active { display: block; }
+
+    /* PR Tabs */
+    .pr-tabs { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; justify-content: center; }
+    .pr-tab { padding: 10px 15px; background: #181818; border: 1px solid #333; cursor: pointer; border-radius: 8px; font-size: 14px; }
+    .pr-tab.active { border-color: #0f0; background: rgba(0,255,0,0.1); }
+    .pr-content { display: none; } .pr-content.active { display: block; }
+
+    /* Password Toggle */
+    .password-wrapper { position: relative; }
+    .password-toggle { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #0f0; cursor: pointer; font-size: 18px; padding: 0; }
   </style>
 </head>
 <body>
   <div class="watermark">LARFORYOU®</div>
 
-  <!-- ECRÃS -->
-  <section id="screen-welcome" class="screen active">
+  <!-- LANDING -->
+  <section id="landing" class="screen active">
     <h1>⚡ ZAP FLAGS</h1> <p class="sub">Bem-vindo!</p>
     <div class="btn-row">
-      <button class="btn" onclick="goTo('screen-player')">🎮 SOU JOGADOR</button>
-      <button class="btn btn-dark" onclick="goTo('screen-company')">🏢 SOU EMPRESA</button>
-      <button class="btn btn-dark" onclick="goTo('screen-admin-login')">🔒 ADMIN</button>
+      <button class="btn" onclick="goTo('auth-screen', 'player')">🎮 JOGAR</button>
+      <button class="btn btn-dark" onclick="goTo('auth-screen', 'company')">🏢 EMPRESA</button>
+      <button class="btn btn-dark" onclick="goTo('backoffice')">🔒 BACKOFFICE</button>
     </div>
   </section>
 
-  <section id="screen-player" class="screen">
-    <h1>🎮 JOGADOR</h1> <p class="sub">Entra com email e senha.</p>
-    <form id="form-player"><div class="form-group"><input type="email" id="p-email" required placeholder="Email (ex: max@test.com)"></div><div class="form-group"><input type="password" id="p-pass" required placeholder="Senha (ex: 123456)"></div><button type="submit" class="btn">ENTRAR</button></form>
-    <div id="msg-player" class="msg"></div> <button class="btn btn-dark" onclick="goTo('screen-welcome')">VOLTAR</button>
+  <!-- AUTH SCREEN -->
+  <section id="auth-screen" class="screen">
+    <h1>🔐 AUTENTICAÇÃO</h1>
+    <div class="auth-tabs">
+      <div class="auth-tab active" onclick="switchAuthTab('player')">JOGADOR</div>
+      <div class="auth-tab" onclick="switchAuthTab('company')">EMPRESA</div>
+    </div>
+
+    <!-- Player Form -->
+    <div id="auth-player" class="auth-form active">
+      <p class="sub">Entra ou regista como jogador</p>
+      <form id="form-player">
+        <div class="form-group"><input type="email" id="p-email" required placeholder="Email (ex: big1@test.com)"></div>
+        <div class="form-group password-wrapper">
+          <input type="password" id="p-pass" required placeholder="Senha (123456)">
+          <button type="button" class="password-toggle" onclick="togglePassword('p-pass', this)">👁️</button>
+        </div>
+        <div class="form-group">
+          <select id="p-district" required>
+            <option value="">Seleciona distrito</option>
+            <option value="Aveiro">Aveiro</option>
+            <option value="Beja">Beja</option>
+            <option value="Braga">Braga</option>
+            <option value="Bragança">Bragança</option>
+            <option value="Castelo Branco">Castelo Branco</option>
+            <option value="Coimbra">Coimbra</option>
+            <option value="Évora">Évora</option>
+            <option value="Faro">Faro</option>
+            <option value="Guarda">Guarda</option>
+            <option value="Leiria">Leiria</option>
+            <option value="Lisboa">Lisboa</option>
+            <option value="Portalegre">Portalegre</option>
+            <option value="Porto">Porto</option>
+            <option value="Santarém">Santarém</option>
+            <option value="Setúbal">Setúbal</option>
+            <option value="Viana do Castelo">Viana do Castelo</option>
+            <option value="Vila Real">Vila Real</option>
+            <option value="Viseu">Viseu</option>
+            <option value="Açores">Açores</option>
+            <option value="Madeira">Madeira</option>
+          </select>
+        </div>
+        <button type="submit" class="btn">ENTRAR / REGISTAR</button>
+      </form>
+      <div id="msg-player" class="msg"></div>
+    </div>
+
+    <!-- Company Form -->
+    <div id="auth-company" class="auth-form">
+      <p class="sub">Entra ou regista como empresa</p>
+      <form id="form-company">
+        <div class="form-group"><input type="text" id="c-name" required placeholder="Nome (ex: big 01)"></div>
+        <div class="form-group"><input type="text" id="c-nif" maxlength="9" required placeholder="NIF (ex: 123456781)"></div>
+        <div class="form-group password-wrapper">
+          <input type="password" id="c-pass" required placeholder="Senha (123456)">
+          <button type="button" class="password-toggle" onclick="togglePassword('c-pass', this)">👁️</button>
+        </div>
+        <button type="submit" class="btn">ENTRAR / REGISTAR</button>
+      </form>
+      <div id="msg-company" class="msg"></div>
+    </div>
+
+    <button class="btn btn-dark" onclick="goTo('landing')">VOLTAR</button>
   </section>
 
-  <section id="screen-company" class="screen">
-    <h1>🏢 EMPRESA</h1> <p class="sub">Entra com NIF e senha.</p>
-    <form id="form-company"><div class="form-group"><input type="text" id="c-nif" maxlength="9" required placeholder="NIF (ex: 123456781)"></div><div class="form-group"><input type="password" id="c-pass" required placeholder="Senha (ex: 123456)"></div><button type="submit" class="btn">ENTRAR</button></form>
-    <div id="msg-company" class="msg"></div> <button class="btn btn-dark" onclick="goTo('screen-welcome')">VOLTAR</button>
+  <!-- GAME SCREEN -->
+  <section id="game-screen" class="screen">
+    <div id="top-bar"><span>⚡ 100%</span> <span>🎯 5m</span> <span>🚩 0</span></div>
+    <div id="map"></div>
+    <div id="joystick-container">
+      <div id="joystick-base">
+        <div id="joystick-stick"></div>
+      </div>
+    </div>
   </section>
 
-  <section id="screen-admin-login" class="screen">
-    <h1>🔒 ADMIN</h1><p class="sub">Acesso restrito.</p>
-    <form id="form-admin-login"><div class="form-group"><input type="email" id="ad-email" required placeholder="Email (ovo@ovo)"></div><div class="form-group"><input type="password" id="ad-pass" required placeholder="Senha (258258258)"></div><button type="submit" class="btn">ENTRAR</button></form>
-    <div id="msg-admin-login" class="msg"></div><button class="btn btn-dark" onclick="goTo('screen-welcome')">VOLTAR</button>
+  <!-- PR SCREEN (EMPRESA) -->
+  <section id="pr-screen" class="screen">
+    <h1 id="pr-name-ui">PAINEL DA EMPRESA</h1>
+    <div class="pr-tabs">
+      <div class="pr-tab active" onclick="switchPRTab('dashboard')">📊 Dashboard</div>
+      <div class="pr-tab" onclick="switchPRTab('packs')">🛒 Packs</div>
+      <div class="pr-tab" onclick="switchPRTab('lotes')">📦 Lotes</div>
+      <div class="pr-tab" onclick="switchPRTab('bingos')">🎱 Bingos</div>
+      <div class="pr-tab" onclick="switchPRTab('qrs')">🔍 QRs</div>
+    </div>
+
+    <div id="pr-dashboard" class="pr-content active">
+      <div class="dashboard-grid">
+        <div class="item-module"><h3>📊 Estatísticas</h3><p id="pr-stats">Carregando...</p></div>
+      </div>
+    </div>
+
+    <div id="pr-packs" class="pr-content">
+      <div class="dashboard-grid">
+        <div class="item-module"><h3>🛒 Comprar Packs</h3> <div id="buy-packages-list" class="item-list"></div> <button id="btn-buy-package" class="btn" disabled>COMPRAR</button></div>
+        <div class="item-module"><h3>📦 Packs Ativos</h3><div id="active-packages-list" class="item-list"></div></div>
+      </div>
+    </div>
+
+    <div id="pr-lotes" class="pr-content">
+      <div class="dashboard-grid">
+        <div class="item-module"><h3>📦 Criar Lote Promocional</h3>
+          <div class="form-group"><input id="lote-name" placeholder="Nome do lote"></div>
+          <div class="form-group"><input id="lote-flags" type="number" placeholder="Qtd flags"></div>
+          <button class="btn" onclick="createLote()">CRIAR LOTE</button>
+        </div>
+        <div class="item-module"><h3>📋 Lotes Ativos</h3><div id="lotes-list" class="item-list"></div></div>
+      </div>
+    </div>
+
+    <div id="pr-bingos" class="pr-content">
+      <div class="dashboard-grid">
+        <div class="item-module"><h3>🎱 Criar Bingo</h3>
+          <div class="form-group"><input id="bingo-name" placeholder="Nome do bingo"></div>
+          <div class="form-group"><input id="bingo-prize" placeholder="Prémio"></div>
+          <div class="form-group"><input id="bingo-flags" type="number" placeholder="Flags necessárias"></div>
+          <button class="btn" onclick="createBingo()">CRIAR BINGO</button>
+        </div>
+        <div class="item-module"><h3>📋 Bingos Ativos</h3><div id="bingos-list" class="item-list"></div></div>
+      </div>
+    </div>
+
+    <div id="pr-qrs" class="pr-content">
+      <div class="dashboard-grid">
+        <div class="item-module"><h3>🔍 Validar QR</h3>
+          <input id="qr-validation-input" placeholder="Código QR" />
+          <button class="btn btn-dark" onclick="validateClientQR()">VALIDAR</button>
+          <div id="validation-msg" class="msg"></div>
+        </div>
+        <div class="item-module"><h3>📋 Histórico</h3><div id="qr-history" class="item-list"></div></div>
+      </div>
+    </div>
+
+    <button class="btn btn-dark" onclick="goTo('landing')">SAIR</button>
   </section>
 
-  <section id="screen-game" class="screen"><div id="top-bar"><span>⚡ 100%</span> <span>🎯 5m</span></div> <div id="map"></div></section>
+  <!-- BACKOFFICE -->
+  <section id="backoffice" class="screen">
+    <h1>🛡️ BACKOFFICE</h1>
+    <form id="form-backoffice">
+      <div class="form-group"><input type="email" id="bo-email" required placeholder="Email (ovo@ovo)"></div>
+      <div class="form-group password-wrapper">
+        <input type="password" id="bo-pass" required placeholder="Senha (258258258)">
+        <button type="button" class="password-toggle" onclick="togglePassword('bo-pass', this)">👁️</button>
+      </div>
+      <button type="submit" class="btn">ENTRAR</button>
+    </form>
+    <div id="msg-backoffice" class="msg"></div>
 
-  <section id="screen-company-dashboard" class="screen">
-    <h1 id="company-name-ui">PAINEL DA EMPRESA</h1>
-    <div class="dashboard-grid"><div class="item-module"><h3>🛒 Comprar</h3> <div id="buy-packages-list" class="item-list"></div> <button id="btn-buy-package" class="btn" disabled>COMPRAR</button></div><div class="item-module"><h3>📦 Ativos</h3><div id="active-packages-list" class="item-list"></div></div><div class="item-module"><h3>🔍 Validar</h3><input id="qr-validation-input" placeholder="Código QR" /><button class="btn btn-dark" onclick="validateClientQR()">VALIDAR</button><div id="validation-msg" class="msg"></div></div></div>
-    <button class="btn btn-dark" onclick="goTo('screen-welcome')">SAIR</button>
-  </section>
-  
-  <section id="screen-admin-dashboard" class="screen">
-    <h1>🛡️ PAINEL ADMIN</h1>
-    <div class="btn-row" style="margin-bottom:15px;"><button class="btn-dark" onclick="showAdminTab('dashboard')">📊</button><button class="btn-dark" onclick="showAdminTab('players')">👥</button><button class="btn-dark" onclick="showAdminTab('companies')">🏢</button></div>
-    <div id="admin-content" class="dashboard-grid"></div><button class="btn btn-danger" onclick="goTo('screen-welcome')">🚪 SAIR</button>
+    <div id="bo-dashboard" style="display:none; width:100%; max-width:800px; padding:20px;">
+      <div class="btn-row" style="margin-bottom:15px;">
+        <button class="btn-dark" onclick="showBOTab('stats')">📊 Stats</button>
+        <button class="btn-dark" onclick="showBOTab('players')">👥 Jogadores</button>
+        <button class="btn-dark" onclick="showBOTab('companies')">🏢 Empresas</button>
+      </div>
+      <div id="bo-content" class="dashboard-grid"></div>
+      <button class="btn btn-danger" onclick="logoutBackoffice()">🚪 SAIR</button>
+    </div>
+
+    <button class="btn btn-dark" onclick="goTo('landing')" id="bo-back-btn">VOLTAR</button>
   </section>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
-    // ESTADO
-    const STATE = JSON.parse(localStorage.getItem("zap_flags_v2")) || {
-      player: { email: "max@test.com", pass: "123456" },
-      companies: Array.from({length:10}, (_,i)=>({id:`bit${i+1}`,name:`Bit${i+1}`,nif:`12345678${i+1}`,pass:"123456",packages:[]})),
-      admin: { email: "ovo@ovo", pass: "258258258" }
-    };
-    function saveState(){ localStorage.setItem("zap_flags_v2", JSON.stringify(STATE)); }
+    // ESTADO UNIFICADO
+    const STATE_KEY = "ZAP_FLAGS_V1";
+    
+    function loadState() {
+      const saved = localStorage.getItem(STATE_KEY);
+      if (saved) return JSON.parse(saved);
+      
+      // Dados de teste iniciais
+      return {
+        players: Array.from({length:10}, (_,i)=>({
+          id: `player_${i+1}`,
+          name: `big ${i+1}`,
+          email: `big${i+1}@test.com`,
+          pass: "123456",
+          district: "Lisboa",
+          flags: 0,
+          position: { lat: 38.7223, lng: -9.1393 }
+        })),
+        companies: Array.from({length:10}, (_,i)=>({
+          id: `company_${i+1}`,
+          name: `big 0${i+1}`,
+          nif: `12345678${i+1}`,
+          pass: "123456",
+          packages: [],
+          lotes: [],
+          qrHistory: []
+        })),
+        backoffice: { email: "ovo@ovo", pass: "258258258" },
+        currentPlayer: null,
+        currentCompany: null
+      };
+    }
+    
+    function saveState() {
+      localStorage.setItem(STATE_KEY, JSON.stringify(STATE));
+    }
+    
+    let STATE = loadState();
 
-    // NAVEGAÇÃO
-    function goTo(id) {
+    // NAVEGAÇÃO SPA
+    function goTo(screenId, defaultTab = null) {
       document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-      const el = document.getElementById(id);
+      const el = document.getElementById(screenId);
       if(el) {
         el.classList.add('active');
-        if(id === 'screen-game') initGame();
-        if(id === 'screen-company-dashboard') initCompanyDashboard(window.currentCompany);
-        if(id === 'screen-admin-dashboard') showAdminTab('dashboard');
+        
+        if(screenId === 'auth-screen' && defaultTab) {
+          switchAuthTab(defaultTab);
+        }
+        if(screenId === 'game-screen') initGame();
+        if(screenId === 'pr-screen' && STATE.currentCompany) initPRDashboard();
       }
     }
 
-    // FORMULÁRIOS
-    document.getElementById('form-player').addEventListener('submit',e=>{e.preventDefault(); if(document.getElementById('p-email').value===STATE.player.email&&document.getElementById('p-pass').value===STATE.player.pass){document.getElementById('msg-player').innerHTML='<span class="ok">✓ Login OK!</span>';setTimeout(()=>goTo('screen-game'),300);}else{document.getElementById('msg-player').innerHTML='<span class="danger">Inválido.</span>';}});
-    document.getElementById('form-company').addEventListener('submit',e=>{e.preventDefault(); const co=STATE.companies.find(c=>c.nif===document.getElementById('c-nif').value&&c.pass===document.getElementById('c-pass').value); if(co){window.currentCompany=co;document.getElementById('msg-company').innerHTML='<span class="ok">✓ Login OK!</span>';setTimeout(()=>goTo('screen-company-dashboard'),300);}else{document.getElementById('msg-company').innerHTML='<span class="danger">Inválido.</span>';}});
-    document.getElementById('form-admin-login').addEventListener('submit',e=>{e.preventDefault(); if(document.getElementById('ad-email').value===STATE.admin.email&&document.getElementById('ad-pass').value===STATE.admin.pass){document.getElementById('msg-admin-login').innerHTML='<span class="ok">✓ Acesso!</span>';setTimeout(()=>goTo('screen-admin-dashboard'),300);}else{document.getElementById('msg-admin-login').innerHTML='<span class="danger">Inválido.</span>';}});
-    
-    // JOGO
-    function initGame(){if(window.map)return window.map.invalidateSize(); window.map=L.map('map',{zoomControl:false}).setView([38.7223,-9.1393],16); L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(window.map); setTimeout(()=>window.map.invalidateSize(),150);}
-    
-    // EMPRESA
-    function initCompanyDashboard(co){if(!co)return goTo('screen-company'); document.getElementById('company-name-ui').textContent=co.name; const PKGS=[{n:"Médio",p:15,f:5000},{n:"Grande",p:25,f:15000},{n:"XL",p:35,f:30000}]; document.getElementById('buy-packages-list').innerHTML=PKGS.map(p=>`<div class="package-item" data-name="${p.n}"><strong>${p.n} - ${p.p}€</strong><p>🚩 ${p.f.toLocaleString()}</p></div>`).join(''); document.querySelectorAll('#buy-packages-list .package-item').forEach(i=>i.addEventListener('click',()=>{document.querySelectorAll('#buy-packages-list .package-item').forEach(el=>el.classList.remove('selected')); i.classList.add('selected'); document.getElementById('btn-buy-package').disabled=false;})); function renderActive(){document.getElementById('active-packages-list').innerHTML=co.packages.length?co.packages.map(p=>`<div class="package-item"><strong>${p.n}</strong><p>🚩 Restantes: ${(p.fLeft||p.f).toLocaleString()}</p></div>`).join(''):'<p>Nenhum.</p>';} document.getElementById('btn-buy-package').onclick=()=>{const sel=document.querySelector('#buy-packages-list .selected'); if(!sel)return; const pDef=PKGS.find(p=>p.n===sel.dataset.name); co.packages.push({...pDef,fLeft:pDef.f}); saveState(); renderActive();}; renderActive();}
-    function validateClientQR(){const i=document.getElementById('qr-validation-input'); alert(i.value?`✓ QR validado!`:`Insira QR.`);}
-    
-    // ADMIN
-    function showAdminTab(tab){const c=document.getElementById('admin-content'); if(tab==='dashboard')c.innerHTML=rAdminDash(); if(tab==='players')c.innerHTML=rAdminPlayers(); if(tab==='companies')c.innerHTML=rAdminComps();}
-    function rAdminDash(){return`<div class="item-module"><h3>📊 Stats</h3><p>Jogadores: ${STATE.player.email?1:0} | Empresas: ${STATE.companies.length}</p></div><div class="item-module"><h3>⚠️ Reset</h3><input id="admin-pass" type="password" placeholder="Senha admin" /><button class="btn btn-danger" onclick="adminReset()">RESET</button></div>`;}
-    function rAdminPlayers(){if(!STATE.player.email)return'<p>Nenhum.</p>'; return`<div style="overflow-x:auto;"><table class="admin-table"><tr><th>Email</th><th>Senha</th></tr><tr><td>${STATE.player.email}</td><td>${STATE.player.pass}</td></tr></table></div>`;}
-    function rAdminComps(){const r=STATE.companies.map(c=>`<tr><td>${c.name}</td><td>${c.nif}</td><td>${c.packages.length}</td></tr>`).join(''); return`<div style="overflow-x:auto;"><table class="admin-table"><tr><th>Nome</th><th>NIF</th><th>Pacotes</th></tr>${r}</table></div>`;}
-    function adminReset(){if(document.getElementById('admin-pass').value===STATE.admin.pass&&confirm("Apagar TUDO?")){localStorage.removeItem("zap_flags_v2");location.reload();}}
-    
-    console.log("✅ ZAP FLAGS v2.5 Carregado. Pronto.");
+    // TOGGLE PASSWORD
+    function togglePassword(inputId, btn) {
+      const input = document.getElementById(inputId);
+      if(input.type === 'password') {
+        input.type = 'text';
+        btn.textContent = '🔒';
+      } else {
+        input.type = 'password';
+        btn.textContent = '👁️';
+      }
+    }
+
+    // AUTH TABS
+    function switchAuthTab(tab) {
+      document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.auth-form').forEach(f => f.classList.remove('active'));
+      
+      if(tab === 'player') {
+        document.querySelectorAll('.auth-tab')[0].classList.add('active');
+        document.getElementById('auth-player').classList.add('active');
+      } else {
+        document.querySelectorAll('.auth-tab')[1].classList.add('active');
+        document.getElementById('auth-company').classList.add('active');
+      }
+    }
+
+    // PLAYER LOGIN/REGISTER
+    document.getElementById('form-player').addEventListener('submit', e => {
+      e.preventDefault();
+      const email = document.getElementById('p-email').value;
+      const pass = document.getElementById('p-pass').value;
+      const district = document.getElementById('p-district').value;
+      
+      let player = STATE.players.find(p => p.email === email);
+      
+      if(player) {
+        if(player.pass === pass) {
+          STATE.currentPlayer = player;
+          document.getElementById('msg-player').innerHTML = '<span class="ok">✓ Login OK!</span>';
+          setTimeout(() => goTo('game-screen'), 300);
+        } else {
+          document.getElementById('msg-player').innerHTML = '<span class="danger">Senha incorreta.</span>';
+        }
+      } else {
+        // Register new player
+        player = {
+          id: `player_${Date.now()}`,
+          name: email.split('@')[0],
+          email,
+          pass,
+          district,
+          flags: 0,
+          position: { lat: 38.7223, lng: -9.1393 }
+        };
+        STATE.players.push(player);
+        STATE.currentPlayer = player;
+        saveState();
+        document.getElementById('msg-player').innerHTML = '<span class="ok">✓ Registado e entrado!</span>';
+        setTimeout(() => goTo('game-screen'), 300);
+      }
+    });
+
+    // COMPANY LOGIN/REGISTER
+    document.getElementById('form-company').addEventListener('submit', e => {
+      e.preventDefault();
+      const name = document.getElementById('c-name').value;
+      const nif = document.getElementById('c-nif').value;
+      const pass = document.getElementById('c-pass').value;
+      
+      let company = STATE.companies.find(c => c.nif === nif);
+      
+      if(company) {
+        if(company.pass === pass) {
+          STATE.currentCompany = company;
+          document.getElementById('msg-company').innerHTML = '<span class="ok">✓ Login OK!</span>';
+          setTimeout(() => goTo('pr-screen'), 300);
+        } else {
+          document.getElementById('msg-company').innerHTML = '<span class="danger">Senha incorreta.</span>';
+        }
+      } else {
+        // Register new company
+        company = {
+          id: `company_${Date.now()}`,
+          name,
+          nif,
+          pass,
+          packages: [],
+          lotes: [],
+          qrHistory: []
+        };
+        STATE.companies.push(company);
+        STATE.currentCompany = company;
+        saveState();
+        document.getElementById('msg-company').innerHTML = '<span class="ok">✓ Registado e entrado!</span>';
+        setTimeout(() => goTo('pr-screen'), 300);
+      }
+    });
+
+    // BACKOFFICE LOGIN
+    document.getElementById('form-backoffice').addEventListener('submit', e => {
+      e.preventDefault();
+      const email = document.getElementById('bo-email').value;
+      const pass = document.getElementById('bo-pass').value;
+      
+      if(email === STATE.backoffice.email && pass === STATE.backoffice.pass) {
+        document.getElementById('msg-backoffice').innerHTML = '<span class="ok">✓ Acesso autorizado!</span>';
+        document.getElementById('form-backoffice').style.display = 'none';
+        document.getElementById('bo-back-btn').style.display = 'none';
+        document.getElementById('bo-dashboard').style.display = 'block';
+        showBOTab('stats');
+      } else {
+        document.getElementById('msg-backoffice').innerHTML = '<span class="danger">Credenciais inválidas.</span>';
+      }
+    });
+
+    function logoutBackoffice() {
+      document.getElementById('form-backoffice').style.display = 'block';
+      document.getElementById('bo-back-btn').style.display = 'block';
+      document.getElementById('bo-dashboard').style.display = 'none';
+      document.getElementById('bo-email').value = '';
+      document.getElementById('bo-pass').value = '';
+      document.getElementById('msg-backoffice').innerHTML = '';
+    }
+
+    function showBOTab(tab) {
+      const c = document.getElementById('bo-content');
+      if(tab === 'stats') {
+        c.innerHTML = `<div class="item-module"><h3>📊 Estatísticas</h3><p>Jogadores: ${STATE.players.length} | Empresas: ${STATE.companies.length}</p></div>`;
+      } else if(tab === 'players') {
+        const rows = STATE.players.map(p => `<tr><td>${p.name}</td><td>${p.email}</td><td>${p.district}</td><td>${p.flags}</td></tr>`).join('');
+        c.innerHTML = `<div style="overflow-x:auto;"><table class="admin-table"><tr><th>Nome</th><th>Email</th><th>Distrito</th><th>Flags</th></tr>${rows}</table></div>`;
+      } else if(tab === 'companies') {
+        const rows = STATE.companies.map(c => `<tr><td>${c.name}</td><td>${c.nif}</td><td>${c.packages.length}</td><td>${c.lotes.length}</td></tr>`).join('');
+        c.innerHTML = `<div style="overflow-x:auto;"><table class="admin-table"><tr><th>Nome</th><th>NIF</th><th>Packs</th><th>Lotes</th></tr>${rows}</table></div>`;
+      }
+    }
+
+    // GAME
+    let playerMarker = null;
+    let flags = [];
+    let gameInterval = null;
+    let joystickActive = false;
+    let joystickData = { dx: 0, dy: 0 };
+
+    function initGame() {
+      if(window.map) {
+        window.map.invalidateSize();
+        window.map.remove();
+      }
+      
+      window.map = L.map('map', { zoomControl: false }).setView([STATE.currentPlayer.position.lat, STATE.currentPlayer.position.lng], 16);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(window.map);
+      
+      // Create player marker
+      const playerIcon = L.divIcon({
+        className: 'player-marker',
+        iconSize: [15, 15],
+        iconAnchor: [7, 7]
+      });
+      
+      playerMarker = L.marker([STATE.currentPlayer.position.lat, STATE.currentPlayer.position.lng], { icon: playerIcon }).addTo(window.map);
+      
+      // Spawn flags
+      spawnFlags();
+      
+      // Init joystick
+      initJoystick();
+      
+      // Start game loop
+      if(gameInterval) clearInterval(gameInterval);
+      gameInterval = setInterval(gameLoop, 100);
+      
+      // Try GPS
+      if(navigator.geolocation) {
+        navigator.geolocation.watchPosition(
+          pos => {
+            STATE.currentPlayer.position.lat = pos.coords.latitude;
+            STATE.currentPlayer.position.lng = pos.coords.longitude;
+            if(playerMarker) {
+              playerMarker.setLatLng([pos.coords.latitude, pos.coords.longitude]);
+              window.map.panTo([pos.coords.latitude, pos.coords.longitude]);
+            }
+            saveState();
+          },
+          err => console.log('GPS error:', err),
+          { enableHighAccuracy: true }
+        );
+      }
+      
+      setTimeout(() => window.map.invalidateSize(), 150);
+    }
+
+    function spawnFlags() {
+      // Clear existing flags
+      flags.forEach(f => window.map.removeLayer(f.marker));
+      flags = [];
+      
+      // Spawn 10 random flags around player
+      const centerLat = STATE.currentPlayer.position.lat;
+      const centerLng = STATE.currentPlayer.position.lng;
+      
+      for(let i = 0; i < 10; i++) {
+        const lat = centerLat + (Math.random() - 0.5) * 0.01;
+        const lng = centerLng + (Math.random() - 0.5) * 0.01;
+        
+        const flagIcon = L.divIcon({
+          className: 'flag-marker',
+          iconSize: [20, 20],
+          iconAnchor: [10, 10]
+        });
+        
+        const marker = L.marker([lat, lng], { icon: flagIcon }).addTo(window.map);
+        flags.push({ id: i, lat, lng, marker });
+      }
+    }
+
+    function initJoystick() {
+      const container = document.getElementById('joystick-container');
+      const stick = document.getElementById('joystick-stick');
+      const base = document.getElementById('joystick-base');
+      
+      let isDragging = false;
+      
+      function handleStart(e) {
+        isDragging = true;
+        e.preventDefault();
+      }
+      
+      function handleMove(e) {
+        if(!isDragging) return;
+        e.preventDefault();
+        
+        const rect = base.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+        
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        
+        let dx = clientX - centerX;
+        let dy = clientY - centerY;
+        
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        const maxDistance = rect.width / 2 - 25;
+        
+        if(distance > maxDistance) {
+          dx = (dx / distance) * maxDistance;
+          dy = (dy / distance) * maxDistance;
+        }
+        
+        stick.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+        
+        joystickData.dx = dx / maxDistance;
+        joystickData.dy = dy / maxDistance;
+      }
+      
+      function handleEnd(e) {
+        isDragging = false;
+        stick.style.transform = 'translate(-50%, -50%)';
+        joystickData.dx = 0;
+        joystickData.dy = 0;
+      }
+      
+      stick.addEventListener('mousedown', handleStart);
+      stick.addEventListener('touchstart', handleStart);
+      document.addEventListener('mousemove', handleMove);
+      document.addEventListener('touchmove', handleMove);
+      document.addEventListener('mouseup', handleEnd);
+      document.addEventListener('touchend', handleEnd);
+    }
+
+    function gameLoop() {
+      if(!playerMarker || !window.map) return;
+      
+      // Manual movement from joystick
+      if(joystickData.dx !== 0 || joystickData.dy !== 0) {
+        const speed = 0.0001;
+        const newLat = STATE.currentPlayer.position.lat - joystickData.dy * speed;
+        const newLng = STATE.currentPlayer.position.lng + joystickData.dx * speed;
+        
+        STATE.currentPlayer.position.lat = newLat;
+        STATE.currentPlayer.position.lng = newLng;
+        
+        playerMarker.setLatLng([newLat, newLng]);
+        window.map.panTo([newLat, newLng]);
+        
+        saveState();
+      }
+      
+      // Check flag collision
+      tryCollectFlag();
+    }
+
+    function tryCollectFlag() {
+      const playerLat = STATE.currentPlayer.position.lat;
+      const playerLng = STATE.currentPlayer.position.lng;
+      
+      for(let i = flags.length - 1; i >= 0; i--) {
+        const flag = flags[i];
+        const distance = Math.sqrt(
+          Math.pow(playerLat - flag.lat, 2) + 
+          Math.pow(playerLng - flag.lng, 2)
+        );
+        
+        // Collision threshold (approximately 10 meters)
+        if(distance < 0.0001) {
+          // Collect flag
+          window.map.removeLayer(flag.marker);
+          flags.splice(i, 1);
+          
+          STATE.currentPlayer.flags++;
+          saveState();
+          
+          // Update HUD
+          document.querySelector('#top-bar span:last-child').textContent = `🚩 ${STATE.currentPlayer.flags}`;
+          
+          // Spawn new flag
+          const newLat = playerLat + (Math.random() - 0.5) * 0.01;
+          const newLng = playerLng + (Math.random() - 0.5) * 0.01;
+          
+          const flagIcon = L.divIcon({
+            className: 'flag-marker',
+            iconSize: [20, 20],
+            iconAnchor: [10, 10]
+          });
+          
+          const marker = L.marker([newLat, newLng], { icon: flagIcon }).addTo(window.map);
+          flags.push({ id: Date.now(), lat: newLat, lng: newLng, marker });
+          
+          break;
+        }
+      }
+    }
+
+    // PR TABS
+    function switchPRTab(tab) {
+      document.querySelectorAll('.pr-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.pr-content').forEach(c => c.classList.remove('active'));
+      
+      const tabs = ['dashboard', 'packs', 'lotes', 'bingos', 'qrs'];
+      const index = tabs.indexOf(tab);
+      document.querySelectorAll('.pr-tab')[index].classList.add('active');
+      document.getElementById(`pr-${tab}`).classList.add('active');
+      
+      if(tab === 'dashboard') updatePRStats();
+    }
+
+    function initPRDashboard() {
+      if(!STATE.currentCompany) return goTo('auth-screen', 'company');
+      document.getElementById('pr-name-ui').textContent = `PAINEL - ${STATE.currentCompany.name}`;
+      
+      const PKGS = [{n:"Médio",p:15,f:5000},{n:"Grande",p:25,f:15000},{n:"XL",p:35,f:30000}];
+      document.getElementById('buy-packages-list').innerHTML = PKGS.map(p => 
+        `<div class="package-item" data-name="${p.n}"><strong>${p.n} - ${p.p}€</strong><p>🚩 ${p.f.toLocaleString()}</p></div>`
+      ).join('');
+      
+      document.querySelectorAll('#buy-packages-list .package-item').forEach(i => {
+        i.addEventListener('click', () => {
+          document.querySelectorAll('#buy-packages-list .package-item').forEach(el => el.classList.remove('selected'));
+          i.classList.add('selected');
+          document.getElementById('btn-buy-package').disabled = false;
+        });
+      });
+      
+      renderActivePackages();
+      renderLotes();
+      renderBingos();
+      renderQRHistory();
+      updatePRStats();
+      
+      document.getElementById('btn-buy-package').onclick = () => {
+        const sel = document.querySelector('#buy-packages-list .selected');
+        if(!sel) return;
+        const pDef = PKGS.find(p => p.n === sel.dataset.name);
+        STATE.currentCompany.packages.push({...pDef, fLeft: pDef.f});
+        saveState();
+        renderActivePackages();
+        updatePRStats();
+      };
+    }
+
+    function renderActivePackages() {
+      const list = document.getElementById('active-packages-list');
+      list.innerHTML = STATE.currentCompany.packages.length 
+        ? STATE.currentCompany.packages.map(p => `<div class="package-item"><strong>${p.n}</strong><p>🚩 Restantes: ${(p.fLeft||p.f).toLocaleString()}</p></div>`).join('')
+        : '<p>Nenhum.</p>';
+    }
+
+    function updatePRStats() {
+      const totalFlags = STATE.currentCompany.packages.reduce((sum, p) => sum + (p.fLeft || p.f), 0);
+      document.getElementById('pr-stats').textContent = `Packs: ${STATE.currentCompany.packages.length} | Flags disponíveis: ${totalFlags.toLocaleString()} | Lotes: ${STATE.currentCompany.lotes.length}`;
+    }
+
+    function createLote() {
+      const name = document.getElementById('lote-name').value;
+      const flags = parseInt(document.getElementById('lote-flags').value);
+      
+      if(!name || !flags) {
+        alert('Preenche todos os campos');
+        return;
+      }
+      
+      STATE.currentCompany.lotes.push({
+        id: `lote_${Date.now()}`,
+        name,
+        flags,
+        createdAt: new Date().toISOString()
+      });
+      
+      saveState();
+      renderLotes();
+      document.getElementById('lote-name').value = '';
+      document.getElementById('lote-flags').value = '';
+    }
+
+    function renderLotes() {
+      const list = document.getElementById('lotes-list');
+      list.innerHTML = STATE.currentCompany.lotes.length
+        ? STATE.currentCompany.lotes.map(l => `<div class="package-item"><strong>${l.name}</strong><p>🚩 ${l.flags.toLocaleString()} flags</p></div>`).join('')
+        : '<p>Nenhum.</p>';
+    }
+
+    function createBingo() {
+      const name = document.getElementById('bingo-name').value;
+      const prize = document.getElementById('bingo-prize').value;
+      const flags = parseInt(document.getElementById('bingo-flags').value);
+      
+      if(!name || !prize || !flags) {
+        alert('Preenche todos os campos');
+        return;
+      }
+      
+      if(!STATE.currentCompany.bingos) STATE.currentCompany.bingos = [];
+      
+      STATE.currentCompany.bingos.push({
+        id: `bingo_${Date.now()}`,
+        name,
+        prize,
+        requiredFlags: flags,
+        createdAt: new Date().toISOString()
+      });
+      
+      saveState();
+      renderBingos();
+      document.getElementById('bingo-name').value = '';
+      document.getElementById('bingo-prize').value = '';
+      document.getElementById('bingo-flags').value = '';
+    }
+
+    function renderBingos() {
+      const list = document.getElementById('bingos-list');
+      if(!STATE.currentCompany.bingos) STATE.currentCompany.bingos = [];
+      list.innerHTML = STATE.currentCompany.bingos.length
+        ? STATE.currentCompany.bingos.map(b => `<div class="package-item"><strong>${b.name}</strong><p>🎁 ${b.prize} | 🚩 ${b.requiredFlags} flags</p></div>`).join('')
+        : '<p>Nenhum.</p>';
+    }
+
+    function validateClientQR() {
+      const input = document.getElementById('qr-validation-input');
+      if(!input.value) {
+        document.getElementById('validation-msg').innerHTML = '<span class="danger">Insere um código QR.</span>';
+        return;
+      }
+      
+      STATE.currentCompany.qrHistory.push({
+        code: input.value,
+        validatedAt: new Date().toISOString()
+      });
+      
+      saveState();
+      renderQRHistory();
+      document.getElementById('validation-msg').innerHTML = '<span class="ok">✓ QR validado!</span>';
+      input.value = '';
+    }
+
+    function renderQRHistory() {
+      const list = document.getElementById('qr-history');
+      list.innerHTML = STATE.currentCompany.qrHistory.length
+        ? STATE.currentCompany.qrHistory.slice(-10).reverse().map(q => `<div class="package-item"><strong>${q.code}</strong><p>${new Date(q.validatedAt).toLocaleString()}</p></div>`).join('')
+        : '<p>Nenhum.</p>';
+    }
+
+    console.log("✅ ZAP FLAGS v3.0 Carregado. Pronto.");
   </script>
 </body>
 </html>
