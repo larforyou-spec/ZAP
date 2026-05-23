@@ -345,6 +345,13 @@
     /* Password Toggle */
     .password-wrapper { position: relative; }
     .password-toggle { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #0f0; cursor: pointer; font-size: 18px; padding: 0; }
+
+    /* Modal */
+    .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+    .modal.hidden { display: none; }
+    .modal-content { background: #181818; padding: 30px; border-radius: 12px; border: 1px solid #333; max-width: 500px; width: 90%; }
+    .modal-content h2 { margin-top: 0; color: #0f0; }
+    .modal-content select { background: #222; border: 1px solid #333; color: #fff; padding: 10px; border-radius: 8px; width: 100%; }
   </style>
 </head>
 <body>
@@ -554,6 +561,7 @@
       <div class="dashboard-grid">
         <div class="item-module"><h3>🛒 Comprar Packs</h3> <div id="buy-packages-list" class="item-list"></div> <button id="btn-buy-package" class="btn" disabled>COMPRAR</button></div>
         <div class="item-module"><h3>📦 Packs Ativos</h3><div id="active-packages-list" class="item-list"></div></div>
+        <div class="item-module"><h3>🎁 Gestão de Prémios/Descontos</h3><div id="rewards-list" class="item-list"></div><button class="btn" onclick="openRewardModal()">+ Adicionar Prémio/Desconto</button></div>
       </div>
     </div>
 
@@ -633,6 +641,33 @@
 
     <button class="btn btn-dark" onclick="goTo('landing')" id="bo-back-btn">VOLTAR</button>
   </section>
+
+  <!-- MODAL DE PRÉMIOS/DESCONTOS -->
+  <div id="reward-modal" class="modal hidden">
+    <div class="modal-content">
+      <h2>🎁 Configurar Prémio/Desconto</h2>
+      <div class="form-group"><label for="reward-type">Tipo</label>
+        <select id="reward-type">
+          <option value="discount">Desconto (%)</option>
+          <option value="fixed">Valor Fixo (€)</option>
+          <option value="product">Produto/Prémio</option>
+          <option value="service">Serviço</option>
+        </select>
+      </div>
+      <div class="form-group"><label for="reward-value">Valor</label><input type="text" id="reward-value" placeholder="Ex: 10% ou 5€ ou Descrição do prémio"></div>
+      <div class="form-group"><label for="reward-package">Pacote (opcional)</label>
+        <select id="reward-package">
+          <option value="">Todos os pacotes</option>
+        </select>
+      </div>
+      <div class="form-group"><label for="reward-flags">Flags necessárias (opcional)</label><input type="number" id="reward-flags" placeholder="Ex: 20"></div>
+      <div class="form-group"><label for="reward-expiry">Validade (dias)</label><input type="number" id="reward-expiry" value="30"></div>
+      <div class="btn-row">
+        <button class="btn" onclick="saveReward()">GUARDAR</button>
+        <button class="btn btn-danger" onclick="closeRewardModal()">CANCELAR</button>
+      </div>
+    </div>
+  </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
@@ -1712,21 +1747,39 @@
     }
 
     function generateQR() {
-      const qrCode = 'ZAP-' + Math.random().toString(36).slice(2, 8).toUpperCase();
+      // QR code com proteção contra fotos de celular
+      const timestamp = Date.now();
+      const randomPart = Math.random().toString(36).slice(2, 8).toUpperCase();
+      const qrCode = 'ZAP-' + randomPart + '-' + timestamp;
+
       const qr = {
         code: qrCode,
         prName: 'ZAP FLAGS',
         rewardText: '5% de desconto',
-        createdAt: Date.now(),
-        expiresAt: Date.now() + 15 * 24 * 60 * 60 * 1000, // 15 days
-        status: 'active'
+        createdAt: timestamp,
+        expiresAt: timestamp + 15 * 24 * 60 * 60 * 1000, // 15 days
+        status: 'active',
+        // Proteção: timestamp de validação e dispositivo
+        validationAttempts: 0,
+        lastValidationAt: null,
+        deviceId: generateDeviceId()
       };
-      
+
       if(!STATE.currentPlayer.qrs) STATE.currentPlayer.qrs = [];
       STATE.currentPlayer.qrs.push(qr);
       saveState();
-      
-      alert('🎉 Ganhaste um cupão QR! Vê nos teus cupões.');
+
+      alert('🎉 Ganhaste um cupão QR! Vê nos teus cupões.\n\n⚠️ O QR tem proteção contra fotos de celular e só pode ser validado uma vez.');
+    }
+
+    function generateDeviceId() {
+      // Gerar ID único do dispositivo para proteção
+      let deviceId = localStorage.getItem('zap_device_id');
+      if(!deviceId) {
+        deviceId = 'DEV-' + Math.random().toString(36).slice(2, 15) + '-' + Date.now().toString(36);
+        localStorage.setItem('zap_device_id', deviceId);
+      }
+      return deviceId;
     }
 
     function expireOldQrs() {
@@ -1772,7 +1825,7 @@
     function initPRDashboard() {
       if(!STATE.currentCompany) return goTo('auth-screen', 'company');
       document.getElementById('pr-name-ui').textContent = `PAINEL - ${STATE.currentCompany.name}`;
-      
+
       const PKGS = [
         {n:"Gratuito",p:0,f:1000,radius:0.5,days:30,bingos:0,free:true},
         {n:"Básico",p:15,f:5000,radius:5,days:60,bingos:5},
@@ -1783,7 +1836,11 @@
       document.getElementById('buy-packages-list').innerHTML = PKGS.map(p =>
         `<div class="package-item" data-name="${p.n}"><strong>${p.n} - ${p.p === 0 ? 'GRÁTIS' : p.p + '€'}</strong><p>🚩 ${p.f.toLocaleString()} · 📍 ${p.radius === Infinity ? 'Ilimitado' : p.radius + 'km'} · 📅 ${p.days} dias · 🎱 ${p.bingos} bingos</p></div>`
       ).join('');
-      
+
+      // Preencher select de pacotes no modal
+      const packageSelect = document.getElementById('reward-package');
+      packageSelect.innerHTML = '<option value="">Todos os pacotes</option>' + PKGS.map(p => `<option value="${p.n}">${p.n}</option>`).join('');
+
       document.querySelectorAll('#buy-packages-list .package-item').forEach(i => {
         i.addEventListener('click', () => {
           document.querySelectorAll('#buy-packages-list .package-item').forEach(el => el.classList.remove('selected'));
@@ -1791,11 +1848,12 @@
           document.getElementById('btn-buy-package').disabled = false;
         });
       });
-      
+
       renderActivePackages();
       renderLotes();
       renderBingos();
       renderQRHistory();
+      renderRewards();
       updatePRStats();
       
       document.getElementById('btn-buy-package').onclick = () => {
@@ -1889,9 +1947,141 @@
         ? STATE.currentCompany.packages.map(p => {
             const expiresDate = p.expiresAt ? new Date(p.expiresAt).toLocaleDateString() : 'N/A';
             const radiusText = p.radius === Infinity ? 'Ilimitado' : p.radius + 'km';
-            return `<div class="package-item"><strong>${p.n}</strong><p>🚩 Restantes: ${(p.flagsLeft||p.flagsInitial||p.f).toLocaleString()} / ${(p.flagsInitial||p.f).toLocaleString()}</p><p>📍 Raio: ${radiusText} · 📅 Expira: ${expiresDate} · QR: ${p.qrExpiryDays} dias</p></div>`;
+            const activeStatus = p.active ? '<span class="ok">Ativo</span>' : '<span class="danger">Inativo</span>';
+            return `<div class="package-item" data-package-id="${p.id}">
+              <strong>${p.n}</strong>
+              <p>🚩 Restantes: ${(p.flagsLeft||p.flagsInitial||p.f).toLocaleString()} / ${(p.flagsInitial||p.f).toLocaleString()}</p>
+              <p>📍 Raio: ${radiusText} · 📅 Expira: ${expiresDate} · QR: ${p.qrExpiryDays} dias</p>
+              <p>Estado: ${activeStatus} ${p.prize ? '· 🎁 Prémio: ' + p.prize : ''}</p>
+              <div class="btn-row">
+                <button class="btn-small btn-dark" onclick="goBackFromPackage()">↩ Voltar</button>
+                <button class="btn-small" onclick="togglePackageActivation('${p.id}')">${p.active ? '⏸ Desativar' : '▶ Ativar'}</button>
+                <button class="btn-small" onclick="savePackageSettings('${p.id}')">💾 Guardar</button>
+                <button class="btn-small btn-dark" onclick="selectBatchesForPackage('${p.id}')">📦 Selecionar Lotes</button>
+                <button class="btn-small" onclick="openPrizeModal('${p.id}')">🎁 Definir Prémio</button>
+              </div>
+            </div>`;
           }).join('')
         : '<p>Nenhum.</p>';
+    }
+
+    function goBackFromPackage() {
+      switchPRTab('dashboard');
+    }
+
+    function togglePackageActivation(packageId) {
+      const pkg = STATE.currentCompany.packages.find(p => p.id === packageId);
+      if(!pkg) return;
+      pkg.active = !pkg.active;
+      saveState();
+      renderActivePackages();
+    }
+
+    function savePackageSettings(packageId) {
+      const pkg = STATE.currentCompany.packages.find(p => p.id === packageId);
+      if(!pkg) return;
+      saveState();
+      alert('✓ Definições do pacote guardadas!');
+    }
+
+    function selectBatchesForPackage(packageId) {
+      const pkg = STATE.currentCompany.packages.find(p => p.id === packageId);
+      if(!pkg) return;
+      
+      if(!STATE.currentCompany.lotes || STATE.currentCompany.lotes.length === 0) {
+        alert('Não há lotes disponíveis. Cria lotes primeiro na aba "Lotes".');
+        return;
+      }
+      
+      const lotesList = STATE.currentCompany.lotes.map((l, idx) => 
+        `<label style="display:block;margin:8px 0;">
+          <input type="checkbox" value="${l.id}" ${pkg.selectedLotes && pkg.selectedLotes.includes(l.id) ? 'checked' : ''}>
+          ${l.name} - ${l.flags.toLocaleString()} flags
+        </label>`
+      ).join('');
+      
+      const modalHtml = `
+        <div id="batch-selection-modal" class="modal" style="display:flex;">
+          <div class="modal-content">
+            <h2>📦 Selecionar Lotes para ${pkg.n}</h2>
+            <div style="max-height:300px;overflow-y:auto;margin:15px 0;">
+              ${lotesList}
+            </div>
+            <div class="btn-row">
+              <button class="btn" onclick="confirmBatchSelection('${packageId}')">✓ Confirmar</button>
+              <button class="btn btn-danger" onclick="closeBatchSelectionModal()">✕ Cancelar</button>
+            </div>
+          </div>
+        </div>
+      `;
+      
+      document.body.insertAdjacentHTML('beforeend', modalHtml);
+    }
+
+    function confirmBatchSelection(packageId) {
+      const pkg = STATE.currentCompany.packages.find(p => p.id === packageId);
+      if(!pkg) return;
+      
+      const checkboxes = document.querySelectorAll('#batch-selection-modal input[type="checkbox"]:checked');
+      pkg.selectedLotes = Array.from(checkboxes).map(cb => cb.value);
+      
+      saveState();
+      closeBatchSelectionModal();
+      renderActivePackages();
+      alert(`✓ ${pkg.selectedLotes.length} lote(s) selecionado(s) para o pacote!`);
+    }
+
+    function closeBatchSelectionModal() {
+      const modal = document.getElementById('batch-selection-modal');
+      if(modal) modal.remove();
+    }
+
+    function openPrizeModal(packageId) {
+      const pkg = STATE.currentCompany.packages.find(p => p.id === packageId);
+      if(!pkg) return;
+      
+      const modalHtml = `
+        <div id="prize-modal" class="modal" style="display:flex;">
+          <div class="modal-content">
+            <h2>🎁 Definir Prémio para ${pkg.n}</h2>
+            <div class="form-group">
+              <label>Prémio Oferecido</label>
+              <input type="text" id="prize-input" placeholder="Ex: 10% de desconto, Produto X, 5€, etc." value="${pkg.prize || ''}">
+            </div>
+            <div class="form-group">
+              <label>Descrição Detalhada (opcional)</label>
+              <input type="text" id="prize-description" placeholder="Detalhes do prémio" value="${pkg.prizeDescription || ''}">
+            </div>
+            <div class="btn-row">
+              <button class="btn" onclick="savePrize('${packageId}')">✓ Guardar Prémio</button>
+              <button class="btn btn-danger" onclick="closePrizeModal()">✕ Cancelar</button>
+            </div>
+          </div>
+        </div>
+      `;
+      
+      document.body.insertAdjacentHTML('beforeend', modalHtml);
+    }
+
+    function savePrize(packageId) {
+      const pkg = STATE.currentCompany.packages.find(p => p.id === packageId);
+      if(!pkg) return;
+      
+      const prizeInput = document.getElementById('prize-input').value;
+      const prizeDescription = document.getElementById('prize-description').value;
+      
+      pkg.prize = prizeInput;
+      pkg.prizeDescription = prizeDescription;
+      
+      saveState();
+      closePrizeModal();
+      renderActivePackages();
+      alert('✓ Prémio definido com sucesso!');
+    }
+
+    function closePrizeModal() {
+      const modal = document.getElementById('prize-modal');
+      if(modal) modal.remove();
     }
 
     function getPackageTotals(company) {
@@ -2172,6 +2362,31 @@
       const input = document.getElementById('qr-validation-input');
       if(!input.value) {
         document.getElementById('validation-msg').innerHTML = '<span class="danger">Insere um código QR.</span>';
+        return;
+      }
+
+      // Verificar proteção contra fotos de celular
+      const qrCode = input.value;
+      const qrParts = qrCode.split('-');
+      if(qrParts.length < 3 || qrParts[0] !== 'ZAP') {
+        document.getElementById('validation-msg').innerHTML = '<span class="danger">Código QR inválido.</span>';
+        return;
+      }
+
+      const timestamp = parseInt(qrParts[2]);
+      const now = Date.now();
+      const timeDiff = now - timestamp;
+
+      // Verificar se o QR é muito antigo (possível foto)
+      if(timeDiff > 60000) { // 1 minuto
+        document.getElementById('validation-msg').innerHTML = '<span class="danger">⚠️ QR expirado. O QR tem proteção contra fotos de celular.</span>';
+        return;
+      }
+
+      // Verificar se o QR já foi validado recentemente
+      const recentValidation = STATE.currentCompany.qrHistory.find(q => q.code === qrCode && (now - new Date(q.validatedAt).getTime()) < 60000);
+      if(recentValidation) {
+        document.getElementById('validation-msg').innerHTML = '<span class="danger">⚠️ Este QR já foi validado recentemente. Proteção contra fotos de celular.</span>';
         return;
       }
 
