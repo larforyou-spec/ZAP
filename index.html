@@ -2678,10 +2678,29 @@ Estado: Pago
 ═══════════════════════════════════════════════════════════════
       `;
 
-      const printWindow = window.open('', '_blank');
-      printWindow.document.write('<pre>' + invoiceContent + '</pre>');
-      printWindow.document.close();
-      printWindow.print();
+      // Usar data URL para evitar erro de segurança com file://
+      const printContent = `
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Fatura ${invoice.id}</title>
+  <style>
+    body { font-family: monospace; white-space: pre; padding: 20px; }
+    @media print { body { padding: 0; } }
+  </style>
+</head>
+<body>${invoiceContent}</body>
+</html>
+      `;
+      
+      const printWindow = window.open('data:text/html;charset=utf-8,' + encodeURIComponent(printContent), '_blank');
+      if(printWindow) {
+        printWindow.onload = function() {
+          printWindow.print();
+        };
+      } else {
+        alert('Não foi possível abrir a janela de impressão. O navegador bloqueou a janela pop-up.');
+      }
     }
 
     console.log("✅ ZAP FLAGS v3.0 Carregado. Pronto.");
