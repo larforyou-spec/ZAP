@@ -1,2557 +1,1083 @@
 <!DOCTYPE html>
 <html lang="pt">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>ZAP FLAGS</title>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" onerror="console.error('Erro ao carregar Leaflet CSS')" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" onerror="console.error('Erro ao carregar Font Awesome')" />
-  <style>
-    * { box-sizing: border-box; }
-    body { font-family: Arial, sans-serif; background: #000; color: #0f0; overflow: hidden; }
-    
-    .hidden { display: none !important; }
-
-    .screen { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #000; z-index: 10; }
-    .screen.active { display: flex !important; }
-    #landing, #auth-screen, #backoffice { flex-direction: column; justify-content: center; align-items: center; padding: 20px; }
-    #game-screen, #pr-screen { flex-direction: column; padding: 0; overflow: hidden; align-items: center; }
-    #pr-screen, #backoffice { justify-content: flex-start; padding-top: 20px; overflow-y: auto; }
-
-    .watermark { position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%) rotate(-45deg); font-size: clamp(2rem, 8vw, 5rem); font-weight: 900; color: rgba(0,255,0,0.12); pointer-events: none; z-index: 0; }
-
-    /* Login Screen Gradient */
-    #auth-screen {
-      background:
-        radial-gradient(circle at 20% 20%, rgba(0,255,0,.12), transparent 25%),
-        radial-gradient(circle at 80% 30%, rgba(0,255,255,.08), transparent 25%),
-        linear-gradient(180deg, #000, #051005);
-    }
-    
-    h1 { margin-bottom: 10px; text-shadow: 0 0 8px #0f0; } .sub { color: #a7fca7; margin-bottom: 20px; text-align: center; }
-    .btn { background: #0f0; color: #000; border: none; padding: 12px 20px; border-radius: 10px; font-weight: 800; cursor: pointer; margin: 8px; min-width: 120px; }
-    .btn:disabled { opacity:0.5; } .btn-dark { background: #181818; color: #0f0; border: 1px solid #0f0; } .btn-danger { background: #8b0000; color: #fff; }
-    .btn-row { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; width:100%; max-width: 400px; }
-    .form-group { margin: 12px 0; text-align: left; width: 100%; max-width: 320px; }
-    input, select { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #0f0; background: #101010; color: #0f0; margin-bottom: 8px; }
-    .msg { min-height: 20px; margin-top: 8px; font-size: 12px; } .ok { color: #8fff8f; } .danger { color: #ff8686; }
-
-    /* Password Toggle */
-    .password-wrapper { position: relative; }
-    .password-toggle { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #0f0; cursor: pointer; font-size: 18px; padding: 0; }
-    
-    #top-bar { position: fixed; top: 0; left: 0; right: 0; z-index: 100; background: rgba(0,0,0,0.9); border-bottom: 1px solid #0f0; padding: 10px 15px; display: flex; justify-content: space-between; font-weight: bold; }
-    #map { flex: 1; width: 100%; height: 100%; z-index: 1; }
-    
-    /* Joystick */
-    #joystick-container { position: fixed; bottom: 30px; left: 30px; width: 120px; height: 120px; z-index: 200; }
-    #joystick-base { width: 100%; height: 100%; background: rgba(0,255,0,0.2); border: 2px solid #0f0; border-radius: 50%; position: relative; }
-    #joystick-stick { width: 50px; height: 50px; background: #0f0; border-radius: 50%; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); cursor: pointer; }
-
-    /* D-Pad 8 direções */
-    #dpad-container {
-      position: fixed;
-      bottom: 30px;
-      left: 30px;
-      z-index: 200;
-      display: grid;
-      grid-template-columns: 50px 50px 50px;
-      grid-template-rows: 50px 50px 50px;
-      gap: 5px;
-    }
-    .dpad-btn {
-      background: rgba(0,255,0,0.2);
-      border: 2px solid #0f0;
-      color: #0f0;
-      font-size: 1.2rem;
-      border-radius: 8px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .dpad-btn:hover { background: rgba(0,255,0,0.4); }
-    .dpad-center { background: #0f0; color: #000; }
-
-    /* Fog Overlay */
-    #fog-overlay {
-      position: absolute;
-      inset: 0;
-      pointer-events: none;
-      z-index: 450;
-      --fog-x: 50%;
-      --fog-y: 50%;
-      --fog-r: 90px;
-      background:
-        radial-gradient(
-          circle var(--fog-r) at var(--fog-x) var(--fog-y),
-          rgba(0,0,0,0) 0%,
-          rgba(0,0,0,0) 60%,
-          rgba(0,30,90,0.60) 78%,
-          rgba(0,30,90,0.86) 100%
-        );
-    }
-
-    /* Offline Controls Arrastáveis */
-    #dpad-container {
-      position: fixed;
-      bottom: 30px;
-      left: 30px;
-      z-index: 200;
-      display: grid;
-      grid-template-columns: 50px 50px 50px;
-      grid-template-rows: 50px 50px 50px;
-      gap: 5px;
-      background: rgba(0,0,0,0.88);
-      border: 1px solid #0f0;
-      border-radius: 12px;
-      padding: 8px;
-      touch-action: none;
-      user-select: none;
-    }
-    .dpad-drag-handle {
-      font-size: 14px;
-      color: #bfffbf;
-      margin-bottom: 4px;
-      padding: 2px;
-      border-bottom: 1px solid rgba(0,255,0,0.25);
-      cursor: grab;
-      grid-column: 1 / -1;
-      text-align: center;
-    }
-    .dpad-drag-handle:active {
-      cursor: grabbing;
-    }
-    .dpad-size-row {
-      display: flex;
-      justify-content: center;
-      gap: 4px;
-      margin-top: 4px;
-      margin-bottom: 4px;
-      grid-column: 1 / -1;
-    }
-    
-    /* Flag Marker */
-    .flag-marker { background: #ff0; border: 2px solid #000; border-radius: 50%; width: 20px; height: 20px; }
-    
-    /* Player Marker */
-    .player-marker {
-      width: 28px;
-      height: 28px;
-      border-radius: 50%;
-      background: linear-gradient(135deg,#00f0ff,#0066ff);
-      border: 3px solid #fff;
-      box-shadow: 0 0 10px rgba(0,255,255,.55);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: white;
-      font-size: 12px;
-      font-weight: 900;
-      overflow: hidden;
-    }
-    .player-marker img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      border-radius: 50%;
-    }
-    
-    .dashboard-grid { display: grid; grid-template-columns: 1fr; gap: 20px; width: 100%; max-width: 800px; padding: 20px; }
-    .item-module { background: rgba(0,25,0,0.16); border: 1px solid #0f0; border-radius: 10px; padding: 15px; } .item-module h3 { margin-bottom: 10px; }
-    .item-list { max-height: 200px; overflow-y: auto; margin-bottom: 10px; }
-    .package-item { background: #111; padding: 10px; border-radius: 8px; margin-bottom: 8px; border: 1px solid #333; cursor: pointer; }
-    .package-item.selected { border-color: #fff; } .package-item p { font-size: 13px; color: #a7fca7; margin-top: 5px; }
-    .admin-table { width:100%; border-collapse:collapse; table-layout: fixed; } .admin-table td, .admin-table th { border:1px solid #0f0; padding:6px; font-size:12px; }
-
-    /* Melhorias de UI do código avançado */
-    button:hover:not(:disabled) {
-      opacity: 0.9;
-    }
-
-    .btn-small {
-      padding: 6px 10px;
-      font-size: 12px;
-    }
-
-    input:focus, select:focus {
-      outline: 2px solid #00ff66;
-    }
-
-    .warning { color: #ffb347; font-weight: bold; }
-
-    /* Modal */
-    .modal {
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      z-index: 3000;
-      width: 92%;
-      max-width: 480px;
-      background: #000;
-      border: 3px solid #0f0;
-      border-radius: 14px;
-      padding: 16px;
-      box-shadow: 0 0 25px rgba(0,255,0,.22);
-      max-height: 90vh;
-      overflow-y: auto;
-    }
-
-    /* Energy Bar */
-    .energy-bar {
-      width: 100%;
-      height: 8px;
-      background: #222;
-      border-radius: 999px;
-      overflow: hidden;
-      border: 1px solid rgba(0,255,0,.35);
-    }
-
-    #energy-fill {
-      height: 100%;
-      width: 100%;
-      background: linear-gradient(90deg,#008f1f,#00ff66);
-      transition: width 0.3s;
-    }
-
-    /* Floating Buttons */
-    #floating-buttons {
-      position: fixed;
-      right: 10px;
-      bottom: 90px;
-      z-index: 1100;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-
-    .float-btn {
-      width: 46px;
-      height: 46px;
-      border-radius: 50%;
-      padding: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 18px;
-      box-shadow: 0 0 10px rgba(0,255,0,.15);
-    }
-
-    /* Side Panel */
-    #side-panel {
-      position: fixed;
-      left: 8px;
-      right: 8px;
-      bottom: 8px;
-      z-index: 2500;
-      background: rgba(0,0,0,.92);
-      border: 2px solid #0f0;
-      border-radius: 14px;
-      padding: 12px;
-      max-height: 36vh;
-      overflow-y: auto;
-    }
-
-    .panel-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 8px;
-      gap: 10px;
-    }
-
-    .panel-header h2 {
-      margin: 0;
-      font-size: 16px;
-    }
-
-    .badge {
-      display: inline-block;
-      padding: 4px 8px;
-      font-size: 12px;
-      font-weight: bold;
-      border-radius: 999px;
-      margin-right: 4px;
-      margin-top: 5px;
-      background: #033;
-      color: #fff;
-    }
-
-    .badge-gold {
-      background: #a67c00;
-    }
-
-    /* QR Code */
-    .qr-code {
-      display: inline-block;
-      margin-top: 8px;
-      padding: 8px;
-      border-radius: 10px;
-      border: 1px solid #0f0;
-      background: #111;
-      font-family: monospace;
-      word-break: break-all;
-      color: #fff;
-      font-size: 14px;
-    }
-
-    /* Progress Bar */
-    .progress-bar {
-      width: 100%;
-      height: 6px;
-      background: #222;
-      border-radius: 999px;
-      overflow: hidden;
-      margin-top: 8px;
-    }
-
-    .progress-bar-fill {
-      height: 100%;
-      transition: width 0.3s;
-    }
-
-    /* Ticker de notícias */
-    #ticker {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      height: 30px;
-      background: rgba(0, 0, 0, 0.9);
-      color: #0f0;
-      display: flex;
-      align-items: center;
-      padding: 0 1rem;
-      font-size: 12px;
-      z-index: 900;
-      overflow: hidden;
-      white-space: nowrap;
-      border-top: 1px solid #0f0;
-    }
-
-    /* Auth Tabs */
-    .auth-tabs { display: flex; gap: 10px; margin-bottom: 20px; }
-    .auth-tab { padding: 10px 20px; background: #181818; border: 1px solid #333; cursor: pointer; border-radius: 8px; }
-    .auth-tab.active { border-color: #0f0; background: rgba(0,255,0,0.1); }
-    .auth-form { display: none; } .auth-form.active { display: block; }
-
-    /* PR Tabs */
-    .pr-tabs { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; justify-content: center; }
-    .pr-tab { padding: 10px 15px; background: #181818; border: 1px solid #333; cursor: pointer; border-radius: 8px; font-size: 14px; }
-    .pr-tab.active { border-color: #0f0; background: rgba(0,255,0,0.1); }
-    .pr-content { display: none; } .pr-content.active { display: block; }
-
-    /* Password Toggle */
-    .password-wrapper { position: relative; }
-    .password-toggle { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #0f0; cursor: pointer; font-size: 18px; padding: 0; }
-
-    /* Modal */
-    .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 1000; }
-    .modal.hidden { display: none; }
-    .modal-content { background: #181818; padding: 30px; border-radius: 12px; border: 1px solid #333; max-width: 500px; width: 90%; }
-    .modal-content h2 { margin-top: 0; color: #0f0; }
-    .modal-content select { background: #222; border: 1px solid #333; color: #fff; padding: 10px; border-radius: 8px; width: 100%; }
-  </style>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
+<title>ZAP FLAGS | Larforyou®</title>
+<meta name="theme-color" content="#000"/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;overflow:hidden;font-family:'Segoe UI',Roboto,Arial,sans-serif;background:#000;color:#fff;user-select:none;-webkit-user-select:none}
+.pag{display:none;min-height:100vh;overflow-y:auto}.pag.ativa{display:block}
+.cx{max-width:480px;margin:0 auto;padding:20px}
+button{cursor:pointer;transition:.15s;border:none;border-radius:8px;font-weight:700;font-size:14px;padding:10px 14px}
+button:active{transform:scale(.94)}
+.bb{display:block;width:100%;margin:5px 0;text-align:center}
+.bv{background:#4CAF50;color:#fff}.bv:hover{background:#66BB6A}
+.bc{background:#1a1a1a;color:#4CAF50;border:1px solid #4CAF50}
+.bo{background:linear-gradient(135deg,#f90,#fc0);color:#000;font-weight:800}
+.bvol{background:#111;color:#999;border:1px solid #333}
+.bsair{background:#200;color:#f66;border:1px solid #a00;font-size:12px;padding:6px 10px}
+.bbo{background:linear-gradient(135deg,#004,#008);color:#0ff;border:1px solid #0ff}
+input,select{width:100%;padding:12px 14px;margin-bottom:10px;border-radius:8px;border:1px solid rgba(76,175,80,.4);background:rgba(0,0,0,.5);color:#fff;font-size:14px;outline:none}
+input::placeholder{color:rgba(255,255,255,.3)}input:focus{border-color:#81c784;box-shadow:0 0 8px rgba(76,175,80,.3)}
+select option{background:#111}
+.lbl{font-size:12px;color:#81c784;display:block;margin:8px 0 3px}.lbl em{color:#f44;font-style:normal}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:0 10px}
+.pw-wrap{position:relative}.pw-wrap input{padding-right:44px;margin:0}
+.pw-toggle{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:14px;color:#555;padding:3px}
+.msg{padding:10px;margin:6px 0;border-radius:6px;display:none;font-size:12px}
+.msg.e{background:#200;border:1px solid #f44;color:#f66;display:block}
+.msg.s{background:#020;border:1px solid #4CAF50;color:#81c784;display:block}
+.aj{background:rgba(0,30,0,.4);border:1px solid #4CAF50;border-radius:12px;padding:16px;margin:8px 0}.aj h3{color:#4CAF50;margin-bottom:10px;font-size:14px}
+.apr{background:rgba(30,20,0,.4);border:1px solid #f90;border-radius:12px;padding:16px;margin:8px 0}.apr h3{color:#f90;margin-bottom:10px;font-size:14px}
+.abo{background:linear-gradient(135deg,rgba(0,5,20,.6),rgba(0,15,40,.4));border:1px solid #0ff;border-radius:12px;padding:16px;margin:8px 0;position:relative;overflow:hidden}
+.abo::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#0ff,transparent);animation:scan 3s linear infinite}
+@keyframes scan{from{transform:translateX(-100%)}to{transform:translateX(100%)}}
+.abo h3{color:#0ff;margin-bottom:10px;font-size:14px}
+.badge-bo{background:#0ff;color:#000;padding:2px 7px;border-radius:9px;font-size:10px;font-weight:700;margin-left:5px}
+.sess-bar{border-radius:10px;padding:12px;margin:8px 0;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.sess-j{background:rgba(0,30,0,.5);border:1px solid #4CAF50}.sess-pr{background:rgba(30,20,0,.5);border:1px solid #f90}
+.ucard{border-radius:12px;padding:18px;margin-bottom:14px;text-align:center}
+.ucard-j{border:1px solid #4CAF50;background:linear-gradient(135deg,rgba(0,40,0,.4),rgba(0,15,0,.3));box-shadow:0 0 18px rgba(76,175,80,.1)}
+.ucard-pr{border:1px solid #f90;background:linear-gradient(135deg,rgba(40,25,0,.4),rgba(15,10,0,.3))}
+.uavt{width:78px;height:78px;border-radius:50%;margin:0 auto 11px;display:flex;align-items:center;justify-content:center;font-size:28px;position:relative}
+.uavt-j{background:rgba(0,40,0,.5);border:3px solid #4CAF50;box-shadow:0 0 14px rgba(76,175,80,.3)}
+.uavt-pr{background:rgba(40,25,0,.5);border:3px solid #f90}
+.udot{position:absolute;bottom:3px;right:3px;width:15px;height:15px;border-radius:50%;border:2px solid #000;animation:pulse 2s ease-in-out infinite}
+.udot-j{background:#4CAF50}.udot-pr{background:#f90}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.u-nome{font-size:18px;font-weight:700;margin-bottom:3px}.u-sub{font-size:11px;color:#888;margin-bottom:12px}
+.u-stats{display:flex;justify-content:center;gap:16px}.u-stat-n{font-size:14px;font-weight:700}.u-stat-l{font-size:10px;color:#666;margin-top:1px}
+.ckl{display:flex;align-items:center;gap:8px;font-size:12px;color:#aaa;cursor:pointer;margin:6px 0}
+.ckl input[type=checkbox]{width:16px;height:16px;accent-color:#4CAF50;cursor:pointer;flex-shrink:0}
+.sep{display:flex;align-items:center;gap:8px;margin:12px 0}.sep-l{flex:1;border-top:1px solid #222}.sep-t{color:#444;font-size:11px;white-space:nowrap}
+.lnk{color:#0ff;cursor:pointer;text-decoration:underline;font-size:13px}
+.fbar{height:4px;border-radius:2px;margin-top:4px;transition:.3s;background:#333;width:0%}.ftxt{font-size:10px;color:#666}
+.card{background:rgba(255,255,255,.03);border:1px solid #222;border-radius:8px;padding:12px;margin:7px 0}
+.card-b{border-color:#0ff}.card-y{border-color:#f90}.card-v{border-color:#4CAF50}
+.item{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:12px;margin-bottom:8px;font-size:13px;line-height:1.5;color:#ccc}
+.row{padding:5px 0;border-bottom:1px solid #111;font-size:13px;display:flex;justify-content:space-between;gap:8px}.row:last-child{border-bottom:none}
+.rl{color:#888;font-size:11px;white-space:nowrap;flex-shrink:0}.rv{text-align:right;word-break:break-word}
+.scroll{max-height:65vh;overflow-y:auto}
+#mapa{position:fixed;inset:0;z-index:1}.leaflet-container{background:#0a0a0a}
+#avt-cx{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:500;pointer-events:none}
+#circ-vis{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);border-radius:50%;border:3px solid rgba(76,175,80,.6);pointer-events:none;box-shadow:0 0 0 3000px rgba(0,0,0,.76),0 0 20px rgba(76,175,80,.3);transition:width .6s,height .6s;width:120px;height:120px}
+#circ-alc{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);border-radius:50%;border:2px dashed #ff0;pointer-events:none;display:none;animation:gir 3s linear infinite}
+@keyframes gir{from{transform:translate(-50%,-50%) rotate(0)}to{transform:translate(-50%,-50%) rotate(360deg)}}
+#aviso-ap{position:absolute;left:50%;top:calc(50% - 78px);transform:translateX(-50%);background:rgba(76,175,80,.95);color:#000;font-weight:700;font-size:13px;padding:5px 14px;border-radius:20px;display:none;z-index:502;cursor:pointer;white-space:nowrap;pointer-events:all;animation:bounce .3s ease-in-out infinite alternate}
+@keyframes bounce{from{transform:translateX(-50%) translateY(0)}to{transform:translateX(-50%) translateY(-4px)}}
+#avt-svg{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:52px;height:66px;z-index:501;filter:drop-shadow(0 0 10px rgba(76,175,80,.5))}
+#hud-j{position:fixed;top:0;left:0;right:0;z-index:2000;background:rgba(0,0,0,.88);backdrop-filter:blur(6px);border-bottom:1px solid rgba(76,175,80,.3);padding:8px 12px;display:flex;justify-content:space-between;align-items:center}
+.hn{font-size:10px;color:#aaa;text-align:center}.hv{font-size:13px;color:#0ff;font-weight:700;display:block}
+#pan-sk{position:fixed;left:8px;top:54px;z-index:2000;background:rgba(0,0,0,.92);border:1px solid rgba(76,175,80,.3);border-radius:8px;padding:8px;font-size:11px;min-width:110px}
+.psk{display:flex;justify-content:space-between;padding:2px 0;border-bottom:1px solid #111}.psk:last-child{border-bottom:none}
+.pskl{color:#888}.pskv{color:#0ff;font-weight:700}
+#bsk{height:5px;background:#222;border-radius:3px;overflow:hidden;margin-top:3px;border:1px solid rgba(76,175,80,.2)}
+#bskf{height:100%;background:linear-gradient(90deg,#4CAF50,#0ff);border-radius:3px;transition:width .4s}
+#bskt{font-size:9px;color:#555;text-align:center;margin-top:2px}
+#ctrl{position:fixed;z-index:2000;background:rgba(0,0,0,.9);border:2px solid rgba(76,175,80,.4);border-radius:12px;padding:9px;bottom:50px;right:10px;touch-action:none;cursor:move;box-shadow:0 0 12px rgba(76,175,80,.15)}
+#ctrl-g{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-bottom:5px}
+.cbtn{background:rgba(76,175,80,.08);border:1px solid rgba(76,175,80,.35);color:#fff;border-radius:50%;font-size:16px;font-weight:700;cursor:pointer;width:46px;height:46px;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent;touch-action:none;transition:.1s}
+.cbtn:active,.cbtn.on{background:#4CAF50;border-color:#81c784;color:#fff;box-shadow:0 0 8px #4CAF50}
+#ctrl-tam{display:flex;gap:4px;justify-content:center}
+.tbtn{background:#0a0a0a;border:1px solid #333;color:#888;border-radius:4px;font-size:10px;font-weight:700;cursor:pointer;padding:3px 8px}
+.tbtn:hover{background:#1a1a1a;border-color:#4CAF50;color:#4CAF50}
+.drag-handle{font-size:10px;color:rgba(76,175,80,.4);text-align:center;margin-bottom:4px;cursor:move;padding:2px}
+#aba-band{position:fixed;bottom:0;left:0;right:0;z-index:4000;background:rgba(5,10,5,.97);border-top:2px solid #4CAF50;border-radius:16px 16px 0 0;padding:16px 18px;transform:translateY(100%);transition:transform .33s ease;max-height:60vh;overflow-y:auto}
+#aba-band.aberta{transform:translateY(0)}
+.aba-fechar{position:absolute;top:11px;right:13px;background:#111;border:1px solid #555;color:#888;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px}
+.aba-fechar:hover{background:#300;border-color:#f00;color:#f00}
+#aba-qr{position:fixed;top:58px;left:50%;transform:translateX(-50%);z-index:4500;background:rgba(5,5,0,.97);border:2px solid #f90;border-radius:14px;padding:16px 18px;width:93%;max-width:380px;display:none;max-height:80vh;overflow-y:auto;box-shadow:0 0 28px rgba(255,150,0,.3)}
+#aba-qr.aberta{display:block;animation:popUp .33s ease}
+@keyframes popUp{from{transform:translateX(-50%) scale(.85);opacity:0}to{transform:translateX(-50%) scale(1);opacity:1}}
+#rodape{position:fixed;bottom:0;left:0;right:0;z-index:2000;background:rgba(0,0,0,.92);border-top:1px solid #f90;height:36px;overflow:hidden;display:flex;align-items:center}
+#ticker{display:inline-flex;gap:80px;white-space:nowrap;animation:rolar 28s linear infinite;padding-left:100vw}
+@keyframes rolar{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+.tick{color:#f90;font-size:11px;font-weight:700}.tick b{color:#0ff}
+#gps-txt{position:fixed;bottom:40px;left:50%;transform:translateX(-50%);z-index:2000;font-size:9px;color:#555;background:rgba(0,0,0,.8);border-radius:10px;padding:2px 10px;white-space:nowrap}
+#notif{position:fixed;top:62px;left:50%;transform:translateX(-50%);z-index:3000;background:rgba(0,0,0,.95);border:2px solid #0ff;border-radius:10px;padding:10px 18px;text-align:center;display:none;min-width:220px;pointer-events:none}
+.pr-header{background:rgba(15,10,0,.97);border-bottom:1px solid #f90;padding:8px 12px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:100}
+#conf-ovl{position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:9500;display:none}
+#conf-box{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#060606;border:2px solid #f44;border-radius:12px;padding:22px;z-index:9501;width:90%;max-width:360px;text-align:center;display:none}
+.watermark{position:fixed;bottom:38px;left:14px;font-size:17px;font-weight:900;color:rgba(255,255,255,.12);z-index:9999;pointer-events:none;letter-spacing:1px}
+.copyright{position:fixed;bottom:4px;width:100%;text-align:center;font-size:9px;color:rgba(255,255,255,.08);z-index:9999;pointer-events:none}
+</style>
 </head>
 <body>
-  <div class="watermark">LARFORYOU®</div>
+<div class="watermark">Larforyou®</div>
+<div class="copyright">© 2025 Larforyou® — Marca Registada</div>
 
-  <!-- LANDING -->
-  <section id="landing" class="screen active" role="main" aria-label="Tela inicial">
-    <h1>⚡ ZAP FLAGS</h1> <p class="sub">Bem-vindo!</p>
-    <div class="btn-row">
-      <button class="btn" onclick="goTo('auth-screen', 'player')" aria-label="Jogar como jogador">🎮 JOGAR</button>
-      <button class="btn btn-dark" onclick="goTo('auth-screen', 'company')" aria-label="Entrar como empresa">🏢 EMPRESA</button>
-      <button class="btn btn-dark" onclick="goTo('backoffice')" aria-label="Aceder ao backoffice">🔒 BACKOFFICE</button>
-    </div>
-  </section>
+<!-- INÍCIO -->
+<div id="p-inicio" class="pag ativa">
+<div class="cx" style="padding-top:22px;text-align:center">
+  <h1 style="font-size:30px;text-shadow:0 0 18px rgba(76,175,80,.5);letter-spacing:2px">🏴 ZAP FLAGS</h1>
+  <p style="color:#81c784;font-size:13px;margin-bottom:16px">Caça ao Tesouro Digital</p>
+  <div id="home-j" style="display:none"><div class="sess-bar sess-j"><div style="text-align:left"><div style="font-weight:700;font-size:14px;color:#4CAF50" id="home-j-nm">👤 —</div><div style="font-size:11px;color:#aaa;margin-top:2px" id="home-j-info">—</div></div><div style="display:flex;gap:5px"><button class="bv" style="padding:6px 12px;font-size:12px" onclick="reentrarJogo()">🎮 Jogar</button><button class="bsair" onclick="confirmarSair('j')">🚪</button></div></div></div>
+  <div id="home-pr" style="display:none"><div class="sess-bar sess-pr"><div style="text-align:left"><div style="font-weight:700;font-size:14px;color:#f90" id="home-pr-nm">🏪 —</div><div style="font-size:11px;color:#aaa;margin-top:2px" id="home-pr-info">—</div></div><div style="display:flex;gap:5px"><button class="bo" style="padding:6px 12px;font-size:12px" onclick="reentrarPR()">🏪 Painel</button><button class="bsair" onclick="confirmarSair('pr')">🚪</button></div></div></div>
+  <div class="aj"><h3>🎮 ÁREA DO JOGADOR</h3><button class="bv bb" onclick="ir('p-login-j')">▶ ENTRAR NO JOGO</button><button class="bc bb" onclick="ir('p-reg-j')">📝 CRIAR CONTA</button></div>
+  <div class="apr"><h3>🏪 ÁREA DO LOJISTA</h3><button class="bv bb" onclick="ir('p-login-pr')">▶ ENTRAR NA CONTA</button><button class="bo bb" onclick="ir('p-reg-pr')">📝 REGISTAR EMPRESA</button></div>
+  <div class="abo"><h3>🖥️ BACKOFFICE <span class="badge-bo">ADMIN</span></h3><button class="bbo bb" onclick="ir('p-bo-login')">🖥️ ACEDER</button></div>
+  <p style="color:#333;font-size:10px;margin-top:16px">v12.0 © 2025 ZAP FLAGS by Larforyou®</p>
+</div></div>
 
-  <!-- AUTH SCREEN -->
-  <section id="auth-screen" class="screen" role="main" aria-label="Tela de autenticação">
-    <h1>🔐 AUTENTICAÇÃO</h1>
-    <div class="auth-tabs" role="tablist" aria-label="Tipo de conta">
-      <div class="auth-tab active" onclick="switchAuthTab('player')" role="tab" aria-selected="true" aria-controls="auth-player">JOGADOR</div>
-      <div class="auth-tab" onclick="switchAuthTab('company')" role="tab" aria-selected="false" aria-controls="auth-company">EMPRESA</div>
-    </div>
-
-    <!-- Player Form -->
-    <div id="auth-player" class="auth-form active" role="tabpanel" aria-labelledby="auth-player">
-      <p class="sub">Entra ou regista como jogador</p>
-      <form id="form-player">
-        <div class="form-group"><label for="p-name">Nome completo</label><input type="text" id="p-name" required placeholder="Nome completo" aria-required="true"></div>
-        <div class="form-group"><label for="p-email">Email</label><input type="email" id="p-email" required placeholder="Email (ex: big1@test.com)" aria-required="true"></div>
-        <div class="form-group"><label for="p-phone">Telemóvel (opcional)</label><input type="tel" id="p-phone" placeholder="Telemóvel (opcional)"></div>
-        <div class="form-group password-wrapper">
-          <label for="p-pass">Senha</label>
-          <input type="password" id="p-pass" required placeholder="Senha (123456)" aria-required="true">
-          <button type="button" class="password-toggle" onclick="togglePassword('p-pass', this)" aria-label="Mostrar ou ocultar senha">👁️</button>
-        </div>
-        <div class="form-group">
-          <label for="p-avatar">Avatar</label>
-          <select id="p-avatar" required aria-required="true">
-            <option value="">Seleciona avatar *</option>
-            <option value="male">♂ Masculino</option>
-            <option value="female">♀ Feminino</option>
-            <option value="photo">📷 Foto personalizada</option>
-          </select>
-        </div>
-        <div class="form-group"><label for="p-photo">URL da foto (opcional)</label><input type="url" id="p-photo" placeholder="URL da foto (se escolheu foto)"></div>
-        <div class="form-group"><label for="p-address">Morada (opcional)</label><input type="text" id="p-address" placeholder="Morada (opcional)"></div>
-        <div class="form-group"><label for="p-locality">Localidade (opcional)</label><input type="text" id="p-locality" placeholder="Localidade (opcional)"></div>
-        <div class="form-group">
-          <label for="p-district">Distrito</label>
-          <select id="p-district" required aria-required="true">
-            <option value="">Seleciona distrito *</option>
-            <option value="Aveiro">Aveiro</option>
-            <option value="Beja">Beja</option>
-            <option value="Braga">Braga</option>
-            <option value="Bragança">Bragança</option>
-            <option value="Castelo Branco">Castelo Branco</option>
-            <option value="Coimbra">Coimbra</option>
-            <option value="Évora">Évora</option>
-            <option value="Faro">Faro</option>
-            <option value="Guarda">Guarda</option>
-            <option value="Leiria">Leiria</option>
-            <option value="Lisboa">Lisboa</option>
-            <option value="Portalegre">Portalegre</option>
-            <option value="Porto">Porto</option>
-            <option value="Santarém">Santarém</option>
-            <option value="Setúbal">Setúbal</option>
-            <option value="Viana do Castelo">Viana do Castelo</option>
-            <option value="Vila Real">Vila Real</option>
-            <option value="Viseu">Viseu</option>
-            <option value="Açores">Açores</option>
-            <option value="Madeira">Madeira</option>
-          </select>
-        </div>
-        <button type="submit" class="btn">ENTRAR / REGISTAR</button>
-      </form>
-      <div id="msg-player" class="msg" role="status" aria-live="polite"></div>
-      <div style="margin-top: 10px;">
-        <button class="btn-dark btn-small" onclick="showPasswordRecovery('player')" aria-label="Recuperar senha">🔑 Esqueci senha</button>
-      </div>
-    </div>
-
-    <!-- Company Form -->
-    <div id="auth-company" class="auth-form" role="tabpanel" aria-labelledby="auth-company">
-      <p class="sub">Entra ou regista como empresa</p>
-      <form id="form-company">
-        <div class="form-group"><label for="c-name">Nome da empresa</label><input type="text" id="c-name" required placeholder="Nome (ex: big 01)" aria-required="true"></div>
-        <div class="form-group"><label for="c-nif">NIF</label><input type="text" id="c-nif" maxlength="9" required placeholder="NIF (ex: 123456781)" aria-required="true"></div>
-        <div class="form-group"><label for="c-fiscal-address">Morada fiscal *</label><input type="text" id="c-fiscal-address" required placeholder="Morada fiscal completa" aria-required="true"></div>
-        <div class="form-group"><label for="c-fiscal-code">Código postal fiscal *</label><input type="text" id="c-fiscal-code" required placeholder="Código postal (ex: 1000-001)" aria-required="true"></div>
-        <div class="form-group"><label for="c-fiscal-city">Cidade fiscal *</label><input type="text" id="c-fiscal-city" required placeholder="Cidade" aria-required="true"></div>
-        <div class="form-group password-wrapper">
-          <label for="c-pass">Senha</label>
-          <input type="password" id="c-pass" required placeholder="Senha (123456)" aria-required="true">
-          <button type="button" class="password-toggle" onclick="togglePassword('c-pass', this)" aria-label="Mostrar ou ocultar senha">👁️</button>
-        </div>
-        <button type="submit" class="btn">ENTRAR / REGISTAR</button>
-      </form>
-      <div id="msg-company" class="msg" role="status" aria-live="polite"></div>
-      <div style="margin-top: 10px;">
-        <button class="btn-dark btn-small" onclick="showPasswordRecovery('company')" aria-label="Recuperar senha">🔑 Esqueci senha</button>
-      </div>
-    </div>
-
-    <button class="btn btn-dark" onclick="goTo('landing')">VOLTAR</button>
-  </section>
-
-  <!-- GAME SCREEN -->
-  <section id="game-screen" class="screen">
-    <div id="top-bar">
-      <div class="energy-bar">
-        <div id="energy-fill"></div>
-      </div>
-      <div id="top-bar-text">
-        <span id="energy-text">Energia: 100%</span>
-        <span id="mode-text">Modo: -</span>
-        <span id="flags-text">🚩 0</span>
-      </div>
-    </div>
-    <div id="map"></div>
-    <div id="fog-overlay"></div>
-    <div id="joystick-container">
-      <div id="joystick-base">
-        <div id="joystick-stick"></div>
-      </div>
-    </div>
-    <div id="dpad-container" class="hidden">
-      <div class="dpad-drag-handle">⋮⋮</div>
-      <div class="dpad-size-row">
-        <button class="btn-dark btn-small" onclick="resizeDPad(-10)">A-</button>
-        <button class="btn-dark btn-small" onclick="resizeDPad(10)">A+</button>
-      </div>
-      <button class="dpad-btn" data-dir="nw"><i class="fa-solid fa-arrow-up-left"></i></button>
-      <button class="dpad-btn" data-dir="n"><i class="fa-solid fa-arrow-up"></i></button>
-      <button class="dpad-btn" data-dir="ne"><i class="fa-solid fa-arrow-up-right"></i></button>
-      <button class="dpad-btn" data-dir="w"><i class="fa-solid fa-arrow-left"></i></button>
-      <button class="dpad-center" onclick="centerOnPlayer()"><i class="fa-solid fa-location-crosshairs"></i></button>
-      <button class="dpad-btn" data-dir="e"><i class="fa-solid fa-arrow-right"></i></button>
-      <button class="dpad-btn" data-dir="sw"><i class="fa-solid fa-arrow-down-left"></i></button>
-      <button class="dpad-btn" data-dir="s"><i class="fa-solid fa-arrow-down"></i></button>
-      <button class="dpad-btn" data-dir="se"><i class="fa-solid fa-arrow-down-right"></i></button>
-    </div>
-    <div id="floating-buttons">
-      <button class="float-btn btn-dark" onclick="openPanel('progress')" title="Progresso"><i class="fa-solid fa-chart-line"></i></button>
-      <button class="float-btn btn-dark" onclick="openPanel('qrs')" title="Cupões QR"><i class="fa-solid fa-ticket"></i></button>
-      <button class="float-btn btn-dark" onclick="openPanel('account')" title="Conta"><i class="fa-solid fa-user"></i></button>
-      <button class="float-btn btn-dark" onclick="centerOnPlayer()" title="Centrar mapa"><i class="fa-solid fa-location-crosshairs"></i></button>
-    </div>
-    <div id="side-panel" class="hidden">
-      <div class="panel-header">
-        <h2 id="side-panel-title">Painel</h2>
-        <button class="btn-dark btn-small" onclick="closePanel()">✕</button>
-      </div>
-      <div id="side-panel-content"></div>
-    </div>
-    <div id="ticker"></div>
-  </section>
-
-  <!-- MODAL: DETALHES DA BANDEIRA -->
-  <div id="flag-modal" class="modal hidden">
-    <div class="panel-header">
-      <h2 id="flag-modal-title">Detalhes da Bandeira</h2>
-      <button class="btn-dark btn-small" onclick="closeFlagModal()">✕</button>
-    </div>
-    <div id="flag-modal-content"></div>
+<!-- LOGIN JOGADOR -->
+<div id="p-login-j" class="pag"><div class="cx">
+  <button class="bvol bb" onclick="ir('p-inicio')" style="margin-bottom:14px">← VOLTAR</button>
+  <div class="aj"><h3>🎮 ENTRAR NO JOGO</h3><div id="m-lj" class="msg"></div>
+    <div id="lj-com"><div class="ucard ucard-j"><div class="uavt uavt-j"><span id="lj-emoji">🎮</span><div class="udot udot-j"></div></div><div class="u-nome" style="color:#4CAF50" id="lj-nm">—</div><div class="u-sub" id="lj-sub">Jogador · Nível 1</div><div class="u-stats"><div><div class="u-stat-n" style="color:#0ff" id="lj-fl">0</div><div class="u-stat-l">🏴 Flags</div></div><div><div class="u-stat-n" style="color:#4CAF50" id="lj-en">100%</div><div class="u-stat-l">⚡ Energia</div></div><div><div class="u-stat-n" style="color:#f90" id="lj-sk">0</div><div class="u-stat-l">🎯 Skill</div></div><div><div class="u-stat-n" style="color:#0ff" id="lj-vis">5m</div><div class="u-stat-l">👁 Visão</div></div></div></div>
+      <div class="lbl">🔑 Senha</div><div class="pw-wrap"><input type="password" id="lj-pw" placeholder="A tua senha" onkeydown="if(event.key==='Enter')loginJCom()"><button class="pw-toggle" onclick="tPW('lj-pw',this)">👁</button></div>
+      <label class="ckl"><input type="checkbox" id="lj-lbr-pw"> Lembrar senha</label>
+      <button class="bv bb" onclick="loginJCom()" style="padding:14px;font-size:15px">▶ ENTRAR COMO <span id="lj-btn-nm">—</span></button>
+      <div class="sep"><div class="sep-l"></div><span class="sep-t">não és tu?</span><div class="sep-l"></div></div>
+      <button class="bc bb" onclick="trocarContaJ()" style="font-size:12px">🔄 Outra conta</button></div>
+    <div id="lj-sem" style="display:none"><div class="lbl">📧 Email</div><input type="email" id="lj-em" placeholder="email@exemplo.com" oninput="verEmJ()" onkeydown="if(event.key==='Enter')document.getElementById('lj-pw-m').focus()"><div id="lj-em-i" style="display:none;background:rgba(0,0,0,.5);border:1px solid #4CAF50;border-radius:6px;padding:7px 11px;margin:4px 0;font-size:12px"></div><div class="lbl">🔑 Senha</div><div class="pw-wrap"><input type="password" id="lj-pw-m" placeholder="A tua senha" onkeydown="if(event.key==='Enter')loginJSem()"><button class="pw-toggle" onclick="tPW('lj-pw-m',this)">👁</button></div><label class="ckl"><input type="checkbox" id="lj-lbr" checked> Lembrar conta</label><button class="bv bb" onclick="loginJSem()" style="padding:14px;font-size:15px">▶ ENTRAR</button></div>
+    <div style="display:flex;gap:14px;justify-content:center;margin-top:14px;padding-top:12px;border-top:1px solid #222"><span class="lnk" onclick="ir('p-reg-j')">📝 Criar conta</span><span class="lnk" onclick="irRec('j')">🔑 Recuperar</span></div>
   </div>
+</div></div>
 
-  <!-- MODAL: SELEÇÃO DE MODO -->
-  <div id="mode-modal" class="modal hidden">
-    <div class="panel-header">
-      <h2 style="margin:0;">🎮 Como queres jogar?</h2>
-      <button class="btn-dark btn-small" onclick="closeModeModal()">✕</button>
-    </div>
-    <div class="item-module">
-      <h3>📡 GPS / Rua</h3>
-      <p class="small">Joga a caminhar na rua com localização real. Ideal para explorar a cidade!</p>
-    </div>
-    <div class="item-module">
-      <h3>🏠 Offline / Casa</h3>
-      <p class="small">Joga sem GPS real, com movimento manual. Ideal para testar ou jogar em casa.</p>
-    </div>
-    <div class="btn-row">
-      <button onclick="requestGPSMode()">🛰️ ATIVAR GPS</button>
-      <button class="btn-dark" onclick="activateHomeMode()">🏠 MODO OFFLINE</button>
-    </div>
+<!-- REGISTO JOGADOR -->
+<div id="p-reg-j" class="pag"><div class="cx">
+  <button class="bvol bb" onclick="ir('p-inicio')" style="margin-bottom:14px">← VOLTAR</button>
+  <div class="aj"><h3>📝 CRIAR CONTA</h3><div class="card card-b" style="text-align:center;margin-bottom:12px"><p style="color:#0ff;font-weight:700">🎁 1.000 bandeiras GRÁTIS!</p></div><div id="m-regj" class="msg"></div>
+    <div class="lbl">👤 Nome <em>*</em></div><input id="rj-nm" placeholder="O teu nome" maxlength="30">
+    <div class="lbl">📧 Email <em>*</em></div><input type="email" id="rj-em" placeholder="email@exemplo.com">
+    <div class="lbl">📱 Telemóvel</div><input type="tel" id="rj-tl" placeholder="912 345 678">
+    <div class="lbl">🔑 Senha <em>*</em> <span id="rj-ft" class="ftxt"></span></div><div class="pw-wrap"><input type="password" id="rj-pw" placeholder="Mín. 4" oninput="calcF(this.value,'rj-fb','rj-ft')"><button class="pw-toggle" onclick="tPW('rj-pw',this)">👁</button></div><div id="rj-fb" class="fbar"></div>
+    <div class="lbl">🔑 Confirmar <em>*</em></div><div class="pw-wrap"><input type="password" id="rj-pw2" placeholder="Repete" onkeydown="if(event.key==='Enter')fazerRegJ()"><button class="pw-toggle" onclick="tPW('rj-pw2',this)">👁</button></div>
+    <label class="ckl"><input type="checkbox" id="rj-lbr" checked> Lembrar</label>
+    <button class="bv bb" onclick="fazerRegJ()" style="padding:14px;font-size:15px">✅ CRIAR CONTA</button></div>
+</div></div>
+
+<!-- LOGIN PR -->
+<div id="p-login-pr" class="pag"><div class="cx">
+  <button class="bvol bb" onclick="ir('p-inicio')" style="margin-bottom:14px">← VOLTAR</button>
+  <div class="apr"><h3>🏪 ENTRAR</h3><div id="m-lpr" class="msg"></div>
+    <div id="lpr-com"><div class="ucard ucard-pr"><div class="uavt uavt-pr"><span>🏪</span><div class="udot udot-pr"></div></div><div class="u-nome" style="color:#f90" id="lpr-nm">—</div><div class="u-sub" id="lpr-sub">Lojista</div><div class="u-stats"><div><div class="u-stat-n" style="color:#f90" id="lpr-loc">—</div><div class="u-stat-l">📍 Local</div></div><div><div class="u-stat-n" style="color:#0ff" id="lpr-packs">0</div><div class="u-stat-l">📦 Packs</div></div></div></div>
+      <div class="lbl">🔑 Senha</div><div class="pw-wrap"><input type="password" id="lpr-pw" placeholder="Senha" onkeydown="if(event.key==='Enter')loginPRCom()"><button class="pw-toggle" onclick="tPW('lpr-pw',this)">👁</button></div><label class="ckl"><input type="checkbox" id="lpr-lbr-pw"> Lembrar</label>
+      <button class="bo bb" onclick="loginPRCom()" style="padding:14px;font-size:15px">▶ ENTRAR COMO <span id="lpr-btn-nm">—</span></button><div class="sep"><div class="sep-l"></div><span class="sep-t">não é a tua?</span><div class="sep-l"></div></div><button class="bc bb" onclick="trocarContaPR()" style="font-size:12px">🔄 Outra</button></div>
+    <div id="lpr-sem" style="display:none"><div class="lbl">📧 Email</div><input type="email" id="lpr-em" placeholder="loja@email.com" oninput="verEmPR()"><div id="lpr-em-i" style="display:none;background:rgba(0,0,0,.5);border:1px solid #f90;border-radius:6px;padding:7px 11px;margin:4px 0;font-size:12px;color:#f90"></div><div class="lbl">🔑 Senha</div><div class="pw-wrap"><input type="password" id="lpr-pw-m" placeholder="Senha" onkeydown="if(event.key==='Enter')loginPRSem()"><button class="pw-toggle" onclick="tPW('lpr-pw-m',this)">👁</button></div><label class="ckl"><input type="checkbox" id="lpr-lbr" checked> Lembrar</label><button class="bo bb" onclick="loginPRSem()" style="padding:14px;font-size:15px">▶ ENTRAR</button></div>
+    <div style="display:flex;gap:14px;justify-content:center;margin-top:14px;padding-top:12px;border-top:1px solid #222"><span class="lnk" onclick="ir('p-reg-pr')">📝 Registar</span><span class="lnk" onclick="irRec('pr')">🔑 Recuperar</span></div>
   </div>
+</div></div>
 
-  <!-- PR SCREEN (EMPRESA) -->
-  <section id="pr-screen" class="screen">
-    <h1 id="pr-name-ui">PAINEL DA EMPRESA</h1>
-    <div class="pr-tabs">
-      <div class="pr-tab active" onclick="switchPRTab('dashboard')">📊 Dashboard</div>
-      <div class="pr-tab" onclick="switchPRTab('packs')">🛒 Packs</div>
-      <div class="pr-tab" onclick="switchPRTab('lotes')">📦 Lotes</div>
-      <div class="pr-tab" onclick="switchPRTab('bingos')">🎱 Bingos</div>
-      <div class="pr-tab" onclick="switchPRTab('qrs')">🔍 QRs</div>
-      <div class="pr-tab" onclick="switchPRTab('branches')">🏢 Filiais</div>
-      <div class="pr-tab" onclick="switchPRTab('invoices')">🧾 Faturas</div>
-    </div>
+<!-- REGISTO PR -->
+<div id="p-reg-pr" class="pag"><div class="cx">
+  <button class="bvol bb" onclick="ir('p-inicio')" style="margin-bottom:14px">← VOLTAR</button>
+  <div class="apr"><h3>📝 REGISTAR EMPRESA</h3></div><div id="m-regpr" class="msg"></div>
+  <div class="scroll">
+    <div class="card card-y"><h3 style="color:#f90;margin-bottom:8px">📍 MORADA</h3><input id="prr-rua" placeholder="* Rua"><div class="g2"><input id="prr-cp" placeholder="* Cód.Postal"><input id="prr-loc" placeholder="* Localidade"></div><select id="prr-dist"><option value="">* Distrito</option><option>Aveiro</option><option>Beja</option><option>Braga</option><option>Bragança</option><option>Castelo Branco</option><option>Coimbra</option><option>Évora</option><option>Faro</option><option>Guarda</option><option>Leiria</option><option>Lisboa</option><option>Portalegre</option><option>Porto</option><option>Santarém</option><option>Setúbal</option><option>Viana do Castelo</option><option>Vila Real</option><option>Viseu</option><option>Madeira</option><option>Açores</option></select></div>
+    <div class="card card-y"><h3 style="color:#f90;margin-bottom:8px">🏢 EMPRESA</h3><input id="prr-ne" placeholder="* Nome"><input id="prr-nif" placeholder="* NIF" maxlength="9"><select id="prr-ativ"><option value="">* Setor</option><option>Restaurante</option><option>Café</option><option>Bar</option><option>Supermercado</option><option>Roupa</option><option>Eletrónica</option><option>Farmácia</option><option>Cabeleireiro</option><option>Ginásio</option><option>Clínica</option><option>Outro</option></select></div>
+    <div class="card card-y"><h3 style="color:#f90;margin-bottom:8px">📞 CONTACTOS</h3><input type="tel" id="prr-tel" placeholder="* Telefone"><input type="email" id="prr-email" placeholder="* Email"><input type="tel" id="prr-tel-r" placeholder="* Telemóvel Resp."></div>
+    <div class="card card-y"><h3 style="color:#f90;margin-bottom:8px">👤 RESPONSÁVEL</h3><input id="prr-resp" placeholder="* Nome"><div class="lbl">🔑 Senha <em>*</em> <span id="prr-ft" class="ftxt"></span></div><div class="pw-wrap"><input type="password" id="prr-pw" placeholder="Mín. 4" oninput="calcF(this.value,'prr-fb','prr-ft')"><button class="pw-toggle" onclick="tPW('prr-pw',this)">👁</button></div><div id="prr-fb" class="fbar"></div><div class="lbl">🔑 Confirmar <em>*</em></div><div class="pw-wrap"><input type="password" id="prr-pw2" placeholder="Repete"><button class="pw-toggle" onclick="tPW('prr-pw2',this)">👁</button></div></div>
+    <label class="ckl"><input type="checkbox" id="prr-trm"> Aceito os Termos</label><label class="ckl"><input type="checkbox" id="prr-lbr" checked> Lembrar</label>
+    <button class="bo bb" onclick="fazerRegPR()" style="padding:14px;font-size:15px">✅ REGISTAR</button></div>
+</div></div>
 
-    <div id="pr-dashboard" class="pr-content active">
-      <div class="dashboard-grid">
-        <div class="item-module"><h3>📊 Estatísticas</h3><p id="pr-stats">Carregando...</p></div>
-      </div>
-    </div>
+<!-- RECUPERAR -->
+<div id="p-rec" class="pag"><div class="cx">
+  <button class="bvol bb" onclick="irVoltarRec()" style="margin-bottom:14px">← VOLTAR</button>
+  <div id="rec-area-j" class="aj" style="display:none"><h3>🔑 RECUPERAR — JOGADOR</h3></div>
+  <div id="rec-area-pr" class="apr" style="display:none"><h3>🔑 RECUPERAR — LOJISTA</h3></div>
+  <div id="m-rec" class="msg"></div>
+  <div id="rec-p1"><div class="card card-b" style="text-align:center"><p style="color:#0ff;font-weight:700">Como receber o código?</p></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0"><div id="rec-oem" onclick="selRec('email')" style="background:rgba(0,0,0,.4);border:2px solid #333;border-radius:10px;padding:14px;text-align:center;cursor:pointer"><div style="font-size:24px">📧</div><div style="font-weight:700">Email</div></div><div id="rec-osms" onclick="selRec('sms')" style="background:rgba(0,0,0,.4);border:2px solid #333;border-radius:10px;padding:14px;text-align:center;cursor:pointer"><div style="font-size:24px">📱</div><div style="font-weight:700">SMS</div></div></div><div id="rec-fem" style="display:none"><div class="lbl">📧 Email</div><input type="email" id="rec-em"></div><div id="rec-fsms" style="display:none"><div class="lbl">📱 Telemóvel</div><input type="tel" id="rec-tl"></div><button class="bv bb" id="rec-btn-env" onclick="enviarCod()" style="display:none;padding:14px">📨 ENVIAR</button></div>
+  <div id="rec-p2" style="display:none"><div class="card card-v" style="text-align:center"><p style="color:#666;font-size:11px">⚠ SIMULAÇÃO</p><p id="rec-cshow" style="font-size:28px;color:#0ff;font-weight:700;letter-spacing:10px">----</p></div><div class="lbl">🔢 Código</div><input type="number" id="rec-cin" style="text-align:center;font-size:20px;letter-spacing:8px" maxlength="4" oninput="this.value=this.value.slice(0,4)" onkeydown="if(event.key==='Enter')verCod()"><button class="bv bb" onclick="verCod()" style="padding:14px">✅ VERIFICAR</button><button class="bc bb" onclick="reenvCod()" style="font-size:12px">🔄 Reenviar</button></div>
+  <div id="rec-p3" style="display:none"><div class="card card-v" style="text-align:center"><p style="color:#4CAF50;font-weight:700">✅ Confirmado!</p></div><div class="lbl">🔑 Nova Senha <span id="rec-ft" class="ftxt"></span></div><div class="pw-wrap"><input type="password" id="rec-np" oninput="calcF(this.value,'rec-fb','rec-ft')"><button class="pw-toggle" onclick="tPW('rec-np',this)">👁</button></div><div id="rec-fb" class="fbar"></div><div class="lbl">🔑 Confirmar</div><div class="pw-wrap"><input type="password" id="rec-np2" onkeydown="if(event.key==='Enter')guardarNovaSenha()"><button class="pw-toggle" onclick="tPW('rec-np2',this)">👁</button></div><button class="bv bb" onclick="guardarNovaSenha()" style="padding:14px">💾 GUARDAR</button></div>
+</div></div>
 
-    <div id="pr-packs" class="pr-content">
-      <div class="dashboard-grid">
-        <div class="item-module"><h3>🛒 Comprar Packs</h3> <div id="buy-packages-list" class="item-list"></div> <button id="btn-buy-package" class="btn" disabled>COMPRAR</button></div>
-        <div class="item-module"><h3>📦 Packs Ativos</h3><div id="active-packages-list" class="item-list"></div></div>
-        <div class="item-module"><h3>🎁 Gestão de Prémios/Descontos</h3><div id="rewards-list" class="item-list"></div><button class="btn" onclick="openRewardModal()">+ Adicionar Prémio/Desconto</button></div>
-      </div>
-    </div>
+<!-- BACKOFFICE -->
+<div id="p-bo-login" class="pag"><div class="cx">
+  <button class="bvol bb" onclick="ir('p-inicio')" style="margin-bottom:14px">← VOLTAR</button>
+  <div class="abo"><h3>🖥️ BACKOFFICE <span class="badge-bo">SISTEMA</span></h3><div id="m-bo" class="msg"></div><div class="lbl">🔑 Código</div><div class="pw-wrap"><input type="password" id="bo-pw" style="text-align:center;letter-spacing:6px;border-color:#0ff;color:#0ff;font-size:18px" onkeydown="if(event.key==='Enter')loginBO()"><button class="pw-toggle" onclick="tPW('bo-pw',this)">👁</button></div><button class="bbo bb" onclick="loginBO()" style="padding:14px;font-size:15px">🖥️ ENTRAR</button></div>
+</div></div>
 
-    <div id="pr-lotes" class="pr-content">
-      <div class="dashboard-grid">
-        <div class="item-module"><h3>📦 Criar Lote Promocional</h3>
-          <div class="form-group"><input id="lote-name" placeholder="Nome do lote"></div>
-          <div class="form-group"><input id="lote-flags" type="number" placeholder="Qtd flags"></div>
-          <button class="btn" onclick="createLote()">CRIAR LOTE</button>
-        </div>
-        <div class="item-module"><h3>📋 Lotes Ativos</h3><div id="lotes-list" class="item-list"></div></div>
-      </div>
-    </div>
-
-    <div id="pr-bingos" class="pr-content">
-      <div class="dashboard-grid">
-        <div class="item-module"><h3>🎱 Criar Bingo (Prémio Único)</h3>
-          <div class="form-group"><input id="bingo-name" placeholder="Nome do bingo"></div>
-          <div class="form-group"><input id="bingo-prize" placeholder="Prémio único"></div>
-          <div class="form-group"><input id="bingo-flags" type="number" placeholder="Flags necessárias"></div>
-          <div class="form-group">
-            <label>Duração de Ativação</label>
-            <div style="display:flex;gap:8px;">
-              <input id="bingo-active-days" type="number" placeholder="Dias" value="0" min="0" style="flex:1;">
-              <input id="bingo-active-hours" type="number" placeholder="Horas" value="0" min="0" max="23" style="flex:1;">
-              <input id="bingo-active-minutes" type="number" placeholder="Minutos" value="0" min="0" max="59" style="flex:1;">
-            </div>
-            <small style="color:#888;">Define dias, horas e minutos (opcional)</small>
-          </div>
-          <button class="btn" onclick="createBingo()">CRIAR BINGO</button>
-        </div>
-        <div class="item-module"><h3>📋 Bingos Ativos</h3><div id="bingos-list" class="item-list"></div></div>
-      </div>
-    </div>
-
-    <div id="pr-qrs" class="pr-content">
-      <div class="dashboard-grid">
-        <div class="item-module"><h3>🔍 Validar QR</h3>
-          <input id="qr-validation-input" placeholder="Código QR" />
-          <button class="btn btn-dark" onclick="validateClientQR()">VALIDAR</button>
-          <div id="validation-msg" class="msg"></div>
-        </div>
-        <div class="item-module"><h3>📋 Histórico</h3><div id="qr-history" class="item-list"></div></div>
-      </div>
-    </div>
-
-    <div id="pr-branches" class="pr-content">
-      <div class="dashboard-grid">
-        <div class="item-module"><h3>📋 Filiais Pendentes de Aprovação</h3><div id="pending-branches-list" class="item-list"></div></div>
-        <div class="item-module"><h3>🏢 Filiais Aprovadas</h3><div id="approved-branches-list" class="item-list"></div></div>
-      </div>
-    </div>
-
-    <div id="pr-invoices" class="pr-content">
-      <div class="dashboard-grid">
-        <div class="item-module"><h3>🧾 Histórico de Faturas</h3><div id="invoices-list" class="item-list"></div></div>
-      </div>
-    </div>
-
-    <button class="btn btn-dark" onclick="goTo('landing')">SAIR</button>
-  </section>
-
-  <!-- BACKOFFICE -->
-  <section id="backoffice" class="screen">
-    <h1>🛡️ BACKOFFICE</h1>
-    <form id="form-backoffice">
-      <div class="form-group"><input type="email" id="bo-email" required placeholder="Email (ovo@ovo)"></div>
-      <div class="form-group password-wrapper">
-        <input type="password" id="bo-pass" required placeholder="Senha (258258258)">
-        <button type="button" class="password-toggle" onclick="togglePassword('bo-pass', this)">👁️</button>
-      </div>
-      <button type="submit" class="btn">ENTRAR</button>
-    </form>
-    <div id="msg-backoffice" class="msg"></div>
-
-    <div id="bo-dashboard" style="display:none; width:100%; max-width:800px; padding:20px;">
-      <div class="btn-row" style="margin-bottom:15px;">
-        <button class="btn-dark" onclick="showBOTab('stats')">📊 Stats</button>
-        <button class="btn-dark" onclick="showBOTab('players')">👥 Jogadores</button>
-        <button class="btn-dark" onclick="showBOTab('companies')">🏢 Empresas</button>
-      </div>
-      <div id="bo-content" class="dashboard-grid"></div>
-      <button class="btn btn-danger" onclick="logoutBackoffice()">🚪 SAIR</button>
-    </div>
-
-    <button class="btn btn-dark" onclick="goTo('landing')" id="bo-back-btn">VOLTAR</button>
-  </section>
-
-  <!-- MODAL DE PRÉMIOS/DESCONTOS -->
-  <div id="reward-modal" class="modal hidden">
-    <div class="modal-content">
-      <h2>🎁 Configurar Prémio/Desconto</h2>
-      <div class="form-group"><label for="reward-type">Tipo</label>
-        <select id="reward-type">
-          <option value="discount">Desconto (%)</option>
-          <option value="fixed">Valor Fixo (€)</option>
-          <option value="product">Produto/Prémio</option>
-          <option value="service">Serviço</option>
-        </select>
-      </div>
-      <div class="form-group"><label for="reward-value">Valor</label><input type="text" id="reward-value" placeholder="Ex: 10% ou 5€ ou Descrição do prémio"></div>
-      <div class="form-group"><label for="reward-package">Pacote (opcional)</label>
-        <select id="reward-package">
-          <option value="">Todos os pacotes</option>
-        </select>
-      </div>
-      <div class="form-group"><label for="reward-flags">Flags necessárias (opcional)</label><input type="number" id="reward-flags" placeholder="Ex: 20"></div>
-      <div class="form-group"><label for="reward-expiry">Validade (dias)</label><input type="number" id="reward-expiry" value="30"></div>
-      <div class="btn-row">
-        <button class="btn" onclick="saveReward()">GUARDAR</button>
-        <button class="btn btn-danger" onclick="closeRewardModal()">CANCELAR</button>
-      </div>
-    </div>
+<!-- JOGO -->
+<div id="p-jogo" class="pag" style="padding:0;overflow:hidden;height:100vh">
+  <div id="mapa"></div>
+  <div id="avt-cx"><div id="circ-vis"></div><div id="circ-alc"></div><div id="aviso-ap" onclick="apanharManual()">👆 APANHAR!</div>
+    <svg id="avt-svg" viewBox="0 0 52 66" xmlns="http://www.w3.org/2000/svg"><ellipse cx="26" cy="63" rx="11" ry="3" fill="rgba(0,0,0,.5)"/><g><g id="ape" style="transform-origin:22px 43px"><rect x="17" y="41" width="8" height="17" rx="4" fill="#0a4a0a"/><ellipse cx="21" cy="57" rx="7" ry="3.5" fill="#083808"/></g><g id="apd" style="transform-origin:30px 43px"><rect x="26" y="41" width="8" height="17" rx="4" fill="#0a4a0a"/><ellipse cx="30" cy="57" rx="7" ry="3.5" fill="#083808"/></g><rect x="17" y="26" width="18" height="17" rx="5" fill="#0d6a0d"/><rect x="21" y="29" width="10" height="2.5" rx="1.2" fill="#0ff" opacity=".5"/><rect x="21" y="34" width="10" height="1.5" rx=".75" fill="#0ff" opacity=".3"/><g id="abe" style="transform-origin:17px 28px"><rect x="8" y="26" width="9" height="13" rx="4.5" fill="#0b5a0b"/><circle cx="12.5" cy="40" r="4" fill="#094a09"/></g><g id="abd" style="transform-origin:35px 28px"><rect x="35" y="26" width="9" height="13" rx="4.5" fill="#0b5a0b"/><circle cx="39.5" cy="40" r="4" fill="#094a09"/></g><rect x="23" y="22" width="6" height="6" rx="3" fill="#0b5a0b"/><g id="acab" style="transform-origin:26px 13px"><circle cx="26" cy="13" r="12" fill="#0d6a0d"/><ellipse cx="26" cy="3.5" rx="11" ry="5" fill="#050"/><rect x="15" y="3" width="22" height="6" rx="2.5" fill="#050"/><rect x="17" y="9" width="18" height="4" rx="2" fill="#0ff" opacity=".55"/><circle cx="21" cy="15" r="3.2" fill="#000"/><circle cx="31" cy="15" r="3.2" fill="#000"/><circle cx="21" cy="15" r="2" fill="#0ff"/><circle cx="31" cy="15" r="2" fill="#0ff"/><circle cx="21.9" cy="14.1" r=".8" fill="#fff"/><circle cx="31.9" cy="14.1" r=".8" fill="#fff"/><path d="M22 19Q26 21.5 30 19" stroke="#0ff" stroke-width="1.3" fill="none" opacity=".6"/><line x1="26" y1="3" x2="26" y2="0" stroke="#4CAF50" stroke-width="2"/><circle cx="26" cy="0" r="3" fill="#0ff"><animate attributeName="opacity" values="1;.2;1" dur="1.4s" repeatCount="indefinite"/><animate attributeName="r" values="3;4;3" dur="1.4s" repeatCount="indefinite"/></circle></g></g></svg>
   </div>
+  <div id="hud-j"><div><div style="font-weight:700;font-size:13px" id="j-nm">👤 —</div><div style="font-size:10px;color:#888" id="j-nv">Nível 1</div></div><div style="display:flex;gap:10px;font-size:10px;text-align:center"><div class="hn">🏴<span class="hv" id="h-fl">0</span></div><div class="hn">⚡<span class="hv" id="h-en">100%</span></div><div class="hn">🎯<span class="hv" id="h-sk">0</span></div><div class="hn">👁<span class="hv" id="h-vis">5m</span></div></div><div style="display:flex;gap:4px"><button class="bvol" style="padding:5px 8px;font-size:10px" onclick="voltarHome()">← Início</button><button class="bsair" style="padding:5px 8px;font-size:10px" onclick="confirmarSair('j')">Sair</button></div></div>
+  <div id="pan-sk"><div style="color:#4CAF50;font-weight:700;text-align:center;margin-bottom:3px;font-size:10px">📊 SKILL</div><div class="psk"><span class="pskl">Nível</span><span class="pskv" id="sk-nv">1</span></div><div class="psk"><span class="pskl">Skill</span><span class="pskv" id="sk-sk">0</span></div><div class="psk"><span class="pskl">Visão</span><span class="pskv" id="sk-vis">5m</span></div><div class="psk"><span class="pskl">Próx.</span><span class="pskv" id="sk-px">500</span></div><div id="bsk"><div id="bskf" style="width:0%"></div></div><div id="bskt">0 / 500</div></div>
+  <div id="ctrl"><div class="drag-handle">⠿ 🕹️ WASD / Setas</div><div id="ctrl-g"><div></div><div class="cbtn" id="bc-c" onpointerdown="pd('c')" onpointerup="pu('c')">▲</div><div></div><div class="cbtn" id="bc-e" onpointerdown="pd('e')" onpointerup="pu('e')">◀</div><div class="cbtn" style="font-size:8px;color:#222;cursor:default">●</div><div class="cbtn" id="bc-d" onpointerdown="pd('d')" onpointerup="pu('d')">▶</div><div></div><div class="cbtn" id="bc-b" onpointerdown="pd('b')" onpointerup="pu('b')">▼</div><div></div></div><div id="ctrl-tam"><button class="tbtn" onclick="mudarTam(-1)">A−</button><span id="tam-lbl" style="font-size:9px;color:#555;align-self:center">46px</span><button class="tbtn" onclick="mudarTam(1)">A+</button></div></div>
+  <div id="rodape"><div id="ticker"></div></div>
+  <div id="gps-txt">📡 GPS: a iniciar...</div>
+  <div id="notif"><div id="ntf-ico" style="font-size:16px;margin-bottom:3px"></div><div id="ntf-txt" style="color:#0ff;font-weight:700;font-size:14px"></div><div id="ntf-sub" style="color:#888;font-size:11px;margin-top:2px"></div></div>
+  <div id="aba-band"><div class="aba-fechar" onclick="fecharAbaBanda()">✕</div><div id="aba-band-c"></div><button class="bv bb" onclick="fecharAbaBanda()" style="margin-top:9px">✅ FECHAR</button></div>
+  <div id="aba-qr"><div class="aba-fechar" onclick="fecharAbaQR()" style="background:#1a0800;border-color:#f90;color:#f90">✕</div><div id="aba-qr-c"></div><button class="bo bb" onclick="fecharAbaQR()" style="margin-top:9px">✅ FECHAR</button></div>
+</div>
 
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" onerror="console.error('Erro ao carregar Leaflet JS')"></script>
-  <script>
-    // ESTADO UNIFICADO
-    const STATE_KEY = "ZAP_FLAGS_V1";
-    
-    function loadState() {
-      const saved = localStorage.getItem(STATE_KEY);
-      if (saved) return JSON.parse(saved);
-      
-      // Dados de teste iniciais
-      return {
-        players: Array.from({length:10}, (_,i)=>({
-          id: `player_${i+1}`,
-          name: `big ${i+1}`,
-          email: `big${i+1}@test.com`,
-          pass: "123456",
-          district: "Lisboa",
-          flags: 0,
-          zapFlags: 0,
-          prFlags: 0,
-          totalFlags: 0,
-          energy: 100,
-          skill: 1,
-          vision: 5,
-          position: { lat: 38.7223, lng: -9.1393 },
-          qrs: [],
-          usedQrs: []
-        })),
-        companies: Array.from({length:10}, (_,i)=>({
-          id: `company_${i+1}`,
-          name: `big 0${i+1}`,
-          nif: `12345678${i+1}`,
-          pass: "123456",
-          email: `big0${i+1}@empresa.com`,
-          phone: `91234567${i}`,
-          address: `Rua da Empresa ${i+1}`,
-          locality: "Lisboa",
-          photo: "",
-          packages: [],
-          lotes: [],
-          bingos: [],
-          qrHistory: [],
-          campaign: {
-            rewardsEnabled: false,
-            rewardType: "none",
-            rewardText: "Sem prémio",
-            promoLotsActive: 0,
-            promoBudgetLeft: 0,
-            bingoCountActive: 0,
-            bingoText: "",
-            rewardsGiven: 0,
-            prizeExpiryDays: 15
-          }
-        })),
-        backoffice: { email: "ovo@ovo", pass: "258258258" },
-        currentPlayer: null,
-        currentCompany: null
-      };
+<!-- PR PAINEL -->
+<div id="p-pr" class="pag" style="padding:0">
+  <div class="pr-header"><div><div style="font-weight:700;font-size:14px;color:#f90" id="pr-hud-n">🏪 —</div><div style="font-size:10px;color:#888" id="pr-hud-loc">—</div></div><div style="display:flex;gap:4px"><button class="bvol" style="padding:5px 8px;font-size:10px" onclick="ir('p-inicio')">← Início</button><button class="bsair" style="padding:5px 8px;font-size:10px" onclick="confirmarSair('pr')">Sair</button></div></div>
+  <div class="cx" style="padding-top:14px">
+    <div id="pr-card-emp"></div>
+    <div style="display:flex;gap:4px;margin:12px 0;flex-wrap:wrap" id="pr-tabs"><button class="bo" style="flex:1;padding:8px;font-size:11px;min-width:70px" onclick="prTab('dash')">📊 Resumo</button><button class="bc" style="flex:1;padding:8px;font-size:11px;min-width:70px" onclick="prTab('packs')">📦 Packs</button><button class="bc" style="flex:1;padding:8px;font-size:11px;min-width:70px" onclick="prTab('lotes')">🎫 Lotes</button><button class="bc" style="flex:1;padding:8px;font-size:11px;min-width:70px" onclick="prTab('qrs')">📱 QRs</button><button class="bc" style="flex:1;padding:8px;font-size:11px;min-width:70px" onclick="prTab('dados')">⚙️ Dados</button></div>
+    <div id="pr-tab-content" class="scroll" style="max-height:calc(100vh - 220px)"></div>
+  </div>
+</div>
+
+<!-- CONFIRMAÇÃO -->
+<div id="conf-ovl"></div>
+<div id="conf-box"><div id="conf-ico" style="font-size:28px;margin-bottom:7px">❓</div><h2 id="conf-tit" style="color:#f44;margin-bottom:8px;font-size:14px"></h2><p id="conf-txt" style="color:#888;font-size:12px;margin-bottom:16px;line-height:1.5"></p><div style="display:flex;gap:8px"><button class="bvol" style="flex:1;padding:12px" onclick="fecharConf()">❌ CANCELAR</button><button class="bsair" style="flex:1;padding:12px" onclick="exConf()">✅ CONFIRMAR</button></div></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+'use strict';
+
+var PASSE='321321';
+var CFG={VISAO_MIN:5,VISAO_MAX:100,SKILL_P:10,QR_N:20,APANHAR_RAIO:12,AVISO_RAIO:20,VEL_PX:2.5,N_BAND:12,SPAWN_RAIO:140};
+var PACKS={
+  MINIMO:{key:'MINIMO',label:'Mínimo',price:10,flags:1000,radiusKm:5,maxLots:50,bingos:0,durDias:30},
+  MEDIO:{key:'MEDIO',label:'Médio',price:15,flags:2500,radiusKm:15,maxLots:125,bingos:2,durDias:60},
+  GRANDE:{key:'GRANDE',label:'Grande',price:25,flags:10000,radiusKm:50,maxLots:500,bingos:3,durDias:90},
+  ENORME:{key:'ENORME',label:'Enorme',price:50,flags:25000,radiusKm:999999,maxLots:1250,bingos:5,durDias:180}
+};
+
+function flagsParaSk(s){return 500*Math.pow(2,s)}
+function calcVisao(s){return Math.min(CFG.VISAO_MAX,CFG.VISAO_MIN+Math.floor(s/CFG.SKILL_P))}
+
+var BD={
+  _g:function(k,d){try{return JSON.parse(localStorage.getItem(k))||d}catch(e){return d}},
+  _s:function(k,v){localStorage.setItem(k,JSON.stringify(v))},
+  jogs:function(){return this._g('zf_j',[])},
+  emps:function(){return this._g('zf_e',[])},
+  saveJ:function(l){this._s('zf_j',l)},
+  saveE:function(l){this._s('zf_e',l)},
+  getSJ:function(){return this._g('zf_sj',null)},
+  getSP:function(){return this._g('zf_sp',null)},
+  setSJ:function(u){this._s('zf_sj',u)},
+  setSP:function(p){this._s('zf_sp',p)},
+  delSJ:function(){localStorage.removeItem('zf_sj')},
+  delSP:function(){localStorage.removeItem('zf_sp')},
+  getPwJ:function(){return localStorage.getItem('zf_pwj')||''},
+  setPwJ:function(p){localStorage.setItem('zf_pwj',p)},
+  delPwJ:function(){localStorage.removeItem('zf_pwj')},
+  getPwP:function(){return localStorage.getItem('zf_pwp')||''},
+  setPwP:function(p){localStorage.setItem('zf_pwp',p)},
+  delPwP:function(){localStorage.removeItem('zf_pwp')}
+};
+
+function G(id){return document.getElementById(id)}
+function V(id){var e=G(id);return e?e.value.trim():''}
+function vE(e){return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(e).toLowerCase())}
+function vT(t){return /^[0-9]{9,15}$/.test(String(t).replace(/[\s\-+]/g,''))}
+function vN(n){return /^[0-9]{9}$/.test(String(n).replace(/\s/g,''))}
+function fN(n){return(n||0).toLocaleString('pt-PT')}
+function fD(t){return t?new Date(t).toLocaleDateString('pt-PT'):'---'}
+
+function msg(id,t,c){var e=G(id);if(!e)return;e.className='msg '+c;e.innerText=t;setTimeout(function(){if(e){e.className='msg';e.innerText=''}},5e3)}
+function tPW(id,b){var i=G(id);if(!i)return;i.type=i.type==='text'?'password':'text';b.innerText=i.type==='password'?'👁':'🙈'}
+function calcF(p,b,t){var e=G(b),f=G(t);if(!e)return;var s=0;if(p.length>=4)s++;if(p.length>=8)s++;if(/[0-9]/.test(p))s++;if(/[^a-zA-Z0-9]/.test(p))s++;e.style.background=['#333','#f44','#f90','#fc0','#4CAF50'][s];e.style.width=(s/4*100)+'%';if(f)f.innerText=['','— Fraca','— Razoável','— Boa','— Forte'][s]}
+function calcDist(a,b,c,d){var x=(d-b)*111e3*Math.cos(a*Math.PI/180),y=(c-a)*111e3;return Math.sqrt(x*x+y*y)}
+function distPx(m){if(!mapaJ)return m*5;var z=mapaJ.getZoom();return m/(156543.03392*Math.cos(AV.lat*Math.PI/180)/Math.pow(2,z))}
+
+// NAVEGAÇÃO
+function ir(id){
+  var p=document.querySelectorAll('.pag');
+  for(var i=0;i<p.length;i++)p[i].classList.remove('ativa');
+  var a=G(id);if(a)a.classList.add('ativa');
+  var m=document.querySelectorAll('.msg');
+  for(var j=0;j<m.length;j++){m[j].className='msg';m[j].innerText=''}
+  window.scrollTo(0,0);
+  if(id==='p-inicio')atualizarHome();
+  if(id==='p-login-j')prepLoginJ();
+  if(id==='p-login-pr')prepLoginPR();
+  if(id==='p-jogo')iniciarJogo();
+  if(id==='p-pr'){renderPRCard();prTab('dash')}
+}
+function voltarHome(){pararJogo();ir('p-inicio')}
+
+function atualizarHome(){
+  var j=BD.getSJ(),p=BD.getSP();
+  if(j){G('home-j-nm').innerText='👤 '+j.nm;G('home-j-info').innerText='🏴 '+fN(j.fl||0)+' · 👁 '+(j.visao||5)+'m · Nv '+(j.nivel||1);G('home-j').style.display='block'}
+  else G('home-j').style.display='none';
+  if(p){G('home-pr-nm').innerText='🏪 '+p.ne;G('home-pr-info').innerText='📍 '+(p.loc||'-')+(p.dist?', '+p.dist:'');G('home-pr').style.display='block'}
+  else G('home-pr').style.display='none'
+}
+function reentrarJogo(){var s=BD.getSJ();if(!s){ir('p-login-j');return}jogAtual=s;ir('p-jogo')}
+function reentrarPR(){var s=BD.getSP();if(!s){ir('p-login-pr');return}entrarNoPR(s)}
+
+var confAcao=null;
+function confirmarSair(q){mostrConf('🚪',q==='j'?'SAIR DO JOGO?':'SAIR DA CONTA?','Progresso guardado.','sair-'+q)}
+function mostrConf(i,t,x,a){confAcao=a;G('conf-ico').innerText=i;G('conf-tit').innerText=t;G('conf-txt').innerText=x;G('conf-ovl').style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:9500;display:block';G('conf-box').style.display='block'}
+function fecharConf(){confAcao=null;G('conf-ovl').style.display='none';G('conf-box').style.display='none'}
+function exConf(){var a=confAcao;fecharConf();if(a==='sair-j'){BD.delSJ();BD.delPwJ();pararJogo();ir('p-inicio')}else if(a==='sair-pr'){BD.delSP();BD.delPwP();ir('p-inicio')}}
+
+// LOGIN JOGADOR
+function prepLoginJ(){
+  var s=BD.getSJ();
+  if(s){
+    G('lj-com').style.display='block';G('lj-sem').style.display='none';
+    G('lj-nm').innerText=s.nm||'-';G('lj-btn-nm').innerText=s.nm||'-';
+    G('lj-sub').innerText='Nível '+(s.nivel||1);
+    G('lj-fl').innerText=fN(s.fl||0);G('lj-en').innerText=Math.round(s.en||100)+'%';
+    G('lj-sk').innerText=s.sk||0;G('lj-vis').innerText=(s.visao||5)+'m';
+    G('lj-emoji').innerText=['🌱','🥉','🥈','🥇','💎','👑'][Math.min(5,Math.floor((s.sk||0)/10))];
+    var p=BD.getPwJ();
+    if(p){G('lj-pw').value=p;G('lj-lbr-pw').checked=true}
+    else{G('lj-pw').value='';G('lj-lbr-pw').checked=false}
+    setTimeout(function(){var e=G('lj-pw');if(e)e.focus()},200)
+  }else{
+    G('lj-com').style.display='none';G('lj-sem').style.display='block';
+    G('lj-em').value='';G('lj-em-i').style.display='none';
+    setTimeout(function(){var e=G('lj-em');if(e)e.focus()},200)
+  }
+}
+function loginJCom(){
+  var s=BD.getSJ();if(!s){prepLoginJ();return}
+  var p=G('lj-pw').value;
+  if(!p){msg('m-lj','❌ Senha!','e');return}
+  if(p===PASSE){finLoginJ(s);return}
+  var l=BD.jogs(),j=null;
+  for(var i=0;i<l.length;i++){if(l[i].em===s.em&&l[i].pw===p){j=l[i];break}}
+  if(!j){msg('m-lj','❌ Incorreta!','e');G('lj-pw').value='';G('lj-pw').focus();return}
+  if(G('lj-lbr-pw').checked)BD.setPwJ(p);else BD.delPwJ();
+  finLoginJ(j)
+}
+function loginJSem(){
+  var e=V('lj-em').toLowerCase(),p=G('lj-pw-m').value;
+  if(!vE(e)){msg('m-lj','❌ Email!','e');return}
+  if(!p){msg('m-lj','❌ Senha!','e');return}
+  if(p===PASSE){finLoginJ({nm:'ADMIN',em:e,fl:0,en:100,sk:0,nivel:1,visao:5});return}
+  var l=BD.jogs(),j=null,ex=false;
+  for(var i=0;i<l.length;i++){if(l[i].em===e){ex=true;if(l[i].pw===p){j=l[i];break}}}
+  if(!j){msg('m-lj',ex?'❌ Senha incorreta!':'❌ Não encontrado!','e');return}
+  if(G('lj-lbr').checked)BD.setPwJ(p);
+  finLoginJ(j)
+}
+function finLoginJ(j){
+  j.ult=Date.now();
+  var l=BD.jogs(),idx=-1;
+  for(var i=0;i<l.length;i++){if(l[i].em===j.em){idx=i;break}}
+  if(idx>=0)l[idx]=j;else if(j.em)l.push(j);
+  BD.saveJ(l);BD.setSJ(j);jogAtual=j;ir('p-jogo')
+}
+function verEmJ(){
+  var e=V('lj-em').toLowerCase(),d=G('lj-em-i');
+  if(!vE(e)){d.style.display='none';return}
+  var l=BD.jogs(),j=null;
+  for(var i=0;i<l.length;i++){if(l[i].em===e){j=l[i];break}}
+  d.style.display='block';
+  if(j){d.style.color='#81c784';d.innerHTML='✅ <b style="color:#0ff">'+j.nm+'</b>'}
+  else{d.style.color='#f66';d.innerHTML='❌ <span class="lnk" onclick="ir(\'p-reg-j\')">Criar</span>'}
+}
+function trocarContaJ(){BD.delSJ();BD.delPwJ();prepLoginJ()}
+
+// REGISTO JOGADOR
+function fazerRegJ(){
+  var n=V('rj-nm'),e=V('rj-em').toLowerCase(),t=V('rj-tl'),p=G('rj-pw').value,p2=G('rj-pw2').value;
+  if(!n){msg('m-regj','❌ Nome!','e');return}
+  if(!vE(e)){msg('m-regj','❌ Email!','e');return}
+  if(!p||p.length<4){msg('m-regj','❌ Senha mín. 4!','e');return}
+  if(p!==p2){msg('m-regj','❌ Senhas!','e');return}
+  var l=BD.jogs();
+  for(var i=0;i<l.length;i++){if(l[i].em===e){msg('m-regj','❌ Existe!','e');return}}
+  var em=BD.emps();
+  for(var j=0;j<em.length;j++){if(em[j].em===e){msg('m-regj','❌ É empresa!','e');return}}
+  var nv={nm:n,em:e,tl:t.replace(/\s/g,''),pw:p,fl:0,en:100,sk:0,flEnerg:0,flLimite:500,nivel:1,visao:5,qrsGerados:[],reg:Date.now(),ult:Date.now()};
+  l.push(nv);BD.saveJ(l);BD.setSJ(nv);
+  if(G('rj-lbr').checked)BD.setPwJ(p);
+  jogAtual=nv;ir('p-jogo')
+}
+
+// LOGIN PR
+function prepLoginPR(){
+  var s=BD.getSP();
+  if(s){
+    G('lpr-com').style.display='block';G('lpr-sem').style.display='none';
+    G('lpr-nm').innerText=s.ne||'-';G('lpr-btn-nm').innerText=s.ne||'-';
+    G('lpr-sub').innerText=(s.ativ||'-')+' · '+(s.loc||'-');
+    G('lpr-loc').innerText=s.loc||'-';G('lpr-packs').innerText=(s.packs||[]).length;
+    var p=BD.getPwP();
+    if(p){G('lpr-pw').value=p;G('lpr-lbr-pw').checked=true}
+    else{G('lpr-pw').value='';G('lpr-lbr-pw').checked=false}
+    setTimeout(function(){var e=G('lpr-pw');if(e)e.focus()},200)
+  }else{
+    G('lpr-com').style.display='none';G('lpr-sem').style.display='block';
+    G('lpr-em').value='';G('lpr-em-i').style.display='none'
+  }
+}
+function loginPRCom(){
+  var s=BD.getSP();if(!s){prepLoginPR();return}
+  var p=G('lpr-pw').value;
+  if(!p){msg('m-lpr','❌ Senha!','e');return}
+  if(p===PASSE){entrarNoPR(s);return}
+  var l=BD.emps(),e=null;
+  for(var i=0;i<l.length;i++){if(l[i].em===s.em&&l[i].pw===p){e=l[i];break}}
+  if(!e){msg('m-lpr','❌ Incorreta!','e');return}
+  if(G('lpr-lbr-pw').checked)BD.setPwP(p);
+  entrarNoPR(e)
+}
+function loginPRSem(){
+  var e=V('lpr-em').toLowerCase(),p=G('lpr-pw-m').value;
+  if(!vE(e)){msg('m-lpr','❌ Email!','e');return}
+  if(!p){msg('m-lpr','❌ Senha!','e');return}
+  if(p===PASSE){
+    var l2=BD.emps(),f=null;
+    for(var k=0;k<l2.length;k++){if(l2[k].em===e){f=l2[k];break}}
+    entrarNoPR(f||{ne:'Admin',em:e,loc:'-',ativ:'-'});return
+  }
+  var l=BD.emps(),r=null;
+  for(var i=0;i<l.length;i++){if(l[i].em===e&&l[i].pw===p){r=l[i];break}}
+  if(!r){msg('m-lpr','❌ Não encontrada!','e');return}
+  if(G('lpr-lbr').checked)BD.setPwP(p);
+  entrarNoPR(r)
+}
+function verEmPR(){
+  var e=V('lpr-em').toLowerCase(),d=G('lpr-em-i');
+  if(!vE(e)){d.style.display='none';return}
+  var l=BD.emps(),p=null;
+  for(var i=0;i<l.length;i++){if(l[i].em===e){p=l[i];break}}
+  d.style.display='block';
+  if(p){d.style.color='#f90';d.innerHTML='✅ <b style="color:#0ff">'+p.ne+'</b>'}
+  else{d.style.color='#f66';d.innerHTML='❌ <span class="lnk" onclick="ir(\'p-reg-pr\')">Registar</span>'}
+}
+function trocarContaPR(){BD.delSP();BD.delPwP();prepLoginPR()}
+function entrarNoPR(pr){BD.setSP(pr);G('pr-hud-n').innerText='🏪 '+pr.ne;G('pr-hud-loc').innerText=(pr.loc||'')+(pr.dist?', '+pr.dist:'');ir('p-pr')}
+
+// REGISTO PR
+function fazerRegPR(){
+  var ne=V('prr-ne'),nif=V('prr-nif'),rua=V('prr-rua'),cp=V('prr-cp'),loc=V('prr-loc'),dist=V('prr-dist');
+  var ativ=V('prr-ativ'),tel=V('prr-tel'),em=V('prr-email').toLowerCase(),telR=V('prr-tel-r');
+  var resp=V('prr-resp'),pw=G('prr-pw').value,pw2=G('prr-pw2').value;
+  if(!rua){msg('m-regpr','❌ Morada!','e');return}
+  if(!cp){msg('m-regpr','❌ Cód.Postal!','e');return}
+  if(!loc){msg('m-regpr','❌ Localidade!','e');return}
+  if(!dist){msg('m-regpr','❌ Distrito!','e');return}
+  if(!ne){msg('m-regpr','❌ Nome!','e');return}
+  if(!nif||!vN(nif)){msg('m-regpr','❌ NIF (9 dígitos)!','e');return}
+  if(!ativ){msg('m-regpr','❌ Setor!','e');return}
+  if(!tel||!vT(tel)){msg('m-regpr','❌ Telefone!','e');return}
+  if(!em||!vE(em)){msg('m-regpr','❌ Email!','e');return}
+  if(!telR||!vT(telR)){msg('m-regpr','❌ Telemóvel resp.!','e');return}
+  if(!resp){msg('m-regpr','❌ Responsável!','e');return}
+  if(!pw||pw.length<4){msg('m-regpr','❌ Senha mín. 4!','e');return}
+  if(pw!==pw2){msg('m-regpr','❌ Senhas!','e');return}
+  if(!G('prr-trm').checked){msg('m-regpr','❌ Termos!','e');return}
+  var l=BD.emps();
+  for(var i=0;i<l.length;i++){
+    if(l[i].nif===nif){msg('m-regpr','❌ NIF existe!','e');return}
+    if(l[i].em===em){msg('m-regpr','❌ Email existe!','e');return}
+  }
+  var jl=BD.jogs();
+  for(var j=0;j<jl.length;j++){if(jl[j].em===em){msg('m-regpr','❌ É jogador!','e');return}}
+  var n={ne:ne,nif:nif,ativ:ativ,rua:rua,cp:cp,loc:loc,dist:dist,tel:tel,em:em,telR:telR,resp:resp,pw:pw,packs:[],lotes:[],qrsGerados:0,qrsUsados:0,reg:Date.now()};
+  l.push(n);BD.saveE(l);BD.setSP(n);
+  if(G('prr-lbr').checked)BD.setPwP(pw);
+  entrarNoPR(n)
+}
+
+// RECUPERAR SENHA
+var recQuem='j',recMetodo='',recCod='',recVolta='p-login-j';
+function irRec(q){recQuem=q;recMetodo='';recVolta=q==='j'?'p-login-j':'p-login-pr';G('rec-area-j').style.display=q==='j'?'block':'none';G('rec-area-pr').style.display=q==='pr'?'block':'none';G('rec-p1').style.display='block';G('rec-p2').style.display='none';G('rec-p3').style.display='none';G('rec-fem').style.display=G('rec-fsms').style.display='none';G('rec-btn-env').style.display='none';G('rec-oem').style.borderColor=G('rec-osms').style.borderColor='#333';ir('p-rec')}
+function irVoltarRec(){ir(recVolta)}
+function selRec(m){recMetodo=m;G('rec-oem').style.borderColor=m==='email'?'#0ff':'#333';G('rec-osms').style.borderColor=m==='sms'?'#0ff':'#333';G('rec-fem').style.display=m==='email'?'block':'none';G('rec-fsms').style.display=m==='sms'?'block':'none';G('rec-btn-env').style.display='block'}
+function enviarCod(){if(!recMetodo){msg('m-rec','❌ Método!','e');return}var e=V('rec-em').toLowerCase(),t=V('rec-tl').replace(/\s/g,'');if(recMetodo==='email'&&!vE(e)){msg('m-rec','❌ Email!','e');return}if(recMetodo==='sms'&&!vT(t)){msg('m-rec','❌ Telemóvel!','e');return}var l=recQuem==='j'?BD.jogs():BD.emps(),ok=false;for(var i=0;i<l.length;i++){if(recMetodo==='email'&&l[i].em===e){ok=true;break}if(recMetodo==='sms'&&(l[i].tl===t||l[i].telR===t||l[i].tel===t)){ok=true;break}}if(!ok){msg('m-rec','❌ Não encontrado!','e');return}recCod=String(Math.floor(1e3+Math.random()*9e3));G('rec-p1').style.display='none';G('rec-p2').style.display='block';G('rec-cshow').innerText=recCod}
+function reenvCod(){recCod=String(Math.floor(1e3+Math.random()*9e3));G('rec-cshow').innerText=recCod;msg('m-rec','✅ Reenviado!','s')}
+function verCod(){var c=V('rec-cin');if(c!==recCod){msg('m-rec','❌ Errado!','e');return}G('rec-p2').style.display='none';G('rec-p3').style.display='block'}
+function guardarNovaSenha(){
+  var p=G('rec-np').value,p2=G('rec-np2').value;
+  if(!p||p.length<4){msg('m-rec','❌ Mín. 4!','e');return}
+  if(p!==p2){msg('m-rec','❌ Senhas!','e');return}
+  var e=V('rec-em').toLowerCase(),t=V('rec-tl').replace(/\s/g,'');
+  if(recQuem==='j'){var l=BD.jogs();for(var i=0;i<l.length;i++){var ok=recMetodo==='email'?l[i].em===e:l[i].tl===t;if(ok){l[i].pw=p;BD.saveJ(l);BD.setSJ(l[i]);BD.setPwJ(p);break}}}
+  else{var l2=BD.emps();for(var j=0;j<l2.length;j++){var ok2=recMetodo==='email'?l2[j].em===e:(l2[j].telR===t||l2[j].tel===t);if(ok2){l2[j].pw=p;BD.saveE(l2);BD.setSP(l2[j]);BD.setPwP(p);break}}}
+  msg('m-rec','✅ Alterada!','s');
+  setTimeout(function(){if(recQuem==='j'){jogAtual=BD.getSJ();if(jogAtual)ir('p-jogo');else ir('p-login-j')}else{var sp=BD.getSP();if(sp)entrarNoPR(sp);else ir('p-login-pr')}},1500)
+}
+function loginBO(){if(G('bo-pw').value!==PASSE){msg('m-bo','❌ Incorreto!','e');return}jogAtual={nm:'ADMIN',em:'admin@zf',fl:0,en:100,sk:0,nivel:1,visao:5,isBO:true};BD.setSJ(jogAtual);ir('p-jogo')}
+
+// ================================================================
+// SISTEMA PR COMPLETO
+// ================================================================
+var prTabAtual='dash';
+
+function renderPRCard(){
+  var pr=BD.getSP();if(!pr)return;
+  var tf=0,pa=0,la=0;
+  var pks=pr.packs||[];
+  for(var i=0;i<pks.length;i++){tf+=pks[i].flagsTotal||pks[i].flags||0;if(pks[i].fim>Date.now())pa++}
+  var lts=pr.lotes||[];
+  for(var j=0;j<lts.length;j++){if(lts[j].estado==='ativo')la++}
+  G('pr-card-emp').innerHTML='<div class="ucard ucard-pr"><div class="uavt uavt-pr"><span style="font-size:32px">🏪</span><div class="udot udot-pr"></div></div><div class="u-nome" style="color:#f90">'+pr.ne+'</div><div class="u-sub">'+(pr.ativ||'-')+' · '+(pr.loc||'-')+'</div><div class="u-stats"><div><div class="u-stat-n" style="color:#f90">'+pa+'</div><div class="u-stat-l">📦 Packs</div></div><div><div class="u-stat-n" style="color:#0ff">'+la+'</div><div class="u-stat-l">🎫 Lotes</div></div><div><div class="u-stat-n" style="color:#4CAF50">'+fN(tf)+'</div><div class="u-stat-l">🏴 Flags</div></div><div><div class="u-stat-n" style="color:#f44">'+(pr.qrsGerados||0)+'</div><div class="u-stat-l">📱 QRs</div></div></div></div>'
+}
+
+function prTab(tab){
+  prTabAtual=tab;
+  var tabs=G('pr-tabs');
+  if(tabs){
+    var btns=tabs.querySelectorAll('button');
+    for(var i=0;i<btns.length;i++){btns[i].className='bc';btns[i].style.cssText='flex:1;padding:8px;font-size:11px;min-width:70px'}
+    var idx={dash:0,packs:1,lotes:2,qrs:3,dados:4};
+    if(btns[idx[tab]]){btns[idx[tab]].className='bo';btns[idx[tab]].style.cssText='flex:1;padding:8px;font-size:11px;min-width:70px'}
+  }
+  var el=G('pr-tab-content');
+  if(tab==='dash')el.innerHTML=renderDash();
+  else if(tab==='packs')el.innerHTML=renderPacks();
+  else if(tab==='lotes')el.innerHTML=renderLotes();
+  else if(tab==='qrs')el.innerHTML=renderQrs();
+  else if(tab==='dados')el.innerHTML=renderDados()
+}
+
+function renderDash(){
+  var pr=BD.getSP();if(!pr)return'';
+  var pks=pr.packs||[],lts=pr.lotes||[],tf=0,fu=0,fr=0,pa=0,la=0;
+  for(var i=0;i<pks.length;i++){var t=pks[i].flagsTotal||pks[i].flags||0,l=pks[i].flagsLeft||0;tf+=t;fu+=t-l;fr+=l;if(pks[i].fim>Date.now())pa++}
+  for(var j=0;j<lts.length;j++){if(lts[j].estado==='ativo')la++}
+  var pc=tf>0?Math.round(fu/tf*100):0;
+  var h='<h3 style="color:#f90;margin-bottom:12px">📊 Dashboard</h3>';
+  h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">';
+  h+='<div class="card card-y" style="text-align:center;padding:14px"><div style="font-size:24px">🏴</div><div style="font-size:20px;font-weight:700;color:#f90">'+fN(tf)+'</div><div style="font-size:10px;color:#888">Flags Totais</div></div>';
+  h+='<div class="card card-v" style="text-align:center;padding:14px"><div style="font-size:24px">✅</div><div style="font-size:20px;font-weight:700;color:#4CAF50">'+fN(fu)+'</div><div style="font-size:10px;color:#888">Usadas</div></div>';
+  h+='<div class="card card-b" style="text-align:center;padding:14px"><div style="font-size:24px">📦</div><div style="font-size:20px;font-weight:700;color:#0ff">'+pa+'</div><div style="font-size:10px;color:#888">Packs Ativos</div></div>';
+  h+='<div class="card" style="text-align:center;padding:14px;border-color:#f44"><div style="font-size:24px">📱</div><div style="font-size:20px;font-weight:700;color:#f44">'+(pr.qrsGerados||0)+'</div><div style="font-size:10px;color:#888">QR Codes</div></div>';
+  h+='</div>';
+  h+='<div class="card card-y" style="padding:14px"><div style="display:flex;justify-content:space-between;font-size:12px;color:#888;margin-bottom:4px"><span>Flags utilizadas</span><span style="color:#f90;font-weight:700">'+pc+'%</span></div><div style="background:#222;border-radius:4px;height:10px;overflow:hidden"><div style="height:100%;background:linear-gradient(90deg,#f90,#f44);border-radius:4px;width:'+pc+'%"></div></div><div style="display:flex;justify-content:space-between;font-size:10px;color:#555;margin-top:4px"><span>'+fN(fu)+' usadas</span><span>'+fN(fr)+' restantes</span></div></div>';
+  h+='<div class="card" style="padding:12px"><div class="row"><div class="rl">🎫 Lotes Ativos</div><div class="rv" style="color:#0ff;font-weight:700">'+la+'</div></div><div class="row"><div class="rl">📱 QRs Validados</div><div class="rv" style="color:#4CAF50">'+(pr.qrsUsados||0)+'</div></div><div class="row"><div class="rl">📅 Registo</div><div class="rv">'+fD(pr.reg)+'</div></div></div>';
+  return h
+}
+
+function renderPacks(){
+  var pr=BD.getSP();if(!pr)return'';
+  var h='<h3 style="color:#f90;margin-bottom:12px">📦 Packs de Bandeiras</h3>';
+  var pks=pr.packs||[];
+  if(pks.length>0){
+    for(var i=0;i<pks.length;i++){
+      var pk=pks[i],t=pk.flagsTotal||pk.flags||0,l=pk.flagsLeft||0,pc=t>0?Math.round((t-l)/t*100):0,ex=pk.fim<Date.now();
+      h+='<div class="card card-y" style="padding:12px;'+(ex?'opacity:.5':'')+'"><div style="display:flex;justify-content:space-between;margin-bottom:8px"><div><span style="color:'+(ex?'#555':'#f90')+';font-weight:700;font-size:14px">'+(pk.label||pk.key||'Pack')+'</span> <span style="font-size:10px;color:#888">· '+(pk.radiusKm>=999999?'Nacional':pk.radiusKm+'km')+'</span></div><span style="font-size:11px;color:'+(ex?'#f44':'#4CAF50')+';font-weight:700">'+(ex?'❌ Expirado':'✅ Ativo')+'</span></div>';
+      h+='<div style="display:flex;justify-content:space-between;font-size:11px;color:#888;margin-bottom:3px"><span>Flags</span><span style="color:#0ff">'+fN(l)+' / '+fN(t)+'</span></div>';
+      h+='<div style="background:#222;border-radius:3px;height:6px;overflow:hidden"><div style="height:100%;background:linear-gradient(90deg,#4CAF50,#f90);width:'+pc+'%;border-radius:3px"></div></div>';
+      h+='<div style="display:flex;justify-content:space-between;font-size:10px;color:#555;margin-top:6px"><span>Início: '+fD(pk.inicio)+'</span><span>Expira: '+fD(pk.fim)+'</span></div></div>'
     }
-    
-    function saveState() {
-      localStorage.setItem(STATE_KEY, JSON.stringify(STATE));
+  }else h+='<div class="item" style="text-align:center">Nenhum pack ativo. Compra abaixo!</div>';
+  h+='<h3 style="color:#0ff;margin-bottom:10px;margin-top:16px">🛒 Comprar Pack</h3>';
+  var keys=['MINIMO','MEDIO','GRANDE','ENORME'],emj=['🟢','🔵','🟡','🔴'];
+  for(var k=0;k<keys.length;k++){
+    var p=PACKS[keys[k]];
+    h+='<div class="card" style="padding:14px;border-color:'+(k<2?'#4CAF50':'#f90')+'"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div><span style="font-size:16px">'+emj[k]+'</span> <span style="font-weight:700;font-size:15px">'+p.label+'</span></div><span style="background:linear-gradient(135deg,#f90,#fc0);color:#000;padding:4px 10px;border-radius:6px;font-weight:800;font-size:14px">'+p.price+'€</span></div>';
+    h+='<div class="row"><div class="rl">🏴 Flags</div><div class="rv" style="color:#0ff;font-weight:700">'+fN(p.flags)+'</div></div>';
+    h+='<div class="row"><div class="rl">📍 Raio</div><div class="rv">'+(p.radiusKm>=999999?'🌍 Nacional':p.radiusKm+'km')+'</div></div>';
+    h+='<div class="row"><div class="rl">🎫 Lotes máx.</div><div class="rv">'+p.maxLots+'</div></div>';
+    h+='<div class="row"><div class="rl">📅 Duração</div><div class="rv">'+p.durDias+' dias</div></div>';
+    h+='<button class="bo bb" onclick="comprarPack(\''+keys[k]+'\')" style="margin-top:8px;padding:12px;font-size:14px">🛒 COMPRAR</button></div>'
+  }
+  return h
+}
+
+function comprarPack(key){
+  var pack=PACKS[key];if(!pack)return;
+  var pr=BD.getSP();if(!pr)return;
+  if(!pr.packs)pr.packs=[];
+  var agora=Date.now();
+  pr.packs.push({id:'PK_'+Math.random().toString(36).slice(2,8).toUpperCase(),key:pack.key,label:pack.label,price:pack.price,flags:pack.flags,flagsTotal:pack.flags,flagsLeft:pack.flags,radiusKm:pack.radiusKm,maxLots:pack.maxLots,inicio:agora,fim:agora+pack.durDias*864e5,criadoEm:agora});
+  salvarPR(pr);mostrarNotif('📦','Pack '+pack.label+' comprado!',fN(pack.flags)+' flags');renderPRCard();prTab('packs')
+}
+
+function renderLotes(){
+  var pr=BD.getSP();if(!pr)return'';
+  var h='<h3 style="color:#f90;margin-bottom:12px">🎫 Lotes de Prémios</h3>';
+  var lts=pr.lotes||[];
+  if(lts.length>0){
+    for(var i=0;i<lts.length;i++){
+      var l=lts[i],at=l.estado==='ativo',pc=l.n>0?Math.round((l.usados||0)/l.n*100):0;
+      h+='<div class="card'+(at?' card-y':'')+'" style="padding:12px;'+(at?'':'opacity:.6')+'"><div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="font-weight:700;color:'+(at?'#f90':'#555')+'">'+l.premio+'</span><span style="font-size:11px;color:'+(at?'#4CAF50':'#f44')+'">'+(at?'✅ Ativo':'⏸ Inativo')+'</span></div>';
+      if(l.descricao)h+='<div style="font-size:12px;color:#888;margin-bottom:6px">'+l.descricao+'</div>';
+      h+='<div class="row"><div class="rl">🎁 Prémios</div><div class="rv">'+(l.usados||0)+' / '+l.n+'</div></div>';
+      h+='<div style="background:#222;border-radius:3px;height:5px;overflow:hidden;margin:4px 0"><div style="height:100%;background:#f90;width:'+pc+'%;border-radius:3px"></div></div>';
+      h+='<div class="row"><div class="rl">📅 Expira</div><div class="rv">'+fD(l.expiracao)+'</div></div>';
+      h+='<div style="display:flex;gap:6px;margin-top:8px">';
+      if(at)h+='<button class="bsair" style="flex:1;padding:6px" onclick="toggleLote('+i+')">⏸ Pausar</button>';
+      else h+='<button class="bv" style="flex:1;padding:6px;font-size:12px" onclick="toggleLote('+i+')">▶ Ativar</button>';
+      h+='<button class="bsair" style="padding:6px 10px;font-size:11px" onclick="apagarLote('+i+')">🗑</button></div></div>'
     }
-    
-    let STATE = loadState();
+  }else h+='<div class="item" style="text-align:center">Nenhum lote criado.</div>';
+  h+='<div class="card card-b" style="padding:14px;margin-top:14px"><h3 style="color:#0ff;margin-bottom:10px">➕ Criar Lote</h3>';
+  h+='<div class="lbl">🎁 Nome do Prémio <em>*</em></div><input id="nl-premio" placeholder="Ex: 10% desconto, café grátis...">';
+  h+='<div class="lbl">📝 Descrição</div><input id="nl-desc" placeholder="Detalhes (opcional)">';
+  h+='<div class="g2"><div><div class="lbl">🔢 Quantidade <em>*</em></div><input type="number" id="nl-qtd" placeholder="50" min="1"></div><div><div class="lbl">📅 Duração (dias)</div><input type="number" id="nl-dias" placeholder="30" min="1"></div></div>';
+  h+='<button class="bo bb" onclick="criarLote()" style="margin-top:8px;padding:12px;font-size:14px">✅ CRIAR LOTE</button></div>';
+  return h
+}
 
-    // NAVEGAÇÃO SPA
-    function goTo(screenId, defaultTab = null) {
-      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-      const el = document.getElementById(screenId);
-      if(el) {
-        el.classList.add('active');
+function criarLote(){
+  var premio=V('nl-premio'),desc=V('nl-desc'),qtd=parseInt(V('nl-qtd'))||0,dias=parseInt(V('nl-dias'))||30;
+  if(!premio){mostrarNotif('❌','Nome obrigatório!','');return}
+  if(qtd<1){mostrarNotif('❌','Quantidade mín. 1','');return}
+  var pr=BD.getSP();if(!pr)return;
+  if(!pr.lotes)pr.lotes=[];
+  var agora=Date.now();
+  pr.lotes.push({id:'LT_'+Math.random().toString(36).slice(2,8).toUpperCase(),premio:premio,descricao:desc,n:qtd,usados:0,estado:'ativo',criadoEm:agora,expiracao:agora+dias*864e5});
+  salvarPR(pr);mostrarNotif('🎫','Lote criado!',premio);renderPRCard();prTab('lotes')
+}
+function toggleLote(i){var pr=BD.getSP();if(!pr||!pr.lotes||!pr.lotes[i])return;pr.lotes[i].estado=pr.lotes[i].estado==='ativo'?'inativo':'ativo';salvarPR(pr);prTab('lotes')}
+function apagarLote(i){var pr=BD.getSP();if(!pr||!pr.lotes)return;if(!confirm('Apagar este lote?'))return;pr.lotes.splice(i,1);salvarPR(pr);renderPRCard();prTab('lotes')}
 
-        if(screenId === 'auth-screen' && defaultTab) {
-          switchAuthTab(defaultTab);
-        }
-        if(screenId === 'game-screen') initGame();
-        if(screenId === 'pr-screen' && STATE.currentCompany) initPRDashboard();
-      }
+function renderQrs(){
+  var pr=BD.getSP();if(!pr)return'';
+  var h='<h3 style="color:#f90;margin-bottom:12px">📱 QR Codes</h3>';
+  var jogs=BD.jogs(),qrs=[];
+  for(var i=0;i<jogs.length;i++){
+    var q=jogs[i].qrsGerados||[];
+    for(var j=0;j<q.length;j++){if(q[j].emp===pr.em||q[j].ne===pr.ne)qrs.push({jog:jogs[i].nm,qr:q[j]})}
+  }
+  h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">';
+  h+='<div class="card card-y" style="text-align:center;padding:12px"><div style="font-size:20px;font-weight:700;color:#f90">'+qrs.length+'</div><div style="font-size:10px;color:#888">Gerados</div></div>';
+  h+='<div class="card card-v" style="text-align:center;padding:12px"><div style="font-size:20px;font-weight:700;color:#4CAF50">'+(pr.qrsUsados||0)+'</div><div style="font-size:10px;color:#888">Validados</div></div></div>';
+  h+='<div class="card card-b" style="padding:14px;margin-bottom:14px"><h3 style="color:#0ff;margin-bottom:8px">🔍 Validar QR</h3>';
+  h+='<div class="lbl">Código do QR (o jogador mostra-te)</div>';
+  h+='<input id="pr-qr-val" placeholder="Ex: QR-CC-A1B2C3" style="text-align:center;font-size:16px;letter-spacing:2px">';
+  h+='<button class="bv bb" onclick="validarQR()" style="margin-top:6px;padding:12px;font-size:14px">✅ VALIDAR</button>';
+  h+='<div id="pr-qr-res" style="margin-top:8px"></div></div>';
+  if(qrs.length>0){
+    h+='<h3 style="color:#888;margin-bottom:8px;font-size:12px">Últimos QRs</h3>';
+    for(var k=qrs.length-1;k>=Math.max(0,qrs.length-15);k--){
+      var it=qrs[k];
+      h+='<div class="card" style="padding:10px"><div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:'+(it.qr.usado?'#555':'#0ff')+';font-weight:700;font-size:12px">'+(it.qr.id||'---')+'</span><span style="font-size:10px;color:#888">'+fD(it.qr.data)+'</span></div>';
+      h+='<div class="row"><div class="rl">👤</div><div class="rv">'+it.jog+'</div></div>';
+      h+='<div class="row"><div class="rl">🎁</div><div class="rv" style="color:#f90">'+(it.qr.premio||'-')+'</div></div>';
+      if(it.qr.usado)h+='<div style="font-size:10px;color:#555;margin-top:4px">✅ Validado em '+fD(it.qr.usadoEm)+'</div>';
+      h+='</div>'
     }
+  }else h+='<div class="item" style="text-align:center">Nenhum QR gerado.<br><span style="color:#888;font-size:11px">Jogadores precisam '+CFG.QR_N+' bandeiras para ganhar QR.</span></div>';
+  return h
+}
 
-    // FUNÇÕES UTILITÁRIAS
-    function randomId(prefix) {
-      return prefix + '_' + Math.random().toString(36).slice(2, 10).toUpperCase();
+function validarQR(){
+  var cod=V('pr-qr-val').toUpperCase(),res=G('pr-qr-res');
+  if(!cod){res.innerHTML='<div class="msg e">❌ Insere o código!</div>';return}
+  var pr=BD.getSP();if(!pr)return;
+  var jogs=BD.jogs(),enc=null,ji=-1,qi=-1;
+  for(var i=0;i<jogs.length;i++){
+    var q=jogs[i].qrsGerados||[];
+    for(var j=0;j<q.length;j++){if(q[j].id&&q[j].id.toUpperCase()===cod){enc=q[j];ji=i;qi=j;break}}
+    if(enc)break
+  }
+  if(!enc){res.innerHTML='<div class="msg e">❌ QR não encontrado!</div>';return}
+  if(enc.usado){res.innerHTML='<div class="msg e">⚠️ Já utilizado em '+fD(enc.usadoEm)+'</div>';return}
+  enc.usado=true;enc.usadoEm=Date.now();
+  jogs[ji].qrsGerados[qi]=enc;BD.saveJ(jogs);
+  pr.qrsUsados=(pr.qrsUsados||0)+1;salvarPR(pr);
+  res.innerHTML='<div class="msg s">✅ Validado!<br>👤 '+jogs[ji].nm+'<br>🎁 '+(enc.premio||'-')+'</div>';
+  mostrarNotif('✅','QR Validado!',enc.premio||'');renderPRCard()
+}
+
+function renderDados(){
+  var pr=BD.getSP();if(!pr)return'';
+  var h='<h3 style="color:#f90;margin-bottom:12px">⚙️ Dados da Empresa</h3>';
+  h+='<div class="card card-y" style="padding:14px">';
+  h+='<div class="row"><div class="rl">🏢 Nome</div><div class="rv" style="color:#f90;font-weight:700">'+pr.ne+'</div></div>';
+  h+='<div class="row"><div class="rl">📋 NIF</div><div class="rv">'+(pr.nif||'-')+'</div></div>';
+  h+='<div class="row"><div class="rl">🏷 Setor</div><div class="rv">'+(pr.ativ||'-')+'</div></div>';
+  h+='<div class="row"><div class="rl">📍 Morada</div><div class="rv">'+(pr.rua||'-')+'</div></div>';
+  h+='<div class="row"><div class="rl">📮 Cód.Postal</div><div class="rv">'+(pr.cp||'-')+'</div></div>';
+  h+='<div class="row"><div class="rl">🏙 Local</div><div class="rv">'+(pr.loc||'-')+(pr.dist?', '+pr.dist:'')+'</div></div>';
+  h+='<div class="row"><div class="rl">📞 Tel.</div><div class="rv">'+(pr.tel||'-')+'</div></div>';
+  h+='<div class="row"><div class="rl">📧 Email</div><div class="rv" style="color:#0ff">'+(pr.em||'-')+'</div></div>';
+  h+='<div class="row"><div class="rl">👤 Resp.</div><div class="rv">'+(pr.resp||'-')+'</div></div>';
+  h+='<div class="row"><div class="rl">📅 Registo</div><div class="rv">'+fD(pr.reg)+'</div></div></div>';
+  h+='<div class="card card-b" style="padding:14px;margin-top:12px"><h3 style="color:#0ff;margin-bottom:8px">🔑 Alterar Senha</h3>';
+  h+='<div class="lbl">Senha Atual</div><div class="pw-wrap"><input type="password" id="pr-pw-a" placeholder="Senha atual"><button class="pw-toggle" onclick="tPW(\'pr-pw-a\',this)">👁</button></div>';
+  h+='<div class="lbl" style="margin-top:8px">Nova Senha</div><div class="pw-wrap"><input type="password" id="pr-pw-n" placeholder="Nova (mín. 4)"><button class="pw-toggle" onclick="tPW(\'pr-pw-n\',this)">👁</button></div>';
+  h+='<div class="lbl" style="margin-top:8px">Confirmar</div><div class="pw-wrap"><input type="password" id="pr-pw-c" placeholder="Repete"><button class="pw-toggle" onclick="tPW(\'pr-pw-c\',this)">👁</button></div>';
+  h+='<button class="bv bb" onclick="alterarSenhaPR()" style="margin-top:8px;padding:12px">💾 ALTERAR</button><div id="pr-pw-msg" style="margin-top:6px"></div></div>';
+  return h
+}
+
+function alterarSenhaPR(){
+  var a=G('pr-pw-a').value,n=G('pr-pw-n').value,c=G('pr-pw-c').value,r=G('pr-pw-msg');
+  var pr=BD.getSP();if(!pr)return;
+  if(!a){r.innerHTML='<div class="msg e">❌ Senha atual!</div>';return}
+  if(a!==pr.pw&&a!==PASSE){r.innerHTML='<div class="msg e">❌ Incorreta!</div>';return}
+  if(!n||n.length<4){r.innerHTML='<div class="msg e">❌ Mín. 4!</div>';return}
+  if(n!==c){r.innerHTML='<div class="msg e">❌ Senhas!</div>';return}
+  pr.pw=n;salvarPR(pr);BD.setPwP(n);
+  r.innerHTML='<div class="msg s">✅ Alterada!</div>';
+  G('pr-pw-a').value=G('pr-pw-n').value=G('pr-pw-c').value='';
+  mostrarNotif('✅','Senha alterada!','')
+}
+
+function salvarPR(pr){
+  var l=BD.emps(),found=false;
+  for(var i=0;i<l.length;i++){
+    if(l[i].em===pr.em||(l[i].nif&&l[i].nif===pr.nif)){l[i]=pr;found=true;break}
+  }
+  if(!found)l.push(pr);
+  BD.saveE(l);BD.setSP(pr)
+}
+
+// ================================================================
+// MOTOR DE JOGO COM LIGAÇÃO REAL AO SISTEMA PR
+// ================================================================
+var mapaJ=null,marcAvt=null,bandsNoMapa=[],bandMaisProx=null;
+var jogoOk=false,animF=null,animT=0,ultimoF=0,notifTmr=null;
+var dirs={c:false,b:false,e:false,d:false};
+var tamBtn=46;
+var AV={lat:39.5,lng:-8.0,dir:1,andando:false};
+var jogAtual=null;
+
+function iniciarJogo(){
+  jogAtual=BD.getSJ();
+  if(!jogAtual){ir('p-login-j');return}
+  atualizarHUDJogo();atualizarPainelSk();iniciarTicker();
+  if(jogoOk){setTimeout(function(){if(mapaJ){mapaJ.invalidateSize();atualizarCirculo()}},200);return}
+  jogoOk=true;
+  mapaJ=L.map('mapa',{center:[AV.lat,AV.lng],zoom:18,zoomControl:true,attributionControl:false,dragging:false,touchZoom:true,scrollWheelZoom:true,doubleClickZoom:false,keyboard:false});
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{maxZoom:20}).addTo(mapaJ);
+  mapaJ.on('zoom',function(){atualizarCirculo()});
+  var ic=L.divIcon({className:'',html:'<div style="width:14px;height:14px;background:#4CAF50;border-radius:50%;border:2px solid #fff;box-shadow:0 0 10px #4CAF50"></div>',iconSize:[14,14],iconAnchor:[7,7]});
+  marcAvt=L.marker([AV.lat,AV.lng],{icon:ic,zIndexOffset:1e3}).addTo(mapaJ);
+  iniciarGPS();setTimeout(spawnarBandeiras,700);arrastarCtrl();
+  animF=requestAnimationFrame(loopJogo)
+}
+
+function pararJogo(){
+  if(animF){cancelAnimationFrame(animF);animF=null}
+  jogoOk=false;
+  if(mapaJ)try{mapaJ.remove()}catch(e){}
+  mapaJ=null;bandsNoMapa=[];marcAvt=null;jogAtual=null
+}
+
+function iniciarGPS(){
+  if(!navigator.geolocation){G('gps-txt').innerText='❌ GPS indisponível';return}
+  navigator.geolocation.getCurrentPosition(
+    function(p){
+      AV.lat=p.coords.latitude;AV.lng=p.coords.longitude;
+      if(mapaJ)mapaJ.setView([AV.lat,AV.lng],18,{animate:false});
+      if(marcAvt)marcAvt.setLatLng([AV.lat,AV.lng]);
+      G('gps-txt').innerText='✅ GPS: '+AV.lat.toFixed(4)+', '+AV.lng.toFixed(4);
+      for(var i=0;i<bandsNoMapa.length;i++){if(bandsNoMapa[i].m&&mapaJ)try{mapaJ.removeLayer(bandsNoMapa[i].m)}catch(e){}}
+      bandsNoMapa=[];spawnarBandeiras()
+    },
+    function(){G('gps-txt').innerText='⚠️ GPS indisponível — usa joystick'},
+    {enableHighAccuracy:true,timeout:8e3}
+  )
+}
+
+function spawnarBandeiras(){
+  if(!mapaJ)return;
+  var n=CFG.N_BAND-bandsNoMapa.filter(function(b){return!b.apanhada}).length;
+  // Obter empresas com packs ativos
+  var empsComPacks=BD.emps().filter(function(e){return(e.packs||[]).some(function(p){return p.flagsLeft>0&&p.fim>Date.now()})});
+
+  for(var i=0;i<n;i++){
+    var a=Math.random()*2*Math.PI,d=15+Math.random()*CFG.SPAWN_RAIO;
+    var la=(d/111e3)*Math.cos(a),ln=(d/(111e3*Math.cos(AV.lat*Math.PI/180)))*Math.sin(a);
+    var tp='vazia',empRef=null,loteRef=null;
+    var r=Math.random();
+    if(r<0.45)tp='energia';
+    else if(r<0.72&&empsComPacks.length>0){
+      tp='pr';
+      empRef=empsComPacks[Math.floor(Math.random()*empsComPacks.length)];
+      var lotesAtivos=(empRef.lotes||[]).filter(function(l){return l.estado==='ativo'&&l.expiracao>Date.now()});
+      loteRef=lotesAtivos.length>0?lotesAtivos[Math.floor(Math.random()*lotesAtivos.length)]:null
     }
+    bandsNoMapa.push({lat:AV.lat+la,lng:AV.lng+ln,tipo:tp,empId:empRef?empRef.em:null,loteId:loteRef?loteRef.id:null,apanhada:false,m:null,visivel:false})
+  }
+  atualizarVisibilidade()
+}
 
-    function escapeHtml(text) {
-      if(!text) return '';
-      const div = document.createElement('div');
-      div.textContent = text;
-      return div.innerHTML;
+function corBanda(b){
+  if(b.tipo==='energia')return{cor:'#0ff',emj:'⚡'};
+  if(b.tipo==='pr'){
+    // Cor da empresa se existir
+    var emps=BD.emps();
+    for(var i=0;i<emps.length;i++){if(emps[i].em===b.empId&&emps[i].color)return{cor:emps[i].color,emj:'🏴'}}
+    return{cor:'#ff0',emj:'🏴'}
+  }
+  return{cor:'#555',emj:'🏴'}
+}
+
+function atualizarVisibilidade(){
+  if(!mapaJ)return;
+  var v=jogAtual?(jogAtual.visao||5):5;
+  for(var i=0;i<bandsNoMapa.length;i++){
+    var b=bandsNoMapa[i];
+    if(b.apanhada)continue;
+    var d=calcDist(AV.lat,AV.lng,b.lat,b.lng);
+    if(d<=v&&!b.visivel){
+      b.visivel=true;
+      var info=corBanda(b);
+      var ic=L.divIcon({className:'',html:'<div style="background:'+info.cor+';color:#000;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;border:2px solid #fff;cursor:pointer;box-shadow:0 0 10px '+info.cor+'">'+info.emj+'</div>',iconSize:[26,26],iconAnchor:[13,13]});
+      b.m=L.marker([b.lat,b.lng],{icon:ic}).addTo(mapaJ);
+      (function(banda){banda.m.on('click',function(){tentarApanhar(banda)})})(b)
+    }else if(d>v&&b.visivel&&b.m){
+      b.visivel=false;try{mapaJ.removeLayer(b.m)}catch(e){}b.m=null
     }
-
-    function sanitizeColor(color) {
-      if(!color || typeof color !== 'string') return '#00ff00';
-      const hexPattern = /^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/;
-      if(hexPattern.test(color)) return color;
-      return '#00ff00';
-    }
-
-    // TOGGLE PASSWORD
-    function togglePassword(inputId, btn) {
-      const input = document.getElementById(inputId);
-      if(input.type === 'password') {
-        input.type = 'text';
-        btn.textContent = '🔒';
-      } else {
-        input.type = 'password';
-        btn.textContent = '👁️';
-      }
-    }
-
-    // AUTH TABS
-    function switchAuthTab(tab) {
-      document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
-      document.querySelectorAll('.auth-form').forEach(f => f.classList.remove('active'));
-      
-      if(tab === 'player') {
-        document.querySelectorAll('.auth-tab')[0].classList.add('active');
-        document.getElementById('auth-player').classList.add('active');
-      } else {
-        document.querySelectorAll('.auth-tab')[1].classList.add('active');
-        document.getElementById('auth-company').classList.add('active');
-      }
-    }
-
-    // PASSWORD RECOVERY
-    function showPasswordRecovery(type) {
-      const identifier = prompt(type === 'player' ? 'Introduz o teu email ou telemóvel para recuperar a senha:' : 'Introduz o teu NIF ou email para recuperar a senha:');
-      if(!identifier) return;
-      
-      if(type === 'player') {
-        const player = STATE.players.find(p => p.email === identifier || p.phone === identifier);
-        if(player) {
-          alert('Demo: A tua senha é: ' + player.pass);
-        } else {
-          alert('Conta não encontrada.');
-        }
-      } else {
-        const company = STATE.companies.find(c => c.nif === identifier || c.email === identifier);
-        if(company) {
-          alert('Demo: A tua senha é: ' + company.pass);
-        } else {
-          alert('Empresa não encontrada.');
-        }
-      }
-    }
-
-    // PLAYER LOGIN/REGISTER
-    document.getElementById('form-player').addEventListener('submit', e => {
-      e.preventDefault();
-      const name = document.getElementById('p-name').value;
-      const email = document.getElementById('p-email').value;
-      const phone = document.getElementById('p-phone').value;
-      const pass = document.getElementById('p-pass').value;
-      const avatar = document.getElementById('p-avatar').value;
-      const photo = document.getElementById('p-photo').value;
-      const address = document.getElementById('p-address').value;
-      const locality = document.getElementById('p-locality').value;
-      const district = document.getElementById('p-district').value;
-
-      let player = STATE.players.find(p => p.name === name);
-
-      if(player) {
-        if(player.pass === pass) {
-          STATE.currentPlayer = player;
-          document.getElementById('msg-player').innerHTML = '<span class="ok">✓ Login OK!</span>';
-          setTimeout(() => goTo('game-screen'), 300);
-        } else {
-          document.getElementById('msg-player').innerHTML = '<span class="danger">Senha incorreta.</span>';
-        }
-      } else {
-        // Register new player
-        player = {
-          id: `player_${Date.now()}`,
-          name,
-          email,
-          phone,
-          pass,
-          avatar,
-          photo,
-          address,
-          locality,
-          district,
-          flags: 0,
-          zapFlags: 0,
-          prFlags: 0,
-          totalFlags: 0,
-          energy: 100,
-          skill: 1,
-          vision: 5,
-          position: { lat: 38.7223, lng: -9.1393 },
-          qrs: [],
-          usedQrs: []
-        };
-        STATE.players.push(player);
-        STATE.currentPlayer = player;
-        saveState();
-        document.getElementById('msg-player').innerHTML = '<span class="ok">✓ Registado e entrado!</span>';
-        setTimeout(() => goTo('game-screen'), 300);
-      }
-    });
-
-    // COMPANY LOGIN/REGISTER
-    document.getElementById('form-company').addEventListener('submit', e => {
-      e.preventDefault();
-      const name = document.getElementById('c-name').value;
-      const nif = document.getElementById('c-nif').value;
-      const fiscalAddress = document.getElementById('c-fiscal-address').value;
-      const fiscalCode = document.getElementById('c-fiscal-code').value;
-      const fiscalCity = document.getElementById('c-fiscal-city').value;
-      const pass = document.getElementById('c-pass').value;
-
-      let company = STATE.companies.find(c => c.nif === nif);
-
-      if(company) {
-        // Verificar se é filial pendente
-        if(company.status === 'pending') {
-          document.getElementById('msg-company').innerHTML = '<span class="warning">⚠️ A tua conta está pendente de aprovação pela empresa mãe.</span>';
-          return;
-        }
-
-        // Login normal
-        if(company.pass === pass) {
-          STATE.currentCompany = company;
-          document.getElementById('msg-company').innerHTML = '<span class="ok">✓ Login OK!</span>';
-          setTimeout(() => goTo('pr-screen'), 300);
-        } else {
-          document.getElementById('msg-company').innerHTML = '<span class="danger">Senha incorreta.</span>';
-        }
-      } else {
-        // Verificar se existe empresa mãe com o mesmo NIF
-        const parentCompany = STATE.companies.find(c => c.nif === nif && c.status !== 'pending');
-
-        if(parentCompany) {
-          // Criar filial pendente
-          const branch = {
-            id: `branch_${Date.now()}`,
-            name,
-            nif,
-            pass,
-            fiscalAddress,
-            fiscalCode,
-            fiscalCity,
-            status: 'pending',
-            parentId: parentCompany.id,
-            parentName: parentCompany.name,
-            packages: [],
-            lotes: [],
-            qrHistory: [],
-            campaign: {
-              rewardsEnabled: false,
-              rewardType: 'none',
-              rewardText: 'Sem prémio',
-              promoLotsActive: 0,
-              promoBudgetLeft: 0,
-              bingoCountActive: 0,
-              bingoText: '',
-              rewardsGiven: 0
-            }
-          };
-
-          // Adicionar às filiais pendentes da empresa mãe
-          if(!parentCompany.pendingBranches) parentCompany.pendingBranches = [];
-          parentCompany.pendingBranches.push(branch.id);
-
-          STATE.companies.push(branch);
-          saveState();
-          document.getElementById('msg-company').innerHTML = '<span class="warning">⚠️ Filial registada! Aguarda aprovação da empresa mãe (' + parentCompany.name + ').</span>';
-        } else {
-          // Registrar nova empresa mãe
-          company = {
-            id: `company_${Date.now()}`,
-            name,
-            nif,
-            pass,
-            fiscalAddress,
-            fiscalCode,
-            fiscalCity,
-            status: 'active',
-            packages: [],
-            lotes: [],
-            qrHistory: [],
-            pendingBranches: [],
-            branches: [],
-            campaign: {
-              rewardsEnabled: false,
-              rewardType: 'none',
-              rewardText: 'Sem prémio',
-              promoLotsActive: 0,
-              promoBudgetLeft: 0,
-              bingoCountActive: 0,
-              bingoText: '',
-              rewardsGiven: 0
-            }
-          };
-          STATE.companies.push(company);
-          STATE.currentCompany = company;
-          saveState();
-          document.getElementById('msg-company').innerHTML = '<span class="ok">✓ Empresa registada e entrada!</span>';
-          setTimeout(() => goTo('pr-screen'), 300);
-        }
-      }
-    });
-
-    // BACKOFFICE LOGIN
-    document.getElementById('form-backoffice').addEventListener('submit', e => {
-      e.preventDefault();
-      const email = document.getElementById('bo-email').value;
-      const pass = document.getElementById('bo-pass').value;
-      
-      if(email === STATE.backoffice.email && pass === STATE.backoffice.pass) {
-        document.getElementById('msg-backoffice').innerHTML = '<span class="ok">✓ Acesso autorizado!</span>';
-        document.getElementById('form-backoffice').style.display = 'none';
-        document.getElementById('bo-back-btn').style.display = 'none';
-        document.getElementById('bo-dashboard').style.display = 'block';
-        showBOTab('stats');
-      } else {
-        document.getElementById('msg-backoffice').innerHTML = '<span class="danger">Credenciais inválidas.</span>';
-      }
-    });
-
-    function logoutBackoffice() {
-      document.getElementById('form-backoffice').style.display = 'block';
-      document.getElementById('bo-back-btn').style.display = 'block';
-      document.getElementById('bo-dashboard').style.display = 'none';
-      document.getElementById('bo-email').value = '';
-      document.getElementById('bo-pass').value = '';
-      document.getElementById('msg-backoffice').innerHTML = '';
-    }
-
-    function showBOTab(tab) {
-      const c = document.getElementById('bo-content');
-      if(tab === 'stats') {
-        c.innerHTML = `<div class="item-module"><h3>📊 Estatísticas</h3><p>Jogadores: ${STATE.players.length} | Empresas: ${STATE.companies.length}</p></div>`;
-      } else if(tab === 'players') {
-        const rows = STATE.players.map(p => `<tr><td>${p.name}</td><td>${p.email}</td><td>${p.district}</td><td>${p.flags}</td></tr>`).join('');
-        c.innerHTML = `<div style="overflow-x:auto;"><table class="admin-table"><tr><th>Nome</th><th>Email</th><th>Distrito</th><th>Flags</th></tr>${rows}</table></div>`;
-      } else if(tab === 'companies') {
-        const rows = STATE.companies.map(c => `<tr><td>${c.name}</td><td>${c.nif}</td><td>${c.packages.length}</td><td>${c.lotes.length}</td></tr>`).join('');
-        c.innerHTML = `<div style="overflow-x:auto;"><table class="admin-table"><tr><th>Nome</th><th>NIF</th><th>Packs</th><th>Lotes</th></tr>${rows}</table></div>`;
-      }
-    }
-
-    // GAME
-    let playerMarker = null;
-    let flags = [];
-    let gameInterval = null;
-    let joystickActive = false;
-    let joystickData = { dx: 0, dy: 0 };
-    let offlineMode = false;
-    let currentOpenPanel = null;
-    let lastPosForEnergy = null;
-    let movedMetersBuffer = 0;
-    let lastMovementTime = Date.now();
-    let energyInterval = null;
-    let visionCircle = null;
-
-    function createPlayerIcon() {
-      let inner = 'JG';
-      if(STATE.currentPlayer.avatar === 'male') inner = '♂';
-      if(STATE.currentPlayer.avatar === 'female') inner = '♀';
-      if(STATE.currentPlayer.avatar === 'photo' && STATE.currentPlayer.photo) {
-        inner = '<img src="' + STATE.currentPlayer.photo + '" onerror="this.outerHTML=\'JG\'" />';
-      }
-      return L.divIcon({
-        className: '',
-        html: '<div class="player-marker">' + inner + '</div>',
-        iconSize: [28, 28],
-        iconAnchor: [14, 14]
-      });
-    }
-
-    function initGame() {
-      if(window.map) {
-        window.map.invalidateSize();
-        window.map.remove();
-      }
-
-      window.map = L.map('map', { zoomControl: false }).setView([STATE.currentPlayer.position.lat, STATE.currentPlayer.position.lng], 16);
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(window.map);
-
-      // Create player marker
-      playerMarker = L.marker([STATE.currentPlayer.position.lat, STATE.currentPlayer.position.lng], { icon: createPlayerIcon() }).addTo(window.map);
-
-      // Create vision circle
-      visionCircle = L.circle([STATE.currentPlayer.position.lat, STATE.currentPlayer.position.lng], {
-        radius: STATE.currentPlayer.vision,
-        color: '#00ff00',
-        fillOpacity: 0.05,
-        weight: 1
-      }).addTo(window.map);
-
-      // Spawn flags
-      spawnFlags();
-
-      // Init joystick
-      initJoystick();
-
-      // Start game loop
-      if(gameInterval) clearInterval(gameInterval);
-      gameInterval = setInterval(gameLoop, 100);
-
-      // Start energy regeneration
-      startEnergyRegeneration();
-
-      // Show mode modal
-      document.getElementById('mode-modal').classList.remove('hidden');
-
-      setTimeout(() => window.map.invalidateSize(), 150);
-    }
-
-    // Modal de seleção de modo
-    function closeModeModal() {
-      document.getElementById('mode-modal').classList.add('hidden');
-    }
-
-    function requestGPSMode() {
-      closeModeModal();
-      offlineMode = false;
-      document.getElementById('joystick-container').classList.add('hidden');
-      renderTopBar();
-      
-      if(!navigator.geolocation) {
-        alert('GPS não suportado.');
-        activateHomeMode();
-        return;
-      }
-      
-      if(navigator.geolocation.watchId) {
-        navigator.geolocation.clearWatch(navigator.geolocation.watchId);
-      }
-      
-      navigator.geolocation.getCurrentPosition(
-        pos => {
-          updatePosition(pos, true);
-          navigator.geolocation.watchId = navigator.geolocation.watchPosition(
-            p => updatePosition(p, false),
-            () => { alert('Erro GPS.'); activateHomeMode(); },
-            { enableHighAccuracy: true, maximumAge: 5000, timeout: 20000 }
-          );
-        },
-        () => {
-          alert('GPS falhou.');
-          document.getElementById('mode-modal').classList.remove('hidden');
-        },
-        { enableHighAccuracy: true, maximumAge: 5000, timeout: 20000 }
-      );
-    }
-
-    function activateHomeMode() {
-      closeModeModal();
-      offlineMode = true;
-      document.getElementById('joystick-container').classList.add('hidden');
-      document.getElementById('dpad-container').classList.remove('hidden');
-      renderTopBar();
-      initDPad();
-    }
-
-    function updatePosition(pos, forceCenter) {
-      updatePlayerLocation(pos.coords.latitude, pos.coords.longitude, true, forceCenter);
-    }
-
-    function updatePlayerLocation(lat, lng, fromMovement, centerMap) {
-      STATE.currentPlayer.position = { lat, lng };
-      
-      // Energy system
-      if(lastPosForEnergy && fromMovement) {
-        const moved = getDistanceMeters(lastPosForEnergy.lat, lastPosForEnergy.lng, lat, lng);
-        if(moved > 0.5) {
-          movedMetersBuffer += moved;
-          lastMovementTime = Date.now();
-          while(movedMetersBuffer >= 20) {
-            movedMetersBuffer -= 20;
-            STATE.currentPlayer.energy = Math.max(0, STATE.currentPlayer.energy - 1);
-          }
-        }
-      }
-      lastPosForEnergy = { lat, lng };
-      
-      if(playerMarker) {
-        playerMarker.setLatLng([lat, lng]);
-      }
-      
-      if(visionCircle) {
-        visionCircle.setLatLng([lat, lng]);
-        visionCircle.setRadius(STATE.currentPlayer.vision);
-      }
-      
-      if(centerMap && window.map) {
-        window.map.setView([lat, lng], 16);
-      }
-
-      updateFogOverlay();
-
-      renderTopBar();
-      saveState();
-    }
-
-    function updateFogOverlay() {
-      if(!window.map || !STATE.currentPlayer.position) return;
-      const pt = window.map.latLngToContainerPoint([STATE.currentPlayer.position.lat, STATE.currentPlayer.position.lng]);
-      const fog = document.getElementById('fog-overlay');
-      if(fog) {
-        fog.style.setProperty('--fog-x', pt.x + 'px');
-        fog.style.setProperty('--fog-y', pt.y + 'px');
-        fog.style.setProperty('--fog-r', Math.max(55, STATE.currentPlayer.vision * 18) + 'px');
-      }
-    }
-
-    function getDistanceMeters(lat1, lng1, lat2, lng2) {
-      const R = 6371e3;
-      const phi1 = lat1 * Math.PI / 180;
-      const phi2 = lat2 * Math.PI / 180;
-      const dPhi = (lat2 - lat1) * Math.PI / 180;
-      const dLambda = (lng2 - lng1) * Math.PI / 180;
-      const a = Math.sin(dPhi/2) * Math.sin(dPhi/2) + Math.cos(phi1) * Math.cos(phi2) * Math.sin(dLambda/2) * Math.sin(dLambda/2);
-      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-      return R * c;
-    }
-
-    function randomOffset(lat, lng, radiusMeters) {
-      const angle = Math.random() * 2 * Math.PI;
-      const distance = Math.random() * radiusMeters;
-      const latOffset = (distance * Math.cos(angle)) / 111320;
-      const lngOffset = (distance * Math.sin(angle)) / (111320 * Math.cos(lat * Math.PI / 180));
-      return { lat: lat + latOffset, lng: lng + lngOffset };
-    }
-
-    function getAllActivePackages() {
-      const list = [];
-      STATE.companies.forEach(company => {
-        (company.packages || []).forEach(pkg => {
-          if(pkg.flagsLeft > 0) list.push({ company, pkg });
-        });
-      });
-      return list;
-    }
-
-    function weightedPackagePick() {
-      if(!STATE.currentPlayer.position) return null;
-      const candidates = getAllActivePackages().map(({ company, pkg }) => {
-        const distKm = getDistanceMeters(STATE.currentPlayer.position.lat, STATE.currentPlayer.position.lng, company.lat || 38.7223, company.lng || -9.1393) / 1000;
-        let weight = 0;
-        if(pkg.radiusKm === Infinity) weight = 0.4;
-        else if(distKm <= pkg.radiusKm) {
-          const closeness = 1 - (distKm / pkg.radiusKm);
-          const bonus = pkg.radiusKm <= 5 ? 2.2 : pkg.radiusKm <= 15 ? 1.8 : 1.3;
-          weight = (1 + closeness * 4) * bonus;
-        } else weight = 0.03;
-        weight *= Math.max(0.3, Math.min(2, pkg.flagsLeft / Math.max(pkg.flagsInitial || pkg.flags, 1)));
-        return { company, pkg, weight };
-      }).filter(c => c.weight > 0);
-
-      const total = candidates.reduce((a, c) => a + c.weight, 0);
-      if(!total) return null;
-      let r = Math.random() * total;
-      for(const c of candidates) { r -= c.weight; if(r <= 0) return { company: c.company, pkg: c.pkg }; }
-      return candidates[0] ? { company: candidates[0].company, pkg: candidates[0].pkg } : null;
-    }
-
-    function startEnergyRegeneration() {
-      if(energyInterval) clearInterval(energyInterval);
-      energyInterval = setInterval(() => {
-        if(Date.now() - lastMovementTime >= 60000 && STATE.currentPlayer.energy < 100) {
-          STATE.currentPlayer.energy = Math.min(100, STATE.currentPlayer.energy + 1);
-          renderTopBar();
-          saveState();
-        }
-      }, 30000);
-    }
-
-    function renderTopBar() {
-      document.getElementById('energy-fill').style.width = STATE.currentPlayer.energy + '%';
-      document.getElementById('energy-text').textContent = 'Energia: ' + STATE.currentPlayer.energy + '%';
-      document.getElementById('mode-text').textContent = offlineMode ? 'Modo: Offline' : 'Modo: GPS';
-      document.getElementById('flags-text').textContent = '🚩 ' + STATE.currentPlayer.totalFlags;
-    }
-
-    function centerOnPlayer() {
-      if(window.map && STATE.currentPlayer.position) {
-        window.map.setView([STATE.currentPlayer.position.lat, STATE.currentPlayer.position.lng], 16);
-      }
-    }
-
-    // Painéis laterais
-    function openPanel(type) {
-      currentOpenPanel = type;
-      document.getElementById('side-panel').classList.remove('hidden');
-      const title = document.getElementById('side-panel-title');
-      const content = document.getElementById('side-panel-content');
-
-      if(type === 'progress') {
-        title.textContent = 'Progresso';
-        content.innerHTML = renderProgressPanel();
-      } else if(type === 'qrs') {
-        title.textContent = 'Cupões QR';
-        content.innerHTML = renderQRPanel();
-      } else if(type === 'account') {
-        title.textContent = 'Conta';
-        content.innerHTML = renderAccountPanel();
-      }
-    }
-
-    function closePanel() {
-      currentOpenPanel = null;
-      document.getElementById('side-panel').classList.add('hidden');
-    }
-
-    function renderProgressPanel() {
-      return '<div class="item-module"><p><strong>Total:</strong> ' + STATE.currentPlayer.totalFlags + ' · <strong>ZAP:</strong> ' + STATE.currentPlayer.zapFlags + ' · <strong>PR:</strong> ' + STATE.currentPlayer.prFlags + '</p><p><strong>Skill:</strong> ' + STATE.currentPlayer.skill + ' · <strong>Visão:</strong> ' + STATE.currentPlayer.vision.toFixed(1) + 'm</p></div>';
-    }
-
-    function renderQRPanel() {
-      expireOldQrs();
-      if(!STATE.currentPlayer.qrs || !STATE.currentPlayer.qrs.length) {
-        return '<div class="item-module"><p>Sem cupões.</p></div>';
-      }
-      return STATE.currentPlayer.qrs.map(q => '<div class="item-module"><span class="badge badge-gold">QR</span> <strong>' + q.prName + '</strong><p class="small">Prémio: ' + q.rewardText + ' · Válido: ' + qrExpiryText(q.expiresAt) + '</p><div class="qr-code">' + q.code + '</div><img src="https://quickchart.io/qr?text=' + encodeURIComponent(q.code) + '&size=100" style="margin-top:8px;background:#fff;padding:4px;border-radius:6px;" onerror="this.style.display=\'none\';console.error(\'Erro ao carregar imagem QR\')" /></div>').join('');
-    }
-
-    function renderAccountPanel() {
-      return '<div class="item-module"><p><strong>Nome:</strong> ' + STATE.currentPlayer.name + '</p><p><strong>Email:</strong> ' + STATE.currentPlayer.email + '</p><p><strong>Energia:</strong> ' + STATE.currentPlayer.energy + '%</p></div><div class="item-module"><button class="btn-danger" onclick="logoutPlayer()">SAIR</button></div>';
-    }
-
-    function logoutPlayer() {
-      if(!confirm('Sair da conta?')) return;
-      STATE.currentPlayer = null;
-      saveState();
-      goTo('landing');
-    }
-
-    // Ticker de notícias
-    function updateTicker() {
-      const ticker = document.getElementById('ticker');
-      if(!ticker) return;
-      
-      let messages = ['🎉 Bem-vindo ao ZAP FLAGS!'];
-      
-      // Adicionar notícias de empresas
-      STATE.companies.forEach(company => {
-        if(company.bingos && company.bingos.length > 0) {
-          const activeBingo = company.bingos.find(b => b.active);
-          if(activeBingo) {
-            messages.push(`🎱 ${company.name}: Bingo ativo - ${activeBingo.prize}!`);
-          }
-        }
-      });
-      
-      // Adicionar notícias de jogadores (simuladas)
-      if(STATE.players.length > 0) {
-        const randomPlayer = STATE.players[Math.floor(Math.random() * STATE.players.length)];
-        if(randomPlayer.totalFlags > 0) {
-          messages.push(`🚩 ${randomPlayer.name} coletou ${randomPlayer.totalFlags} bandeiras!`);
-        }
-      }
-      
-      ticker.textContent = messages.join('  •  ');
-      
-      // Animação de scroll
-      ticker.animate([
-        { transform: 'translateX(100%)' },
-        { transform: 'translateX(-100%)' }
-      ], {
-        duration: 20000,
-        iterations: Infinity
-      });
-    }
-
-    setInterval(updateTicker, 15000);
-
-    function spawnFlags() {
-      // Clear existing flags
-      flags.forEach(f => window.map.removeLayer(f.marker));
-      flags = [];
-      
-      // Spawn flags around player
-      const centerLat = STATE.currentPlayer.position.lat;
-      const centerLng = STATE.currentPlayer.position.lng;
-      
-      // Spawn 5 ZAP flags (give energy)
-      for(let i = 0; i < 5; i++) {
-        const lat = centerLat + (Math.random() - 0.5) * 0.01;
-        const lng = centerLng + (Math.random() - 0.5) * 0.01;
-        
-        const flagIcon = L.divIcon({
-          className: 'flag-marker',
-          iconSize: [20, 20],
-          iconAnchor: [10, 10],
-          html: '<div style="width:20px;height:20px;background:#00BFFF;border:2px solid #fff;border-radius:50%;"></div>'
-        });
-        
-        const marker = L.marker([lat, lng], { icon: flagIcon }).addTo(window.map);
-        marker.on('click', () => openFlagModal('zap_' + i, 'ZAP'));
-        flags.push({ id: 'zap_' + i, type: 'ZAP', lat, lng, marker });
-      }
-
-      // Spawn 5 PR flags
-      for(let i = 0; i < 5; i++) {
-        const lat = centerLat + (Math.random() - 0.5) * 0.01;
-        const lng = centerLng + (Math.random() - 0.5) * 0.01;
-
-        const flagIcon = L.divIcon({
-          className: 'flag-marker',
-          iconSize: [20, 20],
-          iconAnchor: [10, 10],
-          html: '<div style="width:20px;height:20px;background:#ff0;border:2px solid #000;border-radius:50%;"></div>'
-        });
-
-        const marker = L.marker([lat, lng], { icon: flagIcon }).addTo(window.map);
-        marker.on('click', () => openFlagModal('pr_' + i, 'PR'));
-        flags.push({ id: 'pr_' + i, type: 'PR', lat, lng, marker });
-      }
-    }
-
-    function initJoystick() {
-      const container = document.getElementById('joystick-container');
-      const stick = document.getElementById('joystick-stick');
-      const base = document.getElementById('joystick-base');
-      
-      let isDragging = false;
-      
-      function handleStart(e) {
-        isDragging = true;
-        e.preventDefault();
-      }
-      
-      function handleMove(e) {
-        if(!isDragging) return;
-        e.preventDefault();
-        
-        const rect = base.getBoundingClientRect();
-        const centerX = rect.left + rect.width / 2;
-        const centerY = rect.top + rect.height / 2;
-        
-        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-        
-        let dx = clientX - centerX;
-        let dy = clientY - centerY;
-        
-        const distance = Math.sqrt(dx * dx + dy * dy);
-        const maxDistance = rect.width / 2 - 25;
-        
-        if(distance > maxDistance) {
-          dx = (dx / distance) * maxDistance;
-          dy = (dy / distance) * maxDistance;
-        }
-        
-        stick.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
-        
-        joystickData.dx = dx / maxDistance;
-        joystickData.dy = dy / maxDistance;
-      }
-      
-      function handleEnd(e) {
-        isDragging = false;
-        stick.style.transform = 'translate(-50%, -50%)';
-        joystickData.dx = 0;
-        joystickData.dy = 0;
-      }
-      
-      stick.addEventListener('mousedown', handleStart);
-      stick.addEventListener('touchstart', handleStart);
-      document.addEventListener('mousemove', handleMove);
-      document.addEventListener('touchmove', handleMove);
-      document.addEventListener('mouseup', handleEnd);
-      document.addEventListener('touchend', handleEnd);
-    }
-
-    function initDPad() {
-      document.querySelectorAll('.dpad-btn[data-dir]').forEach(btn => {
-        btn.addEventListener('click', (e) => movePlayerDPad(e.currentTarget.dataset.dir));
-      });
-
-      document.addEventListener('keydown', (e) => {
-        if(!offlineMode) return;
-        const keyMap = {
-          'ArrowUp': 'n',
-          'ArrowDown': 's',
-          'ArrowLeft': 'w',
-          'ArrowRight': 'e',
-          'w': 'n',
-          's': 's',
-          'a': 'w',
-          'd': 'e'
-        };
-        if(keyMap[e.key]) {
-          e.preventDefault();
-          movePlayerDPad(keyMap[e.key]);
-        }
-      });
-
-      makeDraggable(document.getElementById('dpad-container'), '.dpad-drag-handle');
-    }
-
-    function makeDraggable(el, handleSelector) {
-      const handle = el.querySelector(handleSelector) || el;
-      let dragging = false, startX = 0, startY = 0, startLeft = 0, startTop = 0;
-
-      handle.addEventListener('pointerdown', e => {
-        dragging = true;
-        const rect = el.getBoundingClientRect();
-        el.style.left = rect.left + 'px';
-        el.style.top = rect.top + 'px';
-        el.style.right = 'auto';
-        el.style.bottom = 'auto';
-        startLeft = rect.left;
-        startTop = rect.top;
-        startX = e.clientX;
-        startY = e.clientY;
-        handle.setPointerCapture(e.pointerId);
-      });
-
-      window.addEventListener('pointermove', e => {
-        if(!dragging) return;
-        el.style.left = Math.max(0, startLeft + e.clientX - startX) + 'px';
-        el.style.top = Math.max(0, startTop + e.clientY - startY) + 'px';
-      });
-
-      window.addEventListener('pointerup', () => { dragging = false; });
-    }
-
-    function resizeDPad(delta) {
-      const box = document.getElementById('dpad-container');
-      if(!box) return;
-      const currentSize = parseInt(getComputedStyle(box).gridTemplateColumns.split(' ')[0]) || 50;
-      const newSize = Math.max(40, Math.min(70, currentSize + delta));
-      box.style.gridTemplateColumns = newSize + 'px ' + newSize + 'px ' + newSize + 'px';
-      box.style.gridTemplateRows = newSize + 'px ' + newSize + 'px ' + newSize + 'px';
-    }
-
-    function movePlayerDPad(dir) {
-      if(!STATE.currentPlayer || STATE.currentPlayer.energy <= 0) {
-        alert('Sem energia!');
-        return;
-      }
-
-      const step = 0.00002;
-      const lat = STATE.currentPlayer.position.lat;
-      const lng = STATE.currentPlayer.position.lng;
-
-      let newLat = lat;
-      let newLng = lng;
-
-      if(dir.includes('n')) newLat += step;
-      if(dir.includes('s')) newLat -= step;
-      if(dir.includes('e')) newLng += step;
-      if(dir.includes('w')) newLng -= step;
-
-      STATE.currentPlayer.energy = Math.max(0, STATE.currentPlayer.energy - 0.5);
-      updatePlayerLocation(newLat, newLng, true, true);
-    }
-
-    function openFlagModal(flagId, type) {
-      const flag = flags.find(f => f.id === flagId);
-      if(!flag || !STATE.currentPlayer.position) return;
-
-      const dist = getDistanceMeters(STATE.currentPlayer.position.lat, STATE.currentPlayer.position.lng, flag.lat, flag.lng);
-      const canCollect = dist <= 5;
-
-      const content = document.getElementById('flag-modal-content');
-      const title = document.getElementById('flag-modal-title');
-
-      if(type === 'ZAP') {
-        title.textContent = '🔵 Bandeira ZAP';
-        content.innerHTML = `
-          <div class="item-module">
-            <p>+10% energia · +skill</p>
-            <p class="small">Distância: ${Math.round(dist)}m</p>
-            <button ${canCollect ? '' : 'disabled'} onclick="collectZapFlag('${flagId}')">${canCollect ? 'RECOLHER' : 'APROXIMA-TE'}</button>
-          </div>
-        `;
-      } else {
-        title.textContent = '🚩 Bandeira PR';
-        content.innerHTML = `
-          <div class="item-module">
-            <p>+pontos · +skill</p>
-            <p class="small">Distância: ${Math.round(dist)}m</p>
-            <button ${canCollect ? '' : 'disabled'} onclick="collectPRFlag('${flagId}')">${canCollect ? 'RECOLHER' : 'APROXIMA-TE'}</button>
-          </div>
-        `;
-      }
-
-      document.getElementById('flag-modal').classList.remove('hidden');
-    }
-
-    function closeFlagModal() {
-      document.getElementById('flag-modal').classList.add('hidden');
-    }
-
-    function collectZapFlag(flagId) {
-      const flag = flags.find(f => f.id === flagId);
-      if(!flag) return;
-
-      STATE.currentPlayer.energy = Math.min(100, STATE.currentPlayer.energy + 10);
-      STATE.currentPlayer.zapFlags++;
-      STATE.currentPlayer.totalFlags++;
-
-      if(flag.marker && window.map) window.map.removeLayer(flag.marker);
-      flags = flags.filter(f => f.id !== flagId);
-
-      closeFlagModal();
-      renderTopBar();
-      saveState();
-    }
-
-    function collectPRFlag(flagId) {
-      const flag = flags.find(f => f.id === flagId);
-      if(!flag || STATE.currentPlayer.energy <= 0) {
-        alert('Sem energia!');
-        return;
-      }
-
-      STATE.currentPlayer.energy = Math.max(0, STATE.currentPlayer.energy - 5);
-      STATE.currentPlayer.prFlags++;
-      STATE.currentPlayer.totalFlags++;
-
-      // Sistema de progresso por PR (20 bandeiras = prémio)
-      if(!STATE.currentPlayer.promoProgressByPR) STATE.currentPlayer.promoProgressByPR = {};
-      if(!STATE.currentPlayer.promoProgressByPR[flag.companyId]) {
-        STATE.currentPlayer.promoProgressByPR[flag.companyId] = { current: 0, total: 0 };
-      }
-      STATE.currentPlayer.promoProgressByPR[flag.companyId].current++;
-      STATE.currentPlayer.promoProgressByPR[flag.companyId].total++;
-
-      // Verificar se atingiu 20 bandeiras para gerar prémio
-      if(STATE.currentPlayer.promoProgressByPR[flag.companyId].current >= 20) {
-        STATE.currentPlayer.promoProgressByPR[flag.companyId].current -= 20;
-        generateQR(flag.companyId);
-      }
-
-      if(flag.marker && window.map) window.map.removeLayer(flag.marker);
-      flags = flags.filter(f => f.id !== flagId);
-
-      closeFlagModal();
-      renderTopBar();
-      saveState();
-    }
-
-    function generateQR(companyId) {
-      const company = STATE.companies.find(c => c.id === companyId);
-      if(!company) return;
-
-      const qrCode = 'ZAP-' + (company.short || company.name).slice(0, 3).toUpperCase() + '-' + Math.random().toString(36).slice(2, 8).toUpperCase();
-      const qr = {
-        code: qrCode,
-        companyId: companyId,
-        companyName: company.name,
-        rewardText: company.campaign?.rewardText || 'Oferta',
-        createdAt: Date.now(),
-        expiresAt: Date.now() + 15 * 24 * 60 * 60 * 1000,
-        status: 'active'
-      };
-
-      if(!STATE.currentPlayer.qrs) STATE.currentPlayer.qrs = [];
-      STATE.currentPlayer.qrs.push(qr);
-      saveState();
-
-      alert('🎉 Ganhaste um cupão QR! Vê nos teus cupões.');
-    }
-
-    function gameLoop() {
-      if(!playerMarker || !window.map) return;
-      
-      // Manual movement from joystick
-      if(joystickData.dx !== 0 || joystickData.dy !== 0) {
-        const speed = 0.0001;
-        const newLat = STATE.currentPlayer.position.lat - joystickData.dy * speed;
-        const newLng = STATE.currentPlayer.position.lng + joystickData.dx * speed;
-        
-        STATE.currentPlayer.position.lat = newLat;
-        STATE.currentPlayer.position.lng = newLng;
-        
-        playerMarker.setLatLng([newLat, newLng]);
-        window.map.panTo([newLat, newLng]);
-        
-        saveState();
-      }
-      
-      // Check flag collision
-      tryCollectFlag();
-    }
-
-    function tryCollectFlag() {
-      const playerLat = STATE.currentPlayer.position.lat;
-      const playerLng = STATE.currentPlayer.position.lng;
-      
-      for(let i = flags.length - 1; i >= 0; i--) {
-        const flag = flags[i];
-        const distance = Math.sqrt(
-          Math.pow(playerLat - flag.lat, 2) + 
-          Math.pow(playerLng - flag.lng, 2)
-        );
-        
-        // Collision threshold (approximately 10 meters)
-        if(distance < 0.0001) {
-          // Collect flag
-          window.map.removeLayer(flag.marker);
-          flags.splice(i, 1);
-          
-          if(flag.type === 'ZAP') {
-            // ZAP flag gives energy
-            STATE.currentPlayer.energy = Math.min(100, STATE.currentPlayer.energy + 10);
-            STATE.currentPlayer.zapFlags++;
-            STATE.currentPlayer.totalFlags++;
-          } else {
-            // PR flag gives points
-            if(STATE.currentPlayer.energy <= 0) {
-              alert('Sem energia para coletar bandeiras PR!');
-              // Respawn the flag
-              respawnFlag(flag);
-              return;
-            }
-            STATE.currentPlayer.energy = Math.max(0, STATE.currentPlayer.energy - 5);
-            STATE.currentPlayer.prFlags++;
-            STATE.currentPlayer.totalFlags++;
-            
-            // Check for promo rewards
-            checkPromoReward();
-          }
-          
-          // Update skill and vision
-          updateSkillAndVision();
-          
-          saveState();
-          
-          // Update HUD
-          renderTopBar();
-          
-          // Respawn flag
-          respawnFlag(flag);
-          
-          break;
+  }
+}
+
+function verificarBandeiras(){
+  var md=1/0;bandMaisProx=null;
+  for(var i=0;i<bandsNoMapa.length;i++){
+    var b=bandsNoMapa[i];
+    if(b.apanhada||!b.visivel)continue;
+    var d=calcDist(AV.lat,AV.lng,b.lat,b.lng);
+    if(d<md){md=d;bandMaisProx=b}
+    if(d<=4)apanharBanda(b)
+  }
+  var av=G('aviso-ap'),ca=G('circ-alc');
+  if(bandMaisProx&&md<=CFG.AVISO_RAIO&&!bandMaisProx.apanhada){
+    av.style.display='block';
+    av.style.background=md<=CFG.APANHAR_RAIO?'rgba(76,175,80,.95)':'rgba(255,200,0,.95)';
+    av.innerText=md<=CFG.APANHAR_RAIO?'👆 APANHAR!':'📍 '+Math.round(md)+'m';
+    var rPx=Math.max(20,distPx(md));
+    ca.style.display='block';ca.style.width=rPx*2+'px';ca.style.height=rPx*2+'px';
+    ca.style.borderColor=md<=CFG.APANHAR_RAIO?'#4CAF50':'#ff0'
+  }else{av.style.display='none';ca.style.display='none'}
+}
+
+function tentarApanhar(b){var d=calcDist(AV.lat,AV.lng,b.lat,b.lng);if(d<=CFG.APANHAR_RAIO)apanharBanda(b);else mostrarNotif('📍',Math.round(d)+'m','Máx. '+CFG.APANHAR_RAIO+'m')}
+function apanharManual(){if(bandMaisProx&&!bandMaisProx.apanhada)tentarApanhar(bandMaisProx)}
+
+function apanharBanda(b){
+  if(b.apanhada)return;
+  b.apanhada=true;b.visivel=false;
+  try{var el=b.m?b.m.getElement():null;if(el){el.style.transition='all .3s';el.style.transform='scale(0)';el.style.opacity='0'}}catch(e){}
+  setTimeout(function(){try{if(mapaJ&&b.m)mapaJ.removeLayer(b.m)}catch(e){}},300);
+
+  jogAtual.fl=(jogAtual.fl||0)+1;
+  var h='';
+
+  if(b.tipo==='energia'){
+    jogAtual.en=Math.min(100,(jogAtual.en||100)+5);
+    jogAtual.flEnerg=(jogAtual.flEnerg||0)+1;
+    verificarSkill();
+    h='<div style="text-align:center;padding:8px"><div style="font-size:32px;margin-bottom:8px">⚡</div><h3 style="color:#0ff;margin-bottom:6px">Energia!</h3><p style="color:#4CAF50;font-size:16px;font-weight:700">+5%</p></div>';
+    mostrarNotif('⚡','+5% Energia','Skill '+(jogAtual.sk||0))
+
+  }else if(b.tipo==='pr'&&b.empId){
+    // Bandeira PR real ligada a empresa
+    var emps=BD.emps();
+    var empIdx=-1;
+    for(var i=0;i<emps.length;i++){if(emps[i].em===b.empId){empIdx=i;break}}
+
+    if(empIdx>=0){
+      var empresa=emps[empIdx];
+      // Decrementar flags do pack
+      for(var pi=0;pi<(empresa.packs||[]).length;pi++){
+        if(empresa.packs[pi].flagsLeft>0&&empresa.packs[pi].fim>Date.now()){
+          empresa.packs[pi].flagsLeft--;break
         }
       }
-    }
 
-    function respawnFlag(oldFlag) {
-      const playerLat = STATE.currentPlayer.position.lat;
-      const playerLng = STATE.currentPlayer.position.lng;
-      const newLat = playerLat + (Math.random() - 0.5) * 0.01;
-      const newLng = playerLng + (Math.random() - 0.5) * 0.01;
-      
-      const flagIcon = L.divIcon({
-        className: 'flag-marker',
-        iconSize: [20, 20],
-        iconAnchor: [10, 10],
-        html: oldFlag.type === 'ZAP' 
-          ? '<div style="width:20px;height:20px;background:#00BFFF;border:2px solid #fff;border-radius:50%;"></div>'
-          : '<div style="width:20px;height:20px;background:#ff0;border:2px solid #000;border-radius:50%;"></div>'
-      });
-      
-      const marker = L.marker([newLat, newLng], { icon: flagIcon }).addTo(window.map);
-      flags.push({ id: Date.now(), type: oldFlag.type, lat: newLat, lng: newLng, marker });
-    }
-
-    function updateSkillAndVision() {
-      const totalFlags = STATE.currentPlayer.totalFlags || 0;
-      STATE.currentPlayer.skill = Math.floor(1 + Math.log2(totalFlags + 1));
-      STATE.currentPlayer.vision = Math.min(20, 5 + (STATE.currentPlayer.skill * 0.5));
-
-      if(visionCircle) {
-        visionCircle.setRadius(STATE.currentPlayer.vision);
-      }
-
-      // Atualizar fog overlay com nova visão
-      updateFogOverlay();
-    }
-
-    function checkPromoReward() {
-      // Simple promo system: every 20 PR flags, generate a QR
-      if(STATE.currentPlayer.prFlags > 0 && STATE.currentPlayer.prFlags % 20 === 0) {
-        generateQR();
-      }
-    }
-
-    function generateQR() {
-      // QR code com proteção contra fotos de celular
-      const timestamp = Date.now();
-      const randomPart = Math.random().toString(36).slice(2, 8).toUpperCase();
-      const qrCode = 'ZAP-' + randomPart + '-' + timestamp;
-
-      const qr = {
-        code: qrCode,
-        prName: 'ZAP FLAGS',
-        rewardText: '5% de desconto',
-        createdAt: timestamp,
-        expiresAt: timestamp + 15 * 24 * 60 * 60 * 1000, // 15 days
-        status: 'active',
-        // Proteção: timestamp de validação e dispositivo
-        validationAttempts: 0,
-        lastValidationAt: null,
-        deviceId: generateDeviceId()
-      };
-
-      if(!STATE.currentPlayer.qrs) STATE.currentPlayer.qrs = [];
-      STATE.currentPlayer.qrs.push(qr);
-      saveState();
-
-      alert('🎉 Ganhaste um cupão QR! Vê nos teus cupões.\n\n⚠️ O QR tem proteção contra fotos de celular e só pode ser validado uma vez.');
-    }
-
-    function generateDeviceId() {
-      // Gerar ID único do dispositivo para proteção
-      let deviceId = localStorage.getItem('zap_device_id');
-      if(!deviceId) {
-        deviceId = 'DEV-' + Math.random().toString(36).slice(2, 15) + '-' + Date.now().toString(36);
-        localStorage.setItem('zap_device_id', deviceId);
-      }
-      return deviceId;
-    }
-
-    function expireOldQrs() {
-      if(!STATE.currentPlayer.qrs) return;
-      const now = Date.now();
-      STATE.currentPlayer.qrs = STATE.currentPlayer.qrs.filter(q => {
-        if(q.status === 'active' && q.expiresAt <= now) {
-          q.status = 'expired';
-          if(!STATE.currentPlayer.usedQrs) STATE.currentPlayer.usedQrs = [];
-          STATE.currentPlayer.usedQrs.push(q);
-          return false;
+      // Progresso no lote
+      var loteIdx=-1;
+      if(b.loteId){
+        for(var li=0;li<(empresa.lotes||[]).length;li++){
+          if(empresa.lotes[li].id===b.loteId){loteIdx=li;break}
         }
-        return q.status === 'active';
-      });
-    }
+      }
 
-    function qrExpiryText(expiresAt) {
-      const now = Date.now();
-      const diff = expiresAt - now;
-      if(diff <= 0) return 'Expirado';
-      const days = Math.floor(diff / (24 * 60 * 60 * 1000));
-      const hours = Math.floor((diff % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000));
-      if(days > 0) return days + ' dia' + (days !== 1 ? 's' : '');
-      if(hours > 0) return hours + ' hora' + (hours !== 1 ? 's' : '');
-      return '< 1 hora';
-    }
+      var premio=null;
+      if(loteIdx>=0){
+        var lote=empresa.lotes[loteIdx];
+        lote.usados=(lote.usados||0)+1;
 
-    // PR TABS
-    function switchPRTab(tab) {
-      document.querySelectorAll('.pr-tab').forEach(t => t.classList.remove('active'));
-      document.querySelectorAll('.pr-content').forEach(c => c.classList.remove('active'));
+        // Verificar se atingiu QR_N para QR
+        var chave=empresa.em+'_'+lote.id;
+        var prog=BD._g('zf_pg',{});
+        prog[chave]=(prog[chave]||0)+1;
+        BD._s('zf_pg',prog);
 
-      const tabs = ['dashboard', 'packs', 'lotes', 'bingos', 'qrs', 'branches', 'invoices'];
-      const index = tabs.indexOf(tab);
-      document.querySelectorAll('.pr-tab')[index].classList.add('active');
-      document.getElementById(`pr-${tab}`).classList.add('active');
-
-      if(tab === 'dashboard') updatePRStats();
-      if(tab === 'branches') renderBranches();
-      if(tab === 'invoices') renderInvoices();
-    }
-
-    function initPRDashboard() {
-      if(!STATE.currentCompany) return goTo('auth-screen', 'company');
-      document.getElementById('pr-name-ui').textContent = `PAINEL - ${STATE.currentCompany.name}`;
-
-      const PKGS = [
-        {n:"Gratuito",p:0,f:1000,radius:0.5,days:30,bingos:0,free:true},
-        {n:"Básico",p:15,f:5000,radius:5,days:60,bingos:5},
-        {n:"Médio",p:25,f:20000,radius:20,days:90,bingos:20},
-        {n:"Grande",p:50,f:50000,radius:100,days:120,bingos:50},
-        {n:"Ilimitado",p:100,f:150000,radius:Infinity,days:250,bingos:100}
-      ];
-      document.getElementById('buy-packages-list').innerHTML = PKGS.map(p =>
-        `<div class="package-item" data-name="${p.n}"><strong>${p.n} - ${p.p === 0 ? 'GRÁTIS' : p.p + '€'}</strong><p>🚩 ${p.f.toLocaleString()} · 📍 ${p.radius === Infinity ? 'Ilimitado' : p.radius + 'km'} · 📅 ${p.days} dias · 🎱 ${p.bingos} bingos</p></div>`
-      ).join('');
-
-      // Preencher select de pacotes no modal
-      const packageSelect = document.getElementById('reward-package');
-      packageSelect.innerHTML = '<option value="">Todos os pacotes</option>' + PKGS.map(p => `<option value="${p.n}">${p.n}</option>`).join('');
-
-      document.querySelectorAll('#buy-packages-list .package-item').forEach(i => {
-        i.style.cursor = 'pointer';
-        i.addEventListener('click', () => {
-          document.querySelectorAll('#buy-packages-list .package-item').forEach(el => el.classList.remove('selected'));
-          i.classList.add('selected');
-          const btn = document.getElementById('btn-buy-package');
-          btn.disabled = false;
-          btn.style.opacity = '1';
-        });
-      });
-
-      renderActivePackages();
-      renderLotes();
-      renderBingos();
-      renderQRHistory();
-      renderRewards();
-      updatePRStats();
-      
-      document.getElementById('btn-buy-package').onclick = () => {
-        console.log('Botão de compra clicado');
-        const sel = document.querySelector('#buy-packages-list .selected');
-        console.log('Pacote selecionado:', sel);
-        if(!sel) {
-          alert('Por favor, seleciona um pacote primeiro.');
-          return;
+        if(prog[chave]>=CFG.QR_N&&lote.usados<lote.n){
+          prog[chave]=0;BD._s('zf_pg',prog);
+          var qrId='QR-'+empresa.ne.substring(0,2).toUpperCase()+'-'+Math.random().toString(36).slice(2,8).toUpperCase();
+          var qrObj={id:qrId,emp:empresa.em,ne:empresa.ne,premio:lote.premio,lotId:lote.id,data:Date.now(),usado:false};
+          if(!jogAtual.qrsGerados)jogAtual.qrsGerados=[];
+          jogAtual.qrsGerados.push(qrObj);
+          empresa.qrsGerados=(empresa.qrsGerados||0)+1;
+          premio=qrObj
         }
-
-        // Verificar se a filial tem bloqueio de compra de pacotes
-        if(STATE.currentCompany.blocked === 'partial' && STATE.currentCompany.blockedFeatures && STATE.currentCompany.blockedFeatures.includes(1)) {
-          alert('⚠️ A tua conta tem bloqueio de compra de pacotes. Contacta a empresa mãe.');
-          return;
-        }
-
-        if(STATE.currentCompany.blocked === true) {
-          alert('⚠️ A tua conta está bloqueada. Contacta a empresa mãe.');
-          return;
-        }
-
-        const pDef = PKGS.find(p => p.n === sel.dataset.name);
-        const newPackage = {
-          ...pDef,
-          id: 'pkg_' + Date.now(),
-          flagsLeft: pDef.f,
-          flagsInitial: pDef.f,
-          createdAt: Date.now(),
-          expiresAt: Date.now() + (pDef.days * 24 * 60 * 60 * 1000),
-          qrExpiryDays: STATE.currentCompany.campaign.prizeExpiryDays || 15,
-          active: true
-        };
-
-        // Sistema de faturação: se for filial, a fatura é passada à empresa mãe
-        let invoiceTo = STATE.currentCompany.name;
-        let invoiceNif = STATE.currentCompany.nif;
-        let invoiceAddress = STATE.currentCompany.fiscalAddress || 'N/A';
-        let invoiceCity = STATE.currentCompany.fiscalCity || 'N/A';
-        let invoiceCode = STATE.currentCompany.fiscalCode || 'N/A';
-
-        if(STATE.currentCompany.parentId) {
-          const parentCompany = STATE.companies.find(c => c.id === STATE.currentCompany.parentId);
-          if(parentCompany) {
-            invoiceTo = parentCompany.name;
-            invoiceNif = parentCompany.nif;
-            invoiceAddress = parentCompany.fiscalAddress || 'N/A';
-            invoiceCity = parentCompany.fiscalCity || 'N/A';
-            invoiceCode = parentCompany.fiscalCode || 'N/A';
-          }
-        }
-
-        // Adicionar informações de faturação ao pacote
-        newPackage.invoice = {
-          to: invoiceTo,
-          nif: invoiceNif,
-          address: invoiceAddress,
-          city: invoiceCity,
-          code: invoiceCode,
-          purchasedBy: STATE.currentCompany.name,
-          purchasedAt: new Date().toISOString(),
-          amount: pDef.p
-        };
-
-        // Guardar fatura no histórico
-        if(!STATE.currentCompany.invoices) STATE.currentCompany.invoices = [];
-        const invoice = {
-          id: 'INV-' + Date.now(),
-          packageId: newPackage.id,
-          packageName: newPackage.n,
-          to: invoiceTo,
-          nif: invoiceNif,
-          address: invoiceAddress,
-          city: invoiceCity,
-          code: invoiceCode,
-          purchasedBy: STATE.currentCompany.name,
-          purchasedAt: new Date().toISOString(),
-          amount: pDef.p,
-          flags: pDef.f,
-          status: 'paid'
-        };
-        STATE.currentCompany.invoices.push(invoice);
-
-        STATE.currentCompany.packages.push(newPackage);
-        saveState();
-        renderActivePackages();
-        updatePRStats();
-
-        alert(`✓ Pacote comprado!\n\nFatura passada a:\n${invoiceTo}\nNIF: ${invoiceNif}\nMorada: ${invoiceAddress}\n${invoiceCity}\n${invoiceCode}\n\nValor: ${pDef.p}€`);
-      };
-    }
-
-    function renderActivePackages() {
-      const list = document.getElementById('active-packages-list');
-      list.innerHTML = STATE.currentCompany.packages.length
-        ? STATE.currentCompany.packages.map(p => {
-            const expiresDate = p.expiresAt ? new Date(p.expiresAt).toLocaleDateString() : 'N/A';
-            const radiusText = p.radius === Infinity ? 'Ilimitado' : p.radius + 'km';
-            const activeStatus = p.active ? '<span class="ok">Ativo</span>' : '<span class="danger">Inativo</span>';
-            return `<div class="package-item" data-package-id="${p.id}">
-              <strong>${p.n}</strong>
-              <p>🚩 Restantes: ${(p.flagsLeft||p.flagsInitial||p.f).toLocaleString()} / ${(p.flagsInitial||p.f).toLocaleString()}</p>
-              <p>📍 Raio: ${radiusText} · 📅 Expira: ${expiresDate} · QR: ${p.qrExpiryDays} dias</p>
-              <p>Estado: ${activeStatus} ${p.prize ? '· 🎁 Prémio: ' + p.prize : ''}</p>
-              <div class="btn-row">
-                <button class="btn-small btn-dark" onclick="goBackFromPackage()">↩ Voltar</button>
-                <button class="btn-small" onclick="togglePackageActivation('${p.id}')">${p.active ? '⏸ Desativar' : '▶ Ativar'}</button>
-                <button class="btn-small" onclick="savePackageSettings('${p.id}')">💾 Guardar</button>
-                <button class="btn-small btn-dark" onclick="selectBatchesForPackage('${p.id}')">📦 Selecionar Lotes</button>
-                <button class="btn-small" onclick="openPrizeModal('${p.id}')">🎁 Definir Prémio</button>
-              </div>
-            </div>`;
-          }).join('')
-        : '<p>Nenhum.</p>';
-    }
-
-    function goBackFromPackage() {
-      switchPRTab('dashboard');
-    }
-
-    function togglePackageActivation(packageId) {
-      const pkg = STATE.currentCompany.packages.find(p => p.id === packageId);
-      if(!pkg) return;
-      pkg.active = !pkg.active;
-      saveState();
-      renderActivePackages();
-    }
-
-    function savePackageSettings(packageId) {
-      const pkg = STATE.currentCompany.packages.find(p => p.id === packageId);
-      if(!pkg) return;
-      saveState();
-      alert('✓ Definições do pacote guardadas!');
-    }
-
-    function selectBatchesForPackage(packageId) {
-      const pkg = STATE.currentCompany.packages.find(p => p.id === packageId);
-      if(!pkg) return;
-      
-      if(!STATE.currentCompany.lotes || STATE.currentCompany.lotes.length === 0) {
-        alert('Não há lotes disponíveis. Cria lotes primeiro na aba "Lotes".');
-        return;
-      }
-      
-      const lotesList = STATE.currentCompany.lotes.map((l, idx) => 
-        `<label style="display:block;margin:8px 0;">
-          <input type="checkbox" value="${l.id}" ${pkg.selectedLotes && pkg.selectedLotes.includes(l.id) ? 'checked' : ''}>
-          ${l.name} - ${l.flags.toLocaleString()} flags
-        </label>`
-      ).join('');
-      
-      const modalHtml = `
-        <div id="batch-selection-modal" class="modal" style="display:flex;">
-          <div class="modal-content">
-            <h2>📦 Selecionar Lotes para ${pkg.n}</h2>
-            <div style="max-height:300px;overflow-y:auto;margin:15px 0;">
-              ${lotesList}
-            </div>
-            <div class="btn-row">
-              <button class="btn" onclick="confirmBatchSelection('${packageId}')">✓ Confirmar</button>
-              <button class="btn btn-danger" onclick="closeBatchSelectionModal()">✕ Cancelar</button>
-            </div>
-          </div>
-        </div>
-      `;
-      
-      document.body.insertAdjacentHTML('beforeend', modalHtml);
-    }
-
-    function confirmBatchSelection(packageId) {
-      const pkg = STATE.currentCompany.packages.find(p => p.id === packageId);
-      if(!pkg) return;
-      
-      const checkboxes = document.querySelectorAll('#batch-selection-modal input[type="checkbox"]:checked');
-      pkg.selectedLotes = Array.from(checkboxes).map(cb => cb.value);
-      
-      saveState();
-      closeBatchSelectionModal();
-      renderActivePackages();
-      alert(`✓ ${pkg.selectedLotes.length} lote(s) selecionado(s) para o pacote!`);
-    }
-
-    function closeBatchSelectionModal() {
-      const modal = document.getElementById('batch-selection-modal');
-      if(modal) modal.remove();
-    }
-
-    function openPrizeModal(packageId) {
-      const pkg = STATE.currentCompany.packages.find(p => p.id === packageId);
-      if(!pkg) return;
-      
-      const modalHtml = `
-        <div id="prize-modal" class="modal" style="display:flex;">
-          <div class="modal-content">
-            <h2>🎁 Definir Prémio para ${pkg.n}</h2>
-            <div class="form-group">
-              <label>Prémio Oferecido</label>
-              <input type="text" id="prize-input" placeholder="Ex: 10% de desconto, Produto X, 5€, etc." value="${pkg.prize || ''}">
-            </div>
-            <div class="form-group">
-              <label>Descrição Detalhada (opcional)</label>
-              <input type="text" id="prize-description" placeholder="Detalhes do prémio" value="${pkg.prizeDescription || ''}">
-            </div>
-            <div class="btn-row">
-              <button class="btn" onclick="savePrize('${packageId}')">✓ Guardar Prémio</button>
-              <button class="btn btn-danger" onclick="closePrizeModal()">✕ Cancelar</button>
-            </div>
-          </div>
-        </div>
-      `;
-      
-      document.body.insertAdjacentHTML('beforeend', modalHtml);
-    }
-
-    function savePrize(packageId) {
-      const pkg = STATE.currentCompany.packages.find(p => p.id === packageId);
-      if(!pkg) return;
-      
-      const prizeInput = document.getElementById('prize-input').value;
-      const prizeDescription = document.getElementById('prize-description').value;
-      
-      pkg.prize = prizeInput;
-      pkg.prizeDescription = prizeDescription;
-      
-      saveState();
-      closePrizeModal();
-      renderActivePackages();
-      alert('✓ Prémio definido com sucesso!');
-    }
-
-    function closePrizeModal() {
-      const modal = document.getElementById('prize-modal');
-      if(modal) modal.remove();
-    }
-
-    function getPackageTotals(company) {
-      if(!company || !company.packages) {
-        return { totalBought: 0, totalLeft: 0, maxRadius: 0, hasPaid: false, maxLotsPaid: 0, totalBingosPaid: 0 };
-      }
-      let totalBought = 0, totalLeft = 0, maxRadius = 0, hasPaid = false, maxLotsPaid = 0, totalBingosPaid = 0;
-      company.packages.forEach(pkg => {
-        totalBought += pkg.flagsInitial || pkg.flags || 0;
-        totalLeft += pkg.flagsLeft || pkg.fLeft || 0;
-        if(pkg.radiusKm === Infinity) maxRadius = Infinity;
-        else if(maxRadius !== Infinity) maxRadius = Math.max(maxRadius, pkg.radiusKm || 0);
-        if(pkg.paid) {
-          hasPaid = true;
-          maxLotsPaid += pkg.maxLots || 0;
-          totalBingosPaid += pkg.bingos || 0;
-        }
-      });
-      return { totalBought, totalLeft, maxRadius, hasPaid, maxLotsPaid, totalBingosPaid };
-    }
-
-    function getStockWarning(company) {
-      const totals = getPackageTotals(company);
-      const total = Math.max(totals.totalBought, 1);
-      const pct = (totals.totalLeft / total) * 100;
-      if(totals.totalLeft === 0) return '<span class="danger">⚠️ Sem bandeiras!</span>';
-      if(pct <= 5) return '<span class="danger">⚠️ Menos de 5% restante.</span>';
-      if(pct <= 20) return '<span class="warning">⚠️ Menos de 20% restante.</span>';
-      return '<span class="ok">✓ Stock OK</span>';
-    }
-
-    // FILIAIS
-    function renderBranches() {
-      const pendingList = document.getElementById('pending-branches-list');
-      const approvedList = document.getElementById('approved-branches-list');
-
-      if(!STATE.currentCompany.pendingBranches || STATE.currentCompany.pendingBranches.length === 0) {
-        pendingList.innerHTML = '<p>Nenhuma filial pendente.</p>';
-      } else {
-        pendingList.innerHTML = STATE.currentCompany.pendingBranches.map(branchId => {
-          const branch = STATE.companies.find(c => c.id === branchId);
-          if(!branch) return '';
-          return `<div class="package-item"><strong>${branch.name}</strong><p>📍 ${branch.fiscalAddress}, ${branch.fiscalCity}</p><p>📋 ${branch.fiscalCode}</p><div class="btn-row"><button class="btn-small" onclick="approveBranch('${branch.id}')">✓ Aprovar</button><button class="btn-danger btn-small" onclick="rejectBranch('${branch.id}')">✕ Rejeitar</button></div></div>`;
-        }).join('');
       }
 
-      if(!STATE.currentCompany.branches || STATE.currentCompany.branches.length === 0) {
-        approvedList.innerHTML = '<p>Nenhuma filial aprovada.</p>';
-      } else {
-        approvedList.innerHTML = STATE.currentCompany.branches.map(branchId => {
-          const branch = STATE.companies.find(c => c.id === branchId);
-          if(!branch) return '';
-          const isBlocked = branch.blocked === true;
-          const isPartiallyBlocked = branch.blocked === 'partial';
-          const blockStatus = isBlocked ? '<span class="danger">🔒 BLOQUEADA</span>' : isPartiallyBlocked ? '<span class="warning">⚠️ BLOQUEIO PARCIAL</span>' : '<span class="ok">✓ Ativa</span>';
-          return `<div class="package-item"><strong>${branch.name}</strong><p>📍 ${branch.fiscalAddress}, ${branch.fiscalCity}</p><p>📋 ${branch.fiscalCode}</p><p>${blockStatus}</p><div class="btn-row"><button class="btn-small" onclick="blockBranch('${branch.id}', 'total')">🔒 Bloquear Total</button><button class="btn-dark btn-small" onclick="blockBranch('${branch.id}', 'partial')">⚠️ Bloqueio Parcial</button><button class="btn-small" onclick="unblockBranch('${branch.id}')">🔓 Desbloquear</button></div></div>`;
-        }).join('');
+      emps[empIdx]=empresa;BD.saveE(emps);
+
+      var progAtual=BD._g('zf_pg',{})[empresa.em+'_'+(b.loteId||'')];
+      h='<div style="padding:8px">';
+      h+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid #222">';
+      h+='<div style="font-size:28px">🏪</div><div><div style="font-weight:700;font-size:15px;color:#f90">'+empresa.ne+'</div><div style="font-size:11px;color:#888">'+(empresa.ativ||'-')+' · '+(empresa.loc||'-')+'</div></div></div>';
+
+      if(loteIdx>=0){
+        var lt=empresa.lotes[loteIdx];
+        var pc2=Math.round(((progAtual||0)/CFG.QR_N)*100);
+        h+='<div style="background:rgba(30,20,0,.4);border:2px solid #f90;border-radius:8px;padding:11px;margin-bottom:10px">';
+        h+='<p style="color:#f90;font-weight:700;margin-bottom:6px">🎁 '+lt.premio+'</p>';
+        h+='<div style="display:flex;justify-content:space-between;font-size:12px;color:#888;margin-bottom:3px"><span>Progresso para QR</span><span style="color:#f90;font-weight:700">'+(progAtual||0)+' / '+CFG.QR_N+'</span></div>';
+        h+='<div style="background:#222;border-radius:3px;height:8px;overflow:hidden"><div style="height:100%;background:linear-gradient(90deg,#f90,#f44);border-radius:3px;width:'+pc2+'%"></div></div>';
+        h+='<p style="font-size:10px;color:#555;margin-top:4px">Faltam '+Math.max(0,CFG.QR_N-(progAtual||0))+' bandeiras</p></div>'
       }
+
+      if(premio){
+        h+='<div style="background:rgba(0,30,0,.4);border:2px solid #4CAF50;border-radius:8px;padding:12px;margin-bottom:10px;text-align:center">';
+        h+='<p style="color:#4CAF50;font-weight:700;font-size:16px;margin-bottom:6px">🎉 QR CODE GERADO!</p>';
+        h+='<p style="color:#fff;font-size:14px;margin-bottom:6px">'+premio.premio+'</p>';
+        h+='<div style="background:#111;border:1px solid #4CAF50;border-radius:6px;padding:8px;font-family:monospace;font-size:13px;letter-spacing:2px;color:#0ff">'+premio.id+'</div>';
+        h+='<p style="font-size:11px;color:#888;margin-top:6px">Vai a QRs no menu para ver o código QR</p></div>';
+        mostrarNotif('🎉','QR Code Gerado!',premio.premio)
+      }else{
+        mostrarNotif('🏴','Bandeira PR!',empresa.ne)
+      }
+      h+='</div>'
+    }else{
+      h='<div style="text-align:center;padding:8px"><div style="font-size:32px;margin-bottom:8px">🏴</div><h3 style="color:#f90;margin-bottom:6px">Bandeira PR!</h3></div>';
+      mostrarNotif('🏴','Bandeira PR!','+1 Flag')
     }
-
-    function approveBranch(branchId) {
-      const branch = STATE.companies.find(c => c.id === branchId);
-      if(!branch || !STATE.currentCompany) return;
-
-      // Remover das pendentes
-      STATE.currentCompany.pendingBranches = STATE.currentCompany.pendingBranches.filter(id => id !== branchId);
-
-      // Adicionar às aprovadas
-      if(!STATE.currentCompany.branches) STATE.currentCompany.branches = [];
-      STATE.currentCompany.branches.push(branchId);
-
-      // Atualizar status da filial
-      branch.status = 'active';
-      branch.blocked = false;
-
-      // Partilhar dados da empresa mãe com a filial
-      branch.packages = [...STATE.currentCompany.packages];
-      branch.lotes = [...STATE.currentCompany.lotes];
-      branch.campaign = { ...STATE.currentCompany.campaign };
-      branch.parentId = STATE.currentCompany.id;
-      branch.parentName = STATE.currentCompany.name;
-
-      saveState();
-      renderBranches();
-      alert('✓ Filial aprovada! A filial agora tem acesso a todos os recursos da empresa mãe.');
-    }
-
-    function rejectBranch(branchId) {
-      const branch = STATE.companies.find(c => c.id === branchId);
-      if(!branch || !STATE.currentCompany) return;
-
-      // Remover das pendentes
-      STATE.currentCompany.pendingBranches = STATE.currentCompany.pendingBranches.filter(id => id !== branchId);
-
-      // Remover a filial do sistema
-      STATE.companies = STATE.companies.filter(c => c.id !== branchId);
-
-      saveState();
-      renderBranches();
-      alert('✕ Filial rejeitada e removida do sistema.');
-    }
-
-    function blockBranch(branchId, type) {
-      const branch = STATE.companies.find(c => c.id === branchId);
-      if(!branch || !STATE.currentCompany) return;
-
-      if(type === 'total') {
-        if(!confirm(`Tem a certeza que deseja bloquear totalmente a filial "${branch.name}"? A filial perderá acesso a todos os recursos.`)) return;
-        branch.blocked = true;
-        branch.packages = [];
-        branch.lotes = [];
-        branch.campaign = { rewardsEnabled: false, rewardType: 'none', rewardText: 'Sem prémio', promoLotsActive: 0, promoBudgetLeft: 0, bingoCountActive: 0, bingoText: '', rewardsGiven: 0 };
-      } else if(type === 'partial') {
-        const options = prompt('O que deseja bloquear?\n1 - Comprar pacotes\n2 - Criar lotes\n3 - Criar bingos\n4 - Validar QR\n\nDigite os números separados por vírgula (ex: 1,2,3):');
-        if(!options) return;
-        const blockedFeatures = options.split(',').map(o => parseInt(o.trim())).filter(n => !isNaN(n) && n >= 1 && n <= 4);
-        branch.blocked = 'partial';
-        branch.blockedFeatures = blockedFeatures;
-      }
-
-      saveState();
-      renderBranches();
-      alert(type === 'total' ? '✓ Filial bloqueada totalmente!' : '✓ Bloqueio parcial aplicado!');
-    }
-
-    function unblockBranch(branchId) {
-      const branch = STATE.companies.find(c => c.id === branchId);
-      if(!branch || !STATE.currentCompany) return;
-
-      if(!confirm(`Tem a certeza que deseja desbloquear a filial "${branch.name}"?`)) return;
-
-      branch.blocked = false;
-      branch.blockedFeatures = [];
-
-      // Restaurar acesso aos recursos da empresa mãe
-      branch.packages = [...STATE.currentCompany.packages];
-      branch.lotes = [...STATE.currentCompany.lotes];
-      branch.campaign = { ...STATE.currentCompany.campaign };
-
-      saveState();
-      renderBranches();
-      alert('✓ Filial desbloqueada! Acesso restaurado.');
-    }
-
-    function updatePRStats() {
-      const totals = getPackageTotals(STATE.currentCompany);
-      document.getElementById('pr-stats').textContent = `Packs: ${STATE.currentCompany.packages.length} | Flags disponíveis: ${totals.totalLeft.toLocaleString()}/${totals.totalBought.toLocaleString()} | ${getStockWarning(STATE.currentCompany)}`;
-    }
-
-    function createLote() {
-      // Verificar se a filial tem bloqueio de criar lotes
-      if(STATE.currentCompany.blocked === 'partial' && STATE.currentCompany.blockedFeatures && STATE.currentCompany.blockedFeatures.includes(2)) {
-        alert('⚠️ A tua conta tem bloqueio de criação de lotes. Contacta a empresa mãe.');
-        return;
-      }
-
-      if(STATE.currentCompany.blocked === true) {
-        alert('⚠️ A tua conta está bloqueada. Contacta a empresa mãe.');
-        return;
-      }
-
-      const name = document.getElementById('lote-name').value;
-      const flags = parseInt(document.getElementById('lote-flags').value);
-
-      if(!name || !flags) {
-        alert('Preenche todos os campos');
-        return;
-      }
-
-      if(!STATE.currentCompany.lotes) STATE.currentCompany.lotes = [];
-
-      STATE.currentCompany.lotes.push({
-        id: `lote_${Date.now()}`,
-        name,
-        flags,
-        createdAt: new Date().toISOString()
-      });
-
-      saveState();
-      renderLotes();
-      document.getElementById('lote-name').value = '';
-      document.getElementById('lote-flags').value = '';
-    }
-
-    function renderLotes() {
-      const list = document.getElementById('lotes-list');
-      list.innerHTML = STATE.currentCompany.lotes.length
-        ? STATE.currentCompany.lotes.map(l => `<div class="package-item"><strong>${l.name}</strong><p>🚩 ${l.flags.toLocaleString()} flags</p></div>`).join('')
-        : '<p>Nenhum.</p>';
-    }
-
-    function createBingo() {
-      // Verificar se a filial tem bloqueio de criar bingos
-      if(STATE.currentCompany.blocked === 'partial' && STATE.currentCompany.blockedFeatures && STATE.currentCompany.blockedFeatures.includes(3)) {
-        alert('⚠️ A tua conta tem bloqueio de criação de bingos. Contacta a empresa mãe.');
-        return;
-      }
-
-      if(STATE.currentCompany.blocked === true) {
-        alert('⚠️ A tua conta está bloqueada. Contacta a empresa mãe.');
-        return;
-      }
-
-      const name = document.getElementById('bingo-name').value;
-      const prize = document.getElementById('bingo-prize').value;
-      const flags = parseInt(document.getElementById('bingo-flags').value);
-      const activeDays = parseInt(document.getElementById('bingo-active-days').value) || 0;
-      const activeHours = parseInt(document.getElementById('bingo-active-hours').value) || 0;
-      const activeMinutes = parseInt(document.getElementById('bingo-active-minutes').value) || 0;
-
-      if(!name || !prize || !flags) {
-        alert('Preenche todos os campos obrigatórios');
-        return;
-      }
-
-      if(activeDays === 0 && activeHours === 0 && activeMinutes === 0) {
-        alert('Define pelo menos uma duração (dias, horas ou minutos)');
-        return;
-      }
-
-      if(!STATE.currentCompany.bingos) STATE.currentCompany.bingos = [];
-
-      // Calcular data de expiração com dias, horas e minutos
-      const expiresAt = Date.now() + (activeDays * 24 * 60 * 60 * 1000) + (activeHours * 60 * 60 * 1000) + (activeMinutes * 60 * 1000);
-
-      STATE.currentCompany.bingos.push({
-        id: `bingo_${Date.now()}`,
-        name,
-        prize,
-        requiredFlags: flags,
-        activeDays,
-        activeHours,
-        activeMinutes,
-        createdAt: new Date().toISOString(),
-        expiresAt: new Date(expiresAt).toISOString(),
-        active: true
-      });
-
-      // Atualizar campanha
-      if(!STATE.currentCompany.campaign) {
-        STATE.currentCompany.campaign = {
-          rewardsEnabled: false,
-          rewardType: 'none',
-          rewardText: 'Sem prémio',
-          promoLotsActive: 0,
-          promoBudgetLeft: 0,
-          bingoCountActive: 0,
-          bingoText: '',
-          rewardsGiven: 0
-        };
-      }
-      STATE.currentCompany.campaign.bingoCountActive = STATE.currentCompany.bingos.length;
-      STATE.currentCompany.campaign.bingoText = name + ' - ' + prize;
-
-      saveState();
-      renderBingos();
-      updatePRStats();
-      document.getElementById('bingo-name').value = '';
-      document.getElementById('bingo-prize').value = '';
-      document.getElementById('bingo-flags').value = '';
-      document.getElementById('bingo-active-days').value = '0';
-      document.getElementById('bingo-active-hours').value = '0';
-      document.getElementById('bingo-active-minutes').value = '0';
-    }
-
-    function renderBingos() {
-      const list = document.getElementById('bingos-list');
-      if(!STATE.currentCompany.bingos) STATE.currentCompany.bingos = [];
-      list.innerHTML = STATE.currentCompany.bingos.length
-        ? STATE.currentCompany.bingos.map(b => {
-            const expiresDate = b.expiresAt ? new Date(b.expiresAt).toLocaleString() : 'N/A';
-            const status = b.active ? '<span class="ok">Ativo</span>' : '<span class="danger">Expirado</span>';
-            
-            // Formatar duração
-            let durationText = '';
-            if(b.activeDays > 0) durationText += `${b.activeDays}d `;
-            if(b.activeHours > 0) durationText += `${b.activeHours}h `;
-            if(b.activeMinutes > 0) durationText += `${b.activeMinutes}min`;
-            if(durationText === '') durationText = '0min';
-            
-            return `<div class="package-item"><strong>${b.name}</strong><p>🎁 Prémio: ${b.prize} | 🚩 Flags: ${b.requiredFlags} | ⏱️ Duração: ${durationText.trim()} | Expira: ${expiresDate} | ${status}</p></div>`;
-          }).join('')
-        : '<p>Nenhum.</p>';
-    }
-
-    function validateClientQR() {
-      // Verificar se a filial tem bloqueio de validar QR
-      if(STATE.currentCompany.blocked === 'partial' && STATE.currentCompany.blockedFeatures && STATE.currentCompany.blockedFeatures.includes(4)) {
-        alert('⚠️ A tua conta tem bloqueio de validação de QR. Contacta a empresa mãe.');
-        return;
-      }
-
-      if(STATE.currentCompany.blocked === true) {
-        alert('⚠️ A tua conta está bloqueada. Contacta a empresa mãe.');
-        return;
-      }
-
-      const input = document.getElementById('qr-validation-input');
-      if(!input.value) {
-        document.getElementById('validation-msg').innerHTML = '<span class="danger">Insere um código QR.</span>';
-        return;
-      }
-
-      // Verificar proteção contra fotos de celular
-      const qrCode = input.value;
-      const qrParts = qrCode.split('-');
-      if(qrParts.length < 3 || qrParts[0] !== 'ZAP') {
-        document.getElementById('validation-msg').innerHTML = '<span class="danger">Código QR inválido.</span>';
-        return;
-      }
-
-      const timestamp = parseInt(qrParts[2]);
-      const now = Date.now();
-      const timeDiff = now - timestamp;
-
-      // Verificar se o QR é muito antigo (possível foto)
-      if(timeDiff > 60000) { // 1 minuto
-        document.getElementById('validation-msg').innerHTML = '<span class="danger">⚠️ QR expirado. O QR tem proteção contra fotos de celular.</span>';
-        return;
-      }
-
-      // Verificar se o QR já foi validado recentemente
-      const recentValidation = STATE.currentCompany.qrHistory.find(q => q.code === qrCode && (now - new Date(q.validatedAt).getTime()) < 60000);
-      if(recentValidation) {
-        document.getElementById('validation-msg').innerHTML = '<span class="danger">⚠️ Este QR já foi validado recentemente. Proteção contra fotos de celular.</span>';
-        return;
-      }
-
-      STATE.currentCompany.qrHistory.push({
-        code: input.value,
-        validatedAt: new Date().toISOString()
-      });
-
-      saveState();
-      renderQRHistory();
-      document.getElementById('validation-msg').innerHTML = '<span class="ok">✓ QR validado!</span>';
-      input.value = '';
-    }
-
-    function renderQRHistory() {
-      const list = document.getElementById('qr-history');
-      list.innerHTML = STATE.currentCompany.qrHistory.length
-        ? STATE.currentCompany.qrHistory.slice(-10).reverse().map(q => `<div class="package-item"><strong>${q.code}</strong><p>${new Date(q.validatedAt).toLocaleString()}</p></div>`).join('')
-        : '<p>Nenhum.</p>';
-    }
-
-    function renderInvoices() {
-      const list = document.getElementById('invoices-list');
-      if(!STATE.currentCompany.invoices || STATE.currentCompany.invoices.length === 0) {
-        list.innerHTML = '<p>Nenhuma fatura registada.</p>';
-      } else {
-        list.innerHTML = STATE.currentCompany.invoices.slice().reverse().map(inv => {
-          const date = new Date(inv.purchasedAt).toLocaleString();
-          return `<div class="package-item"><strong>${inv.packageName}</strong><p>🧾 Fatura: ${inv.id}</p><p>💰 Valor: ${inv.amount}€ · 🚩 Flags: ${inv.flags.toLocaleString()}</p><p>📅 Data: ${date}</p><p>👤 Comprado por: ${inv.purchasedBy}</p><p>📋 Fatura passada a: ${inv.to} (NIF: ${inv.nif})</p><div class="btn-row"><button class="btn-small" onclick="viewInvoice('${inv.id}')">📄 Ver Fatura</button><button class="btn-dark btn-small" onclick="printInvoice('${inv.id}')">🖨️ Imprimir</button></div></div>`;
-        }).join('');
-      }
-    }
-
-    function viewInvoice(invoiceId) {
-      const invoice = STATE.currentCompany.invoices.find(i => i.id === invoiceId);
-      if(!invoice) return;
-
-      const date = new Date(invoice.purchasedAt).toLocaleString();
-      const invoiceContent = `
-═══════════════════════════════════════════════════════════════
-                    FATURA / RECIBO
-═══════════════════════════════════════════════════════════════
-
-Nº Fatura: ${invoice.id}
-Data: ${date}
-
-═══════════════════════════════════════════════════════════════
-                    DADOS DO CLIENTE
-═══════════════════════════════════════════════════════════════
-
-Nome: ${invoice.to}
-NIF: ${invoice.nif}
-Morada: ${invoice.address}
-Cidade: ${invoice.city}
-Código Postal: ${invoice.code}
-
-═══════════════════════════════════════════════════════════════
-                    DETALHES DA COMPRA
-═══════════════════════════════════════════════════════════════
-
-Pacote: ${invoice.packageName}
-Quantidade de Flags: ${invoice.flags.toLocaleString()}
-Valor Total: ${invoice.amount}€
-
-═══════════════════════════════════════════════════════════════
-                    DADOS DA TRANSAÇÃO
-═══════════════════════════════════════════════════════════════
-
-Comprado por: ${invoice.purchasedBy}
-Estado: Pago
-
-═══════════════════════════════════════════════════════════════
-                    ZAP FLAGS
-═══════════════════════════════════════════════════════════════
-      `;
-
-      alert(invoiceContent);
-    }
-
-    function printInvoice(invoiceId) {
-      const invoice = STATE.currentCompany.invoices.find(i => i.id === invoiceId);
-      if(!invoice) return;
-
-      const date = new Date(invoice.purchasedAt).toLocaleString();
-      const invoiceContent = `
-═══════════════════════════════════════════════════════════════
-                    FATURA / RECIBO
-═══════════════════════════════════════════════════════════════
-
-Nº Fatura: ${invoice.id}
-Data: ${date}
-
-═══════════════════════════════════════════════════════════════
-                    DADOS DO CLIENTE
-═══════════════════════════════════════════════════════════════
-
-Nome: ${invoice.to}
-NIF: ${invoice.nif}
-Morada: ${invoice.address}
-Cidade: ${invoice.city}
-Código Postal: ${invoice.code}
-
-═══════════════════════════════════════════════════════════════
-                    DETALHES DA COMPRA
-═══════════════════════════════════════════════════════════════
-
-Pacote: ${invoice.packageName}
-Quantidade de Flags: ${invoice.flags.toLocaleString()}
-Valor Total: ${invoice.amount}€
-
-═══════════════════════════════════════════════════════════════
-                    DADOS DA TRANSAÇÃO
-═══════════════════════════════════════════════════════════════
-
-Comprado por: ${invoice.purchasedBy}
-Estado: Pago
-
-═══════════════════════════════════════════════════════════════
-                    ZAP FLAGS
-═══════════════════════════════════════════════════════════════
-      `;
-
-      const printWindow = window.open('', '_blank');
-      printWindow.document.write('<pre>' + invoiceContent + '</pre>');
-      printWindow.document.close();
-      printWindow.print();
-    }
-
-    console.log("✅ ZAP FLAGS v3.0 Carregado. Pronto.");
-  </script>
+  }else{
+    h='<div style="text-align:center;padding:8px"><div style="font-size:32px;margin-bottom:8px">🏴</div><h3 style="color:#555">Vazia</h3></div>';
+    mostrarNotif('🏴','Vazia','Continua!')
+  }
+
+  G('aba-band-c').innerHTML=h;
+  G('aba-band').classList.add('aberta');
+  atualizarHUDJogo();atualizarPainelSk();gravarJogador();
+
+  // Respawnar
+  setTimeout(function(){
+    var a=Math.random()*2*Math.PI,d=30+Math.random()*CFG.SPAWN_RAIO;
+    b.lat=AV.lat+(d/111e3)*Math.cos(a);
+    b.lng=AV.lng+(d/(111e3*Math.cos(AV.lat*Math.PI/180)))*Math.sin(a);
+    b.apanhada=false;b.visivel=false;b.m=null;
+    var r=Math.random();
+    var empsOk=BD.emps().filter(function(e){return(e.packs||[]).some(function(p){return p.flagsLeft>0&&p.fim>Date.now()})});
+    if(r<0.45){b.tipo='energia';b.empId=null;b.loteId=null}
+    else if(r<0.72&&empsOk.length>0){
+      b.tipo='pr';
+      var empR=empsOk[Math.floor(Math.random()*empsOk.length)];
+      b.empId=empR.em;
+      var la2=(empR.lotes||[]).filter(function(l){return l.estado==='ativo'&&l.expiracao>Date.now()});
+      b.loteId=la2.length>0?la2[Math.floor(Math.random()*la2.length)].id:null
+    }else{b.tipo='vazia';b.empId=null;b.loteId=null}
+  },5e3+Math.random()*5e3)
+}
+
+function fecharAbaBanda(){G('aba-band').classList.remove('aberta')}
+function fecharAbaQR(){G('aba-qr').classList.remove('aberta');G('aba-qr').style.display='none'}
+
+function verificarSkill(){
+  while((jogAtual.flEnerg||0)>=(jogAtual.flLimite||500)){
+    jogAtual.flEnerg-=(jogAtual.flLimite||500);
+    jogAtual.sk=(jogAtual.sk||0)+1;
+    jogAtual.flLimite=flagsParaSk(jogAtual.sk);
+    var nv=calcVisao(jogAtual.sk),ant=jogAtual.visao||5;
+    jogAtual.visao=nv;jogAtual.nivel=Math.floor(jogAtual.sk/10)+1;
+    if(nv>ant){mostrarNotif('👁️','Visão: '+nv+'m!','Skill '+jogAtual.sk);atualizarCirculo()}
+    else mostrarNotif('🎯','Skill '+jogAtual.sk+'!','')
+  }
+  atualizarPainelSk();atualizarHUDJogo()
+}
+
+function atualizarHUDJogo(){
+  if(!jogAtual)return;
+  G('j-nm').innerText='👤 '+(jogAtual.nm||'—');
+  G('j-nv').innerText='Nível '+(jogAtual.nivel||1)+' · Skill '+(jogAtual.sk||0);
+  G('h-fl').innerText=fN(jogAtual.fl||0);
+  G('h-en').innerText=Math.round(jogAtual.en||100)+'%';
+  G('h-sk').innerText=jogAtual.sk||0;
+  G('h-vis').innerText=(jogAtual.visao||5)+'m'
+}
+
+function atualizarPainelSk(){
+  if(!jogAtual)return;
+  G('sk-nv').innerText=jogAtual.nivel||1;
+  G('sk-sk').innerText=jogAtual.sk||0;
+  G('sk-vis').innerText=(jogAtual.visao||5)+'m';
+  G('sk-px').innerText=fN(jogAtual.flLimite||500);
+  var pc=Math.min(100,((jogAtual.flEnerg||0)/(jogAtual.flLimite||500))*100);
+  G('bskf').style.width=pc+'%';
+  G('bskt').innerText=fN(jogAtual.flEnerg||0)+' / '+fN(jogAtual.flLimite||500)
+}
+
+function gravarJogador(){
+  if(!jogAtual||!jogAtual.em)return;
+  jogAtual.ult=Date.now();
+  var l=BD.jogs(),idx=-1;
+  for(var i=0;i<l.length;i++){if(l[i].em===jogAtual.em){idx=i;break}}
+  if(idx>=0)l[idx]=jogAtual;else l.push(jogAtual);
+  BD.saveJ(l);BD.setSJ(jogAtual)
+}
+
+function atualizarCirculo(){
+  if(!mapaJ||!jogAtual)return;
+  var v=jogAtual.visao||5,r=Math.max(60,distPx(v)),d=r*2;
+  var c=G('circ-vis'),p=(v-CFG.VISAO_MIN)/(CFG.VISAO_MAX-CFG.VISAO_MIN),b=Math.round(p*255);
+  c.style.width=d+'px';c.style.height=d+'px';
+  c.style.borderColor='rgb(0,255,'+b+')';
+  c.style.boxShadow='0 0 0 3000px rgba(0,0,0,.76),0 0 '+(20+p*35)+'px rgba(0,255,'+b+',.4)'
+}
+
+function loopJogo(ts){
+  animF=requestAnimationFrame(loopJogo);
+  var dt=Math.min(ts-ultimoF,50);ultimoF=ts;animT+=dt*.001;
+  var vel=CFG.VEL_PX*(dt/16),mx=0,my=0;
+  if(dirs.c)my-=vel;if(dirs.b)my+=vel;if(dirs.e)mx-=vel;if(dirs.d)mx+=vel;
+  if(mx&&my){mx*=.707;my*=.707}
+  AV.andando=!!(mx||my);
+  if(mx>0)AV.dir=1;else if(mx<0)AV.dir=-1;
+  if(AV.andando&&mapaJ){
+    var z=mapaJ.getZoom(),e=156543.03392*Math.cos(AV.lat*Math.PI/180)/Math.pow(2,z);
+    AV.lat+=(-my*e)/111319.9;AV.lng+=(mx*e)/111319.9;
+    mapaJ.panTo([AV.lat,AV.lng],{animate:false,duration:0});
+    if(marcAvt)marcAvt.setLatLng([AV.lat,AV.lng]);
+    atualizarCirculo();atualizarVisibilidade();verificarBandeiras()
+  }
+  animarAvatar(animT,AV.andando)
+}
+
+function animarAvatar(t,a){
+  var s=G('avt-svg');if(!s)return;
+  if(a){
+    var r=Math.sin(t*8)*22;
+    var ape=G('ape'),apd=G('apd'),abe=G('abe'),abd=G('abd'),acab=G('acab');
+    if(ape)ape.style.transform='rotate('+(-r)+'deg)';
+    if(apd)apd.style.transform='rotate('+r+'deg)';
+    if(abe)abe.style.transform='rotate('+r+'deg)';
+    if(abd)abd.style.transform='rotate('+(-r)+'deg)';
+    if(acab)acab.style.transform='translateY('+Math.abs(Math.sin(t*8))*-1.5+'px)';
+    s.style.transform='translate(-50%,-50%) scaleX('+AV.dir+')';
+    s.style.filter='drop-shadow(0 0 12px #4CAF50)'
+  }else{
+    var r2=Math.sin(t*1.5)*1.5;
+    var ape2=G('ape'),apd2=G('apd'),abe2=G('abe'),abd2=G('abd'),acab2=G('acab');
+    if(ape2)ape2.style.transform='rotate(0)';if(apd2)apd2.style.transform='rotate(0)';
+    if(abe2)abe2.style.transform='rotate('+r2+'deg)';if(abd2)abd2.style.transform='rotate('+(-r2)+'deg)';
+    if(acab2)acab2.style.transform='translateY('+r2*.4+'px)';
+    var sc=1+Math.sin(t*1.2)*.02;
+    s.style.transform='translate(-50%,-50%) scale('+sc+')';
+    s.style.filter='drop-shadow(0 0 '+(8+Math.sin(t*1.2)*4)+'px #4CAF50)'
+  }
+}
+
+document.addEventListener('keydown',function(e){
+  var m={ArrowUp:'c',ArrowDown:'b',ArrowLeft:'e',ArrowRight:'d',w:'c',s:'b',a:'e',d:'d',W:'c',S:'b',A:'e',D:'d'};
+  if(m[e.key]){dirs[m[e.key]]=true;var b=G('bc-'+m[e.key]);if(b)b.classList.add('on');e.preventDefault()}
+  if(e.key===' '||e.key==='Enter')apanharManual();
+  if(e.key==='Escape'){fecharAbaBanda();fecharAbaQR()}
+});
+document.addEventListener('keyup',function(e){
+  var m={ArrowUp:'c',ArrowDown:'b',ArrowLeft:'e',ArrowRight:'d',w:'c',s:'b',a:'e',d:'d',W:'c',S:'b',A:'e',D:'d'};
+  if(m[e.key]){dirs[m[e.key]]=false;var b=G('bc-'+m[e.key]);if(b)b.classList.remove('on')}
+});
+function pd(d){dirs[d]=true;var b=G('bc-'+d);if(b)b.classList.add('on')}
+function pu(d){dirs[d]=false;var b=G('bc-'+d);if(b)b.classList.remove('on')}
+function mudarTam(d){tamBtn=Math.max(32,Math.min(80,tamBtn+d*6));G('tam-lbl').innerText=tamBtn+'px';var b=document.querySelectorAll('.cbtn');for(var i=0;i<b.length;i++){b[i].style.width=tamBtn+'px';b[i].style.height=tamBtn+'px'}}
+function arrastarCtrl(){
+  var c=G('ctrl');if(!c)return;
+  var ar=false,ox=0,oy=0;
+  c.addEventListener('pointerdown',function(e){if(e.target.classList.contains('cbtn')||e.target.classList.contains('tbtn'))return;ar=true;ox=e.clientX-c.getBoundingClientRect().left;oy=e.clientY-c.getBoundingClientRect().top;c.setPointerCapture(e.pointerId);e.preventDefault()});
+  c.addEventListener('pointermove',function(e){if(!ar)return;c.style.left=(e.clientX-ox)+'px';c.style.top=(e.clientY-oy)+'px';c.style.right='auto';c.style.bottom='auto'});
+  c.addEventListener('pointerup',function(){ar=false})
+}
+
+function addTick(h){var t=G('ticker');for(var i=0;i<2;i++){var s=document.createElement('span');s.className='tick';s.innerHTML=h+'   ';t.appendChild(s)}}
+function iniciarTicker(){G('ticker').innerHTML='';addTick('🏴 ZAP FLAGS — Caça ao Tesouro!');addTick('👁️ Bandeiras visíveis no teu raio!');addTick('🎫 '+CFG.QR_N+' bandeiras PR = QR prémio!');addTick('🕹️ WASD · ESPAÇO apanhar · ESC fechar')}
+function mostrarNotif(i,t,s){G('ntf-ico').innerText=i;G('ntf-txt').innerText=t;G('ntf-sub').innerText=s||'';G('notif').style.display='block';if(notifTmr)clearTimeout(notifTmr);notifTmr=setTimeout(function(){G('notif').style.display='none'},2700)}
+
+setInterval(function(){if(jogAtual&&(jogAtual.en||100)<100){jogAtual.en=Math.min(100,(jogAtual.en||100)+1);atualizarHUDJogo();gravarJogador()}},3e4);
+
+ir('p-inicio');
+</script>
 </body>
 </html>
