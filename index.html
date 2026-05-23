@@ -578,11 +578,19 @@
 
     <div id="pr-bingos" class="pr-content">
       <div class="dashboard-grid">
-        <div class="item-module"><h3>🎱 Criar Bingo</h3>
+        <div class="item-module"><h3>🎱 Criar Bingo (Prémio Único)</h3>
           <div class="form-group"><input id="bingo-name" placeholder="Nome do bingo"></div>
-          <div class="form-group"><input id="bingo-prize" placeholder="Prémio"></div>
+          <div class="form-group"><input id="bingo-prize" placeholder="Prémio único"></div>
           <div class="form-group"><input id="bingo-flags" type="number" placeholder="Flags necessárias"></div>
-          <div class="form-group"><input id="bingo-active-days" type="number" placeholder="Dias ativo (min 30)" value="30"></div>
+          <div class="form-group">
+            <label>Duração de Ativação</label>
+            <div style="display:flex;gap:8px;">
+              <input id="bingo-active-days" type="number" placeholder="Dias" value="0" min="0" style="flex:1;">
+              <input id="bingo-active-hours" type="number" placeholder="Horas" value="0" min="0" max="23" style="flex:1;">
+              <input id="bingo-active-minutes" type="number" placeholder="Minutos" value="0" min="0" max="59" style="flex:1;">
+            </div>
+            <small style="color:#888;">Define dias, horas e minutos (opcional)</small>
+          </div>
           <button class="btn" onclick="createBingo()">CRIAR BINGO</button>
         </div>
         <div class="item-module"><h3>📋 Bingos Ativos</h3><div id="bingos-list" class="item-list"></div></div>
@@ -1842,10 +1850,13 @@
       packageSelect.innerHTML = '<option value="">Todos os pacotes</option>' + PKGS.map(p => `<option value="${p.n}">${p.n}</option>`).join('');
 
       document.querySelectorAll('#buy-packages-list .package-item').forEach(i => {
+        i.style.cursor = 'pointer';
         i.addEventListener('click', () => {
           document.querySelectorAll('#buy-packages-list .package-item').forEach(el => el.classList.remove('selected'));
           i.classList.add('selected');
-          document.getElementById('btn-buy-package').disabled = false;
+          const btn = document.getElementById('btn-buy-package');
+          btn.disabled = false;
+          btn.style.opacity = '1';
         });
       });
 
@@ -1857,8 +1868,13 @@
       updatePRStats();
       
       document.getElementById('btn-buy-package').onclick = () => {
+        console.log('Botão de compra clicado');
         const sel = document.querySelector('#buy-packages-list .selected');
-        if(!sel) return;
+        console.log('Pacote selecionado:', sel);
+        if(!sel) {
+          alert('Por favor, seleciona um pacote primeiro.');
+          return;
+        }
 
         // Verificar se a filial tem bloqueio de compra de pacotes
         if(STATE.currentCompany.blocked === 'partial' && STATE.currentCompany.blockedFeatures && STATE.currentCompany.blockedFeatures.includes(1)) {
@@ -2288,16 +2304,24 @@
       const name = document.getElementById('bingo-name').value;
       const prize = document.getElementById('bingo-prize').value;
       const flags = parseInt(document.getElementById('bingo-flags').value);
-      const activeDays = parseInt(document.getElementById('bingo-active-days').value) || 30;
+      const activeDays = parseInt(document.getElementById('bingo-active-days').value) || 0;
+      const activeHours = parseInt(document.getElementById('bingo-active-hours').value) || 0;
+      const activeMinutes = parseInt(document.getElementById('bingo-active-minutes').value) || 0;
 
       if(!name || !prize || !flags) {
-        alert('Preenche todos os campos');
+        alert('Preenche todos os campos obrigatórios');
+        return;
+      }
+
+      if(activeDays === 0 && activeHours === 0 && activeMinutes === 0) {
+        alert('Define pelo menos uma duração (dias, horas ou minutos)');
         return;
       }
 
       if(!STATE.currentCompany.bingos) STATE.currentCompany.bingos = [];
 
-      const expiresAt = Date.now() + (activeDays * 24 * 60 * 60 * 1000);
+      // Calcular data de expiração com dias, horas e minutos
+      const expiresAt = Date.now() + (activeDays * 24 * 60 * 60 * 1000) + (activeHours * 60 * 60 * 1000) + (activeMinutes * 60 * 1000);
 
       STATE.currentCompany.bingos.push({
         id: `bingo_${Date.now()}`,
@@ -2305,6 +2329,8 @@
         prize,
         requiredFlags: flags,
         activeDays,
+        activeHours,
+        activeMinutes,
         createdAt: new Date().toISOString(),
         expiresAt: new Date(expiresAt).toISOString(),
         active: true
@@ -2332,7 +2358,9 @@
       document.getElementById('bingo-name').value = '';
       document.getElementById('bingo-prize').value = '';
       document.getElementById('bingo-flags').value = '';
-      document.getElementById('bingo-active-days').value = '';
+      document.getElementById('bingo-active-days').value = '0';
+      document.getElementById('bingo-active-hours').value = '0';
+      document.getElementById('bingo-active-minutes').value = '0';
     }
 
     function renderBingos() {
@@ -2340,9 +2368,17 @@
       if(!STATE.currentCompany.bingos) STATE.currentCompany.bingos = [];
       list.innerHTML = STATE.currentCompany.bingos.length
         ? STATE.currentCompany.bingos.map(b => {
-            const expiresDate = b.expiresAt ? new Date(b.expiresAt).toLocaleDateString() : 'N/A';
+            const expiresDate = b.expiresAt ? new Date(b.expiresAt).toLocaleString() : 'N/A';
             const status = b.active ? '<span class="ok">Ativo</span>' : '<span class="danger">Expirado</span>';
-            return `<div class="package-item"><strong>${b.name}</strong><p>🎁 ${b.prize} | 🚩 ${b.requiredFlags} flags | 📅 ${b.activeDays} dias | Expira: ${expiresDate} | ${status}</p></div>`;
+            
+            // Formatar duração
+            let durationText = '';
+            if(b.activeDays > 0) durationText += `${b.activeDays}d `;
+            if(b.activeHours > 0) durationText += `${b.activeHours}h `;
+            if(b.activeMinutes > 0) durationText += `${b.activeMinutes}min`;
+            if(durationText === '') durationText = '0min';
+            
+            return `<div class="package-item"><strong>${b.name}</strong><p>🎁 Prémio: ${b.prize} | 🚩 Flags: ${b.requiredFlags} | ⏱️ Duração: ${durationText.trim()} | Expira: ${expiresDate} | ${status}</p></div>`;
           }).join('')
         : '<p>Nenhum.</p>';
     }
