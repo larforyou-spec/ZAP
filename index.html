@@ -562,7 +562,7 @@
         <div class="item-module"><h3>🛒 Comprar Packs</h3> <div id="buy-packages-list" class="item-list"></div>
           <div class="form-group">
             <label>Forma de Pagamento</label>
-            <select id="payment-method">
+            <select id="payment-method" onchange="checkBuyButton()">
               <option value="">Seleciona forma de pagamento</option>
               <option value="qr">💳 QR Code</option>
               <option value="referencia">📄 Referência</option>
@@ -1842,6 +1842,31 @@
       if(tab === 'invoices') renderInvoices();
     }
 
+    function checkBuyButton() {
+      const sel = document.querySelector('#buy-packages-list .selected');
+      const paymentMethod = document.getElementById('payment-method') ? document.getElementById('payment-method').value : '';
+      const btn = document.getElementById('btn-buy-package');
+
+      if(sel && paymentMethod) {
+        btn.disabled = false;
+        btn.style.opacity = '1';
+        console.log('Botão ativado - pacote e pagamento selecionados');
+      } else {
+        btn.disabled = true;
+        btn.style.opacity = '0.5';
+        console.log('Botão desativado - falta pacote ou pagamento');
+      }
+    }
+
+    function renderRewards() {
+      const list = document.getElementById('rewards-list');
+      if(!STATE.currentCompany.campaign || !STATE.currentCompany.campaign.rewardsEnabled) {
+        list.innerHTML = '<p>Sem prémios configurados.</p>';
+        return;
+      }
+      list.innerHTML = `<div class="package-item"><p><strong>Tipo:</strong> ${STATE.currentCompany.campaign.rewardType}</p><p><strong>Prémio:</strong> ${STATE.currentCompany.campaign.rewardText}</p></div>`;
+    }
+
     function initPRDashboard() {
       if(!STATE.currentCompany) return goTo('auth-screen', 'company');
       document.getElementById('pr-name-ui').textContent = `PAINEL - ${STATE.currentCompany.name}`;
@@ -1864,11 +1889,11 @@
       document.querySelectorAll('#buy-packages-list .package-item').forEach(i => {
         i.style.cursor = 'pointer';
         i.addEventListener('click', () => {
+          console.log('Pacote clicado:', i.dataset.name);
           document.querySelectorAll('#buy-packages-list .package-item').forEach(el => el.classList.remove('selected'));
           i.classList.add('selected');
-          const btn = document.getElementById('btn-buy-package');
-          btn.disabled = false;
-          btn.style.opacity = '1';
+          checkBuyButton();
+          console.log('Botão verificado');
         });
       });
 
@@ -1889,10 +1914,15 @@
         }
 
         const paymentMethod = document.getElementById('payment-method').value;
+        console.log('Forma de pagamento:', paymentMethod);
         if(!paymentMethod) {
           alert('Por favor, seleciona uma forma de pagamento.');
           return;
         }
+
+        console.log('STATE.currentCompany:', STATE.currentCompany);
+        console.log('Bloqueio parcial:', STATE.currentCompany.blocked === 'partial');
+        console.log('Bloqueio total:', STATE.currentCompany.blocked === true);
 
         // Verificar se a filial tem bloqueio de compra de pacotes
         if(STATE.currentCompany.blocked === 'partial' && STATE.currentCompany.blockedFeatures && STATE.currentCompany.blockedFeatures.includes(1)) {
@@ -1904,6 +1934,8 @@
           alert('⚠️ A tua conta está bloqueada. Contacta a empresa mãe.');
           return;
         }
+
+        console.log('Validações passadas, a processar compra...');
 
         const pDef = PKGS.find(p => p.n === sel.dataset.name);
         const newPackage = {
