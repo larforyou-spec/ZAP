@@ -499,6 +499,7 @@
       <h2 style="margin:0 0 8px 0;">🎮 Escolhe o modo</h2>
       <p class="small">Seleciona como queres jogar.</p>
       <p id="map-warning" class="small warning hidden">Se o mapa não carregar, abre por GitHub Pages ou servidor local em vez de abrir diretamente o ficheiro.</p>
+      <p id="map-status" class="small">Mapa GPS: a carregar...</p>
       <div class="btn-row" style="max-width:none;">
         <button class="btn" onclick="requestGPSMode()">🛰️ ONLINE GPS</button>
         <button class="btn btn-dark" onclick="activateHomeMode()">💻 OFFLINE GPS</button>
@@ -1158,25 +1159,42 @@
           options: { maxZoom: 19, attribution: '© OpenStreetMap' }
         },
         {
+          url: 'https://{s}.tile.openstreetmap.de/{z}/{x}/{y}.png',
+          options: { maxZoom: 19, attribution: '© OpenStreetMap', subdomains: 'abc' }
+        },
+        {
           url: 'https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png',
           options: { maxZoom: 19, attribution: '© OpenStreetMap HOT' }
         },
         {
           url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
           options: { maxZoom: 20, attribution: '© OpenStreetMap © CARTO', subdomains: 'abcd' }
+        },
+        {
+          url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
+          options: { maxZoom: 19, attribution: 'Tiles © Esri' }
         }
       ];
 
       let providerIndex = 0;
       let currentLayer = null;
+      let loadedTiles = 0;
+      let fallbackTimer = null;
 
       function loadProvider(index) {
         if(currentLayer && window.map) window.map.removeLayer(currentLayer);
+        loadedTiles = 0;
+        if(fallbackTimer) clearTimeout(fallbackTimer);
         const provider = providers[index];
-        currentLayer = L.tileLayer(provider.url, {
-          ...provider.options,
-          crossOrigin: true
-        }).addTo(window.map);
+        const status = document.getElementById('map-status');
+        if(status) status.textContent = 'Mapa GPS: a carregar fornecedor ' + (index + 1) + '...';
+        currentLayer = L.tileLayer(provider.url, provider.options).addTo(window.map);
+
+        currentLayer.on('tileload', () => {
+          loadedTiles++;
+          if(status) status.textContent = 'Mapa GPS: carregado';
+          if(fallbackTimer) clearTimeout(fallbackTimer);
+        });
 
         currentLayer.on('tileerror', () => {
           if(providerIndex < providers.length - 1) {
@@ -1184,6 +1202,16 @@
             loadProvider(providerIndex);
           }
         });
+
+        fallbackTimer = setTimeout(() => {
+          if(loadedTiles === 0 && providerIndex < providers.length - 1) {
+            providerIndex++;
+            loadProvider(providerIndex);
+          } else if(loadedTiles === 0) {
+            const status = document.getElementById('map-status');
+            if(status) status.textContent = 'Mapa GPS: não carregou. Usa GitHub Pages/servidor local ou verifica a internet.';
+          }
+        }, 3000);
       }
 
       loadProvider(providerIndex);
