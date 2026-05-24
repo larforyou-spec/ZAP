@@ -924,6 +924,7 @@
 
       if(player.pass === pass) {
         STATE.currentPlayer = player;
+        applyOfflineEnergyRegen();
         localStorage.setItem('ZAP_FLAGS_LAST_PLAYER_NAME', player.name);
         document.getElementById('msg-player').innerHTML = '<span class="ok">✓ Login OK!</span>';
         setTimeout(() => goTo('game-screen'), 300);
@@ -979,6 +980,7 @@
         prFlags: 0,
         totalFlags: 0,
         energy: 100,
+        lastActivityAt: Date.now(),
         skill: 1,
         vision: 5,
         position: { lat: 38.7223, lng: -9.1393 },
@@ -1149,6 +1151,9 @@
     let lastMovementTime = Date.now();
     let energyInterval = null;
     let visionCircle = null;
+    let offlineStepCounter = 0;
+    const ENERGY_REGEN_INTERVAL_MS = 15 * 60 * 1000;
+    const ENERGY_REGEN_AMOUNT = 10;
 
     function createPlayerAvatarHtml() {
       let head = '';
@@ -1404,7 +1409,7 @@
       STATE.currentPlayer.position = { lat, lng };
       
       // Energy system
-      if(lastPosForEnergy && fromMovement) {
+      if(lastPosForEnergy && fromMovement && !offlineMode) {
         const moved = getDistanceMeters(lastPosForEnergy.lat, lastPosForEnergy.lng, lat, lng);
         if(moved > 0.5) {
           movedMetersBuffer += moved;
@@ -1504,20 +1509,47 @@
 
     function startEnergyRegeneration() {
       if(energyInterval) clearInterval(energyInterval);
+      applyOfflineEnergyRegen();
       energyInterval = setInterval(() => {
-        if(Date.now() - lastMovementTime >= 60000 && STATE.currentPlayer.energy < 100) {
-          STATE.currentPlayer.energy = Math.min(100, STATE.currentPlayer.energy + 1);
-          renderTopBar();
-          saveState();
-        }
-      }, 30000);
+        applyOfflineEnergyRegen();
+      }, 60000);
+    }
+
+    function applyOfflineEnergyRegen() {
+      if(!STATE.currentPlayer) return;
+      const now = Date.now();
+      const lastActivityAt = STATE.currentPlayer.lastActivityAt || STATE.currentPlayer.lastEnergyRegenAt || now;
+      if(now - lastActivityAt < ENERGY_REGEN_INTERVAL_MS || STATE.currentPlayer.energy >= 100) return;
+      const cycles = Math.floor((now - lastActivityAt) / ENERGY_REGEN_INTERVAL_MS);
+      STATE.currentPlayer.energy = Math.min(100, Math.floor((STATE.currentPlayer.energy || 0) + cycles * ENERGY_REGEN_AMOUNT));
+      STATE.currentPlayer.lastActivityAt = lastActivityAt + cycles * ENERGY_REGEN_INTERVAL_MS;
+      const storedPlayer = STATE.players.find(p => p.id === STATE.currentPlayer.id);
+      if(storedPlayer) {
+        storedPlayer.energy = STATE.currentPlayer.energy;
+        storedPlayer.lastActivityAt = STATE.currentPlayer.lastActivityAt;
+      }
+      renderTopBar();
+      saveState();
     }
 
     function renderTopBar() {
-      document.getElementById('energy-fill').style.width = STATE.currentPlayer.energy + '%';
-      document.getElementById('energy-text').textContent = 'Energia: ' + STATE.currentPlayer.energy + '%';
+      const energy = Math.max(0, Math.min(100, Math.floor(STATE.currentPlayer.energy || 0)));
+      document.getElementById('energy-fill').style.width = energy + '%';
+      document.getElementById('energy-text').textContent = 'Energia: ' + energy + '%';
       document.getElementById('mode-text').textContent = offlineMode ? 'Modo: Offline GPS / PC Casa' : 'Modo: Online GPS';
       document.getElementById('flags-text').textContent = '🚩 ' + STATE.currentPlayer.totalFlags;
+    }
+
+    function spendPlayerEnergy(amount) {
+      if(!STATE.currentPlayer) return;
+      STATE.currentPlayer.energy = Math.max(0, Math.floor((STATE.currentPlayer.energy || 0) - amount));
+      const storedPlayer = STATE.players.find(p => p.id === STATE.currentPlayer.id);
+      if(storedPlayer) storedPlayer.energy = STATE.currentPlayer.energy;
+      STATE.currentPlayer.lastActivityAt = Date.now();
+      if(storedPlayer) storedPlayer.lastActivityAt = STATE.currentPlayer.lastActivityAt;
+      lastMovementTime = Date.now();
+      renderTopBar();
+      saveState();
     }
 
     function centerOnPlayer() {
@@ -1786,21 +1818,28 @@
       if(dirAngles[dir] !== undefined) setPlayerAvatarDirection(dirAngles[dir], true);
       pulseScreenAvatar(dir);
 
-      const step = 0.00002;
       const lat = STATE.currentPlayer.position.lat;
       const lng = STATE.currentPlayer.position.lng;
+      const stepMeters = 0.5;
+      const latStep = stepMeters / 111320;
+      const lngStep = stepMeters / (111320 * Math.cos(lat * Math.PI / 180));
 
       let newLat = lat;
       let newLng = lng;
 
-      if(dir.includes('n')) newLat += step;
-      if(dir.includes('s')) newLat -= step;
-      if(dir.includes('e')) newLng += step;
-      if(dir.includes('w')) newLng -= step;
+      if(dir.includes('n')) newLat += latStep;
+      if(dir.includes('s')) newLat -= latStep;
+      if(dir.includes('e')) newLng += lngStep;
+      if(dir.includes('w')) newLng -= lngStep;
 
-      STATE.currentPlayer.energy = Math.max(0, STATE.currentPlayer.energy - 1);
+      offlineStepCounter++;
+      if(offlineStepCounter >= 2) {
+        offlineStepCounter = 0;
+        spendPlayerEnergy(1);
+      } else {
+        lastMovementTime = Date.now();
+      }
       updatePlayerLocation(newLat, newLng, true, true);
-      renderTopBar();
     }
 
     function openFlagModal(flagId, type) {
@@ -1928,6 +1967,7 @@
         const speed = 0.0001;
         const newLat = STATE.currentPlayer.position.lat - joystickData.dy * speed;
         const newLng = STATE.currentPlayer.position.lng + joystickData.dx * speed;
+        spendPlayerEnergy(1);
         updatePlayerLocation(newLat, newLng, true, true);
       }
       
