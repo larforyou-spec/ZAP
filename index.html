@@ -206,11 +206,15 @@
       font-size: 14px;
       color: #bfffbf;
       margin-bottom: 4px;
-      padding: 2px;
+      padding: 8px 2px;
       border-bottom: 1px solid rgba(0,255,0,0.25);
       cursor: move;
       grid-column: 1 / -1;
       text-align: center;
+      touch-action: none;
+      user-select: none;
+      background: rgba(0,255,0,.08);
+      border-radius: 8px;
     }
     .dpad-drag-handle:active {
       cursor: grabbing;
@@ -1916,11 +1920,14 @@
     }
 
     function makeDraggable(el, handleSelector) {
+      if(!el || el.dataset.draggableReady === '1') return;
+      el.dataset.draggableReady = '1';
       const handle = el.querySelector(handleSelector) || el;
       let dragging = false, startX = 0, startY = 0, startLeft = 0, startTop = 0;
 
       handle.addEventListener('pointerdown', e => {
         dragging = true;
+        e.preventDefault();
         const rect = el.getBoundingClientRect();
         el.style.left = rect.left + 'px';
         el.style.top = rect.top + 'px';
@@ -1930,16 +1937,19 @@
         startTop = rect.top;
         startX = e.clientX;
         startY = e.clientY;
-        handle.setPointerCapture(e.pointerId);
+        if(handle.setPointerCapture) handle.setPointerCapture(e.pointerId);
       });
 
-      window.addEventListener('pointermove', e => {
+      document.addEventListener('pointermove', e => {
         if(!dragging) return;
-        el.style.left = Math.max(0, startLeft + e.clientX - startX) + 'px';
-        el.style.top = Math.max(0, startTop + e.clientY - startY) + 'px';
+        e.preventDefault();
+        const maxLeft = window.innerWidth - el.offsetWidth;
+        const maxTop = window.innerHeight - el.offsetHeight;
+        el.style.left = Math.max(0, Math.min(maxLeft, startLeft + e.clientX - startX)) + 'px';
+        el.style.top = Math.max(0, Math.min(maxTop, startTop + e.clientY - startY)) + 'px';
       });
 
-      window.addEventListener('pointerup', () => { dragging = false; });
+      document.addEventListener('pointerup', () => { dragging = false; });
     }
 
     function resizeDPad(delta) {
