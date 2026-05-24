@@ -75,16 +75,26 @@
       z-index: 2;
       pointer-events: none;
       overflow: hidden;
+      --map-x: 0px;
+      --map-y: 0px;
+    }
+    #gps-fallback-map-inner {
+      position: absolute;
+      inset: -40%;
+      transform: translate(var(--map-x), var(--map-y));
+      transition: transform .16s linear;
     }
     .gps-road {
       position: absolute;
       left: 50%;
       top: 50%;
-      width: 140vw;
+      width: 180vw;
       height: 18px;
       border-radius: 999px;
-      background: rgba(255,255,255,.92);
-      box-shadow: 0 0 0 2px rgba(120,120,120,.18), inset 0 0 0 2px rgba(255,255,255,.45);
+      background:
+        linear-gradient(90deg, transparent 49%, rgba(120,120,120,.35) 49.5%, rgba(120,120,120,.35) 50.5%, transparent 51%),
+        rgba(255,255,255,.96);
+      box-shadow: 0 0 0 3px rgba(90,90,90,.22), inset 0 0 0 2px rgba(255,255,255,.65);
       transform-origin: center;
     }
     .gps-road.main {
@@ -623,15 +633,17 @@
     </div>
     <div id="map"></div>
     <div id="gps-fallback-map">
-      <div class="gps-road main r1"></div>
-      <div class="gps-road main r2"></div>
-      <div class="gps-road r3"></div>
-      <div class="gps-road r4"></div>
-      <div class="gps-road r5"></div>
-      <div class="gps-place p1"></div>
-      <div class="gps-place p2"></div>
-      <div class="gps-place p3"></div>
-      <div class="gps-place p4"></div>
+      <div id="gps-fallback-map-inner">
+        <div class="gps-road main r1"></div>
+        <div class="gps-road main r2"></div>
+        <div class="gps-road r3"></div>
+        <div class="gps-road r4"></div>
+        <div class="gps-road r5"></div>
+        <div class="gps-place p1"></div>
+        <div class="gps-place p2"></div>
+        <div class="gps-place p3"></div>
+        <div class="gps-place p4"></div>
+      </div>
     </div>
     <div id="player-screen-avatar"></div>
     <div id="game-mode-panel">
@@ -1222,6 +1234,8 @@
     let energyInterval = null;
     let visionCircle = null;
     let offlineStepCounter = 0;
+    let fallbackMapX = 0;
+    let fallbackMapY = 0;
     const ENERGY_REGEN_INTERVAL_MS = 15 * 60 * 1000;
     const ENERGY_REGEN_AMOUNT = 10;
 
@@ -1349,7 +1363,7 @@
         currentLayer.on('tileload', () => {
           loadedTiles++;
           if(status) status.textContent = 'Mapa GPS: carregado';
-          document.getElementById('gps-fallback-map')?.classList.add('hidden');
+          if(!offlineMode) document.getElementById('gps-fallback-map')?.classList.add('hidden');
           if(fallbackTimer) clearTimeout(fallbackTimer);
         });
 
@@ -1477,6 +1491,18 @@
         host.style.setProperty('--step-x', '0px');
         host.style.setProperty('--step-y', '0px');
       }, 140);
+    }
+
+    function moveFallbackGPSMap(dir) {
+      const map = document.getElementById('gps-fallback-map');
+      if(!map) return;
+      const px = 18;
+      if(dir.includes('n')) fallbackMapY += px;
+      if(dir.includes('s')) fallbackMapY -= px;
+      if(dir.includes('e')) fallbackMapX -= px;
+      if(dir.includes('w')) fallbackMapX += px;
+      map.style.setProperty('--map-x', fallbackMapX + 'px');
+      map.style.setProperty('--map-y', fallbackMapY + 'px');
     }
 
     function updatePlayerLocation(lat, lng, fromMovement, centerMap) {
@@ -1892,6 +1918,7 @@
       const dirAngles = { n: 0, ne: 45, e: 90, se: 135, s: 180, sw: 225, w: 270, nw: 315 };
       if(dirAngles[dir] !== undefined) setPlayerAvatarDirection(dirAngles[dir], true);
       pulseScreenAvatar(dir);
+      moveFallbackGPSMap(dir);
 
       const lat = STATE.currentPlayer.position.lat;
       const lng = STATE.currentPlayer.position.lng;
