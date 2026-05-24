@@ -275,6 +275,34 @@
       pointer-events: none;
       transition: transform .12s ease-out;
     }
+    #player-screen-avatar::before,
+    #player-screen-avatar::after {
+      content: '';
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+    }
+    #player-screen-avatar::before {
+      width: 160px;
+      height: 160px;
+      border: 2px solid rgba(0,255,255,.75);
+      background: rgba(0,255,255,.08);
+      box-shadow: 0 0 18px rgba(0,255,255,.35);
+    }
+    #player-screen-avatar::after {
+      width: 80px;
+      height: 80px;
+      border: 2px dashed rgba(255,255,0,.95);
+      background: rgba(255,255,0,.08);
+      box-shadow: 0 0 16px rgba(255,255,0,.35);
+      opacity: 0;
+    }
+    #player-screen-avatar.can-collect::after {
+      opacity: 1;
+    }
     #player-screen-avatar .player-marker {
       transform-origin: 50% 78%;
     }
@@ -1533,7 +1561,7 @@
       
       if(visionCircle) {
         visionCircle.setLatLng([lat, lng]);
-        visionCircle.setRadius(STATE.currentPlayer.vision);
+        visionCircle.setRadius(5);
       }
       
       if(centerMap && window.map) {
@@ -1541,9 +1569,20 @@
       }
 
       updateFogOverlay();
+      updateCollectAura();
 
       renderTopBar();
       saveState();
+    }
+
+    function updateCollectAura() {
+      const host = document.getElementById('player-screen-avatar');
+      if(!host || !STATE.currentPlayer?.position) return;
+      const canCollect = flags.some(flag => {
+        const dist = getDistanceMeters(STATE.currentPlayer.position.lat, STATE.currentPlayer.position.lng, flag.lat, flag.lng);
+        return dist <= 2.5;
+      });
+      host.classList.toggle('can-collect', canCollect);
     }
 
     function updateFogOverlay() {
@@ -1794,6 +1833,7 @@
           flags.push({ id, type: 'PR', lat, lng, marker });
         }
       }
+      updateCollectAura();
     }
 
     function initJoystick() {
@@ -1949,7 +1989,7 @@
       if(!flag || !STATE.currentPlayer.position) return;
 
       const dist = getDistanceMeters(STATE.currentPlayer.position.lat, STATE.currentPlayer.position.lng, flag.lat, flag.lng);
-      const canCollect = dist <= 5;
+      const canCollect = dist <= 2.5;
 
       const content = document.getElementById('flag-modal-content');
       const title = document.getElementById('flag-modal-title');
@@ -1959,7 +1999,7 @@
         content.innerHTML = `
           <div class="item-module">
             <p>+10% energia · +skill</p>
-            <p class="small">Distância: ${Math.round(dist)}m</p>
+            <p class="small">Distância: ${dist.toFixed(1)}m · apanha a 2,5m</p>
             <button ${canCollect ? '' : 'disabled'} onclick="collectZapFlag('${flagId}')">${canCollect ? 'RECOLHER' : 'APROXIMA-TE'}</button>
           </div>
         `;
@@ -1968,7 +2008,7 @@
         content.innerHTML = `
           <div class="item-module">
             <p>+pontos · +skill</p>
-            <p class="small">Distância: ${Math.round(dist)}m</p>
+            <p class="small">Distância: ${dist.toFixed(1)}m · apanha a 2,5m</p>
             <button ${canCollect ? '' : 'disabled'} onclick="collectPRFlag('${flagId}')">${canCollect ? 'RECOLHER' : 'APROXIMA-TE'}</button>
           </div>
         `;
@@ -2085,8 +2125,7 @@
         const flag = flags[i];
         const distance = getDistanceMeters(playerLat, playerLng, flag.lat, flag.lng);
         
-        // Collision threshold (approximately 10 meters)
-        if(distance < 10) {
+        if(distance <= 2.5) {
           // Collect flag
           window.map.removeLayer(flag.marker);
           flags.splice(i, 1);
