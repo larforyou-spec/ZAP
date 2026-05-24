@@ -49,11 +49,7 @@
       width: 100%;
       height: 100%;
       z-index: 1;
-      background:
-        linear-gradient(rgba(0,255,0,.08) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(0,255,0,.08) 1px, transparent 1px),
-        #101510;
-      background-size: 40px 40px;
+      background: #d7e3d4;
     }
     #game-mode-panel {
       position: fixed;
@@ -502,6 +498,7 @@
     <div id="game-mode-panel">
       <h2 style="margin:0 0 8px 0;">🎮 Escolhe o modo</h2>
       <p class="small">Seleciona como queres jogar.</p>
+      <p id="map-warning" class="small warning hidden">Se o mapa não carregar, abre por GitHub Pages ou servidor local em vez de abrir diretamente o ficheiro.</p>
       <div class="btn-row" style="max-width:none;">
         <button class="btn" onclick="requestGPSMode()">🛰️ ONLINE GPS</button>
         <button class="btn btn-dark" onclick="activateHomeMode()">💻 OFFLINE GPS</button>
@@ -1099,6 +1096,7 @@
     function initGame() {
       document.getElementById('mode-modal').classList.add('hidden');
       document.getElementById('game-mode-panel').classList.remove('hidden');
+      document.getElementById('map-warning')?.classList.toggle('hidden', location.protocol !== 'file:');
       document.getElementById('fog-overlay')?.remove();
       document.getElementById('joystick-container').classList.add('hidden');
       document.getElementById('dpad-container').classList.add('hidden');
@@ -1115,8 +1113,8 @@
       }
 
       document.getElementById('map').innerHTML = '';
-      window.map = L.map('map', { zoomControl: false }).setView([STATE.currentPlayer.position.lat, STATE.currentPlayer.position.lng], 16);
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(window.map);
+      window.map = L.map('map', { zoomControl: true, preferCanvas: true }).setView([STATE.currentPlayer.position.lat, STATE.currentPlayer.position.lng], 16);
+      addMapTiles();
 
       // Create player marker
       playerMarker = L.marker([STATE.currentPlayer.position.lat, STATE.currentPlayer.position.lng], { icon: createPlayerIcon() }).addTo(window.map);
@@ -1149,7 +1147,46 @@
       // Start energy regeneration
       startEnergyRegeneration();
 
-      setTimeout(() => window.map.invalidateSize(), 300);
+      setTimeout(() => window.map.invalidateSize(true), 300);
+      setTimeout(() => window.map.invalidateSize(true), 1000);
+    }
+
+    function addMapTiles() {
+      const providers = [
+        {
+          url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+          options: { maxZoom: 19, attribution: '© OpenStreetMap' }
+        },
+        {
+          url: 'https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png',
+          options: { maxZoom: 19, attribution: '© OpenStreetMap HOT' }
+        },
+        {
+          url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+          options: { maxZoom: 20, attribution: '© OpenStreetMap © CARTO', subdomains: 'abcd' }
+        }
+      ];
+
+      let providerIndex = 0;
+      let currentLayer = null;
+
+      function loadProvider(index) {
+        if(currentLayer && window.map) window.map.removeLayer(currentLayer);
+        const provider = providers[index];
+        currentLayer = L.tileLayer(provider.url, {
+          ...provider.options,
+          crossOrigin: true
+        }).addTo(window.map);
+
+        currentLayer.on('tileerror', () => {
+          if(providerIndex < providers.length - 1) {
+            providerIndex++;
+            loadProvider(providerIndex);
+          }
+        });
+      }
+
+      loadProvider(providerIndex);
     }
 
     // Modal de seleção de modo
