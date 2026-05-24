@@ -185,23 +185,66 @@
     
     /* Player Marker */
     .player-marker {
-      width: 28px;
-      height: 28px;
-      border-radius: 50%;
-      background: linear-gradient(135deg,#00f0ff,#0066ff);
-      border: 3px solid #fff;
-      box-shadow: 0 0 10px rgba(0,255,255,.55);
+      width: 44px;
+      height: 58px;
       display: flex;
       align-items: center;
       justify-content: center;
-      color: white;
-      font-size: 12px;
-      font-weight: 900;
-      overflow: hidden;
+      transform-origin: 50% 78%;
+      transition: transform .18s linear;
+      filter: drop-shadow(0 4px 8px rgba(0,0,0,.65));
     }
+    .player-avatar {
+      position: relative;
+      width: 34px;
+      height: 54px;
+    }
+    .avatar-head {
+      position: absolute;
+      top: 0;
+      left: 8px;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #ffd8a8;
+      border: 2px solid #fff;
+      box-shadow: 0 0 8px rgba(0,255,255,.55);
+    }
+    .avatar-body {
+      position: absolute;
+      top: 18px;
+      left: 10px;
+      width: 14px;
+      height: 22px;
+      border-radius: 8px;
+      background: linear-gradient(180deg,#00e5ff,#0066ff);
+      border: 2px solid #fff;
+    }
+    .avatar-arm,
+    .avatar-leg {
+      position: absolute;
+      width: 6px;
+      height: 20px;
+      border-radius: 999px;
+      background: #00e5ff;
+      border: 1px solid #fff;
+      transform-origin: 50% 0;
+    }
+    .avatar-arm.left { top: 20px; left: 4px; transform: rotate(25deg); }
+    .avatar-arm.right { top: 20px; right: 4px; transform: rotate(-25deg); }
+    .avatar-leg.left { top: 38px; left: 9px; background: #003cff; transform: rotate(15deg); }
+    .avatar-leg.right { top: 38px; right: 9px; background: #003cff; transform: rotate(-15deg); }
+    .player-marker.walking .avatar-arm.left { animation: armWalkLeft .35s infinite alternate; }
+    .player-marker.walking .avatar-arm.right { animation: armWalkRight .35s infinite alternate; }
+    .player-marker.walking .avatar-leg.left { animation: legWalkLeft .35s infinite alternate; }
+    .player-marker.walking .avatar-leg.right { animation: legWalkRight .35s infinite alternate; }
+    @keyframes armWalkLeft { from { transform: rotate(35deg); } to { transform: rotate(-28deg); } }
+    @keyframes armWalkRight { from { transform: rotate(-35deg); } to { transform: rotate(28deg); } }
+    @keyframes legWalkLeft { from { transform: rotate(26deg); } to { transform: rotate(-18deg); } }
+    @keyframes legWalkRight { from { transform: rotate(-26deg); } to { transform: rotate(18deg); } }
     .player-marker img {
-      width: 100%;
-      height: 100%;
+      width: 18px;
+      height: 18px;
       object-fit: cover;
       border-radius: 50%;
     }
@@ -1082,15 +1125,16 @@
     let visionCircle = null;
 
     function createPlayerIcon() {
-      let inner = 'JG';
+      let head = '';
       if(STATE.currentPlayer.photo) {
-        inner = '<img src="' + STATE.currentPlayer.photo + '" onerror="this.outerHTML=\'JG\'" />';
+        head = '<img src="' + STATE.currentPlayer.photo + '" onerror="this.remove()" />';
       }
+      const inner = '<div class="player-avatar"><div class="avatar-head">' + head + '</div><div class="avatar-body"></div><div class="avatar-arm left"></div><div class="avatar-arm right"></div><div class="avatar-leg left"></div><div class="avatar-leg right"></div></div>';
       return L.divIcon({
         className: '',
         html: '<div class="player-marker">' + inner + '</div>',
-        iconSize: [28, 28],
-        iconAnchor: [14, 14]
+        iconSize: [44, 58],
+        iconAnchor: [22, 48]
       });
     }
 
@@ -1274,7 +1318,26 @@
       updatePlayerLocation(pos.coords.latitude, pos.coords.longitude, true, forceCenter);
     }
 
+    function getBearingDegrees(lat1, lng1, lat2, lng2) {
+      const phi1 = lat1 * Math.PI / 180;
+      const phi2 = lat2 * Math.PI / 180;
+      const dLambda = (lng2 - lng1) * Math.PI / 180;
+      const y = Math.sin(dLambda) * Math.cos(phi2);
+      const x = Math.cos(phi1) * Math.sin(phi2) - Math.sin(phi1) * Math.cos(phi2) * Math.cos(dLambda);
+      return (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
+    }
+
+    function setPlayerAvatarDirection(angle, walking = true) {
+      const el = playerMarker?.getElement()?.querySelector('.player-marker');
+      if(!el) return;
+      el.style.transform = `rotate(${angle}deg)`;
+      el.classList.toggle('walking', walking);
+      clearTimeout(setPlayerAvatarDirection.walkTimer);
+      setPlayerAvatarDirection.walkTimer = setTimeout(() => el.classList.remove('walking'), 450);
+    }
+
     function updatePlayerLocation(lat, lng, fromMovement, centerMap) {
+      const previousPosition = STATE.currentPlayer.position ? { ...STATE.currentPlayer.position } : null;
       STATE.currentPlayer.position = { lat, lng };
       
       // Energy system
@@ -1293,6 +1356,10 @@
       
       if(playerMarker) {
         playerMarker.setLatLng([lat, lng]);
+        if(previousPosition && fromMovement) {
+          const moved = getDistanceMeters(previousPosition.lat, previousPosition.lng, lat, lng);
+          if(moved > 0.05) setPlayerAvatarDirection(getBearingDegrees(previousPosition.lat, previousPosition.lng, lat, lng), true);
+        }
       }
       
       if(visionCircle) {
@@ -1797,14 +1864,7 @@
         const speed = 0.0001;
         const newLat = STATE.currentPlayer.position.lat - joystickData.dy * speed;
         const newLng = STATE.currentPlayer.position.lng + joystickData.dx * speed;
-        
-        STATE.currentPlayer.position.lat = newLat;
-        STATE.currentPlayer.position.lng = newLng;
-        
-        playerMarker.setLatLng([newLat, newLng]);
-        window.map.panTo([newLat, newLng]);
-        
-        saveState();
+        updatePlayerLocation(newLat, newLng, true, true);
       }
       
       // Check flag collision
