@@ -4,8 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>ZAP FLAGS</title>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" onerror="console.error('Erro ao carregar Leaflet CSS')" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" onerror="console.error('Erro ao carregar Font Awesome')" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
   <style>
     * { box-sizing: border-box; }
     body { font-family: Arial, sans-serif; background: #000; color: #0f0; overflow: hidden; }
@@ -41,7 +42,34 @@
     .password-toggle { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #0f0; cursor: pointer; font-size: 18px; padding: 0; }
     
     #top-bar { position: fixed; top: 0; left: 0; right: 0; z-index: 100; background: rgba(0,0,0,0.9); border-bottom: 1px solid #0f0; padding: 10px 15px; display: flex; justify-content: space-between; font-weight: bold; }
-    #map { flex: 1; width: 100%; height: 100%; z-index: 1; }
+    #game-screen { position: fixed; inset: 0; }
+    #map { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; background: #050505; }
+    #game-mode-panel {
+      position: fixed;
+      top: 90px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 3500;
+      width: min(92vw, 520px);
+      background: rgba(0,0,0,.94);
+      border: 3px solid #0f0;
+      border-radius: 16px;
+      padding: 16px;
+      box-shadow: 0 0 28px rgba(0,255,0,.35);
+      text-align: center;
+    }
+    #map::before {
+      content: 'A carregar mapa GPS...';
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #0f0;
+      background: radial-gradient(circle at center, rgba(0,80,0,.4), #020);
+      font-weight: 900;
+      z-index: 0;
+    }
     
     /* Joystick */
     #joystick-container { position: fixed; bottom: 30px; left: 30px; width: 120px; height: 120px; z-index: 200; }
@@ -75,10 +103,11 @@
 
     /* Fog Overlay */
     #fog-overlay {
+      display: none;
       position: absolute;
       inset: 0;
       pointer-events: none;
-      z-index: 450;
+      z-index: 2;
       --fog-x: 50%;
       --fog-y: 50%;
       --fog-r: 90px;
@@ -132,7 +161,32 @@
     }
     
     /* Flag Marker */
-    .flag-marker { background: #ff0; border: 2px solid #000; border-radius: 50%; width: 20px; height: 20px; }
+    .flag-marker { background: transparent; border: 0; }
+    .flag-icon {
+      position: relative;
+      width: 24px;
+      height: 24px;
+      border: 2px solid #fff;
+      border-radius: 50% 50% 50% 0;
+      transform: rotate(-45deg);
+      box-shadow: 0 0 14px currentColor;
+    }
+    .flag-icon::after {
+      content: '';
+      width: 8px;
+      height: 8px;
+      position: absolute;
+      top: 6px;
+      left: 6px;
+      border-radius: 50%;
+      background: rgba(255,255,255,.85);
+    }
+    .flag-zap { color: #00bfff; background: #00bfff; }
+    .flag-pr { color: #ff00ff; background: #ff00ff; }
+    .flag-red { color: #ff3333; background: #ff3333; }
+    .flag-blue { color: #2f80ff; background: #2f80ff; }
+    .flag-orange { color: #ff9900; background: #ff9900; }
+    .flag-grey { color: #888; background: #888; }
     
     /* Player Marker */
     .player-marker {
@@ -345,66 +399,6 @@
     /* Password Toggle */
     .password-wrapper { position: relative; }
     .password-toggle { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #0f0; cursor: pointer; font-size: 18px; padding: 0; }
-
-    /* Modal */
-    .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 1000; }
-    .modal.hidden { display: none; }
-    .modal-content { background: #181818; padding: 30px; border-radius: 12px; border: 1px solid #333; max-width: 500px; width: 90%; }
-    .modal-content h2 { margin-top: 0; color: #0f0; }
-    .modal-content select { background: #222; border: 1px solid #333; color: #fff; padding: 10px; border-radius: 8px; width: 100%; }
-
-    /* Centralizar caixas de seleção e pacotes */
-    .item-module {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-    }
-
-    .item-list {
-      width: 100%;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .package-item {
-      width: 100%;
-      max-width: 400px;
-      text-align: center;
-      margin: 8px 0;
-    }
-
-    .form-group {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-    }
-
-    .form-group label {
-      text-align: center;
-      margin-bottom: 8px;
-    }
-
-    .form-group input,
-    .form-group select {
-      text-align: center;
-    }
-
-    /* Centralizar checkboxes */
-    input[type="checkbox"] {
-      margin: 0 auto;
-      display: block;
-    }
-
-    label {
-      display: block;
-      text-align: center;
-    }
   </style>
 </head>
 <body>
@@ -430,60 +424,42 @@
 
     <!-- Player Form -->
     <div id="auth-player" class="auth-form active" role="tabpanel" aria-labelledby="auth-player">
-      <p class="sub">Entra ou regista como jogador</p>
-      <form id="form-player">
-        <div class="form-group"><label for="p-name">Nome completo</label><input type="text" id="p-name" required placeholder="Nome completo" aria-required="true"></div>
-        <div class="form-group"><label for="p-email">Email</label><input type="email" id="p-email" required placeholder="Email (ex: big1@test.com)" aria-required="true"></div>
-        <div class="form-group"><label for="p-phone">Telemóvel (opcional)</label><input type="tel" id="p-phone" placeholder="Telemóvel (opcional)"></div>
+      <p class="sub">Entra como jogador ou cria uma nova conta</p>
+      <form id="form-player-login">
+        <div class="form-group"><label for="p-login-name">Nome</label><input type="text" id="p-login-name" required placeholder="Nome memorizado ou nome registado" aria-required="true"></div>
         <div class="form-group password-wrapper">
-          <label for="p-pass">Senha</label>
-          <input type="password" id="p-pass" required placeholder="Senha (123456)" aria-required="true">
+          <label for="p-login-pass">Senha</label>
+          <input type="password" id="p-login-pass" required placeholder="Senha" aria-required="true">
+          <button type="button" class="password-toggle" onclick="togglePassword('p-login-pass', this)" aria-label="Mostrar ou ocultar senha">👁️</button>
+        </div>
+        <button type="submit" class="btn">ENTRAR</button>
+      </form>
+      <div class="btn-row" style="margin-top: 10px;">
+        <button class="btn-dark btn-small" onclick="showPlayerRegister()">CRIAR CONTA</button>
+        <button class="btn-dark btn-small" onclick="showPasswordRecovery('player')" aria-label="Recuperar senha">🔑 Esqueci senha ou email</button>
+      </div>
+
+      <form id="form-player-register" class="hidden" style="margin-top: 15px;">
+        <div class="form-group"><label for="p-name">Nome completo *</label><input type="text" id="p-name" placeholder="Nome completo" aria-required="true"></div>
+        <div class="form-group"><label for="p-email">Email *</label><input type="email" id="p-email" placeholder="Email" aria-required="true"></div>
+        <div class="form-group"><label for="p-locality">Localidade *</label><input type="text" id="p-locality" placeholder="Localidade" aria-required="true"></div>
+        <div class="form-group password-wrapper">
+          <label for="p-pass">Senha *</label>
+          <input type="password" id="p-pass" placeholder="Senha" aria-required="true">
           <button type="button" class="password-toggle" onclick="togglePassword('p-pass', this)" aria-label="Mostrar ou ocultar senha">👁️</button>
         </div>
-        <div class="form-group">
-          <label for="p-avatar">Avatar</label>
-          <select id="p-avatar" required aria-required="true">
-            <option value="">Seleciona avatar *</option>
-            <option value="male">♂ Masculino</option>
-            <option value="female">♀ Feminino</option>
-            <option value="photo">📷 Foto personalizada</option>
-          </select>
+        <div class="form-group password-wrapper">
+          <label for="p-pass-confirm">Confirmar senha *</label>
+          <input type="password" id="p-pass-confirm" placeholder="Repete a senha" aria-required="true">
+          <button type="button" class="password-toggle" onclick="togglePassword('p-pass-confirm', this)" aria-label="Mostrar ou ocultar senha">👁️</button>
         </div>
-        <div class="form-group"><label for="p-photo">URL da foto (opcional)</label><input type="url" id="p-photo" placeholder="URL da foto (se escolheu foto)"></div>
+        <div class="form-group"><label for="p-phone">Contacto (opcional)</label><input type="tel" id="p-phone" placeholder="Contacto para recuperação"></div>
         <div class="form-group"><label for="p-address">Morada (opcional)</label><input type="text" id="p-address" placeholder="Morada (opcional)"></div>
-        <div class="form-group"><label for="p-locality">Localidade (opcional)</label><input type="text" id="p-locality" placeholder="Localidade (opcional)"></div>
-        <div class="form-group">
-          <label for="p-district">Distrito</label>
-          <select id="p-district" required aria-required="true">
-            <option value="">Seleciona distrito *</option>
-            <option value="Aveiro">Aveiro</option>
-            <option value="Beja">Beja</option>
-            <option value="Braga">Braga</option>
-            <option value="Bragança">Bragança</option>
-            <option value="Castelo Branco">Castelo Branco</option>
-            <option value="Coimbra">Coimbra</option>
-            <option value="Évora">Évora</option>
-            <option value="Faro">Faro</option>
-            <option value="Guarda">Guarda</option>
-            <option value="Leiria">Leiria</option>
-            <option value="Lisboa">Lisboa</option>
-            <option value="Portalegre">Portalegre</option>
-            <option value="Porto">Porto</option>
-            <option value="Santarém">Santarém</option>
-            <option value="Setúbal">Setúbal</option>
-            <option value="Viana do Castelo">Viana do Castelo</option>
-            <option value="Vila Real">Vila Real</option>
-            <option value="Viseu">Viseu</option>
-            <option value="Açores">Açores</option>
-            <option value="Madeira">Madeira</option>
-          </select>
-        </div>
-        <button type="submit" class="btn">ENTRAR / REGISTAR</button>
+        <div class="form-group"><label for="p-photo">Foto (opcional)</label><input type="url" id="p-photo" placeholder="Cola o link da foto"></div>
+        <button type="submit" class="btn">REGISTAR</button>
+        <button type="button" class="btn btn-dark" onclick="showPlayerLogin()">VOLTAR AO LOGIN</button>
       </form>
       <div id="msg-player" class="msg" role="status" aria-live="polite"></div>
-      <div style="margin-top: 10px;">
-        <button class="btn-dark btn-small" onclick="showPasswordRecovery('player')" aria-label="Recuperar senha">🔑 Esqueci senha</button>
-      </div>
     </div>
 
     <!-- Company Form -->
@@ -524,7 +500,14 @@
       </div>
     </div>
     <div id="map"></div>
-    <div id="fog-overlay"></div>
+    <div id="game-mode-panel">
+      <h2 style="margin:0 0 8px 0;">🎮 Escolhe o modo</h2>
+      <p class="small">Seleciona como queres jogar.</p>
+      <div class="btn-row" style="max-width:none;">
+        <button class="btn" onclick="requestGPSMode()">🛰️ ONLINE GPS</button>
+        <button class="btn btn-dark" onclick="activateHomeMode()">💻 OFFLINE GPS</button>
+      </div>
+    </div>
     <div id="joystick-container">
       <div id="joystick-base">
         <div id="joystick-stick"></div>
@@ -574,20 +557,20 @@
   <!-- MODAL: SELEÇÃO DE MODO -->
   <div id="mode-modal" class="modal hidden">
     <div class="panel-header">
-      <h2 style="margin:0;">🎮 Como queres jogar?</h2>
+      <h2 style="margin:0;">🎮 Escolhe o modo de jogo</h2>
       <button class="btn-dark btn-small" onclick="closeModeModal()">✕</button>
     </div>
     <div class="item-module">
-      <h3>📡 GPS / Rua</h3>
-      <p class="small">Joga a caminhar na rua com localização real. Ideal para explorar a cidade!</p>
+      <h3>�️ Online GPS</h3>
+      <p class="small">Usa a tua localização real. Ideal para jogar na rua com GPS ativo.</p>
     </div>
     <div class="item-module">
-      <h3>🏠 Offline / Casa</h3>
-      <p class="small">Joga sem GPS real, com movimento manual. Ideal para testar ou jogar em casa.</p>
+      <h3>💻 Offline GPS / PC Casa</h3>
+      <p class="small">Mantém o mapa como fundo e permite jogar em casa no PC fixo, com clique no mapa, setas/WASD e comando no ecrã.</p>
     </div>
     <div class="btn-row">
-      <button onclick="requestGPSMode()">🛰️ ATIVAR GPS</button>
-      <button class="btn-dark" onclick="activateHomeMode()">🏠 MODO OFFLINE</button>
+      <button class="btn" onclick="requestGPSMode()">🛰️ ONLINE GPS</button>
+      <button class="btn btn-dark" onclick="activateHomeMode()">💻 OFFLINE GPS</button>
     </div>
   </div>
 
@@ -612,21 +595,8 @@
 
     <div id="pr-packs" class="pr-content">
       <div class="dashboard-grid">
-        <div class="item-module"><h3>🛒 Comprar Packs</h3> <div id="buy-packages-list" class="item-list"></div>
-          <div class="form-group">
-            <label>Forma de Pagamento</label>
-            <select id="payment-method" onchange="checkBuyButton()">
-              <option value="">Seleciona forma de pagamento</option>
-              <option value="qr">💳 QR Code</option>
-              <option value="referencia">📄 Referência</option>
-              <option value="transferencia">🏦 Transferência</option>
-              <option value="referencia_bancaria">📋 Referência Bancária/Demo</option>
-            </select>
-          </div>
-          <button id="btn-buy-package" class="btn" disabled>COMPRAR</button>
-        </div>
+        <div class="item-module"><h3>🛒 Comprar Packs</h3> <div id="buy-packages-list" class="item-list"></div> <button id="btn-buy-package" class="btn" disabled>COMPRAR</button></div>
         <div class="item-module"><h3>📦 Packs Ativos</h3><div id="active-packages-list" class="item-list"></div></div>
-        <div class="item-module"><h3>🎁 Gestão de Prémios/Descontos</h3><div id="rewards-list" class="item-list"></div><button class="btn" onclick="openRewardModal()">+ Adicionar Prémio/Desconto</button></div>
       </div>
     </div>
 
@@ -643,19 +613,11 @@
 
     <div id="pr-bingos" class="pr-content">
       <div class="dashboard-grid">
-        <div class="item-module"><h3>🎱 Criar Bingo (Prémio Único)</h3>
+        <div class="item-module"><h3>🎱 Criar Bingo</h3>
           <div class="form-group"><input id="bingo-name" placeholder="Nome do bingo"></div>
-          <div class="form-group"><input id="bingo-prize" placeholder="Prémio único"></div>
+          <div class="form-group"><input id="bingo-prize" placeholder="Prémio"></div>
           <div class="form-group"><input id="bingo-flags" type="number" placeholder="Flags necessárias"></div>
-          <div class="form-group">
-            <label>Duração de Ativação</label>
-            <div style="display:flex;gap:8px;">
-              <input id="bingo-active-days" type="number" placeholder="Dias" value="0" min="0" style="flex:1;">
-              <input id="bingo-active-hours" type="number" placeholder="Horas" value="0" min="0" max="23" style="flex:1;">
-              <input id="bingo-active-minutes" type="number" placeholder="Minutos" value="0" min="0" max="59" style="flex:1;">
-            </div>
-            <small style="color:#888;">Define dias, horas e minutos (opcional)</small>
-          </div>
+          <div class="form-group"><input id="bingo-active-days" type="number" placeholder="Dias ativo (min 30)" value="30"></div>
           <button class="btn" onclick="createBingo()">CRIAR BINGO</button>
         </div>
         <div class="item-module"><h3>📋 Bingos Ativos</h3><div id="bingos-list" class="item-list"></div></div>
@@ -715,34 +677,7 @@
     <button class="btn btn-dark" onclick="goTo('landing')" id="bo-back-btn">VOLTAR</button>
   </section>
 
-  <!-- MODAL DE PRÉMIOS/DESCONTOS -->
-  <div id="reward-modal" class="modal hidden">
-    <div class="modal-content">
-      <h2>🎁 Configurar Prémio/Desconto</h2>
-      <div class="form-group"><label for="reward-type">Tipo</label>
-        <select id="reward-type">
-          <option value="discount">Desconto (%)</option>
-          <option value="fixed">Valor Fixo (€)</option>
-          <option value="product">Produto/Prémio</option>
-          <option value="service">Serviço</option>
-        </select>
-      </div>
-      <div class="form-group"><label for="reward-value">Valor</label><input type="text" id="reward-value" placeholder="Ex: 10% ou 5€ ou Descrição do prémio"></div>
-      <div class="form-group"><label for="reward-package">Pacote (opcional)</label>
-        <select id="reward-package">
-          <option value="">Todos os pacotes</option>
-        </select>
-      </div>
-      <div class="form-group"><label for="reward-flags">Flags necessárias (opcional)</label><input type="number" id="reward-flags" placeholder="Ex: 20"></div>
-      <div class="form-group"><label for="reward-expiry">Validade (dias)</label><input type="number" id="reward-expiry" value="30"></div>
-      <div class="btn-row">
-        <button class="btn" onclick="saveReward()">GUARDAR</button>
-        <button class="btn btn-danger" onclick="closeRewardModal()">CANCELAR</button>
-      </div>
-    </div>
-  </div>
-
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" onerror="console.error('Erro ao carregar Leaflet JS')"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
     // ESTADO UNIFICADO
     const STATE_KEY = "ZAP_FLAGS_V1";
@@ -862,10 +797,29 @@
       if(tab === 'player') {
         document.querySelectorAll('.auth-tab')[0].classList.add('active');
         document.getElementById('auth-player').classList.add('active');
+        showPlayerLogin();
       } else {
         document.querySelectorAll('.auth-tab')[1].classList.add('active');
         document.getElementById('auth-company').classList.add('active');
       }
+    }
+
+    function showPlayerRegister() {
+      document.getElementById('form-player-login').classList.add('hidden');
+      document.getElementById('form-player-register').classList.remove('hidden');
+      document.getElementById('msg-player').innerHTML = '';
+    }
+
+    function showPlayerLogin() {
+      document.getElementById('form-player-register').classList.add('hidden');
+      document.getElementById('form-player-login').classList.remove('hidden');
+      document.getElementById('msg-player').innerHTML = '';
+      fillRememberedPlayerName();
+    }
+
+    function fillRememberedPlayerName() {
+      const input = document.getElementById('p-login-name');
+      if(input && !input.value) input.value = localStorage.getItem('ZAP_FLAGS_LAST_PLAYER_NAME') || '';
     }
 
     // PASSWORD RECOVERY
@@ -876,7 +830,7 @@
       if(type === 'player') {
         const player = STATE.players.find(p => p.email === identifier || p.phone === identifier);
         if(player) {
-          alert('Demo: A tua senha é: ' + player.pass);
+          alert('Conta encontrada.\nNome: ' + player.name + '\nEmail: ' + player.email + '\nSenha: ' + player.pass);
         } else {
           alert('Conta não encontrada.');
         }
@@ -890,59 +844,89 @@
       }
     }
 
-    // PLAYER LOGIN/REGISTER
-    document.getElementById('form-player').addEventListener('submit', e => {
+    // PLAYER LOGIN
+    document.getElementById('form-player-login').addEventListener('submit', e => {
       e.preventDefault();
-      const name = document.getElementById('p-name').value;
-      const email = document.getElementById('p-email').value;
-      const phone = document.getElementById('p-phone').value;
-      const pass = document.getElementById('p-pass').value;
-      const avatar = document.getElementById('p-avatar').value;
-      const photo = document.getElementById('p-photo').value;
-      const address = document.getElementById('p-address').value;
-      const locality = document.getElementById('p-locality').value;
-      const district = document.getElementById('p-district').value;
+      const name = document.getElementById('p-login-name').value.trim();
+      const pass = document.getElementById('p-login-pass').value;
+      const player = STATE.players.find(p => p.name.toLowerCase() === name.toLowerCase());
 
-      let player = STATE.players.find(p => p.name === name);
-
-      if(player) {
-        if(player.pass === pass) {
-          STATE.currentPlayer = player;
-          document.getElementById('msg-player').innerHTML = '<span class="ok">✓ Login OK!</span>';
-          setTimeout(() => goTo('game-screen'), 300);
-        } else {
-          document.getElementById('msg-player').innerHTML = '<span class="danger">Senha incorreta.</span>';
-        }
-      } else {
-        // Register new player
-        player = {
-          id: `player_${Date.now()}`,
-          name,
-          email,
-          phone,
-          pass,
-          avatar,
-          photo,
-          address,
-          locality,
-          district,
-          flags: 0,
-          zapFlags: 0,
-          prFlags: 0,
-          totalFlags: 0,
-          energy: 100,
-          skill: 1,
-          vision: 5,
-          position: { lat: 38.7223, lng: -9.1393 },
-          qrs: [],
-          usedQrs: []
-        };
-        STATE.players.push(player);
-        STATE.currentPlayer = player;
-        saveState();
-        document.getElementById('msg-player').innerHTML = '<span class="ok">✓ Registado e entrado!</span>';
-        setTimeout(() => goTo('game-screen'), 300);
+      if(!player) {
+        document.getElementById('msg-player').innerHTML = '<span class="danger">Jogador não encontrado. Cria uma conta primeiro.</span>';
+        return;
       }
+
+      if(player.pass === pass) {
+        STATE.currentPlayer = player;
+        localStorage.setItem('ZAP_FLAGS_LAST_PLAYER_NAME', player.name);
+        document.getElementById('msg-player').innerHTML = '<span class="ok">✓ Login OK!</span>';
+        setTimeout(() => goTo('game-screen'), 300);
+      } else {
+        document.getElementById('msg-player').innerHTML = '<span class="danger">Senha incorreta.</span>';
+      }
+    });
+
+    // PLAYER REGISTER
+    document.getElementById('form-player-register').addEventListener('submit', e => {
+      e.preventDefault();
+      const name = document.getElementById('p-name').value.trim();
+      const email = document.getElementById('p-email').value.trim();
+      const locality = document.getElementById('p-locality').value.trim();
+      const pass = document.getElementById('p-pass').value;
+      const passConfirm = document.getElementById('p-pass-confirm').value;
+      const phone = document.getElementById('p-phone').value.trim();
+      const photo = document.getElementById('p-photo').value.trim();
+      const address = document.getElementById('p-address').value.trim();
+
+      if(!name || !email || !locality || !pass || !passConfirm) {
+        document.getElementById('msg-player').innerHTML = '<span class="danger">Preenche nome, email, localidade, senha e confirmação.</span>';
+        return;
+      }
+
+      if(pass !== passConfirm) {
+        document.getElementById('msg-player').innerHTML = '<span class="danger">A senha e a confirmação não coincidem.</span>';
+        return;
+      }
+
+      if(STATE.players.some(p => p.name.toLowerCase() === name.toLowerCase())) {
+        document.getElementById('msg-player').innerHTML = '<span class="danger">Já existe um jogador com esse nome.</span>';
+        return;
+      }
+
+      if(STATE.players.some(p => p.email.toLowerCase() === email.toLowerCase())) {
+        document.getElementById('msg-player').innerHTML = '<span class="danger">Já existe uma conta com esse email.</span>';
+        return;
+      }
+
+      const player = {
+        id: `player_${Date.now()}`,
+        name,
+        email,
+        phone,
+        pass,
+        photo,
+        address,
+        locality,
+        district: locality,
+        flags: 0,
+        zapFlags: 0,
+        prFlags: 0,
+        totalFlags: 0,
+        energy: 100,
+        skill: 1,
+        vision: 5,
+        position: { lat: 38.7223, lng: -9.1393 },
+        qrs: [],
+        usedQrs: []
+      };
+
+      STATE.players.push(player);
+      localStorage.setItem('ZAP_FLAGS_LAST_PLAYER_NAME', player.name);
+      saveState();
+      document.getElementById('msg-player').innerHTML = '<span class="ok">✓ Registo concluído! Agora entra com a tua senha.</span>';
+      document.getElementById('p-login-name').value = player.name;
+      document.getElementById('p-login-pass').value = '';
+      showPlayerLogin();
     });
 
     // COMPANY LOGIN/REGISTER
@@ -1102,9 +1086,7 @@
 
     function createPlayerIcon() {
       let inner = 'JG';
-      if(STATE.currentPlayer.avatar === 'male') inner = '♂';
-      if(STATE.currentPlayer.avatar === 'female') inner = '♀';
-      if(STATE.currentPlayer.avatar === 'photo' && STATE.currentPlayer.photo) {
+      if(STATE.currentPlayer.photo) {
         inner = '<img src="' + STATE.currentPlayer.photo + '" onerror="this.outerHTML=\'JG\'" />';
       }
       return L.divIcon({
@@ -1116,6 +1098,18 @@
     }
 
     function initGame() {
+      document.getElementById('mode-modal').classList.add('hidden');
+      document.getElementById('game-mode-panel').classList.remove('hidden');
+      document.getElementById('fog-overlay')?.remove();
+      document.getElementById('joystick-container').classList.add('hidden');
+      document.getElementById('dpad-container').classList.add('hidden');
+
+      if(typeof L === 'undefined') {
+        document.getElementById('map').innerHTML = '<div style="height:100%;display:flex;align-items:center;justify-content:center;text-align:center;padding:20px;color:#0f0;background:#020;">Mapa GPS indisponível. Verifica a ligação à internet para carregar o Leaflet/OpenStreetMap.</div>';
+        renderTopBar();
+        return;
+      }
+
       if(window.map) {
         window.map.invalidateSize();
         window.map.remove();
@@ -1126,6 +1120,13 @@
 
       // Create player marker
       playerMarker = L.marker([STATE.currentPlayer.position.lat, STATE.currentPlayer.position.lng], { icon: createPlayerIcon() }).addTo(window.map);
+
+      window.map.on('click', e => {
+        if(offlineMode) {
+          updatePlayerLocation(e.latlng.lat, e.latlng.lng, true, true);
+          tryCollectFlag();
+        }
+      });
 
       // Create vision circle
       visionCircle = L.circle([STATE.currentPlayer.position.lat, STATE.currentPlayer.position.lng], {
@@ -1148,21 +1149,20 @@
       // Start energy regeneration
       startEnergyRegeneration();
 
-      // Show mode modal
-      document.getElementById('mode-modal').classList.remove('hidden');
-
-      setTimeout(() => window.map.invalidateSize(), 150);
+      setTimeout(() => window.map.invalidateSize(), 300);
     }
 
     // Modal de seleção de modo
     function closeModeModal() {
       document.getElementById('mode-modal').classList.add('hidden');
+      document.getElementById('game-mode-panel').classList.add('hidden');
     }
 
     function requestGPSMode() {
       closeModeModal();
       offlineMode = false;
       document.getElementById('joystick-container').classList.add('hidden');
+      document.getElementById('dpad-container').classList.add('hidden');
       renderTopBar();
       
       if(!navigator.geolocation) {
@@ -1197,6 +1197,10 @@
       offlineMode = true;
       document.getElementById('joystick-container').classList.add('hidden');
       document.getElementById('dpad-container').classList.remove('hidden');
+      if(window.map && STATE.currentPlayer?.position) {
+        window.map.setView([STATE.currentPlayer.position.lat, STATE.currentPlayer.position.lng], 16);
+        setTimeout(() => window.map.invalidateSize(), 100);
+      }
       renderTopBar();
       initDPad();
     }
@@ -1317,7 +1321,7 @@
     function renderTopBar() {
       document.getElementById('energy-fill').style.width = STATE.currentPlayer.energy + '%';
       document.getElementById('energy-text').textContent = 'Energia: ' + STATE.currentPlayer.energy + '%';
-      document.getElementById('mode-text').textContent = offlineMode ? 'Modo: Offline' : 'Modo: GPS';
+      document.getElementById('mode-text').textContent = offlineMode ? 'Modo: Offline GPS / PC Casa' : 'Modo: Online GPS';
       document.getElementById('flags-text').textContent = '🚩 ' + STATE.currentPlayer.totalFlags;
     }
 
@@ -1360,7 +1364,7 @@
       if(!STATE.currentPlayer.qrs || !STATE.currentPlayer.qrs.length) {
         return '<div class="item-module"><p>Sem cupões.</p></div>';
       }
-      return STATE.currentPlayer.qrs.map(q => '<div class="item-module"><span class="badge badge-gold">QR</span> <strong>' + q.prName + '</strong><p class="small">Prémio: ' + q.rewardText + ' · Válido: ' + qrExpiryText(q.expiresAt) + '</p><div class="qr-code">' + q.code + '</div><img src="https://quickchart.io/qr?text=' + encodeURIComponent(q.code) + '&size=100" style="margin-top:8px;background:#fff;padding:4px;border-radius:6px;" onerror="this.style.display=\'none\';console.error(\'Erro ao carregar imagem QR\')" /></div>').join('');
+      return STATE.currentPlayer.qrs.map(q => '<div class="item-module"><span class="badge badge-gold">QR</span> <strong>' + q.prName + '</strong><p class="small">Prémio: ' + q.rewardText + ' · Válido: ' + qrExpiryText(q.expiresAt) + '</p><div class="qr-code">' + q.code + '</div><img src="https://quickchart.io/qr?text=' + encodeURIComponent(q.code) + '&size=100" style="margin-top:8px;background:#fff;padding:4px;border-radius:6px;" /></div>').join('');
     }
 
     function renderAccountPanel() {
@@ -1413,6 +1417,15 @@
 
     setInterval(updateTicker, 15000);
 
+    function createFlagIcon(color) {
+      return L.divIcon({
+        className: 'flag-marker',
+        iconSize: [24, 24],
+        iconAnchor: [12, 12],
+        html: `<div class="flag-icon flag-${color}"></div>`
+      });
+    }
+
     function spawnFlags() {
       // Clear existing flags
       flags.forEach(f => window.map.removeLayer(f.marker));
@@ -1426,34 +1439,32 @@
       for(let i = 0; i < 5; i++) {
         const lat = centerLat + (Math.random() - 0.5) * 0.01;
         const lng = centerLng + (Math.random() - 0.5) * 0.01;
-        
-        const flagIcon = L.divIcon({
-          className: 'flag-marker',
-          iconSize: [20, 20],
-          iconAnchor: [10, 10],
-          html: '<div style="width:20px;height:20px;background:#00BFFF;border:2px solid #fff;border-radius:50%;"></div>'
-        });
-        
-        const marker = L.marker([lat, lng], { icon: flagIcon }).addTo(window.map);
+
+        const marker = L.marker([lat, lng], { icon: createFlagIcon('zap') }).addTo(window.map);
         marker.on('click', () => openFlagModal('zap_' + i, 'ZAP'));
         flags.push({ id: 'zap_' + i, type: 'ZAP', lat, lng, marker });
       }
 
-      // Spawn 5 PR flags
-      for(let i = 0; i < 5; i++) {
-        const lat = centerLat + (Math.random() - 0.5) * 0.01;
-        const lng = centerLng + (Math.random() - 0.5) * 0.01;
-
-        const flagIcon = L.divIcon({
-          className: 'flag-marker',
-          iconSize: [20, 20],
-          iconAnchor: [10, 10],
-          html: '<div style="width:20px;height:20px;background:#ff0;border:2px solid #000;border-radius:50%;"></div>'
+      const activePackages = getAllActivePackages();
+      if(activePackages.length) {
+        activePackages.slice(0, 10).forEach(({ company, pkg }, i) => {
+          const color = ['pr', 'red', 'blue', 'orange'][i % 4];
+          const radiusMeters = pkg.radius === Infinity || pkg.radiusKm === Infinity ? 5000 : Math.max(300, (pkg.radius || pkg.radiusKm || 1) * 1000);
+          const pos = randomOffset(company.lat || centerLat, company.lng || centerLng, radiusMeters);
+          const id = 'pr_pkg_' + i + '_' + Date.now();
+          const marker = L.marker([pos.lat, pos.lng], { icon: createFlagIcon(color) }).addTo(window.map);
+          marker.on('click', () => openFlagModal(id, 'PR'));
+          flags.push({ id, type: 'PR', companyId: company.id, companyName: company.name, packageId: pkg.id, color, lat: pos.lat, lng: pos.lng, marker });
         });
-
-        const marker = L.marker([lat, lng], { icon: flagIcon }).addTo(window.map);
-        marker.on('click', () => openFlagModal('pr_' + i, 'PR'));
-        flags.push({ id: 'pr_' + i, type: 'PR', lat, lng, marker });
+      } else {
+        for(let i = 0; i < 5; i++) {
+          const lat = centerLat + (Math.random() - 0.5) * 0.01;
+          const lng = centerLng + (Math.random() - 0.5) * 0.01;
+          const id = 'pr_' + i;
+          const marker = L.marker([lat, lng], { icon: createFlagIcon('pr') }).addTo(window.map);
+          marker.on('click', () => openFlagModal(id, 'PR'));
+          flags.push({ id, type: 'PR', lat, lng, marker });
+        }
       }
     }
 
@@ -1659,19 +1670,21 @@
       STATE.currentPlayer.energy = Math.max(0, STATE.currentPlayer.energy - 5);
       STATE.currentPlayer.prFlags++;
       STATE.currentPlayer.totalFlags++;
+      consumePackageFlag(flag);
 
       // Sistema de progresso por PR (20 bandeiras = prémio)
+      const progressKey = flag.companyId || 'zap_flags';
       if(!STATE.currentPlayer.promoProgressByPR) STATE.currentPlayer.promoProgressByPR = {};
-      if(!STATE.currentPlayer.promoProgressByPR[flag.companyId]) {
-        STATE.currentPlayer.promoProgressByPR[flag.companyId] = { current: 0, total: 0 };
+      if(!STATE.currentPlayer.promoProgressByPR[progressKey]) {
+        STATE.currentPlayer.promoProgressByPR[progressKey] = { current: 0, total: 0 };
       }
-      STATE.currentPlayer.promoProgressByPR[flag.companyId].current++;
-      STATE.currentPlayer.promoProgressByPR[flag.companyId].total++;
+      STATE.currentPlayer.promoProgressByPR[progressKey].current++;
+      STATE.currentPlayer.promoProgressByPR[progressKey].total++;
 
       // Verificar se atingiu 20 bandeiras para gerar prémio
-      if(STATE.currentPlayer.promoProgressByPR[flag.companyId].current >= 20) {
-        STATE.currentPlayer.promoProgressByPR[flag.companyId].current -= 20;
-        generateQR(flag.companyId);
+      if(STATE.currentPlayer.promoProgressByPR[progressKey].current >= 20) {
+        STATE.currentPlayer.promoProgressByPR[progressKey].current -= 20;
+        flag.companyId ? generateCompanyQR(flag.companyId) : generateGeneralQR();
       }
 
       if(flag.marker && window.map) window.map.removeLayer(flag.marker);
@@ -1682,7 +1695,14 @@
       saveState();
     }
 
-    function generateQR(companyId) {
+    function consumePackageFlag(flag) {
+      if(!flag.companyId || !flag.packageId) return;
+      const company = STATE.companies.find(c => c.id === flag.companyId);
+      const pkg = company?.packages?.find(p => p.id === flag.packageId);
+      if(pkg && pkg.flagsLeft > 0) pkg.flagsLeft--;
+    }
+
+    function generateCompanyQR(companyId) {
       const company = STATE.companies.find(c => c.id === companyId);
       if(!company) return;
 
@@ -1732,13 +1752,10 @@
       
       for(let i = flags.length - 1; i >= 0; i--) {
         const flag = flags[i];
-        const distance = Math.sqrt(
-          Math.pow(playerLat - flag.lat, 2) + 
-          Math.pow(playerLng - flag.lng, 2)
-        );
+        const distance = getDistanceMeters(playerLat, playerLng, flag.lat, flag.lng);
         
         // Collision threshold (approximately 10 meters)
-        if(distance < 0.0001) {
+        if(distance < 10) {
           // Collect flag
           window.map.removeLayer(flag.marker);
           flags.splice(i, 1);
@@ -1759,9 +1776,10 @@
             STATE.currentPlayer.energy = Math.max(0, STATE.currentPlayer.energy - 5);
             STATE.currentPlayer.prFlags++;
             STATE.currentPlayer.totalFlags++;
+            consumePackageFlag(flag);
             
             // Check for promo rewards
-            checkPromoReward();
+            checkPromoReward(flag);
           }
           
           // Update skill and vision
@@ -1786,17 +1804,12 @@
       const newLat = playerLat + (Math.random() - 0.5) * 0.01;
       const newLng = playerLng + (Math.random() - 0.5) * 0.01;
       
-      const flagIcon = L.divIcon({
-        className: 'flag-marker',
-        iconSize: [20, 20],
-        iconAnchor: [10, 10],
-        html: oldFlag.type === 'ZAP' 
-          ? '<div style="width:20px;height:20px;background:#00BFFF;border:2px solid #fff;border-radius:50%;"></div>'
-          : '<div style="width:20px;height:20px;background:#ff0;border:2px solid #000;border-radius:50%;"></div>'
-      });
+      const flagIcon = createFlagIcon(oldFlag.type === 'ZAP' ? 'zap' : oldFlag.color || 'pr');
       
       const marker = L.marker([newLat, newLng], { icon: flagIcon }).addTo(window.map);
-      flags.push({ id: Date.now(), type: oldFlag.type, lat: newLat, lng: newLng, marker });
+      const newId = String(Date.now());
+      marker.on('click', () => openFlagModal(newId, oldFlag.type));
+      flags.push({ ...oldFlag, id: newId, lat: newLat, lng: newLng, marker });
     }
 
     function updateSkillAndVision() {
@@ -1812,47 +1825,29 @@
       updateFogOverlay();
     }
 
-    function checkPromoReward() {
+    function checkPromoReward(flag = {}) {
       // Simple promo system: every 20 PR flags, generate a QR
       if(STATE.currentPlayer.prFlags > 0 && STATE.currentPlayer.prFlags % 20 === 0) {
-        generateQR();
+        flag.companyId ? generateCompanyQR(flag.companyId) : generateGeneralQR();
       }
     }
 
-    function generateQR() {
-      // QR code com proteção contra fotos de celular
-      const timestamp = Date.now();
-      const randomPart = Math.random().toString(36).slice(2, 8).toUpperCase();
-      const qrCode = 'ZAP-' + randomPart + '-' + timestamp;
-
+    function generateGeneralQR() {
+      const qrCode = 'ZAP-' + Math.random().toString(36).slice(2, 8).toUpperCase();
       const qr = {
         code: qrCode,
         prName: 'ZAP FLAGS',
         rewardText: '5% de desconto',
-        createdAt: timestamp,
-        expiresAt: timestamp + 15 * 24 * 60 * 60 * 1000, // 15 days
-        status: 'active',
-        // Proteção: timestamp de validação e dispositivo
-        validationAttempts: 0,
-        lastValidationAt: null,
-        deviceId: generateDeviceId()
+        createdAt: Date.now(),
+        expiresAt: Date.now() + 15 * 24 * 60 * 60 * 1000, // 15 days
+        status: 'active'
       };
-
+      
       if(!STATE.currentPlayer.qrs) STATE.currentPlayer.qrs = [];
       STATE.currentPlayer.qrs.push(qr);
       saveState();
-
-      alert('🎉 Ganhaste um cupão QR! Vê nos teus cupões.\n\n⚠️ O QR tem proteção contra fotos de celular e só pode ser validado uma vez.');
-    }
-
-    function generateDeviceId() {
-      // Gerar ID único do dispositivo para proteção
-      let deviceId = localStorage.getItem('zap_device_id');
-      if(!deviceId) {
-        deviceId = 'DEV-' + Math.random().toString(36).slice(2, 15) + '-' + Date.now().toString(36);
-        localStorage.setItem('zap_device_id', deviceId);
-      }
-      return deviceId;
+      
+      alert('🎉 Ganhaste um cupão QR! Vê nos teus cupões.');
     }
 
     function expireOldQrs() {
@@ -1895,35 +1890,10 @@
       if(tab === 'invoices') renderInvoices();
     }
 
-    function checkBuyButton() {
-      const sel = document.querySelector('#buy-packages-list .selected');
-      const paymentMethod = document.getElementById('payment-method') ? document.getElementById('payment-method').value : '';
-      const btn = document.getElementById('btn-buy-package');
-
-      if(sel && paymentMethod) {
-        btn.disabled = false;
-        btn.style.opacity = '1';
-        console.log('Botão ativado - pacote e pagamento selecionados');
-      } else {
-        btn.disabled = true;
-        btn.style.opacity = '0.5';
-        console.log('Botão desativado - falta pacote ou pagamento');
-      }
-    }
-
-    function renderRewards() {
-      const list = document.getElementById('rewards-list');
-      if(!STATE.currentCompany.campaign || !STATE.currentCompany.campaign.rewardsEnabled) {
-        list.innerHTML = '<p>Sem prémios configurados.</p>';
-        return;
-      }
-      list.innerHTML = `<div class="package-item"><p><strong>Tipo:</strong> ${STATE.currentCompany.campaign.rewardType}</p><p><strong>Prémio:</strong> ${STATE.currentCompany.campaign.rewardText}</p></div>`;
-    }
-
     function initPRDashboard() {
       if(!STATE.currentCompany) return goTo('auth-screen', 'company');
       document.getElementById('pr-name-ui').textContent = `PAINEL - ${STATE.currentCompany.name}`;
-
+      
       const PKGS = [
         {n:"Gratuito",p:0,f:1000,radius:0.5,days:30,bingos:0,free:true},
         {n:"Básico",p:15,f:5000,radius:5,days:60,bingos:5},
@@ -1934,48 +1904,24 @@
       document.getElementById('buy-packages-list').innerHTML = PKGS.map(p =>
         `<div class="package-item" data-name="${p.n}"><strong>${p.n} - ${p.p === 0 ? 'GRÁTIS' : p.p + '€'}</strong><p>🚩 ${p.f.toLocaleString()} · 📍 ${p.radius === Infinity ? 'Ilimitado' : p.radius + 'km'} · 📅 ${p.days} dias · 🎱 ${p.bingos} bingos</p></div>`
       ).join('');
-
-      // Preencher select de pacotes no modal
-      const packageSelect = document.getElementById('reward-package');
-      packageSelect.innerHTML = '<option value="">Todos os pacotes</option>' + PKGS.map(p => `<option value="${p.n}">${p.n}</option>`).join('');
-
+      
       document.querySelectorAll('#buy-packages-list .package-item').forEach(i => {
-        i.style.cursor = 'pointer';
         i.addEventListener('click', () => {
-          console.log('Pacote clicado:', i.dataset.name);
           document.querySelectorAll('#buy-packages-list .package-item').forEach(el => el.classList.remove('selected'));
           i.classList.add('selected');
-          checkBuyButton();
-          console.log('Botão verificado');
+          document.getElementById('btn-buy-package').disabled = false;
         });
       });
-
+      
       renderActivePackages();
       renderLotes();
       renderBingos();
       renderQRHistory();
-      renderRewards();
       updatePRStats();
       
       document.getElementById('btn-buy-package').onclick = () => {
-        console.log('Botão de compra clicado');
         const sel = document.querySelector('#buy-packages-list .selected');
-        console.log('Pacote selecionado:', sel);
-        if(!sel) {
-          alert('Por favor, seleciona um pacote primeiro.');
-          return;
-        }
-
-        const paymentMethod = document.getElementById('payment-method').value;
-        console.log('Forma de pagamento:', paymentMethod);
-        if(!paymentMethod) {
-          alert('Por favor, seleciona uma forma de pagamento.');
-          return;
-        }
-
-        console.log('STATE.currentCompany:', STATE.currentCompany);
-        console.log('Bloqueio parcial:', STATE.currentCompany.blocked === 'partial');
-        console.log('Bloqueio total:', STATE.currentCompany.blocked === true);
+        if(!sel) return;
 
         // Verificar se a filial tem bloqueio de compra de pacotes
         if(STATE.currentCompany.blocked === 'partial' && STATE.currentCompany.blockedFeatures && STATE.currentCompany.blockedFeatures.includes(1)) {
@@ -1988,8 +1934,6 @@
           return;
         }
 
-        console.log('Validações passadas, a processar compra...');
-
         const pDef = PKGS.find(p => p.n === sel.dataset.name);
         const newPackage = {
           ...pDef,
@@ -1999,8 +1943,7 @@
           createdAt: Date.now(),
           expiresAt: Date.now() + (pDef.days * 24 * 60 * 60 * 1000),
           qrExpiryDays: STATE.currentCompany.campaign.prizeExpiryDays || 15,
-          active: true,
-          paymentMethod: paymentMethod
+          active: true
         };
 
         // Sistema de faturação: se for filial, a fatura é passada à empresa mãe
@@ -2030,8 +1973,7 @@
           code: invoiceCode,
           purchasedBy: STATE.currentCompany.name,
           purchasedAt: new Date().toISOString(),
-          amount: pDef.p,
-          paymentMethod: paymentMethod
+          amount: pDef.p
         };
 
         // Guardar fatura no histórico
@@ -2049,8 +1991,7 @@
           purchasedAt: new Date().toISOString(),
           amount: pDef.p,
           flags: pDef.f,
-          status: 'paid',
-          paymentMethod: paymentMethod
+          status: 'paid'
         };
         STATE.currentCompany.invoices.push(invoice);
 
@@ -2059,20 +2000,7 @@
         renderActivePackages();
         updatePRStats();
 
-        // Limpar seleção
-        document.querySelectorAll('#buy-packages-list .package-item').forEach(el => el.classList.remove('selected'));
-        document.getElementById('btn-buy-package').disabled = true;
-        document.getElementById('btn-buy-package').style.opacity = '0.5';
-        document.getElementById('payment-method').value = '';
-
-        const paymentMethodText = {
-          'qr': 'QR Code',
-          'referencia': 'Referência',
-          'transferencia': 'Transferência',
-          'referencia_bancaria': 'Referência Bancária/Demo'
-        };
-
-        alert(`✓ Pacote comprado!\n\nFatura passada a:\n${invoiceTo}\nNIF: ${invoiceNif}\nMorada: ${invoiceAddress}\n${invoiceCity}\n${invoiceCode}\n\nValor: ${pDef.p}€\nForma de pagamento: ${paymentMethodText[paymentMethod]}`);
+        alert(`✓ Pacote comprado!\n\nFatura passada a:\n${invoiceTo}\nNIF: ${invoiceNif}\nMorada: ${invoiceAddress}\n${invoiceCity}\n${invoiceCode}\n\nValor: ${pDef.p}€`);
       };
     }
 
@@ -2082,148 +2010,9 @@
         ? STATE.currentCompany.packages.map(p => {
             const expiresDate = p.expiresAt ? new Date(p.expiresAt).toLocaleDateString() : 'N/A';
             const radiusText = p.radius === Infinity ? 'Ilimitado' : p.radius + 'km';
-            const activeStatus = p.active ? '<span class="ok">Ativo</span>' : '<span class="danger">Inativo</span>';
-            const paymentMethodText = {
-              'qr': '💳 QR Code',
-              'referencia': '📄 Referência',
-              'transferencia': '🏦 Transferência',
-              'referencia_bancaria': '📋 Ref. Bancária/Demo'
-            };
-            const paymentDisplay = p.paymentMethod ? paymentMethodText[p.paymentMethod] || p.paymentMethod : 'N/A';
-            return `<div class="package-item" data-package-id="${p.id}">
-              <strong>${p.n}</strong>
-              <p>🚩 Restantes: ${(p.flagsLeft||p.flagsInitial||p.f).toLocaleString()} / ${(p.flagsInitial||p.f).toLocaleString()}</p>
-              <p>📍 Raio: ${radiusText} · 📅 Expira: ${expiresDate} · QR: ${p.qrExpiryDays} dias</p>
-              <p>Estado: ${activeStatus} · 💳 Pagamento: ${paymentDisplay} ${p.prize ? '· 🎁 Prémio: ' + p.prize : ''}</p>
-              <div class="btn-row">
-                <button class="btn-small btn-dark" onclick="goBackFromPackage()">↩ Voltar</button>
-                <button class="btn-small" onclick="togglePackageActivation('${p.id}')">${p.active ? '⏸ Desativar' : '▶ Ativar'}</button>
-                <button class="btn-small" onclick="savePackageSettings('${p.id}')">💾 Guardar</button>
-                <button class="btn-small btn-dark" onclick="selectBatchesForPackage('${p.id}')">📦 Selecionar Lotes</button>
-                <button class="btn-small" onclick="openPrizeModal('${p.id}')">🎁 Definir Prémio</button>
-              </div>
-            </div>`;
+            return `<div class="package-item"><strong>${p.n}</strong><p>🚩 Restantes: ${(p.flagsLeft||p.flagsInitial||p.f).toLocaleString()} / ${(p.flagsInitial||p.f).toLocaleString()}</p><p>📍 Raio: ${radiusText} · 📅 Expira: ${expiresDate} · QR: ${p.qrExpiryDays} dias</p></div>`;
           }).join('')
         : '<p>Nenhum.</p>';
-    }
-
-    function goBackFromPackage() {
-      switchPRTab('dashboard');
-    }
-
-    function togglePackageActivation(packageId) {
-      const pkg = STATE.currentCompany.packages.find(p => p.id === packageId);
-      if(!pkg) return;
-      pkg.active = !pkg.active;
-      saveState();
-      renderActivePackages();
-    }
-
-    function savePackageSettings(packageId) {
-      const pkg = STATE.currentCompany.packages.find(p => p.id === packageId);
-      if(!pkg) return;
-      saveState();
-      alert('✓ Definições do pacote guardadas!');
-    }
-
-    function selectBatchesForPackage(packageId) {
-      const pkg = STATE.currentCompany.packages.find(p => p.id === packageId);
-      if(!pkg) return;
-      
-      if(!STATE.currentCompany.lotes || STATE.currentCompany.lotes.length === 0) {
-        alert('Não há lotes disponíveis. Cria lotes primeiro na aba "Lotes".');
-        return;
-      }
-      
-      const lotesList = STATE.currentCompany.lotes.map((l, idx) => 
-        `<label style="display:block;margin:8px 0;">
-          <input type="checkbox" value="${l.id}" ${pkg.selectedLotes && pkg.selectedLotes.includes(l.id) ? 'checked' : ''}>
-          ${l.name} - ${l.flags.toLocaleString()} flags
-        </label>`
-      ).join('');
-      
-      const modalHtml = `
-        <div id="batch-selection-modal" class="modal" style="display:flex;">
-          <div class="modal-content">
-            <h2>📦 Selecionar Lotes para ${pkg.n}</h2>
-            <div style="max-height:300px;overflow-y:auto;margin:15px 0;">
-              ${lotesList}
-            </div>
-            <div class="btn-row">
-              <button class="btn" onclick="confirmBatchSelection('${packageId}')">✓ Confirmar</button>
-              <button class="btn btn-danger" onclick="closeBatchSelectionModal()">✕ Cancelar</button>
-            </div>
-          </div>
-        </div>
-      `;
-      
-      document.body.insertAdjacentHTML('beforeend', modalHtml);
-    }
-
-    function confirmBatchSelection(packageId) {
-      const pkg = STATE.currentCompany.packages.find(p => p.id === packageId);
-      if(!pkg) return;
-      
-      const checkboxes = document.querySelectorAll('#batch-selection-modal input[type="checkbox"]:checked');
-      pkg.selectedLotes = Array.from(checkboxes).map(cb => cb.value);
-      
-      saveState();
-      closeBatchSelectionModal();
-      renderActivePackages();
-      alert(`✓ ${pkg.selectedLotes.length} lote(s) selecionado(s) para o pacote!`);
-    }
-
-    function closeBatchSelectionModal() {
-      const modal = document.getElementById('batch-selection-modal');
-      if(modal) modal.remove();
-    }
-
-    function openPrizeModal(packageId) {
-      const pkg = STATE.currentCompany.packages.find(p => p.id === packageId);
-      if(!pkg) return;
-      
-      const modalHtml = `
-        <div id="prize-modal" class="modal" style="display:flex;">
-          <div class="modal-content">
-            <h2>🎁 Definir Prémio para ${pkg.n}</h2>
-            <div class="form-group">
-              <label>Prémio Oferecido</label>
-              <input type="text" id="prize-input" placeholder="Ex: 10% de desconto, Produto X, 5€, etc." value="${pkg.prize || ''}">
-            </div>
-            <div class="form-group">
-              <label>Descrição Detalhada (opcional)</label>
-              <input type="text" id="prize-description" placeholder="Detalhes do prémio" value="${pkg.prizeDescription || ''}">
-            </div>
-            <div class="btn-row">
-              <button class="btn" onclick="savePrize('${packageId}')">✓ Guardar Prémio</button>
-              <button class="btn btn-danger" onclick="closePrizeModal()">✕ Cancelar</button>
-            </div>
-          </div>
-        </div>
-      `;
-      
-      document.body.insertAdjacentHTML('beforeend', modalHtml);
-    }
-
-    function savePrize(packageId) {
-      const pkg = STATE.currentCompany.packages.find(p => p.id === packageId);
-      if(!pkg) return;
-      
-      const prizeInput = document.getElementById('prize-input').value;
-      const prizeDescription = document.getElementById('prize-description').value;
-      
-      pkg.prize = prizeInput;
-      pkg.prizeDescription = prizeDescription;
-      
-      saveState();
-      closePrizeModal();
-      renderActivePackages();
-      alert('✓ Prémio definido com sucesso!');
-    }
-
-    function closePrizeModal() {
-      const modal = document.getElementById('prize-modal');
-      if(modal) modal.remove();
     }
 
     function getPackageTotals(company) {
@@ -2430,24 +2219,16 @@
       const name = document.getElementById('bingo-name').value;
       const prize = document.getElementById('bingo-prize').value;
       const flags = parseInt(document.getElementById('bingo-flags').value);
-      const activeDays = parseInt(document.getElementById('bingo-active-days').value) || 0;
-      const activeHours = parseInt(document.getElementById('bingo-active-hours').value) || 0;
-      const activeMinutes = parseInt(document.getElementById('bingo-active-minutes').value) || 0;
+      const activeDays = parseInt(document.getElementById('bingo-active-days').value) || 30;
 
       if(!name || !prize || !flags) {
-        alert('Preenche todos os campos obrigatórios');
-        return;
-      }
-
-      if(activeDays === 0 && activeHours === 0 && activeMinutes === 0) {
-        alert('Define pelo menos uma duração (dias, horas ou minutos)');
+        alert('Preenche todos os campos');
         return;
       }
 
       if(!STATE.currentCompany.bingos) STATE.currentCompany.bingos = [];
 
-      // Calcular data de expiração com dias, horas e minutos
-      const expiresAt = Date.now() + (activeDays * 24 * 60 * 60 * 1000) + (activeHours * 60 * 60 * 1000) + (activeMinutes * 60 * 1000);
+      const expiresAt = Date.now() + (activeDays * 24 * 60 * 60 * 1000);
 
       STATE.currentCompany.bingos.push({
         id: `bingo_${Date.now()}`,
@@ -2455,8 +2236,6 @@
         prize,
         requiredFlags: flags,
         activeDays,
-        activeHours,
-        activeMinutes,
         createdAt: new Date().toISOString(),
         expiresAt: new Date(expiresAt).toISOString(),
         active: true
@@ -2484,9 +2263,7 @@
       document.getElementById('bingo-name').value = '';
       document.getElementById('bingo-prize').value = '';
       document.getElementById('bingo-flags').value = '';
-      document.getElementById('bingo-active-days').value = '0';
-      document.getElementById('bingo-active-hours').value = '0';
-      document.getElementById('bingo-active-minutes').value = '0';
+      document.getElementById('bingo-active-days').value = '';
     }
 
     function renderBingos() {
@@ -2494,17 +2271,9 @@
       if(!STATE.currentCompany.bingos) STATE.currentCompany.bingos = [];
       list.innerHTML = STATE.currentCompany.bingos.length
         ? STATE.currentCompany.bingos.map(b => {
-            const expiresDate = b.expiresAt ? new Date(b.expiresAt).toLocaleString() : 'N/A';
+            const expiresDate = b.expiresAt ? new Date(b.expiresAt).toLocaleDateString() : 'N/A';
             const status = b.active ? '<span class="ok">Ativo</span>' : '<span class="danger">Expirado</span>';
-            
-            // Formatar duração
-            let durationText = '';
-            if(b.activeDays > 0) durationText += `${b.activeDays}d `;
-            if(b.activeHours > 0) durationText += `${b.activeHours}h `;
-            if(b.activeMinutes > 0) durationText += `${b.activeMinutes}min`;
-            if(durationText === '') durationText = '0min';
-            
-            return `<div class="package-item"><strong>${b.name}</strong><p>🎁 Prémio: ${b.prize} | 🚩 Flags: ${b.requiredFlags} | ⏱️ Duração: ${durationText.trim()} | Expira: ${expiresDate} | ${status}</p></div>`;
+            return `<div class="package-item"><strong>${b.name}</strong><p>🎁 ${b.prize} | 🚩 ${b.requiredFlags} flags | 📅 ${b.activeDays} dias | Expira: ${expiresDate} | ${status}</p></div>`;
           }).join('')
         : '<p>Nenhum.</p>';
     }
@@ -2524,31 +2293,6 @@
       const input = document.getElementById('qr-validation-input');
       if(!input.value) {
         document.getElementById('validation-msg').innerHTML = '<span class="danger">Insere um código QR.</span>';
-        return;
-      }
-
-      // Verificar proteção contra fotos de celular
-      const qrCode = input.value;
-      const qrParts = qrCode.split('-');
-      if(qrParts.length < 3 || qrParts[0] !== 'ZAP') {
-        document.getElementById('validation-msg').innerHTML = '<span class="danger">Código QR inválido.</span>';
-        return;
-      }
-
-      const timestamp = parseInt(qrParts[2]);
-      const now = Date.now();
-      const timeDiff = now - timestamp;
-
-      // Verificar se o QR é muito antigo (possível foto)
-      if(timeDiff > 60000) { // 1 minuto
-        document.getElementById('validation-msg').innerHTML = '<span class="danger">⚠️ QR expirado. O QR tem proteção contra fotos de celular.</span>';
-        return;
-      }
-
-      // Verificar se o QR já foi validado recentemente
-      const recentValidation = STATE.currentCompany.qrHistory.find(q => q.code === qrCode && (now - new Date(q.validatedAt).getTime()) < 60000);
-      if(recentValidation) {
-        document.getElementById('validation-msg').innerHTML = '<span class="danger">⚠️ Este QR já foi validado recentemente. Proteção contra fotos de celular.</span>';
         return;
       }
 
@@ -2577,14 +2321,7 @@
       } else {
         list.innerHTML = STATE.currentCompany.invoices.slice().reverse().map(inv => {
           const date = new Date(inv.purchasedAt).toLocaleString();
-          const paymentMethodText = {
-            'qr': '💳 QR Code',
-            'referencia': '📄 Referência',
-            'transferencia': '🏦 Transferência',
-            'referencia_bancaria': '📋 Ref. Bancária/Demo'
-          };
-          const paymentDisplay = inv.paymentMethod ? paymentMethodText[inv.paymentMethod] || inv.paymentMethod : 'N/A';
-          return `<div class="package-item"><strong>${inv.packageName}</strong><p>🧾 Fatura: ${inv.id}</p><p>💰 Valor: ${inv.amount}€ · 🚩 Flags: ${inv.flags.toLocaleString()}</p><p>📅 Data: ${date}</p><p>👤 Comprado por: ${inv.purchasedBy}</p><p>📋 Fatura passada a: ${inv.to} (NIF: ${inv.nif})</p><p>💳 Pagamento: ${paymentDisplay}</p><div class="btn-row"><button class="btn-small" onclick="viewInvoice('${inv.id}')">📄 Ver Fatura</button><button class="btn-dark btn-small" onclick="printInvoice('${inv.id}')">🖨️ Imprimir</button></div></div>`;
+          return `<div class="package-item"><strong>${inv.packageName}</strong><p>🧾 Fatura: ${inv.id}</p><p>💰 Valor: ${inv.amount}€ · 🚩 Flags: ${inv.flags.toLocaleString()}</p><p>📅 Data: ${date}</p><p>👤 Comprado por: ${inv.purchasedBy}</p><p>📋 Fatura passada a: ${inv.to} (NIF: ${inv.nif})</p><div class="btn-row"><button class="btn-small" onclick="viewInvoice('${inv.id}')">📄 Ver Fatura</button><button class="btn-dark btn-small" onclick="printInvoice('${inv.id}')">🖨️ Imprimir</button></div></div>`;
         }).join('');
       }
     }
@@ -2678,29 +2415,10 @@ Estado: Pago
 ═══════════════════════════════════════════════════════════════
       `;
 
-      // Usar data URL para evitar erro de segurança com file://
-      const printContent = `
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Fatura ${invoice.id}</title>
-  <style>
-    body { font-family: monospace; white-space: pre; padding: 20px; }
-    @media print { body { padding: 0; } }
-  </style>
-</head>
-<body>${invoiceContent}</body>
-</html>
-      `;
-      
-      const printWindow = window.open('data:text/html;charset=utf-8,' + encodeURIComponent(printContent), '_blank');
-      if(printWindow) {
-        printWindow.onload = function() {
-          printWindow.print();
-        };
-      } else {
-        alert('Não foi possível abrir a janela de impressão. O navegador bloqueou a janela pop-up.');
-      }
+      const printWindow = window.open('', '_blank');
+      printWindow.document.write('<pre>' + invoiceContent + '</pre>');
+      printWindow.document.close();
+      printWindow.print();
     }
 
     console.log("✅ ZAP FLAGS v3.0 Carregado. Pronto.");
