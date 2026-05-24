@@ -199,7 +199,8 @@
       left: 50%;
       top: 50%;
       z-index: 2400;
-      transform: translate(-50%, -50%);
+      transform: translate(-50%, -50%) scale(2.25);
+      transform-origin: center center;
       pointer-events: none;
     }
     #player-screen-avatar .player-marker {
@@ -209,6 +210,7 @@
       position: relative;
       width: 34px;
       height: 54px;
+      transform-origin: 50% 78%;
     }
     .avatar-head {
       position: absolute;
@@ -249,6 +251,8 @@
     .player-marker.walking .avatar-arm.right { animation: armWalkRight .35s infinite alternate; }
     .player-marker.walking .avatar-leg.left { animation: legWalkLeft .35s infinite alternate; }
     .player-marker.walking .avatar-leg.right { animation: legWalkRight .35s infinite alternate; }
+    .player-marker.walking .player-avatar { animation: bodyWalk .18s infinite alternate; }
+    @keyframes bodyWalk { from { transform: translateY(0); } to { transform: translateY(-2px); } }
     @keyframes armWalkLeft { from { transform: rotate(35deg); } to { transform: rotate(-28deg); } }
     @keyframes armWalkRight { from { transform: rotate(-35deg); } to { transform: rotate(28deg); } }
     @keyframes legWalkLeft { from { transform: rotate(26deg); } to { transform: rotate(-18deg); } }
@@ -1357,7 +1361,9 @@
       if(!elements.length) return;
       elements.forEach(el => {
         el.style.transform = `rotate(${angle}deg)`;
-        el.classList.toggle('walking', walking);
+        el.classList.remove('walking');
+        void el.offsetWidth;
+        if(walking) el.classList.add('walking');
       });
       clearTimeout(setPlayerAvatarDirection.walkTimer);
       setPlayerAvatarDirection.walkTimer = setTimeout(() => {
@@ -1751,6 +1757,9 @@
         alert('Sem energia!');
         return;
       }
+
+      const dirAngles = { n: 0, ne: 45, e: 90, se: 135, s: 180, sw: 225, w: 270, nw: 315 };
+      if(dirAngles[dir] !== undefined) setPlayerAvatarDirection(dirAngles[dir], true);
 
       const step = 0.00002;
       const lat = STATE.currentPlayer.position.lat;
