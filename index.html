@@ -199,9 +199,12 @@
       left: 50%;
       top: 50%;
       z-index: 2400;
-      transform: translate(-50%, -50%) scale(2.25);
+      --step-x: 0px;
+      --step-y: 0px;
+      transform: translate(calc(-50% + var(--step-x)), calc(-50% + var(--step-y))) scale(2.25);
       transform-origin: center center;
       pointer-events: none;
+      transition: transform .12s ease-out;
     }
     #player-screen-avatar .player-marker {
       transform-origin: 50% 78%;
@@ -575,15 +578,15 @@
         <button class="btn-dark btn-small" onclick="resizeDPad(-10)">A-</button>
         <button class="btn-dark btn-small" onclick="resizeDPad(10)">A+</button>
       </div>
-      <button class="dpad-btn" data-dir="nw"><i class="fa-solid fa-arrow-up-left"></i></button>
-      <button class="dpad-btn" data-dir="n"><i class="fa-solid fa-arrow-up"></i></button>
-      <button class="dpad-btn" data-dir="ne"><i class="fa-solid fa-arrow-up-right"></i></button>
-      <button class="dpad-btn" data-dir="w"><i class="fa-solid fa-arrow-left"></i></button>
+      <button class="dpad-btn" data-dir="nw" onclick="movePlayerDPad('nw')"><i class="fa-solid fa-arrow-up-left"></i></button>
+      <button class="dpad-btn" data-dir="n" onclick="movePlayerDPad('n')"><i class="fa-solid fa-arrow-up"></i></button>
+      <button class="dpad-btn" data-dir="ne" onclick="movePlayerDPad('ne')"><i class="fa-solid fa-arrow-up-right"></i></button>
+      <button class="dpad-btn" data-dir="w" onclick="movePlayerDPad('w')"><i class="fa-solid fa-arrow-left"></i></button>
       <button class="dpad-center" onclick="centerOnPlayer()"><i class="fa-solid fa-location-crosshairs"></i></button>
-      <button class="dpad-btn" data-dir="e"><i class="fa-solid fa-arrow-right"></i></button>
-      <button class="dpad-btn" data-dir="sw"><i class="fa-solid fa-arrow-down-left"></i></button>
-      <button class="dpad-btn" data-dir="s"><i class="fa-solid fa-arrow-down"></i></button>
-      <button class="dpad-btn" data-dir="se"><i class="fa-solid fa-arrow-down-right"></i></button>
+      <button class="dpad-btn" data-dir="e" onclick="movePlayerDPad('e')"><i class="fa-solid fa-arrow-right"></i></button>
+      <button class="dpad-btn" data-dir="sw" onclick="movePlayerDPad('sw')"><i class="fa-solid fa-arrow-down-left"></i></button>
+      <button class="dpad-btn" data-dir="s" onclick="movePlayerDPad('s')"><i class="fa-solid fa-arrow-down"></i></button>
+      <button class="dpad-btn" data-dir="se" onclick="movePlayerDPad('se')"><i class="fa-solid fa-arrow-down-right"></i></button>
     </div>
     <div id="floating-buttons">
       <button class="float-btn btn-dark" onclick="openPanel('progress')" title="Progresso"><i class="fa-solid fa-chart-line"></i></button>
@@ -1371,6 +1374,20 @@
       }, 450);
     }
 
+    function pulseScreenAvatar(dir) {
+      const host = document.getElementById('player-screen-avatar');
+      if(!host) return;
+      const x = dir.includes('e') ? 10 : dir.includes('w') ? -10 : 0;
+      const y = dir.includes('s') ? 10 : dir.includes('n') ? -10 : 0;
+      host.style.setProperty('--step-x', x + 'px');
+      host.style.setProperty('--step-y', y + 'px');
+      clearTimeout(pulseScreenAvatar.timer);
+      pulseScreenAvatar.timer = setTimeout(() => {
+        host.style.setProperty('--step-x', '0px');
+        host.style.setProperty('--step-y', '0px');
+      }, 140);
+    }
+
     function updatePlayerLocation(lat, lng, fromMovement, centerMap) {
       const previousPosition = STATE.currentPlayer.position ? { ...STATE.currentPlayer.position } : null;
       STATE.currentPlayer.position = { lat, lng };
@@ -1691,10 +1708,6 @@
     }
 
     function initDPad() {
-      document.querySelectorAll('.dpad-btn[data-dir]').forEach(btn => {
-        btn.addEventListener('click', (e) => movePlayerDPad(e.currentTarget.dataset.dir));
-      });
-
       document.addEventListener('keydown', (e) => {
         if(!offlineMode) return;
         const keyMap = {
@@ -1760,6 +1773,7 @@
 
       const dirAngles = { n: 0, ne: 45, e: 90, se: 135, s: 180, sw: 225, w: 270, nw: 315 };
       if(dirAngles[dir] !== undefined) setPlayerAvatarDirection(dirAngles[dir], true);
+      pulseScreenAvatar(dir);
 
       const step = 0.00002;
       const lat = STATE.currentPlayer.position.lat;
@@ -1773,8 +1787,9 @@
       if(dir.includes('e')) newLng += step;
       if(dir.includes('w')) newLng -= step;
 
-      STATE.currentPlayer.energy = Math.max(0, STATE.currentPlayer.energy - 0.5);
+      STATE.currentPlayer.energy = Math.max(0, STATE.currentPlayer.energy - 1);
       updatePlayerLocation(newLat, newLng, true, true);
+      renderTopBar();
     }
 
     function openFlagModal(flagId, type) {
