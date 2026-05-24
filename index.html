@@ -194,6 +194,17 @@
       transition: transform .18s linear;
       filter: drop-shadow(0 4px 8px rgba(0,0,0,.65));
     }
+    #player-screen-avatar {
+      position: fixed;
+      left: 50%;
+      top: 50%;
+      z-index: 2400;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+    }
+    #player-screen-avatar .player-marker {
+      transform-origin: 50% 78%;
+    }
     .player-avatar {
       position: relative;
       width: 34px;
@@ -538,6 +549,7 @@
       </div>
     </div>
     <div id="map"></div>
+    <div id="player-screen-avatar"></div>
     <div id="game-mode-panel">
       <h2 style="margin:0 0 8px 0;">🎮 Escolhe o modo</h2>
       <p class="small">Seleciona como queres jogar.</p>
@@ -1124,15 +1136,24 @@
     let energyInterval = null;
     let visionCircle = null;
 
-    function createPlayerIcon() {
+    function createPlayerAvatarHtml() {
       let head = '';
       if(STATE.currentPlayer.photo) {
         head = '<img src="' + STATE.currentPlayer.photo + '" onerror="this.remove()" />';
       }
       const inner = '<div class="player-avatar"><div class="avatar-head">' + head + '</div><div class="avatar-body"></div><div class="avatar-arm left"></div><div class="avatar-arm right"></div><div class="avatar-leg left"></div><div class="avatar-leg right"></div></div>';
+      return '<div class="player-marker">' + inner + '</div>';
+    }
+
+    function renderScreenAvatar() {
+      const host = document.getElementById('player-screen-avatar');
+      if(host) host.innerHTML = createPlayerAvatarHtml();
+    }
+
+    function createPlayerIcon() {
       return L.divIcon({
         className: '',
-        html: '<div class="player-marker">' + inner + '</div>',
+        html: createPlayerAvatarHtml(),
         iconSize: [44, 58],
         iconAnchor: [22, 48]
       });
@@ -1145,6 +1166,7 @@
       document.getElementById('fog-overlay')?.remove();
       document.getElementById('joystick-container').classList.add('hidden');
       document.getElementById('dpad-container').classList.add('hidden');
+      renderScreenAvatar();
 
       if(typeof L === 'undefined') {
         document.getElementById('map').innerHTML = '<div style="height:100%;display:flex;align-items:center;justify-content:center;text-align:center;padding:20px;color:#0f0;background:#020;">Mapa GPS indisponível. Verifica a ligação à internet para carregar o Leaflet/OpenStreetMap.</div>';
@@ -1328,12 +1350,19 @@
     }
 
     function setPlayerAvatarDirection(angle, walking = true) {
-      const el = playerMarker?.getElement()?.querySelector('.player-marker');
-      if(!el) return;
-      el.style.transform = `rotate(${angle}deg)`;
-      el.classList.toggle('walking', walking);
+      const elements = [
+        playerMarker?.getElement()?.querySelector('.player-marker'),
+        document.querySelector('#player-screen-avatar .player-marker')
+      ].filter(Boolean);
+      if(!elements.length) return;
+      elements.forEach(el => {
+        el.style.transform = `rotate(${angle}deg)`;
+        el.classList.toggle('walking', walking);
+      });
       clearTimeout(setPlayerAvatarDirection.walkTimer);
-      setPlayerAvatarDirection.walkTimer = setTimeout(() => el.classList.remove('walking'), 450);
+      setPlayerAvatarDirection.walkTimer = setTimeout(() => {
+        elements.forEach(el => el.classList.remove('walking'));
+      }, 450);
     }
 
     function updatePlayerLocation(lat, lng, fromMovement, centerMap) {
