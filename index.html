@@ -1,326 +1,277 @@
 <!DOCTYPE html>
 <html lang="pt">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>ZAP FLAGS</title>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js">
-</script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
-  <style>
-    *{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#000;color:#0f0;overflow:hidden}.hidden{display:none!important}.screen{display:none;position:fixed;inset:0;background:#000;z-index:10}.screen.active{display:flex!important}#landing,#auth-screen,#backoffice{flex-direction:column;justify-content:center;align-items:center;padding:20px}#game-screen,#pr-screen{flex-direction:column;padding:0;overflow:hidden;align-items:center}.watermark{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-45deg);font-size:clamp(2rem,8vw,5rem);font-weight:900;color:rgba(0,255,0,.12);pointer-events:none;z-index:0}h1{text-shadow:0 0 8px #0f0}.sub{color:#a7fca7;text-align:center}.btn{background:#0f0;color:#000;border:0;padding:12px 20px;border-radius:10px;font-weight:800;cursor:pointer;margin:8px;min-width:120px}.btn-dark{background:#181818;color:#0f0;border:1px solid #0f0}.btn-danger{background:#8b0000;color:#fff}.btn-small{padding:6px 10px;font-size:12px;min-width:auto}.btn-row{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;width:100%;max-width:440px}.form-group{margin:12px 0;text-align:left;width:100%;max-width:320px}input,select{width:100%;padding:10px;border-radius:8px;border:1px solid #0f0;background:#101010;color:#0f0;margin-bottom:8px}.msg{min-height:20px;font-size:12px}.ok{color:#8fff8f}.danger{color:#ff8686}.warning{color:#ffb347;font-weight:bold}.password-wrapper{position:relative}.password-toggle{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:0;color:#0f0;cursor:pointer;font-size:18px}#auth-screen{background:radial-gradient(circle at 20% 20%,rgba(0,255,0,.12),transparent 25%),radial-gradient(circle at 80% 30%,rgba(0,255,255,.08),transparent 25%),linear-gradient(180deg,#000,#051005)}.auth-tabs,.pr-tabs{display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;justify-content:center}.auth-tab,.pr-tab{padding:10px 15px;background:#181818;border:1px solid #333;cursor:pointer;border-radius:8px}.auth-tab.active,.pr-tab.active{border-color:#0f0;background:rgba(0,255,0,.1)}.auth-form,.pr-content{display:none}.auth-form.active,.pr-content.active{display:block}#top-bar{position:fixed;top:0;left:0;right:0;z-index:3000;background:rgba(0,0,0,.9);border-bottom:1px solid #0f0;padding:10px 15px;display:flex;gap:12px;align-items:center;justify-content:space-between;font-weight:bold}#top-bar-text{display:flex;gap:10px;flex-wrap:wrap;font-size:13px}.energy-bar{flex:1;max-width:260px;height:8px;background:#222;border-radius:999px;overflow:hidden;border:1px solid rgba(0,255,0,.35)}#energy-fill{height:100%;width:100%;background:linear-gradient(90deg,#008f1f,#00ff66);transition:width .3s}#map{position:absolute;inset:0;z-index:1;background:linear-gradient(30deg,transparent 47%,rgba(255,255,255,.75) 48%,rgba(255,255,255,.75) 52%,transparent 53%),linear-gradient(120deg,transparent 47%,rgba(255,255,255,.65) 48%,rgba(255,255,255,.65) 52%,transparent 53%),linear-gradient(rgba(70,130,90,.18) 1px,transparent 1px),linear-gradient(90deg,rgba(70,130,90,.18) 1px,transparent 1px),#b8d7b0;background-size:260px 260px,220px 220px,48px 48px,48px 48px,auto}#map:after{content:'GPS MAP';position:absolute;right:20px;bottom:20px;color:rgba(0,70,0,.35);font-weight:900;letter-spacing:3px}#gps-fallback-map{position:absolute;inset:0;z-index:2;pointer-events:none;overflow:hidden;--map-x:0px;--map-y:0px}#gps-fallback-map-inner{position:absolute;inset:-40%;transform:translate(var(--map-x),var(--map-y));transition:transform .16s linear}.gps-road{position:absolute;left:50%;top:50%;width:180vw;height:18px;border-radius:999px;background:#fff;box-shadow:0 0 0 3px rgba(90,90,90,.22);transform-origin:center}.gps-road.main{height:26px;background:#f4d35e}.gps-road.r1{transform:translate(-50%,-50%) rotate(0deg)}.gps-road.r2{transform:translate(-50%,-50%) rotate(90deg)}.gps-road.r3{transform:translate(-50%,-50%) rotate(32deg);top:38%}.gps-road.r4{transform:translate(-50%,-50%) rotate(-38deg);top:64%}.gps-road.r5{transform:translate(-50%,-50%) rotate(12deg);top:76%}.gps-place{position:absolute;width:14px;height:14px;border-radius:50%;background:#2d9cdb;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.35)}.p1{left:18%;top:28%}.p2{left:72%;top:34%;background:#27ae60}.p3{left:62%;top:72%;background:#eb5757}.p4{left:32%;top:68%;background:#9b51e0}#game-mode-panel{position:fixed;top:90px;left:50%;transform:translateX(-50%);z-index:3500;width:min(92vw,520px);background:rgba(0,0,0,.94);border:3px solid #0f0;border-radius:16px;padding:16px;box-shadow:0 0 28px rgba(0,255,0,.35);text-align:center}#dpad-container{position:fixed;bottom:30px;left:30px;z-index:3600;display:grid;grid-template-columns:50px 50px 50px;grid-template-rows:auto auto 50px 50px 50px;gap:5px;background:rgba(0,0,0,.88);border:1px solid #0f0;border-radius:12px;padding:8px;touch-action:none;user-select:none}.dpad-drag-handle{font-size:14px;color:#bfffbf;margin-bottom:4px;padding:8px 2px;border-bottom:1px solid rgba(0,255,0,.25);cursor:grab;grid-column:1/-1;text-align:center;touch-action:none;user-select:none;background:rgba(0,255,0,.08);border-radius:8px}.dpad-size-row{display:flex;justify-content:center;gap:4px;grid-column:1/-1}.dpad-btn,.dpad-center{background:rgba(0,255,0,.2);border:2px solid #0f0;color:#0f0;font-size:1.2rem;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center}.dpad-center{background:#0f0;color:#000}.flag-marker{background:transparent;border:0}.flag-icon{position:relative;width:24px;height:24px;border:2px solid #fff;border-radius:50% 50% 50% 0;transform:rotate(-45deg);box-shadow:0 0 14px currentColor}.flag-zap{color:#00bfff;background:#00bfff}.flag-pr{color:#ff00ff;background:#ff00ff}#player-screen-avatar{position:fixed;left:50%;top:50%;z-index:2400;--step-x:0px;--step-y:0px;transform:translate(calc(-50% + var(--step-x)),calc(-50% + var(--step-y))) scale(2.25);pointer-events:none;transition:transform .12s ease-out}.vision-aura,.collect-aura{position:absolute;left:50%;top:50%;border-radius:50%;transform:translate(-50%,-50%);pointer-events:none}.vision-aura{width:160px;height:160px;border:3px dotted rgba(0,255,255,.95);background:rgba(0,255,255,.08)}.collect-aura{width:80px;height:80px;border:2px dashed rgba(255,255,0,.95);opacity:0}#player-screen-avatar.can-collect .collect-aura{opacity:1}.player-marker{width:48px;height:44px;display:flex;align-items:center;justify-content:center;position:relative;z-index:2}.player-avatar{position:relative;width:42px;height:34px}.avatar-head{position:absolute;top:0;left:10px;width:22px;height:24px;border-radius:45%;background:#ffd8a8;border:2px solid #fff}.avatar-hand{position:absolute;top:20px;width:10px;height:10px;border-radius:50%;background:#ffd8a8;border:2px solid #fff}.avatar-hand.left{left:0}.avatar-hand.right{right:0}.dashboard-grid{display:grid;grid-template-columns:1fr;gap:20px;width:100%;max-width:800px;padding:20px}.item-module{background:rgba(0,25,0,.16);border:1px solid #0f0;border-radius:10px;padding:15px}.package-item{background:#111;padding:10px;border-radius:8px;margin-bottom:8px;border:1px solid #333}.package-item.selected{border-color:#fff}.modal{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:4000;width:92%;max-width:480px;background:#000;border:3px solid #0f0;border-radius:14px;padding:16px}.panel-header{display:flex;justify-content:space-between;align-items:center}.qr-code{display:inline-block;margin-top:8px;padding:8px;border-radius:10px;border:1px solid #0f0;background:#111;font-family:monospace;color:#fff}#floating-buttons{position:fixed;right:10px;bottom:90px;z-index:3100;display:flex;flex-direction:column;gap:8px}.float-btn{width:46px;height:46px;border-radius:50%;padding:0}#side-panel{position:fixed;left:8px;right:8px;bottom:8px;z-index:3200;background:rgba(0,0,0,.92);border:2px solid #0f0;border-radius:14px;padding:12px;max-height:36vh;overflow-y:auto}#ticker{position:fixed;bottom:0;left:0;right:0;height:30px;background:rgba(0,0,0,.9);color:#0f0;display:flex;align-items:center;padding:0 1rem;font-size:12px;z-index:900;border-top:1px solid #0f0}#pr-screen,#backoffice{justify-content:flex-start;padding-top:20px;overflow-y:auto}
-  
-    .qr-trade-panel{position:fixed;left:8px;top:74px;z-index:3300;width:min(380px,94vw);max-height:72vh;overflow:auto;background:rgba(0,0,0,.94);border:2px solid #0f0;border-radius:14px;padding:12px;box-shadow:0 0 22px rgba(0,255,0,.22)}
-    .qr-trade-panel h2,.qr-trade-panel h3{margin:6px 0 10px}.qr-trade-grid{display:grid;gap:10px}.qr-trade-card{border:1px solid rgba(0,255,0,.45);border-radius:10px;background:#0b0b0b;padding:10px}.qr-trade-card p{margin:4px 0;font-size:12px;color:#bfffbf}.qr-trade-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.qr-trade-actions button{min-width:auto;margin:0}.qr-trade-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}.qr-trade-tabs button{min-width:auto;margin:0;padding:7px 9px}.qr-trade-list{display:grid;gap:8px}.qr-big-view{position:fixed;inset:0;z-index:5000;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.82);padding:18px}.qr-big-box{width:min(520px,96vw);max-height:92vh;overflow:auto;background:#000;border:3px solid #0f0;border-radius:16px;padding:18px;text-align:center}.qr-big-code{margin:12px auto;padding:18px;border:2px dashed #0f0;border-radius:14px;background:#111;color:#fff;font-size:22px;font-family:monospace;word-break:break-all}.qr-big-box img{max-width:260px;width:80%;background:#fff;padding:8px;border-radius:10px}.trade-status{font-size:12px;color:#ffb347}.trade-price-input{max-width:120px}.friend-row{display:flex;align-items:center;justify-content:space-between;gap:8px}.friend-row strong{word-break:break-word}.qr-store-form{display:grid;grid-template-columns:1fr 90px;gap:6px}.qr-store-form input{margin:0}.qr-store-form button{margin:0;min-width:auto}.chat-trade-float{position:fixed;right:10px;bottom:295px;z-index:3150}.chat-trade-float button{width:46px;height:46px;border-radius:50%;min-width:auto;padding:0;margin:0}
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZAP FLAGS - PC Edition</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        /* --- ESTILO DESKTOP --- */
+        body { margin: 0; padding: 0; font-family: 'Courier New', monospace; overflow: hidden; background: #000; color: #0ff; }
+        #map { width: 100vw; height: 100vh; cursor: crosshair; }
+        
+        /* LOGIN SCREEN */
+        #login-screen { 
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(0,0,0,0.95); z-index: 1000; 
+            display: flex; flex-direction: column; justify-content: center; align-items: center; 
+        }
+        .login-box { background: #111; padding: 40px; border: 2px solid #ff00ff; text-align: center; }
+        h1 { font-size: 3rem; margin: 0 0 20px 0; text-shadow: 0 0 10px #0ff; }
+        .btn { background: transparent; border: 2px solid #fff; color: #fff; padding: 15px 40px; font-size: 1.2rem; margin: 10px; cursor: pointer; transition: 0.3s; }
+        .btn:hover { background: #fff; color: #000; }
+        .btn-pr { border-color: #ff00ff; color: #ff00ff; }
+        .btn-pr:hover { background: #ff00ff; color: #fff; }
+
+        /* SIDEBAR (HUD) */
+        #sidebar {
+            position: absolute; top: 20px; left: 20px; width: 250px;
+            background: rgba(0,0,0,0.8); border: 1px solid #0ff; padding: 15px;
+            z-index: 500; display: none;
+        }
+        #sidebar h3 { margin: 0 0 10px 0; color: #ff00ff; }
+        .stat-row { display: flex; justify-content: space-between; margin: 5px 0; font-size: 0.9rem; }
+        
+        /* PAINEL PR (EM BAIXO) */
+        #pr-panel {
+            position: absolute; bottom: 0; left: 0; width: 100%; height: 200px;
+            background: rgba(20,0,20,0.95); border-top: 2px solid #ff00ff;
+            z-index: 500; display: none; padding: 20px; overflow-y: auto;
+        }
+        .pack-card { background: #333; padding: 10px; margin: 5px; border-radius: 5px; display: inline-block; width: 200px; }
+
+        /* MODAL QR */
+        #qr-modal { 
+            display: none; position: absolute; top: 50%; left: 50%; 
+            transform: translate(-50%, -50%); z-index: 2000; 
+            background: white; color: black; padding: 30px; border-radius: 10px; text-align: center; 
+            box-shadow: 0 0 50px #000;
+        }
+    </style>
 </head>
 <body>
-  <div class="watermark">LARFORYOU</div>
-  <section id="landing" class="screen active">
-<h1>ZAP FLAGS</h1>
-<p class="sub">Bem-vindo!</p>
-<div class="btn-row">
-<button class="btn" onclick="goTo('auth-screen','player')">JOGAR</button>
-<button class="btn btn-dark" onclick="goTo('auth-screen','company')">EMPRESA</button>
-<button class="btn btn-dark" onclick="goTo('backoffice')">BACKOFFICE</button>
-</div>
-</section>
-  <section id="auth-screen" class="screen">
-<h1>AUTENTICACAO</h1>
-<div class="auth-tabs">
-<div class="auth-tab active" onclick="switchAuthTab('player')">JOGADOR</div>
-<div class="auth-tab" onclick="switchAuthTab('company')">EMPRESA</div>
-</div>
-<div id="auth-player" class="auth-form active">
-<p class="sub">Entra como jogador ou cria uma nova conta</p>
-<form id="form-player-login">
-<input id="p-login-name" required placeholder="Nome">
-<input type="password" id="p-login-pass" required placeholder="Senha">
-<button class="btn">ENTRAR</button>
-</form>
-<button class="btn-dark btn-small" onclick="showPlayerRegister()">CRIAR CONTA</button>
-<form id="form-player-register" class="hidden">
-<input id="p-name" placeholder="Nome completo">
-<input type="email" id="p-email" placeholder="Email">
-<input id="p-locality" placeholder="Localidade">
-<input type="password" id="p-pass" placeholder="Senha">
-<input type="password" id="p-pass-confirm" placeholder="Confirmar senha">
-<input id="p-phone" placeholder="Contacto">
-<input id="p-address" placeholder="Morada">
-<input id="p-photo" placeholder="Link foto">
-<button class="btn">REGISTAR</button>
-<button type="button" class="btn btn-dark" onclick="showPlayerLogin()">VOLTAR</button>
-</form>
-<div id="msg-player" class="msg">
-</div>
-</div>
-<div id="auth-company" class="auth-form">
-<p class="sub">Entra ou regista como empreco('landing')">VOLTAR</button>
-</section>
-  <section id="game-screen" class="screen">
-<div id="top-bar">
-<div class="energy-bar">
-<div id="energy-fill">
-</div>
-</div>
-<div id="top-bar-text">
-<span id="energy-text">Energia: 100%</span>
-<span id="mode-text">Modo: -</span>
-<span id="flags-text">FLAGS 0</span>
-</div>
-</div>
-<div id="map">
-</div>
-<div id="gps-fallback-map">
-<div id="gps-fallback-map-inner">
-<div class="gps-road main r1">
-</div>
-<div class="gps-road main r2">
-</div>
-<div class="gps-road r3">
-</div>
-<div class="gps-road r4">
-</div>
-<div class="gps-road r5">
-</div>
-<div class="gps-place p1">
-</div>
-<div class="gps-place p2">
-</div>
-<div class="gps-place p3">
-</div>
-<div class="gps-place p4">
-</div>
-</div>
-</div>
-<div id="player-screen-avatar">
-</div>
-<div id="game-mode-panel">
-<h2>Escolhe o modo</h2>
-<p id="map-status">Mapa GPS: a carregar...</p>
-<button class="btn" onclick="requestGPSMode()">ONLINE GPS</button>
-<button class="btn btn-dark" onclick="activateHomeMode()">OFFLINE GPS</button>
-</div>
-<div id="dpad-container" class="hidden">
-<div class="dpad-drag-handle">ARRASTAR</div>
-<div class="dpad-size-row">
-<button class="btn-dark btn-small" onclick="resizeDPad(-10)">A-</button>
-<button class="btn-dark btn-small" onclick="resizeDPad(10)">A+</button>
-</div>
-<button class="dpad-btn" onclick="movePlayerDPad('nw')">NW</button>
-<button class="dpad-btn" onclick="movePlayerDPad('n')">N</button>
-<button class="dpad-btn" onclick="movePlayerDPad('ne')">NE</button>
-<button class="dpad-btn" onclick="movePlayerDPad('w')">W</button>
-<button class="dpad-center" onclick="centerOnPlayer()">CENTRO</button>
-<button class="dpad-btn" onclick="movePlayerDPad('e')">E</button>
-<button class="dpad-btn" onclick="movePlayerDPad('sw')">SW</button>
-<button class="dpad-btn" onclick="movePlayerDPad('s')">S</button>
-<button class="dpad-btn" onclick="movePlayerDPad('se')">SE</button>
-</div>
-<div id="qr-trade-panel" class="qr-trade-panel hidden">
-  <div class="panel-header">
-<h2>Chat / Troca QR</h2>
-<button class="btn-dark btn-small" onclick="toggleQRTradePanel()">X</button>
-</div>
-  <div class="qr-trade-tabs">
-    <button class="btn-dark btn-small" onclick="renderQRTradeTab('players')">Jogadores</button>
-    <button class="btn-dark btn-small" onclick="renderQRTradeTab('storage')">Storage QR</button>
-    <button class="btn-dark btn-small" onclick="renderQRTradeTab('market')">Mercado</button>
-    <button class="btn-dark btn-small" onclick="renderQRTradeTab('requests')">Pedidos</button>
-  </div>
-  <div id="qr-trade-content" class="qr-trade-grid">
-</div>
-</div>
-<div class="chat-trade-float">
-<button class="btn-dark" onclick="toggleQRTradePanel()" title="Chat e troca QR">QR</button>
-</div>
-<div id="qr-big-view" class="qr-big-view hidden">
-</div>
-<div id="floating-buttons">
-<button class="float-btn btn-dark" onclick="openPanel('progress')">ðŸ“Š</button>
-<button class="float-btn btn-dark" onclick="openPanel('qrs')">ðŸŽŸï¸</button>
-<button class="float-btn btn-dark" onclick="openPanel('account')">ðŸ‘¤</button>
-</div>
-<div id="side-panel" class="hidden">
-<div class="panel-header">
-<h2 id="side-panel-title">Painel</h2>
-<button onclick="closePanel()">âœ•</button>
-</div>
-<div id="side-panel-content">
-</div>
-</div>
-<div id="ticker">
-</div>
-</section>
-  <div id="flag-modal" class="modal hidden">
-<div class="panel-header">
-<h2 id="flag-modal-title">Bandeira</h2>
-<button onclick="closeFlagModal()">âœ•</button>
-</div>
-<div id="flag-modal-content">
-</div>
-</div>
-  <section id="pr-screen" class="screen">
-<h1 id="pr-name-ui">EMPRESA</h1>
-<div class="pr-tabs">
-<div class="pr-tab active" onclick="switchPRTab('dashboard')">Dashboard</div>
-<div class="pr-tab" onclick="switchPRTab('packs')">Packs</div>
-</div>
-<div id="pr-dashboard" class="pr-content active">
-<div class="dashboard-grid">
-<div class="item-module">
-<h3>Estatisticas</h3>
-<p id="pr-stats">
-</p>
-</div>
-</div>
-</div>
-<div id="pr-packs" class="pr-content">
-<div class="dashboard-grid">
-<div class="item-module">
-<h3>Packs</h3>
-<div id="buy-packages-list">
-</div>
-<button id="btn-buy-package" class="btn" disabled>COMPRAR</button>
-</div>
-<div class="item-module">
-<h3>Packs Ativos</h3>
-<div id="active-packages-list">
-</div>
-</div>
-</div>
-</div>
-<button class="btn btn-dark" onclick="goTo('landing')">SAIR</button>
-</section>
-  <section id="backoffice" class="screen">
-<h1>BACKOFFICE</h1>
-<form id="form-backoffice">
-<input id="bo-email" placeholder="Email">
-<input type="password" id="bo-pass" placeholder="Senha">
-<button class="btn">ENTRAR</button>
-</form>
-<div id="msg-backoffice">
-</div>
-<div id="bo-dashboard" style="display:none">
-<div id="bo-content">
-</div>
-<button class="btn btn-danger" onclick="logoutBackoffice()">SAIR</button>
-</div>
-<button id="bo-back-btn" class="btn btn-dark" onclick="goTo('landing')">VOLTAR</button>
-</section>
-  <script>
 
-    const STATE_KEY='ZAP_FLAGS_V1';
-    function loadState(){try{const s=localStorage.getItem(STATE_KEY);if(s)return JSON.parse(s)}catch{}return{players:[{id:'player_1',name:'big 1',email:'big1@test.com',pass:'123456',energy:100,totalFlags:0,zapFlags:0,prFlags:0,skill:1,vision:5,lastActivityAt:Date.now(),position:{lat:38.7223,lng:-9.1393},qrs:[]}],companies:[{id:'company_1',name:'big 01',nif:'123456781',pass:'123456',packages:[],campaign:{rewardText:'Oferta'}}],backoffice:{email:'ovo@ovo',pass:'258258258'},currentPlayer:null,currentCompany:null}}
-    function saveState(){localStorage.setItem(STATE_KEY,JSON.stringify(STATE))}
-    function seedTestQRCodes(){STATE.players.forEach(p=>{p.qrs=p.qrs||[];p.qrStorage=p.qrStorage||[];for(let i=1;i<=5;i++){const code='TEST-'+p.id.toUpperCase()+'-QR'+i;if(!p.qrs.some(q=>q.code===code)&&!p.qrStorage.some(q=>q.code===code)){p.qrs.push({code,prName:'QR Teste '+i,rewardText:'Cupao de teste do '+p.name+' numero '+i,createdAt:Date.now(),expiresAt:Date.now()+30*864e5,status:'active',storageId:'test_'+p.id+'_'+i,salePrice:String(2*i),tradeText:'Aceito dinheiro ou outro QR'});}}});saveState()}
-    let STATE=loadState();seedTestQRCodes();let map=null,playerMarker=null,flags=[],gpsWatchId=null,offlineMode=false,offlineStepCounter=0,visionCircle=null;const ENERGY_REGEN_INTERVAL_MS=15*60*1000,ENERGY_REGEN_AMOUNT=10;
-    function goTo(id,tab){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');if(id==='auth-screen'&&tab)switchAuthTab(tab);if(id==='game-screen')initGame();if(id==='pr-screen')initPRDashboard()}
-    function switchAuthTab(t){document.querySelectorAll('.auth-tab').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.auth-form').forEach(x=>x.classList.remove('active'));if(t==='player'){document.querySelectorAll('.auth-tab')[0].classList.add('active');document.getElementById('auth-player').classList.add('active')}else{document.querySelectorAll('.auth-tab')[1].classList.add('active');document.getElementById('auth-company').classList.add('active')}}
-    function showPlayerRegister(){document.getElementById('form-player-login').classList.add('hidden');document.getElementById('form-player-register').classList.remove('hidden')}
-    function showPlayerLogin(){document.getElementById('form-player-register').classList.add('hidden');document.getElementById('form-player-login').classList.remove('hidden')}
-    function pName(id){return document.getElementById(id).value.trim()}
-    document.getElementById('form-player-login').onsubmit=e=>{e.preventDefault();const p=STATE.players.find(x=>x.name.toLowerCase()===pName('p-login-name').toLowerCase());if(p&&p.pass===document.getElementById('p-login-pass').value){STATE.currentPlayer=p;applyOfflineEnergyRegen();goTo('game-screen')}else document.getElementById('msg-player').innerHTML='<span class="danger">Login invalido.</span>'};
-    document.getElementById('form-player-register').onsubmit=e=>{e.preventDefault();const p={id:'player_'+Date.now(),name:pName('p-name'),email:pName('p-email'),pass:document.getElementById('p-pass').value,energy:100,totalFlags:0,zapFlags:0,prFlags:0,skill:1,vision:5,lastActivityAt:Date.now(),position:{lat:38.7223,lng:-9.1393},qrs:[]};STATE.players.push(p);seedTestQRCodes();saveState();showPlayerLogin()};
-    document.getElementById('form-company').onsubmit=e=>{e.preventDefault();let c=STATE.companies.find(x=>x.nif===pName('c-nif'));if(!c){c={id:'company_'+Date.now(),name:pName('c-name'),nif:pName('c-nif'),pass:document.getElementById('c-pass').value,packages:[],campaign:{rewardText:'Oferta'}};STATE.companies.push(c)}STATE.currentCompany=c;saveState();goTo('pr-screen')};
-    document.getElementById('form-backoffice').onsubmit=e=>{e.preventDefault();if(pName('bo-email')===STATE.backoffice.email&&document.getElementById('bo-pass').value===STATE.backoffice.pass){document.getElementById('form-backoffice').style.display='none';document.getElementById('bo-dashboard').style.display='block';document.getElementById('bo-content').innerHTML='Jogadores: '+STATE.players.length+' Empresas: '+STATE.companies.length}};
-    function logoutBackoffice(){document.getElementById('form-backoffice').style.display='block';document.getElementById('bo-dashboard').style.display='none'}
-    function avatarHtml(){return '<div class="player-marker"><div class="player-avatar"><div class="avatar-hand left"></div><div class="avatar-head"></div><div class="avatar-hand right"></div></div></div>'}
-    function renderScreenAvatar(){document.getElementById('player-screen-avatar').innerHTML='<div class="vision-aura"></div><div class="collect-aura"></div>'+avatarHtml()}
-    function initGame(){
-      if(!STATE.currentPlayer)return goTo('auth-screen','player');
-      renderScreenAvatar();
-      document.getElementById('game-mode-panel').classList.remove('hidden');
-      document.getElementById('dpad-container').classList.add('hidden');
-      const mapEl=document.getElementById('map');
-      if(mapEl){mapEl.style.display='block';mapEl.style.height='100%';}
-      if(window.map){window.map.remove();window.map=null}
-      if(typeof L!=='undefined'){
-        window.map=L.map('map',{zoomControl:true}).setView([STATE.currentPlayer.position.lat,STATE.currentPlayer.position.lng],16);
-        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'OpenStreetMap'}).addTo(window.map);
-        playerMarker=L.marker([STATE.currentPlayer.position.lat,STATE.currentPlayer.position.lng],{icon:L.divIcon({html:avatarHtml(),iconSize:[48,44],iconAnchor:[24,34]})}).addTo(window.map);
-        visionCircle=L.circle([STATE.currentPlayer.position.lat,STATE.currentPlayer.position.lng],{radius:5,color:'#0f0'}).addTo(window.map);
-        setTimeout(()=>window.map&&window.map.invalidateSize(),250);
-        spawnFlags();
-      }else{
-        document.getElementById('map-status').textContent='Mapa GPS indisponivel. Usa OFFLINE GPS.';
-      }
-      renderTopBar();
-    }
-    function activateHomeMode(){offlineMode=true;document.getElementById('game-mode-panel').classList.add('hidden');document.getElementById('dpad-container').classList.remove('hidden');initDPad();renderTopBar()}
-    function requestGPSMode(){
-      offlineMode=false;
-      document.getElementById('game-mode-panel').classList.add('hidden');
-      document.getElementById('map-status').textContent='GPS: a procurar localizacao...';
-      if(!navigator.geolocation){activateHomeMode();return}
-      if(gpsWatchId!==null)navigator.geolocation.clearWatch(gpsWatchId);
-      gpsWatchId=navigator.geolocation.watchPosition(
-        p=>{document.getElementById('map-status').textContent='GPS ativo';updatePlayerLocation(p.coords.latitude,p.coords.longitude);window.map&&window.map.invalidateSize();},
-        ()=>{document.getElementById('map-status').textContent='GPS falhou. Modo offline ativo.';activateHomeMode();},
-        {enableHighAccuracy:true,maximumAge:5000,timeout:12000}
-      );
-    }
-    function renderTopBar(){const e=Math.floor(STATE.currentPlayer?.energy||0);document.getElementById('energy-fill').style.width=e+'%';document.getElementById('energy-text').textContent='Energia: '+e+'%';document.getElementById('mode-text').textContent=offlineMode?'Modo: Offline GPS':'Modo: Online GPS';document.getElementById('flags-text').textContent='FLAGS '+(STATE.currentPlayer?.totalFlags||0)}
-    function applyOfflineEnergyRegen(){if(!STATE.currentPlayer)return;const now=Date.now(),last=STATE.currentPlayer.lastActivityAt||now,cycles=Math.floor((now-last)/ENERGY_REGEN_INTERVAL_MS);if(cycles>0){STATE.currentPlayer.energy=Math.min(100,STATE.currentPlayer.energy+cycles*ENERGY_REGEN_AMOUNT);STATE.currentPlayer.lastActivityAt=last+cycles*ENERGY_REGEN_INTERVAL_MS;saveState()}}
-    function spendEnergy(a){STATE.currentPlayer.energy=Math.max(0,STATE.currentPlayer.energy-a);STATE.currentPlayer.lastActivityAt=Date.now();saveState();renderTopBar()}
-    function getDistanceMeters(a,b,c,d){const R=6371e3,p1=a*Math.PI/180,p2=c*Math.PI/180,dp=(c-a)*Math.PI/180,dl=(d-b)*Math.PI/180,x=Math.sin(dp/2)**2+Math.cos(p1)*Math.cos(p2)*Math.sin(dl/2)**2;return R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x))}
-    function randomOffset(lat,lng,r){const A=Math.random()*Math.PI*2,D=Math.random()*r;return{lat:lat+(D*Math.cos(A))/111320,lng:lng+(D*Math.sin(A))/(111320*Math.cos(lat*Math.PI/180))}}
-    function spawnFlags(){flags=[];if(!window.map)return;for(let i=0;i<8;i++){const p=randomOffset(STATE.currentPlayer.position.lat,STATE.currentPlayer.position.lng,500),type=i<4?'ZAP':'PR',id=type.toLowerCase()+'_'+i,m=L.marker([p.lat,p.lng],{icon:L.divIcon({className:'flag-marker',html:'<div class="flag-icon flag-'+(type==='ZAP'?'zap':'pr')+'"></div>',iconSize:[24,24]})}).addTo(window.map);m.on('click',()=>openFlagModal(id,type));flags.push({id,type,lat:p.lat,lng:p.lng,marker:m})}}
-    function updatePlayerLocation(lat,lng){STATE.currentPlayer.position={lat,lng};playerMarker?.setLatLng([lat,lng]);visionCircle?.setLatLng([lat,lng]);window.map?.setView([lat,lng],16);updateCollectAura();saveState();renderTopBar()}
-    function updateCollectAura(){const h=document.getElementById('player-screen-avatar');if(!h)return;h.classList.toggle('can-collect',flags.some(f=>getDistanceMeters(STATE.currentPlayer.position.lat,STATE.currentPlayer.position.lng,f.lat,f.lng)<=2.5))}
-    function centerOnPlayer(){window.map?.setView([STATE.currentPlayer.position.lat,STATE.currentPlayer.position.lng],16)}
-    function initDPad(){if(initDPad.ready)return;initDPad.ready=true;makeDraggable(document.getElementById('dpad-container'),'.dpad-drag-handle');document.addEventListener('keydown',e=>{const m={ArrowUp:'n',ArrowDown:'s',ArrowLeft:'w',ArrowRight:'e',w:'n',s:'s',a:'w',d:'e'};if(offlineMode&&m[e.key])movePlayerDPad(m[e.key])})}
-    function makeDraggable(el,sel){const h=el.querySelector(sel);let drag=false,sx=0,sy=0,sl=0,st=0;h.addEventListener('pointerdown',e=>{drag=true;e.preventDefault();const r=el.getBoundingClientRect();el.style.left=r.left+'px';el.style.top=r.top+'px';el.style.right='auto';el.style.bottom='auto';sx=e.clientX;sy=e.clientY;sl=r.left;st=r.top});document.addEventListener('pointermove',e=>{if(!drag)return;e.preventDefault();el.style.left=Math.max(0,Math.min(window.innerWidth-el.offsetWidth,sl+e.clientX-sx))+'px';el.style.top=Math.max(0,Math.min(window.innerHeight-el.offsetHeight,st+e.clientY-sy))+'px'});document.addEventListener('pointerup',()=>drag=false)}
-    function resizeDPad(d){const b=document.getElementById('dpad-container'),c=parseInt(getComputedStyle(b).gridTemplateColumns)||50,n=Math.max(40,Math.min(70,c+d));b.style.gridTemplateColumns=n+'px '+n+'px '+n+'px'}
-    function movePlayerDPad(dir){if(!STATE.currentPlayer||STATE.currentPlayer.energy<=0)return alert('Sem energia!');const lat=STATE.currentPlayer.position.lat,lng=STATE.currentPlayer.position.lng,ls=.5/111320,gs=.5/(111320*Math.cos(lat*Math.PI/180));let nl=lat,ng=lng;if(dir.includes('n'))nl+=ls;if(dir.includes('s'))nl-=ls;if(dir.includes('e'))ng+=gs;if(dir.includes('w'))ng-=gs;offlineStepCounter++;if(offlineStepCounter>=2){offlineStepCounter=0;spendEnergy(1)}updatePlayerLocation(nl,ng)}
-    function openFlagModal(id,type){const f=flags.find(x=>x.id===id),d=getDistanceMeters(STATE.currentPlayer.position.lat,STATE.currentPlayer.position.lng,f.lat,f.lng),can=d<=2.5;document.getElementById('flag-modal-title').textContent=type==='ZAP'?'Bandeira ZAP':'Bandeira PR';document.getElementById('flag-modal-content').innerHTML='<p>Distancia: '+d.toFixed(1)+'m</p><button '+(can?'':'disabled')+' onclick="collectFlag(\''+id+'\')">'+(can?'RECOLHER':'APROXIMA-TE')+'</button>';document.getElementById('flag-modal').classList.remove('hidden')}
-    function closeFlagModal(){document.getElementById('flag-modal').classList.add('hidden')}
-    function collectFlag(id){const f=flags.find(x=>x.id===id);if(!f)return;if(f.type==='ZAP'){STATE.currentPlayer.energy=Math.min(100,STATE.currentPlayer.energy+10);STATE.currentPlayer.zapFlags++}else{STATE.currentPlayer.energy=Math.max(0,STATE.currentPlayer.energy-5);STATE.currentPlayer.prFlags++}STATE.currentPlayer.totalFlags++;f.marker&&window.map?.removeLayer(f.marker);flags=flags.filter(x=>x.id!==id);closeFlagModal();saveState();renderTopBar();updateCollectAura()}
-    function openPanel(t){document.getElementById('side-panel').classList.remove('hidden');document.getElementById('side-panel-title').textContent=t;document.getElementById('side-panel-content').innerHTML='<div class="item-module"><p>Total: '+STATE.currentPlayer.totalFlags+'</p><p>Energia: '+STATE.currentPlayer.energy+'%</p></div>'}
-    function closePanel(){document.getElementById('side-panel').classList.add('hidden')}
-    function switchPRTab(tab){document.querySelectorAll('.pr-content').forEach(x=>x.classList.remove('active'));document.getElementById('pr-'+tab)?.classList.add('active')}
-    function initPRDashboard(){document.getElementById('pr-name-ui').textContent='PAINEL - '+STATE.currentCompany.name;document.getElementById('pr-stats').textContent='Packs: '+STATE.currentCompany.packages.length;const pk=[{n:'Gratuito',p:0,f:1000},{n:'Basico',p:15,f:5000}];document.getElementById('buy-packages-list').innerHTML=pk.map(p=>'<div class="package-item" onclick="this.classList.toggle(\'selected\');document.getElementById(\'btn-buy-package\').disabled=false" data-name="'+p.n+'">'+p.n+' '+p.p+' EUR</div>').join('');document.getElementById('btn-buy-package').onclick=()=>{const s=document.querySelector('#buy-packages-list .selected');if(!s)return;const p=pk.find(x=>x.n===s.dataset.name);STATE.currentCompany.packages.push({...p,flagsLeft:p.f});saveState();initPRDashboard()};document.getElementById('active-packages-list').innerHTML=STATE.currentCompany.packages.map(p=>'<div class="package-item">'+p.n+' - '+p.flagsLeft+'</div>').join('')}
-    function ensureQRTradeState(){if(!STATE.qrTrade)STATE.qrTrade={friendRequests:[],friends:[],market:[],offers:[],messages:[]};STATE.players.forEach(p=>{if(!p.qrStorage)p.qrStorage=[];if(!p.qrs)p.qrs=[]})}
-    function getPlayerById(id){return STATE.players.find(p=>p.id===id)}
-    function areFriends(a,b){ensureQRTradeState();return STATE.qrTrade.friends.some(f=>(f.a===a&&f.b===b)||(f.a===b&&f.b===a))}
-    function toggleQRTradePanel(){ensureQRTradeState();const p=document.getElementById('qr-trade-panel');if(!STATE.currentPlayer){alert('Entra como jogador primeiro.');return}p.classList.toggle('hidden');if(!p.classList.contains('hidden'))renderQRTradeTab('players')}
-    function renderQRTradeTab(tab){ensureQRTradeState();const c=document.getElementById('qr-trade-content');if(!c)return;if(tab==='players')renderQRPlayers(c);if(tab==='storage')renderQRStorage(c);if(tab==='market')renderQRMarket(c);if(tab==='requests')renderQRRequests(c)}
-    function renderQRPlayers(c){const me=STATE.currentPlayer.id;const rows=STATE.players.filter(p=>p.id!==me).map(p=>{const pending=STATE.qrTrade.friendRequests.some(r=>r.from===me&&r.to===p.id&&r.status==='pending');const incoming=STATE.qrTrade.friendRequests.some(r=>r.from===p.id&&r.to===me&&r.status==='pending');const friend=areFriends(me,p.id);let btn='<button class="btn-dark btn-small" onclick="sendFriendRequest(\''+p.id+'\')">Pedir amizade</button>';if(friend)btn='<span class="ok">Amigo</span>';else if(pending)btn='<span class="trade-status">Pedido enviado</span>';else if(incoming)btn='<button class="btn btn-small" onclick="acceptFriendRequest(\''+p.id+'\')">Aceitar</button>';return '<div class="qr-trade-card friend-row"><strong>'+p.name+'</strong><div>'+btn+'</div></div>'}).join('');c.innerHTML='<h3>Jogadores registados</h3>'+(rows||'<p>Sem outros jogadores.</p>')}
-    function sendFriendRequest(to){ensureQRTradeState();const me=STATE.currentPlayer.id;if(to===me||areFriends(me,to))return;if(!STATE.qrTrade.friendRequests.some(r=>r.from===me&&r.to===to&&r.status==='pending'))STATE.qrTrade.friendRequests.push({id:'fr_'+Date.now(),from:me,to,status:'pending',createdAt:Date.now()});saveState();renderQRTradeTab('players')}
-    function acceptFriendRequest(from){ensureQRTradeState();const me=STATE.currentPlayer.id;const r=STATE.qrTrade.friendRequests.find(x=>x.from===from&&x.to===me&&x.status==='pending');if(r)r.status='accepted';if(!areFriends(me,from))STATE.qrTrade.friends.push({a:me,b:from,createdAt:Date.now()});saveState();renderQRTradeTab('requests')}
-    function rejectFriendRequest(from){ensureQRTradeState();const me=STATE.currentPlayer.id;const r=STATE.qrTrade.friendRequests.find(x=>x.from===from&&x.to===me&&x.status==='pending');if(r)r.status='rejected';saveState();renderQRTradeTab('requests')}
-    function renderQRRequests(c){const me=STATE.currentPlayer.id;const incoming=STATE.qrTrade.friendRequests.filter(r=>r.to===me&&r.status==='pending');const offers=STATE.qrTrade.offers.filter(o=>o.to===me&&o.status==='pending');let html='<h3>Pedidos de amizade</h3>';html+=incoming.length?incoming.map(r=>{const p=getPlayerById(r.from);return '<div class="qr-trade-card"><strong>'+(p?p.name:'Jogador')+'</strong><div class="qr-trade-actions"><button class="btn btn-small" onclick="acceptFriendRequest(\''+r.from+'\')">Aceitar</button><button class="btn-danger btn-small" onclick="rejectFriendRequest(\''+r.from+'\')">Recusar</button></div></div>'}).join(''):'<p>Sem pedidos.</p>';html+='<h3>Propostas de QR</h3>';html+=offers.length?offers.map(o=>renderOfferCard(o)).join(''):'<p>Sem propostas.</p>';c.innerHTML=html}
-    function renderQRStorage(c){const me=STATE.currentPlayer;let owned=(me.qrs||[]).concat(me.qrStorage||[]);const options=owned.map((q,i)=>'<option value="'+i+'">'+(q.code||q.prName||'QR')+'</option>').join('');let html='<h3>Storage QR para venda/troca</h3><div class="qr-trade-card"><p>Adiciona ao storage o QR que queres vender ou trocar.</p><div class="qr-store-form"><select id="qr-store-select">'+options+'</select><button class="btn btn-small" onclick="addSelectedQRToStorage()">Adicionar</button></div></div>';html+=(me.qrStorage&&me.qrStorage.length)?me.qrStorage.map((q,i)=>renderStorageQR(q,i)).join(''):'<p>Nenhum QR em storage.</p>';c.innerHTML=html}
-    function addSelectedQRToStorage(){const me=STATE.currentPlayer;const all=(me.qrs||[]).concat(me.qrStorage||[]);const idx=parseInt(document.getElementById('qr-store-select').value);const q=all[idx];if(!q)return;me.qrStorage=me.qrStorage||[];const copy={...q,storageId:q.storageId||('store_'+Date.now()),salePrice:q.salePrice||'',tradeText:q.tradeText||'',forSale:false};if(!me.qrStorage.some(x=>x.storageId===copy.storageId||x.code===copy.code))me.qrStorage.push(copy);saveState();renderQRTradeTab('storage')}
-    function renderStorageQR(q,i){return '<div class="qr-trade-card"><strong>'+escapeQR(q.code||'QR')+'</strong><p>'+(q.rewardText||q.prName||'Sem descricao')+'</p><div class="qr-trade-actions"><button class="btn-dark btn-small" onclick="viewBigQR(\''+STATE.currentPlayer.id+'\',\''+q.storageId+'\')">Ver maior</button><input class="trade-price-input" id="price_'+i+'" placeholder="EUR" value="'+(q.salePrice||'')+'"><input id="trade_'+i+'" placeholder="Aceito troca por..." value="'+(q.tradeText||'')+'"><button class="btn btn-small" onclick="publishQRForSale('+i+')">Publicar</button></div></div>'}
-    function publishQRForSale(i){ensureQRTradeState();const q=STATE.currentPlayer.qrStorage[i];if(!q)return;q.salePrice=document.getElementById('price_'+i).value.trim();q.tradeText=document.getElementById('trade_'+i).value.trim();q.forSale=true;q.ownerId=STATE.currentPlayer.id;q.ownerLocality=STATE.currentPlayer.locality||STATE.currentPlayer.localidade||'Sem localidade';if(!q.marketViews)q.marketViews=0;if(!STATE.qrTrade.market.some(m=>m.storageId===q.storageId))STATE.qrTrade.market.push(q);saveState();renderQRTradeTab('market')}
-    function estimateQRMarketValue(q){const base=parseInt(q.salePrice||0)||5;const age=Math.max(1,Math.floor((Date.now()-(q.createdAt||Date.now()))/864e5)+1);const expiryDays=q.expiresAt?Math.max(1,Math.ceil((q.expiresAt-Date.now())/864e5)):15;const companyBoost=(q.prName&&q.prName!=='ZAP FLAGS')?8:3;const demand=estimateQRDemand(q);return Math.max(1,Math.round(base*10+companyBoost*expiryDays+demand-age))}
-    function estimateQRDemand(q){const sameCompany=STATE.qrTrade.market.filter(x=>(x.prName||'').toLowerCase()===(q.prName||'').toLowerCase()).length;const views=q.marketViews||0;const price=parseInt(q.salePrice||0)||5;return Math.max(5,Math.min(95,Math.round(25+sameCompany*7+views*3-price)))}
-    function filterQRMarket(){renderQRTradeTab('market')}
-    function renderQRMarket(c){
-      const me=STATE.currentPlayer.id;
-      const txt=(document.getElementById('market-search')?.value||'').toLowerCase();
-      const loc=(document.getElementById('market-locality')?.value||'').toLowerCase();
-      let items=STATE.qrTrade.market.filter(q=>q.ownerId!==me&&q.forSale!==false);
-      if(txt)items=items.filter(q=>(q.prName||'').toLowerCase().includes(txt)||(q.code||'').toLowerCase().includes(txt)||(q.rewardText||'').toLowerCase().includes(txt));
-      if(loc)items=items.filter(q=>(q.ownerLocality||getPlayerById(q.ownerId)?.locality||getPlayerById(q.ownerId)?.localidade||'').toLowerCase().includes(loc));
-      let html='<h3>Mercado geral de QR</h3><div class="qr-trade-card"><input id="market-search" placeholder="Procurar por empresa ou codigo QR" value="'+escapeQR(txt)+'" oninput="filterQRMarket()"><input id="market-locality" placeholder="Procurar por localidade" value="'+escapeQR(loc)+'" oninput="filterQRMarket()"><p>Mostra todos os QR disponiveis no mercado.</p></div>';
-      html+=items.length?items.map((q,i)=>{const p=getPlayerById(q.ownerId);const locality=q.ownerLocality||p?.locality||p?.localidade||'Sem localidade';const value=estimateQRMarketValue(q);const demand=estimateQRDemand(q);window.marketItemRefs=window.marketItemRefs||{};window.marketItemRefs[i]=q;return '<div class="qr-trade-card"><strong>'+escapeQR(q.code||'QR')+'</strong><p>Empresa: '+escapeQR(q.prName||'Sem empresa')+'</p><p>Dono: '+(p?escapeQR(p.name):'Jogador')+' | Localidade: '+escapeQR(locality)+'</p><p>Venda: '+(q.salePrice?q.salePrice+' EUR':'sem preco')+' | Valor mercado: '+value+' moedas</p><p>Procura estimada: '+demand+'% | Troca: '+escapeQR(q.tradeText||'nao definida')+'</p><div class="qr-trade-actions"><button class="btn-dark btn-small" onclick="marketView('+i+')">Ver maior</button><button class="btn btn-small" onclick="marketOffer('+i+')">Tenho interesse</button></div></div>'}).join(''):'<p>Sem QR disponiveis com esses filtros.</p>';
-      c.innerHTML=html;
-    }
-    function marketView(i){const q=window.marketItemRefs&&window.marketItemRefs[i];if(q)viewBigQR(q.ownerId,q.storageId)}
-    function marketOffer(i){const q=window.marketItemRefs&&window.marketItemRefs[i];if(q)makeQROffer(q.ownerId,q.storageId)}
-    function makeQROffer(ownerId,storageId){const type=prompt('Tipo de proposta: dinheiro, troca, dinheiro+qr ou qr');if(!type)return;const money=prompt('Valor em dinheiro, se existir:','');const myQr=prompt('Codigo do teu QR para troca, se existir:','');STATE.qrTrade.offers.push({id:'offer_'+Date.now(),from:STATE.currentPlayer.id,to:ownerId,storageId,type,money,myQr,status:'pending',createdAt:Date.now()});saveState();alert('Proposta enviada. A outra parte tem de aceitar.')}
-    function renderOfferCard(o){const from=getPlayerById(o.from);const owner=getPlayerById(o.to);const qr=(owner?.qrStorage||[]).find(q=>q.storageId===o.storageId);return '<div class="qr-trade-card"><strong>Proposta de '+(from?from.name:'Jogador')+'</strong><p>QR pretendido: '+escapeQR(qr?.code||'QR')+'</p><p>Tipo: '+escapeQR(o.type)+' | Dinheiro: '+escapeQR(o.money||'0')+' | QR: '+escapeQR(o.myQr||'nenhum')+'</p><div class="qr-trade-actions"><button class="btn-dark btn-small" onclick="viewBigQR(\''+o.to+'\',\''+o.storageId+'\')">Analisar QR</button><button class="btn btn-small" onclick="acceptQROffer(\''+o.id+'\')">Aceitar troca</button><button class="btn-danger btn-small" onclick="rejectQROffer(\''+o.id+'\')">Recusar</button></div></div>'}
-    function acceptQROffer(id){const o=STATE.qrTrade.offers.find(x=>x.id===id);if(!o||o.status!=='pending')return;const seller=getPlayerById(o.to),buyer=getPlayerById(o.from);const idx=(seller.qrStorage||[]).findIndex(q=>q.storageId===o.storageId);if(idx<0)return alert('QR ja nao esta disponivel.');const sold=seller.qrStorage.splice(idx,1)[0];buyer.qrs=buyer.qrs||[];buyer.qrs.push({...sold,acquiredFrom:seller.name,acquiredAt:Date.now(),forSale:false});if(o.myQr){seller.qrs=seller.qrs||[];seller.qrs.push({code:o.myQr,prName:'Troca recebida',rewardText:'Recebido de '+buyer.name,createdAt:Date.now(),expiresAt:Date.now()+15*864e5,status:'active'})}STATE.qrTrade.market=STATE.qrTrade.market.filter(q=>q.storageId!==o.storageId);o.status='accepted';saveState();alert('Troca/venda aceite. Cada jogador recebeu o combinado.');renderQRTradeTab('requests')}
-    function rejectQROffer(id){const o=STATE.qrTrade.offers.find(x=>x.id===id);if(o)o.status='rejected';saveState();renderQRTradeTab('requests')}
-    function viewBigQR(ownerId,storageId){const p=getPlayerById(ownerId);const q=(p?.qrStorage||[]).find(x=>x.storageId===storageId)||(p?.qrs||[]).find(x=>x.storageId===storageId);if(!q)return;const box=document.getElementById('qr-big-view');box.innerHTML='<div class="qr-big-box"><h2>Analisar QR</h2><p>Dono: '+(p?p.name:'Jogador')+'</p><div class="qr-big-code">'+escapeQR(q.code||'QR')+'</div><img src="https://quickchart.io/qr?text='+encodeURIComponent(q.code||'QR')+'&size=260"><p>'+escapeQR(q.rewardText||q.prName||'Sem descricao')+'</p><p>Preco: '+escapeQR(q.salePrice||'nao definido')+' | Troca: '+escapeQR(q.tradeText||'nao definida')+'</p><button class="btn btn-dark" onclick="closeBigQR()">Fechar</button></div>';box.classList.remove('hidden')}
-    function closeBigQR(){document.getElementById('qr-big-view').classList.add('hidden')}
-    function escapeQR(v){const d=document.createElement('div');d.textContent=v||'';return d.innerHTML}
-    document.getElementById('ticker').textContent='Bem-vindo ao ZAP FLAGS!';console.log('ZAP FLAGS restaurado.');
-  </script>
+    <!-- 🗺️ MAPA -->
+    <div id="map"></div>
+
+    <!-- 🚪 LOGIN -->
+    <div id="login-screen">
+        <div class="login-box">
+            <h1>⚡ ZAP FLAGS PC</h1>
+            <p>Clica para jogar</p>
+            <button class="btn" onclick="startApp('player')">🎮 JOGADOR</button>
+            <button class="btn btn-pr" onclick="startApp('pr')">🏪 LOJISTA (PR)</button>
+        </div>
+    </div>
+
+    <!-- 📊 SIDEBAR JOGADOR -->
+    <div id="sidebar">
+        <h3>🤖 JOGADOR</h3>
+        <div class="stat-row"><span>Bandeiras:</span> <span id="flag-count">0</span></div>
+        <div class="stat-row"><span>QRs Ganhos:</span> <span id="qr-count">0</span></div>
+        <hr style="border-color: #333;">
+        <p style="font-size:0.8rem; color:#888;">Clica no mapa para andar.<br>Clica na bandeira para apanhar.</p>
+    </div>
+
+    <!-- 💼 PAINEL PR -->
+    <div id="pr-panel">
+        <h3 style="color:#ff00ff; margin-top:0;">GERIR CAMPANHAS (PR)</h3>
+        <div id="pr-list"></div>
+        <button class="btn btn-pr" style="margin-top:10px;" onclick="addCampaign()">+ NOVA CAMPANHA</button>
+    </div>
+
+    <!-- 🎁 QR MODAL -->
+    <div id="qr-modal">
+        <h2 id="qr-title">PRÉMIO!</h2>
+        <div id="qr-image"></div>
+        <p>Loja: <b id="qr-pr-name">...</b></p>
+        <button class="btn" onclick="closeQR()">FECHAR</button>
+    </div>
+
+    <!-- SCRIPTS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script>
+        // --- & CONFIGURAÇÃO ---
+        let map, playerMarker;
+        let currentUser = null;
+        let flags = [];
+        let collections = {}; // { 'pr1-red': 2 }
+
+        // Dados dos PRs (Podes editar isto)
+        let prCampaigns = [
+            {
+                id: 1,
+                name: "STARBUCKS LISBOA",
+                radius: 1000, // 1km
+                lots: [
+                    { color: 'red', discount: '50%', target: 3, url: 'https://starbucks.com' },
+                    { color: 'blue', discount: '10%', target: 5, url: 'https://starbucks.com' },
+                    { color: 'grey', discount: 'Neutro', target: 0, url: 'https://starbucks.com' }
+                ]
+            },
+            {
+                id: 2,
+                name: "NIKE ALGÉS",
+                radius: 500,
+                lots: [
+                    { color: 'orange', discount: '20%', target: 2, url: 'https://nike.com' }
+                ]
+            }
+        ];
+
+        // --- 🚀 START ---
+        function startApp(role) {
+            currentUser = role;
+            document.getElementById('login-screen').style.display = 'none';
+            
+            initMap();
+
+            if (role === 'player') {
+                document.getElementById('sidebar').style.display = 'block';
+                loadCollections();
+                spawnAllFlags();
+            } else {
+                document.getElementById('pr-panel').style.display = 'block';
+                renderPRPanel();
+            }
+        }
+
+        // --- 🗺️ MAPA & MOVIMENTO (PC) ---
+        function initMap() {
+            map = L.map('map').setView([38.7223, -9.1393], 13);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+            // MOVIMENTO: Clicar no mapa move o jogador
+            map.on('click', function(e) {
+                movePlayer(e.latlng.lat, e.latlng.lng);
+            });
+        }
+
+        function movePlayer(lat, lon) {
+            if (!playerMarker) {
+                playerMarker = L.marker([lat, lon], { 
+                    icon: L.divIcon({ className: 'player-dot', html: '🤖', iconSize: [30,30] }) 
+                }).addTo(map);
+            } else {
+                playerMarker.setLatLng([lat, lon]);
+                map.panTo([lat, lon]);
+            }
+            checkNearbyFlags(lat, lon);
+        }
+
+        // --- 🚩 SISTEMA DE BANDEIRAS ---
+        function spawnAllFlags() {
+            flags.forEach(f => map.removeLayer(f.marker));
+            flags = [];
+            prCampaigns.forEach(pr => {
+                pr.lots.forEach(lot => {
+                    for(let i=0; i<3; i++) createFlag(pr, lot);
+                });
+            });
+        }
+
+        function createFlag(pr, lot) {
+            const angle = Math.random() * Math.PI * 2;
+            const dist = Math.random() * pr.radius;
+            const lat = 38.7223 + (Math.random() * 0.1 - 0.05);
+            const lon = -9.1393 + (Math.random() * 0.1 - 0.05);
+
+            const flag = { id: Date.now()+Math.random(), prId: pr.id, prName: pr.name, color: lot.color, discount: lot.discount, target: lot.target, url: lot.url, lat: lat, lon: lon, marker: null };
+            
+            const iconHtml = `<div class="flag-icon flag-${lot.color}"></div>`;
+            flag.marker = L.marker([lat, lon], { icon: L.divIcon({ className: 'flag', html: iconHtml, iconSize: [30,40] }) }).addTo(map);
+            
+            // CLIQUE NA BANDEIRA (PC)
+            flag.marker.on('click', () => captureFlag(flag));
+            flags.push(flag);
+        }
+
+        function checkNearbyFlags(pLat, pLon) {
+            // Auto-captura se clicares MUITO perto (ajuda o jogador)
+            flags.forEach(flag => {
+                if (getDistance(pLat, pLon, flag.lat, flag.lon) < 10) {
+                    captureFlag(flag);
+                }
+            });
+        }
+
+        function captureFlag(flag) {
+            // 1. Abre Publicidade (Nova Aba)
+            window.open(flag.url, '_blank');
+
+            // 2. Atualiza Contagem
+            const key = `${flag.prId}-${flag.color}`;
+            if (!collections[key]) collections[key] = 0;
+            collections[key]++;
+            saveCollections();
+            updateHUD();
+
+            // 3. Remove Bandeira
+            map.removeLayer(flag.marker);
+            flags = flags.filter(f => f.id !== flag.id);
+
+            // 4. Verifica QR
+            if (flag.target > 0 && collections[key] >= flag.target) {
+                generateQR(flag.prName, flag.discount);
+                collections[key] = 0; // Reseta
+                saveCollections();
+            }
+        }
+
+        // --- 🎁 QR & UI ---
+        function generateQR(prName, discount) {
+            document.getElementById('qr-title').innerText = `PARABÉNS! ${discount} DESCONTO`;
+            document.getElementById('qr-pr-name').innerText = prName;
+            document.getElementById('qr-image').innerHTML = "";
+            new QRCode(document.getElementById('qr-image'), { text: `ZAP_${prName}_${discount}_${Date.now()}`, width: 150, height: 150 });
+            document.getElementById('qr-modal').style.display = 'block';
+            document.getElementById('qr-count').innerText = parseInt(document.getElementById('qr-count').innerText) + 1;
+        }
+
+        function closeQR() { document.getElementById('qr-modal').style.display = 'none'; }
+        function updateHUD() { 
+            let total = 0; for(let k in collections) total += collections[k];
+            document.getElementById('flag-count').innerText = total;
+        }
+        function saveCollections() { localStorage.setItem('zap_pc_collections', JSON.stringify(collections)); }
+        function loadCollections() { 
+            const saved = localStorage.getItem('zap_pc_collections'); 
+            if (saved) collections = JSON.parse(saved); 
+            updateHUD();
+        }
+
+        // --- 💼 LÓGICA PR ---
+        function renderPRPanel() {
+            const list = document.getElementById('pr-list');
+            list.innerHTML = '';
+            prCampaigns.forEach((pr, i) => {
+                list.innerHTML += `
+                    <div class="pack-card">
+                        <strong>${pr.name}</strong><br>
+                        <small>Raio: ${pr.radius}m</small><br>
+                        <button onclick="editRadius(${i})" style="font-size:0.7rem">Editar Raio</button>
+                    </div>`;
+            });
+        }
+        function addCampaign() {
+            const name = prompt("Nome da Loja:");
+            if(name) prCampaigns.push({ id: Date.now(), name: name, radius: 500, lots: [{ color: 'red', discount: '10%', target: 2, url: '#' }] });
+            renderPRPanel();
+            if(currentUser==='player') spawnAllFlags();
+        }
+        function editRadius(index) {
+            const r = prompt("Novo raio em metros:", prCampaigns[index].radius);
+            if(r) { prCampaigns[index].radius = parseInt(r); renderPRPanel(); if(currentUser==='player') spawnAllFlags(); }
+        }
+        function getDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371; 
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return R * c * 1000;
+        }
+    </script>
 </body>
 </html>
-
-
