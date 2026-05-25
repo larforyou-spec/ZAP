@@ -87,6 +87,16 @@ html,body{width:100%;height:100%;margin:0;overflow:hidden}
 /* DEAL QR PREVIEW */
 #deal-selected-preview{margin-top:8px;border:2px solid #0f0;border-radius:12px;padding:8px;background:#050;text-align:center;color:#fff}
 #deal-selected-preview img{max-width:170px;width:80%;background:#fff;border-radius:8px;padding:6px}
+/* DEAL MONEY PREVIEW */
+.money-chip{display:inline-block;border:1px solid #fc0;border-radius:999px;padding:6px 10px;margin:3px;background:#3b2b00;color:#fff;cursor:grab;font-weight:900}.money-preview{margin-top:8px;border:2px solid #fc0;border-radius:12px;padding:8px;background:#3b2b00;color:#fff;text-align:center}
+/* MONEY DRAWER */
+.money-drawer{border:2px solid #fc0;border-radius:12px;padding:8px;background:#1f1600;color:#fff;margin-top:8px}.money-out-chip{display:inline-block;margin-top:8px;padding:10px 14px;border-radius:999px;background:#6b4a00;border:2px solid #fc0;color:#fff;font-weight:900;cursor:grab;box-shadow:0 0 10px #000}.money-drawer input{max-width:120px}
+/* DEAL BASKET */
+#deal-basket{border:2px solid #0f0;border-radius:12px;background:#041604;color:#fff;padding:8px;margin-top:8px}.basket-row{display:flex;justify-content:space-between;gap:6px;border-bottom:1px solid rgba(0,255,0,.25);padding:4px 0}.basket-total{font-size:16px;font-weight:900;color:#fc0;margin-top:6px}
+/* SIMPLE DEAL UI */
+.simple-deal-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.simple-bag,.simple-box{border:2px solid #0f0;border-radius:12px;background:#061406;color:#fff;padding:8px;max-height:300px;overflow:auto}.simple-item{border:1px solid rgba(0,255,0,.6);border-radius:8px;padding:6px;margin:5px 0;background:#101;cursor:pointer}.simple-money{border-color:#fc0;background:#261d00}.simple-accepted{color:#0f0;font-weight:900}.simple-pending{color:#fc0;font-weight:900}
+/* LIVE STORAGE DEAL */
+.live-deal-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.live-box,.live-storage{border:2px solid #0f0;border-radius:12px;background:#061406;color:#fff;padding:8px;max-height:320px;overflow:auto}.live-box.friend{border-color:#0cf}.live-chip{border:1px solid rgba(0,255,0,.7);border-radius:8px;padding:7px;margin:5px 0;background:#101;cursor:pointer}.live-money{border-color:#fc0;background:#2b2000}.live-hand{display:inline-block;padding:9px 13px;border-radius:999px;background:#6b4a00;border:2px solid #fc0;color:#fff;font-weight:900;cursor:grab;margin-top:6px}.live-wait{color:#fc0;font-weight:900}.live-ok{color:#0f0;font-weight:900}
 </style>
 </head>
 <body>
@@ -182,6 +192,7 @@ html,body{width:100%;height:100%;margin:0;overflow:hidden}
 <button class="float-btn btn-dark" onclick="downloadOfflineDemo()" title="Baixar Offline">📥</button>
 <button class="float-btn btn-dark" onclick="drainEnergyDemo()" title="Esgotar Energia">⚡</button>
 <button class="float-btn btn-dark" onclick="maxStatsDemo()" title="Max Stats">🔋</button>
+<button class="float-btn btn-dark" onclick="addTestCoinLot()" title="Lote 100 moedas">💰</button>
 </div>
 <div id="side-panel" class="hidden">
 <div class="panel-header">
@@ -256,6 +267,9 @@ html,body{width:100%;height:100%;margin:0;overflow:hidden}
     function loadState(){try{const s=localStorage.getItem(STATE_KEY);if(s)return JSON.parse(s)}catch{}return{players:[{id:'player_1',name:'big 1',email:'big1@test.com',pass:'123456',energy:100,totalFlags:0,zapFlags:0,prFlags:0,skill:1,vision:5,lastActivityAt:Date.now(),position:{lat:38.7223,lng:-9.1393},qrs:[]}],companies:[{id:'company_1',name:'big 01',nif:'123456781',pass:'123456',packages:[],campaign:{rewardText:'Oferta'}}],backoffice:{email:'ovo@ovo',pass:'258258258'},currentPlayer:null,currentCompany:null}}
     function saveState(){localStorage.setItem(STATE_KEY,JSON.stringify(STATE))}
     function seedTestQRCodes(){STATE.players.forEach(p=>{p.qrs=p.qrs||[];p.qrStorage=p.qrStorage||[];for(let i=1;i<=5;i++){const code='TEST-'+p.id.toUpperCase()+'-QR'+i;if(!p.qrs.some(q=>q.code===code)&&!p.qrStorage.some(q=>q.code===code)){p.qrs.push({code,prName:'QR Teste '+i,rewardText:'Cupao de teste do '+p.name+' numero '+i,createdAt:Date.now(),expiresAt:Date.now()+30*864e5,status:'active',storageId:'test_'+p.id+'_'+i,salePrice:String(2*i),tradeText:'Aceito dinheiro ou outro QR'});}}});saveState()}
+    let currentDealBasket={qrs:[],money:0};
+    let simpleDealState={friendId:null,items:[],money:0,meAccepted:false,friendAccepted:false};
+    let liveStorageDeal={friendId:null,requested:false,accepted:false,myItems:[],myMoney:0,friendItems:[],friendMoney:0,myOk:false,friendOk:false};
     let STATE=loadState();seedTestQRCodes();let map=null,playerMarker=null,flags=[],gpsWatchId=null,offlineMode=false,offlineStepCounter=0,visionCircle=null,mapLoadedOnce=false,mapShiftX=0,mapShiftY=0;const ENERGY_REGEN_INTERVAL_MS=15*60*1000,ENERGY_REGEN_AMOUNT=10;
     function goTo(id,tab){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');if(id==='auth-screen'&&tab)switchAuthTab(tab);if(id==='game-screen')initGame();if(id==='pr-screen')initPRDashboard()}
     function switchAuthTab(t){document.querySelectorAll('.auth-tab').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.auth-form').forEach(x=>x.classList.remove('active'));if(t==='player'){document.querySelectorAll('.auth-tab')[0].classList.add('active');document.getElementById('auth-player').classList.add('active')}else{document.querySelectorAll('.auth-tab')[1].classList.add('active');document.getElementById('auth-company').classList.add('active')}}
@@ -364,6 +378,9 @@ html,body{width:100%;height:100%;margin:0;overflow:hidden}
     }
 
 
+
+    function addTestCoinLot(){if(!STATE.currentPlayer)return;STATE.currentPlayer.coins=(STATE.currentPlayer.coins||0)+100;STATE.currentPlayer.testCoinLot=100;saveState();renderTopBar();alert('Lote de teste adicionado: 100 moedas')}
+
     function downloadOfflineDemo(){alert('📥 Modo offline preparado para simulação.')}
     function drainEnergyDemo(){if(!STATE.currentPlayer)return;STATE.currentPlayer.energy=0;saveState();renderTopBar();showTiredNote()}
     function maxStatsDemo(){if(!STATE.currentPlayer)return;STATE.currentPlayer.energy=100;STATE.currentPlayer.hunger=100;STATE.currentPlayer.mood=100;STATE.currentPlayer.coins=Math.max(STATE.currentPlayer.coins||0,150);saveState();renderTopBar()}
@@ -453,7 +470,14 @@ html,body{width:100%;height:100%;margin:0;overflow:hidden}
       STATE.currentPlayer.totalFlags++;f.marker&&window.map?.removeLayer(f.marker);flags=flags.filter(x=>x.id!==id);closeFlagModal();saveState();renderTopBar();updateCollectAura()
     }
 
-    function openPanel(t){document.getElementById('side-panel').classList.remove('hidden');document.getElementById('side-panel-title').textContent=t;document.getElementById('side-panel-content').innerHTML='<div class="item-module"><p>Total: '+STATE.currentPlayer.totalFlags+'</p><p>Energia: '+STATE.currentPlayer.energy+'%</p></div>'}
+    function openPanel(t){
+      document.getElementById('side-panel').classList.remove('hidden');
+      document.getElementById('side-panel-title').textContent=t;
+      let html='<div class="item-module"><p>Total: '+STATE.currentPlayer.totalFlags+'</p><p>Energia: '+STATE.currentPlayer.energy+'%</p><p>Porta-moedas: 🪙 '+(STATE.currentPlayer.coins||0)+'</p></div>';
+      if(t==='account')html+='<div class="item-module"><h3>Porta-moedas do avatar</h3><p>As moedas ganhas, compradas ou recebidas em vendas/trocas ficam guardadas aqui.</p><div class="qr-big-code">🪙 '+(STATE.currentPlayer.coins||0)+'</div></div>';
+      document.getElementById('side-panel-content').innerHTML=html;
+    }
+
     function closePanel(){document.getElementById('side-panel').classList.add('hidden')}
     function switchPRTab(tab){document.querySelectorAll('.pr-content').forEach(x=>x.classList.remove('active'));document.getElementById('pr-'+tab)?.classList.add('active')}
     function initPRDashboard(){document.getElementById('pr-name-ui').textContent='PAINEL - '+STATE.currentCompany.name;document.getElementById('pr-stats').textContent='Packs: '+STATE.currentCompany.packages.length;const pk=[{n:'Gratuito',p:0,f:1000},{n:'Basico',p:15,f:5000}];document.getElementById('buy-packages-list').innerHTML=pk.map(p=>'<div class="package-item" onclick="this.classList.toggle(\'selected\');document.getElementById(\'btn-buy-package\').disabled=false" data-name="'+p.n+'">'+p.n+' '+p.p+' EUR</div>').join('');document.getElementById('btn-buy-package').onclick=()=>{const s=document.querySelector('#buy-packages-list .selected');if(!s)return;const p=pk.find(x=>x.n===s.dataset.name);STATE.currentCompany.packages.push({...p,flagsLeft:p.f});saveState();initPRDashboard()};document.getElementById('active-packages-list').innerHTML=STATE.currentCompany.packages.map(p=>'<div class="package-item">'+p.n+' - '+p.flagsLeft+'</div>').join('')}
@@ -466,20 +490,22 @@ html,body{width:100%;height:100%;margin:0;overflow:hidden}
 
     function seedTradeDemo(){
       if(!STATE.players.some(p=>p.id==='demo_friend')){
-        STATE.players.push({id:'demo_friend',name:'Avatar QR Simulado',email:'demo@qr.test',pass:'123456',energy:100,totalFlags:0,zapFlags:0,prFlags:0,skill:1,vision:5,lastActivityAt:Date.now(),position:{lat:38.72231,lng:-9.13931},coins:150,qrs:[
+        STATE.players.push({id:'demo_friend',name:'Avatar QR Simulado',email:'demo@qr.test',pass:'123456',energy:100,totalFlags:0,zapFlags:0,prFlags:0,skill:1,vision:5,lastActivityAt:Date.now(),position:{lat:38.72231,lng:-9.13931},coins:100,qrs:[
           {code:'DEMO-AMIGO-QR1',prName:'Café Demo',rewardText:'10% desconto demo',createdAt:Date.now(),expiresAt:Date.now()+30*864e5,status:'active'},
           {code:'DEMO-AMIGO-QR2',prName:'Loja Demo',rewardText:'Oferta demo',createdAt:Date.now(),expiresAt:Date.now()+30*864e5,status:'active'}
-        ],qrStorage:[{code:'DEMO-AMIGO-VENDA',storageId:'demo_friend_sale',ownerId:'demo_friend',ownerName:'Avatar QR Simulado',prName:'Mercado Demo',rewardText:'QR à venda demo',createdAt:Date.now(),expiresAt:Date.now()+30*864e5,status:'active',forSale:true,salePrice:'25',tradeText:'Aceito moedas ou QR'}]});
+        ],qrStorage:[{code:'DEMO-AMIGO-VENDA',storageId:'demo_friend_sale',ownerId:'demo_friend',ownerName:'Avatar QR Simulado',prName:'Mercado Demo',rewardText:'QR à venda demo',createdAt:Date.now(),expiresAt:Date.now()+30*864e5,status:'active',forSale:true,salePrice:'25',tradeText:'Aceito moedas ou QR'}],premiumFlags:[]});
       }
+      const demo=STATE.players.find(p=>p.id==='demo_friend');if(demo&&typeof demo.coins!=='number')demo.coins=100;
       if(STATE.currentPlayer){
-        if(typeof STATE.currentPlayer.coins!=='number')STATE.currentPlayer.coins=200;
+        if(typeof STATE.currentPlayer.coins!=='number')STATE.currentPlayer.coins=100;
+        STATE.currentPlayer.testCoinLot=100;
         STATE.currentPlayer.qrs=STATE.currentPlayer.qrs||[];
         if(!STATE.currentPlayer.qrs.some(q=>q.code==='MEU-QR-DEMO-TROCA'))STATE.currentPlayer.qrs.push({code:'MEU-QR-DEMO-TROCA',prName:'Meu QR Demo',rewardText:'QR para simular troca',createdAt:Date.now(),expiresAt:Date.now()+30*864e5,status:'active'});
         if(!areFriends(STATE.currentPlayer.id,'demo_friend'))STATE.qrTrade.friends.push({a:STATE.currentPlayer.id,b:'demo_friend',createdAt:Date.now()});
-        const demo=STATE.players.find(p=>p.id==='demo_friend');
         if(demo&&!STATE.qrTrade.market.some(m=>m.storageId==='demo_friend_sale'))STATE.qrTrade.market.push({...demo.qrStorage[0]});
       }
     }
+
 
     function getPlayerById(id){return STATE.players.find(p=>p.id===id)}
     function areFriends(a,b){return !!(STATE.qrTrade&&STATE.qrTrade.friends&&STATE.qrTrade.friends.some(f=>(f.a===a&&f.b===b)||(f.a===b&&f.b===a)))}
@@ -559,22 +585,27 @@ html,body{width:100%;height:100%;margin:0;overflow:hidden}
     function makeQROffer(ownerId,storageId){openMarketTradeOfferByData(ownerId,storageId)}
 
     function getMarketQRRef(i){return window.marketItemRefs&&window.marketItemRefs[i]}
-    function buyMarketQR(i){
-      ensureQRTradeState();
+    function buyMarketQR(i){openMarketStorageDeal(i)}
+
+    function openMarketTradeOffer(i){openMarketStorageDeal(i)}
+
+    function openMarketStorageDeal(i){
+      if(!STATE.currentPlayer)return alert('Comprador nao encontrado. Entra como jogador primeiro.');
       const q=getMarketQRRef(i);if(!q)return alert('QR nao encontrado.');
-      const buyer=STATE.currentPlayer,seller=getPlayerById(q.ownerId);if(!seller)return alert('Vendedor nao encontrado.');
+      const seller=getPlayerById(q.ownerId);if(!seller)return alert('Vendedor nao encontrado.');
+      liveStorageDeal={friendId:q.ownerId,requested:true,accepted:true,myItems:[],myMoney:0,friendItems:[q],friendMoney:0,myOk:false,friendOk:false,marketQr:q};
       const price=parseInt(q.salePrice||0,10)||estimateQRMarketValue(q);
-      if((buyer.coins||0)<price)return alert('Nao tens moedas suficientes.');
-      const idx=(seller.qrStorage||[]).findIndex(x=>x.storageId===q.storageId);
-      if(idx<0)return alert('Este QR ja nao esta disponivel.');
-      const sold=seller.qrStorage.splice(idx,1)[0];
-      buyer.coins=(buyer.coins||0)-price;seller.coins=(seller.coins||0)+price;
-      buyer.qrs=buyer.qrs||[];buyer.qrs.push({...sold,ownerId:buyer.id,forSale:false,acquiredFrom:seller.name,acquiredAt:Date.now()});
-      STATE.qrTrade.market=STATE.qrTrade.market.filter(x=>x.storageId!==q.storageId);
-      STATE.qrTrade.messages.push({id:'msg_'+Date.now(),from:buyer.id,to:seller.id,text:'Comprei automaticamente o teu QR '+(sold.code||'QR')+' por '+price+' moedas.',read:false,createdAt:Date.now()});
-      saveState();renderTopBar();alert('Compra concluida. Recebeste o QR e o vendedor recebeu as moedas.');renderQRTradeTab('market');
+      const box=document.getElementById('qr-big-view');
+      box.classList.remove('friend-dialog-open');
+      box.innerHTML='<div class="qr-big-box"><h2>Comprar / propor ao vendedor</h2><p><b>Comprador:</b> '+escapeQR(STATE.currentPlayer.name||'Jogador')+'</p><p><b>Vendedor:</b> '+escapeQR(seller.name)+'</p><p><b>QR:</b> '+escapeQR(q.code||'QR')+'</p><p><b>Valor pedido:</b> '+price+' moedas</p><div class="qr-big-code">'+escapeQR(q.code||'QR')+'</div><img src="https://quickchart.io/qr?text='+encodeURIComponent(q.code||'QR')+'&size=240"><p>'+escapeQR(q.rewardText||q.prName||'Sem descricao')+'</p><div class="qr-trade-actions"><button class="btn btn-small" onclick="openSellerStorageForMarket()">Abrir storage e propor QR/moedas</button><button class="btn-dark btn-small" onclick="closeBigQR()">Fechar</button></div></div>';
+      box.classList.remove('hidden');
     }
-    function openMarketTradeOffer(i){const q=getMarketQRRef(i);if(q)openMarketTradeOfferByData(q.ownerId,q.storageId)}
+
+    function openSellerStorageForMarket(){
+      document.getElementById('qr-big-view').classList.add('hidden');
+      renderLiveStorageDeal();
+    }
+
     function openMarketTradeOfferByData(ownerId,storageId){
       ensureQRTradeState();
       const seller=getPlayerById(ownerId);const q=(seller?.qrStorage||[]).find(x=>x.storageId===storageId);if(!seller||!q)return alert('QR nao encontrado.');
@@ -599,7 +630,13 @@ html,body{width:100%;height:100%;margin:0;overflow:hidden}
       saveState();closeBigQR();alert('Proposta enviada ao vendedor. Tambem foi enviado pedido de amizade se ainda nao eram amigos.');renderQRTradeTab('market');
     }
 
-    function renderDealOfferCard(o){const from=getPlayerById(o.from);return '<div class="qr-trade-card"><strong>Proposta de acordo de '+(from?escapeQR(from.name):'Jogador')+'</strong><p>Oferece QR: '+escapeQR(o.myQr||'nenhum')+' | Moedas: '+escapeQR(o.myMoney||'0')+'</p><p>Pede QR: '+escapeQR(o.friendQr||'nenhum')+' | Moedas: '+escapeQR(o.friendMoney||'0')+'</p><div class="qr-trade-actions"><button class="btn btn-small" onclick="acceptDealOffer(\''+o.id+'\')">Aceitar acordo</button><button class="btn-danger btn-small" onclick="rejectQROffer(\''+o.id+'\')">Recusar</button></div></div>'}
+    function renderDealOfferCard(o){
+      const from=getPlayerById(o.from);
+      const qrs=o.myQrs||((o.myQr||'').split(',').filter(Boolean));
+      return '<div class="qr-trade-card"><strong>Proposta de acordo de '+(from?escapeQR(from.name):'Jogador')+'</strong><p>Oferece QRs: '+(qrs.length?qrs.map(escapeQR).join(', '):'nenhum')+'</p><p>Moedas oferecidas: '+escapeQR(o.myMoney||'0')+'</p><p>Pede QR: '+escapeQR(o.friendQr||'nenhum')+' | Moedas: '+escapeQR(o.friendMoney||'0')+'</p><div class="qr-trade-actions"><button class="btn btn-small" onclick="acceptDealOffer(&quot;'+o.id+'&quot;)">Aceitar acordo</button><button class="btn-danger btn-small" onclick="rejectQROffer(&quot;'+o.id+'&quot;)">Recusar</button></div></div>';
+    }
+
+
     function renderOfferCard(o){
       const from=getPlayerById(o.from);
       const owner=getPlayerById(o.to);
@@ -645,18 +682,95 @@ html,body{width:100%;height:100%;margin:0;overflow:hidden}
     function sendFriendMessage(friendId){ensureQRTradeState();const t=document.getElementById('friend-msg-text').value.trim();if(!t)return;const friend=getPlayerById(friendId);STATE.qrTrade.messages.push({id:'msg_'+Date.now(),from:STATE.currentPlayer.id,to:friendId,text:t,read:false,createdAt:Date.now()});saveState();alert('Mensagem enviada para '+(friend?friend.name:'amigo'));renderFriendDialog(friendId)}
     function openDealWindow(friendId){
       renderFriendDialog(friendId);
-      const friend=getPlayerById(friendId);
-      const myQrs=getNegotiableItems(STATE.currentPlayer);
-      const friendQrs=getNegotiableItems(friend||{});
-      const myOptions=myQrs.map(q=>'<option value="'+escapeQR(q.code)+'">'+escapeQR(q.code||q.prName||'QR')+'</option>').join('');
-      const friendOptions=friendQrs.map(q=>'<option value="'+escapeQR(q.code)+'">'+escapeQR(q.code||q.prName||'QR')+'</option>').join('');
-      const pool=myQrs.map(q=>'<div class="deal-qr-chip" draggable="true" ondragstart="event.dataTransfer.setData(&quot;text/plain&quot;,&quot;'+escapeQR(q.code)+'&quot;)" onclick="selectDealQR(&quot;'+escapeQR(q.code)+'&quot;)"><b>'+escapeQR(q.code||'QR')+'</b><br>'+escapeQR(q.itemKind||'QR')+' · '+escapeQR(q.prName||'Sem empresa')+'</div>').join('')||'<p>Sem QRs disponiveis.</p>';
+      liveStorageDeal={friendId,requested:true,accepted:false,myItems:[],myMoney:0,friendItems:[],friendMoney:0,myOk:false,friendOk:false};
+      renderLiveStorageRequest();
+    }
+
+
+
+
+
+
+
+
+
+    function addDealQR(code){if(!code)return;if(!currentDealBasket.qrs.includes(code))currentDealBasket.qrs.push(code);renderDealBasket()}
+    function addDealMoney(v){v=parseInt(v||0,10)||0;if(v<=0)return;if(currentDealBasket.money+v>(STATE.currentPlayer.coins||0))return alert('Nao tens moedas suficientes.');currentDealBasket.money+=v;renderDealBasket()}
+    function clearDealBasket(){currentDealBasket={qrs:[],money:0};renderDealBasket()}
+    function removeDealQR(code){currentDealBasket.qrs=currentDealBasket.qrs.filter(q=>q!==code);renderDealBasket()}
+    function renderDealBasket(){const b=document.getElementById('deal-basket');if(!b)return;const rows=currentDealBasket.qrs.map(q=>'<div class="basket-row"><span>QR: '+escapeQR(q)+'</span><button class="btn-danger btn-small" onclick="removeDealQR(&quot;'+escapeQR(q)+'&quot;)">X</button></div>').join('');b.innerHTML='<h3>Lista na caixa de troca</h3>'+(rows||'<p>Sem QRs na caixa.</p>')+'<div class="basket-total">Moedas: 🪙 '+currentDealBasket.money+'</div>'}
+
+    function renderLiveStorageRequest(){
+      const friend=getPlayerById(liveStorageDeal.friendId);const box=document.getElementById('deal-overlay');
+      box.innerHTML='<div class="qr-big-box"><h2>Abrir storage para negociar</h2><p>Tu pediste para abrir o storage com '+escapeQR(friend?friend.name:'amigo')+'.</p><p>A outra parte tem de aceitar abrir a sua caixa. Isso significa que está interessada em negociar.</p><div class="qr-trade-actions"><button class="btn btn-small" onclick="acceptOpenFriendStorage()">Simular amigo aceita abrir storage</button><button class="btn-dark btn-small" onclick="closeDealOverlay()">Cancelar</button></div></div>';
+      box.classList.remove('hidden');
+    }
+    function acceptOpenFriendStorage(){liveStorageDeal.accepted=true;renderLiveStorageDeal()}
+    function renderLiveStorageDeal(){
+      const friend=getPlayerById(liveStorageDeal.friendId);const myBag=getNegotiableItems(STATE.currentPlayer);const friendBag=getNegotiableItems(friend||{});
+      const myStorage=myBag.map((q,i)=>'<div class="live-chip" draggable="true" ondragstart="event.dataTransfer.setData(&quot;text/liveqr&quot;,&quot;'+i+'&quot;)" onclick="addLiveMyQR('+i+')"><b>'+escapeQR(q.code||'ITEM')+'</b><br>'+escapeQR(q.itemKind||'QR')+' · '+escapeQR(q.prName||'Sem empresa')+'</div>').join('')||'<p>Sem QRs/bens.</p>';
+      const friendStorage=friendBag.map((q,i)=>'<div class="live-chip" onclick="analyzeExternalDealItem(&quot;friendBag&quot;,'+i+')"><b>'+escapeQR(q.code||'ITEM')+'</b><br>'+escapeQR(q.rewardText||q.prName||'Sem descricao')+'</div>').join('')||'<p>Vendedor sem outros QRs visiveis.</p>';
+      const myList=liveStorageDeal.myItems.map((q,i)=>'<div class="live-chip" onclick="analyzeExternalDealItem(&quot;my&quot;,'+i+')"><b>'+escapeQR(q.code||'ITEM')+'</b><br>'+escapeQR(q.rewardText||q.prName||'Sem descricao')+' <button class="btn-danger btn-small" onclick="event.stopPropagation();removeLiveMyItem('+i+')">X</button></div>').join('')||'<p>A tua caixa está vazia.</p>';
+      const friendList=liveStorageDeal.friendItems.map((q,i)=>'<div class="live-chip" onclick="analyzeExternalDealItem(&quot;friend&quot;,'+i+')"><b>'+escapeQR(q.code||'ITEM')+'</b><br>'+escapeQR(q.rewardText||q.prName||'Sem descricao')+'</div>').join('')||'<p>Caixa do vendedor vazia.</p>';
+      const wanted=liveStorageDeal.marketQr?('<p><b>QR pretendido:</b> '+escapeQR(liveStorageDeal.marketQr.code||'QR')+' · <b>Preço:</b> '+(parseInt(liveStorageDeal.marketQr.salePrice||0,10)||estimateQRMarketValue(liveStorageDeal.marketQr))+' moedas</p>'):'';
       const box=document.getElementById('deal-overlay');
-      box.innerHTML='<div class="qr-big-box"><h2>Venda / Troca com '+escapeQR(friend?friend.name:'Amigo')+'</h2><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;text-align:left"><div class="qr-trade-card"><h3>A tua oferta</h3><div class="deal-drop" ondragover="event.preventDefault()" ondrop="selectDealQR(event.dataTransfer.getData(&quot;text/plain&quot;))">Arrasta o teu QR para aqui</div><select id="deal-my-qr" onchange="selectDealQR(this.value)"><option value="">Sem QR</option>'+myOptions+'</select><div id="deal-selected-preview" class="hidden"></div><input id="deal-my-money" placeholder="Moedas que ofereces"></div><div class="qr-trade-card"><h3>Pedido ao amigo</h3><select id="deal-friend-qr"><option value="">Sem QR</option>'+friendOptions+'</select><input id="deal-friend-money" placeholder="Moedas que pedes"></div></div><div class="qr-trade-card"><h3>Os teus QRs disponiveis</h3><div class="deal-qr-pool">'+pool+'</div></div><p>O dialogo fica aberto por baixo. A proposta vai para Pedidos do amigo.</p><div class="qr-trade-actions"><button class="btn btn-small" onclick="sendDealOffer(''+friendId+'')">Enviar proposta</button><button class="btn-dark btn-small" onclick="closeDealOverlay()">Fechar troca</button></div></div>';
+      box.innerHTML='<div class="qr-big-box"><h2>Storage aberto: negociação</h2>'+wanted+'<div class="live-deal-grid"><div><div class="live-storage"><h3>O teu storage</h3><p>Moedas: 🪙 '+(STATE.currentPlayer.coins||0)+'</p><input id="live-money-input" type="number" min="0" placeholder="Quantidade"><button class="btn btn-small" onclick="takeLiveMoneyHand()">Pegar moedas</button><div id="live-money-hand-zone"></div>'+myStorage+'</div><div class="live-box" ondragover="event.preventDefault()" ondrop="dropLiveToMyBox(event)"><h3>A tua proposta</h3>'+myList+'<div class="live-chip live-money" onclick="analyzeMoneyBox(&quot;my&quot;)">Moedas na proposta: 🪙 '+liveStorageDeal.myMoney+' <button class="btn-danger btn-small" onclick="event.stopPropagation();clearLiveMyMoney()">X</button></div><p class="'+(liveStorageDeal.myOk?'live-ok':'live-wait')+'">'+(liveStorageDeal.myOk?'Tu aceitaste':'Tu ainda não aceitaste')+'</p></div></div><div><div class="live-storage"><h3>Storage do vendedor</h3>'+friendStorage+'</div><div class="live-box friend"><h3>O que o vendedor entrega</h3>'+friendList+'<p class="'+(liveStorageDeal.friendOk?'live-ok':'live-wait')+'">'+(liveStorageDeal.friendOk?'Vendedor aceitou':'Vendedor pendente')+'</p><button class="btn-dark btn-small" onclick="simulateFriendAcceptLive()">Simular vendedor aceita</button></div></div></div><p>Clica em qualquer QR para analisar em maior. Arrasta moedas/QRs para a tua proposta.</p><div class="qr-trade-actions"><button class="btn-danger btn-small" onclick="clearLiveMyBox()">Anular proposta</button><button class="btn btn-small" onclick="acceptLiveDealMe()">Eu aceito</button><button class="btn btn-small" onclick="finishLiveDeal()">Concluir se ambos aceitaram</button><button class="btn-dark btn-small" onclick="closeDealOverlay()">Fechar</button></div></div>';
       box.classList.remove('hidden');
     }
 
 
+    function takeLiveMoneyHand(){const v=parseInt(document.getElementById('live-money-input')?.value||0,10)||0;if(v<=0)return alert('Seleciona a quantidade de moedas.');if(v>(STATE.currentPlayer.coins||0))return alert('Nao tens essas moedas.');document.getElementById('live-money-hand-zone').innerHTML='<div class="live-hand" draggable="true" ondragstart="event.dataTransfer.setData(&quot;text/livemoney&quot;,&quot;'+v+'&quot;)" onclick="addLiveMoney('+v+')">🪙 '+v+' moedas na mão</div>'}
+    function addLiveMoney(v){v=parseInt(v||0,10)||0;if(v<=0)return;if(liveStorageDeal.myMoney+v>(STATE.currentPlayer.coins||0))return alert('Nao tens moedas suficientes.');liveStorageDeal.myMoney+=v;liveStorageDeal.myOk=false;renderLiveStorageDeal()}
+    function clearLiveMyMoney(){liveStorageDeal.myMoney=0;liveStorageDeal.myOk=false;renderLiveStorageDeal()}
+    function addLiveMyQR(i){const q=getNegotiableItems(STATE.currentPlayer)[i];if(q&&!liveStorageDeal.myItems.some(x=>x.code===q.code))liveStorageDeal.myItems.push(q);liveStorageDeal.myOk=false;renderLiveStorageDeal()}
+    function removeLiveMyItem(i){liveStorageDeal.myItems.splice(i,1);liveStorageDeal.myOk=false;renderLiveStorageDeal()}
+    function dropLiveToMyBox(e){e.preventDefault();const qi=e.dataTransfer.getData('text/liveqr');const mi=e.dataTransfer.getData('text/livemoney');if(qi!=='')addLiveMyQR(parseInt(qi,10));if(mi)addLiveMoney(mi)}
+    function clearLiveMyBox(){liveStorageDeal.myItems=[];liveStorageDeal.myMoney=0;liveStorageDeal.myOk=false;renderLiveStorageDeal()}
+    function simulateFriendPutDeal(){const friend=getPlayerById(liveStorageDeal.friendId);const bag=getNegotiableItems(friend||{});if(bag[0]&&!liveStorageDeal.friendItems.length)liveStorageDeal.friendItems.push(bag[0]);liveStorageDeal.friendMoney=25;liveStorageDeal.friendOk=false;renderLiveStorageDeal()}
+    function acceptLiveDealMe(){liveStorageDeal.myOk=true;STATE.qrTrade.messages.push({id:'msg_'+Date.now(),from:STATE.currentPlayer.id,to:liveStorageDeal.friendId,text:'Aceitei a proposta na caixa de troca.',read:false,createdAt:Date.now()});saveState();renderLiveStorageDeal()}
+    function simulateFriendAcceptLive(){liveStorageDeal.friendOk=true;renderLiveStorageDeal()}
+    function analyzeMoneyBox(who){alert((who==='my'?'A tua caixa':'Caixa do amigo')+' tem '+(who==='my'?liveStorageDeal.myMoney:liveStorageDeal.friendMoney)+' moedas.')}
+    function analyzeExternalDealItem(src,i){
+      let q=null;if(src==='my')q=liveStorageDeal.myItems[i];if(src==='friend')q=liveStorageDeal.friendItems[i];if(src==='friendBag'){const f=getPlayerById(liveStorageDeal.friendId);q=getNegotiableItems(f||{})[i]}if(!q)return;
+      const box=document.getElementById('qr-big-view');box.classList.remove('friend-dialog-open');
+      const back=liveStorageDeal.friendId&&areFriends(STATE.currentPlayer.id,liveStorageDeal.friendId)?'renderFriendDialog(&quot;'+liveStorageDeal.friendId+'&quot;)':'closeBigQR();renderLiveStorageDeal()';
+      box.innerHTML='<div class="qr-big-box"><h2>Analisar bem</h2><div class="qr-big-code">'+escapeQR(q.code||'ITEM')+'</div><img src="https://quickchart.io/qr?text='+encodeURIComponent(q.code||'ITEM')+'&size=240"><p>Tipo: '+escapeQR(q.itemKind||'QR')+'</p><p>'+escapeQR(q.rewardText||q.prName||'Sem descrição')+'</p><p>Valor pedido: '+escapeQR(q.salePrice||'a negociar')+'</p><button class="btn btn-dark" onclick="'+back+'">Voltar</button></div>';
+      box.classList.remove('hidden')
+    }
+
+
+    function finishLiveDeal(){
+      if(!STATE.currentPlayer)return alert('Comprador nao encontrado.');
+      if(!liveStorageDeal.myOk||!liveStorageDeal.friendOk)return alert('A transação só acontece quando os dois aceitarem.');
+      const seller=getPlayerById(liveStorageDeal.friendId);if(!seller)return alert('Vendedor nao encontrado.');
+      if(liveStorageDeal.myMoney>(STATE.currentPlayer.coins||0))return alert('Moedas insuficientes.');
+      STATE.currentPlayer.coins-=liveStorageDeal.myMoney;seller.coins=(seller.coins||0)+liveStorageDeal.myMoney;
+      if(liveStorageDeal.marketQr){
+        const idx=(seller.qrStorage||[]).findIndex(q=>q.storageId===liveStorageDeal.marketQr.storageId);
+        if(idx>=0){const sold=seller.qrStorage.splice(idx,1)[0];STATE.currentPlayer.qrs=STATE.currentPlayer.qrs||[];STATE.currentPlayer.qrs.push({...sold,ownerId:STATE.currentPlayer.id,forSale:false,acquiredFrom:seller.name,acquiredAt:Date.now()});STATE.qrTrade.market=STATE.qrTrade.market.filter(q=>q.storageId!==sold.storageId)}
+      }
+      STATE.qrTrade.messages.push({id:'msg_'+Date.now(),from:STATE.currentPlayer.id,to:liveStorageDeal.friendId,text:'Transação concluída: '+liveStorageDeal.myItems.length+' bem(ns) e '+liveStorageDeal.myMoney+' moedas.',read:false,createdAt:Date.now()});
+      saveState();renderTopBar();alert('Transação concluída.');closeDealOverlay();if(areFriends(STATE.currentPlayer.id,liveStorageDeal.friendId))renderFriendDialog(liveStorageDeal.friendId)
+    }
+
+
+    function renderSimpleDealWindow(){
+      const friend=getPlayerById(simpleDealState.friendId);const myItems=getNegotiableItems(STATE.currentPlayer);
+      const bagItems=myItems.map((q,i)=>'<div class="simple-item" onclick="addSimpleDealItem('+i+')"><b>'+escapeQR(q.code||'ITEM')+'</b><br>'+escapeQR(q.itemKind||'QR')+' · '+escapeQR(q.prName||'Sem empresa')+'</div>').join('')||'<p>Sem QRs/bens.</p>';
+      const dealItems=simpleDealState.items.map((q,i)=>'<div class="simple-item" onclick="analyzeSimpleDealItem('+i+')"><b>'+escapeQR(q.code||'ITEM')+'</b><br>'+escapeQR(q.rewardText||q.prName||'Sem descricao')+' <button class="btn-danger btn-small" onclick="event.stopPropagation();removeSimpleDealItem('+i+')">X</button></div>').join('')||'<p>Caixa vazia.</p>';
+      const box=document.getElementById('deal-overlay');
+      box.innerHTML='<div class="qr-big-box"><h2>Compra / Venda / Troca com '+escapeQR(friend?friend.name:'Amigo')+'</h2><div class="simple-deal-grid"><div class="simple-bag"><h3>Bolsa aberta</h3><p>Moedas no porta-moedas: 🪙 '+(STATE.currentPlayer.coins||0)+'</p><input id="simple-money-input" type="number" min="0" placeholder="Moedas"><button class="btn btn-small" onclick="addSimpleDealMoney()">Adicionar moedas</button>'+bagItems+'</div><div class="simple-box"><h3>Caixa de troca</h3>'+dealItems+'<div class="simple-item simple-money">Moedas colocadas: 🪙 '+simpleDealState.money+' <button class="btn-danger btn-small" onclick="clearSimpleDealMoney()">Anular moedas</button></div><p>Estado: <span class="'+(simpleDealState.meAccepted?'simple-accepted':'simple-pending')+'">Tu '+(simpleDealState.meAccepted?'aceitaste':'pendente')+'</span> · <span class="'+(simpleDealState.friendAccepted?'simple-accepted':'simple-pending')+'">Amigo '+(simpleDealState.friendAccepted?'aceitou':'pendente')+'</span></p></div></div><p>Podes continuar a dialogar por baixo. Clica num bem da caixa para analisar.</p><div class="qr-trade-actions"><button class="btn-danger btn-small" onclick="clearSimpleDealAll()">Anular tudo</button><button class="btn btn-small" onclick="acceptSimpleDealMe()">Eu aceito</button><button class="btn-dark btn-small" onclick="simulateFriendAcceptDeal()">Simular amigo aceita</button><button class="btn btn-small" onclick="finalizeSimpleDeal()">Concluir se ambos aceitaram</button><button class="btn-dark btn-small" onclick="closeDealOverlay()">Fechar</button></div></div>';
+      box.classList.remove('hidden');
+    }
+    function addSimpleDealItem(i){const it=getNegotiableItems(STATE.currentPlayer)[i];if(it&&!simpleDealState.items.some(x=>x.code===it.code))simpleDealState.items.push(it);simpleDealState.meAccepted=false;renderSimpleDealWindow()}
+    function removeSimpleDealItem(i){simpleDealState.items.splice(i,1);simpleDealState.meAccepted=false;renderSimpleDealWindow()}
+    function addSimpleDealMoney(){const v=parseInt(document.getElementById('simple-money-input')?.value||0,10)||0;if(v<=0)return;if(simpleDealState.money+v>(STATE.currentPlayer.coins||0))return alert('Nao tens moedas suficientes.');simpleDealState.money+=v;simpleDealState.meAccepted=false;renderSimpleDealWindow()}
+    function clearSimpleDealMoney(){simpleDealState.money=0;simpleDealState.meAccepted=false;renderSimpleDealWindow()}
+    function clearSimpleDealAll(){simpleDealState.items=[];simpleDealState.money=0;simpleDealState.meAccepted=false;simpleDealState.friendAccepted=false;renderSimpleDealWindow()}
+    function acceptSimpleDealMe(){simpleDealState.meAccepted=true;STATE.qrTrade.messages.push({id:'msg_'+Date.now(),from:STATE.currentPlayer.id,to:simpleDealState.friendId,text:'Eu aceito esta proposta de troca.',read:false,createdAt:Date.now()});saveState();renderSimpleDealWindow()}
+    function simulateFriendAcceptDeal(){simpleDealState.friendAccepted=true;renderSimpleDealWindow()}
+    function analyzeSimpleDealItem(i){const q=simpleDealState.items[i];if(!q)return;alert('ANALISAR BEM\nCodigo: '+(q.code||'ITEM')+'\nTipo: '+(q.itemKind||'QR')+'\nDescricao: '+(q.rewardText||q.prName||''))}
+    function finalizeSimpleDeal(){if(!simpleDealState.meAccepted||!simpleDealState.friendAccepted)return alert('A transacao so acontece quando os dois aceitarem.');if(simpleDealState.money>(STATE.currentPlayer.coins||0))return alert('Moedas insuficientes.');STATE.currentPlayer.coins-=simpleDealState.money;STATE.qrTrade.messages.push({id:'msg_'+Date.now(),from:STATE.currentPlayer.id,to:simpleDealState.friendId,text:'Transacao concluida: '+simpleDealState.items.length+' bem(ns) e '+simpleDealState.money+' moedas.',read:false,createdAt:Date.now()});saveState();renderTopBar();alert('Transacao concluida em modo de teste.');closeDealOverlay();renderFriendDialog(simpleDealState.friendId)}
 
     function selectDealQR(code){
       const el=document.getElementById('deal-my-qr');if(el)el.value=code||'';
@@ -668,11 +782,18 @@ html,body{width:100%;height:100%;margin:0;overflow:hidden}
     }
 
     function clearDealQR(){selectDealQR('')}
+    function takeMoneyFromDrawer(){const a=parseInt(document.getElementById('money-drawer-amount')?.value||0,10)||0;if(a<=0)return alert('Escolhe a quantidade de moedas.');if(a>(STATE.currentPlayer.coins||0))return alert('Nao tens essas moedas no porta-moedas.');const z=document.getElementById('money-out-zone');if(z)z.innerHTML='<div class="money-out-chip" draggable="true" ondragstart="event.dataTransfer.setData(&quot;text/money&quot;,&quot;'+a+'&quot;)" onclick="addDealMoney('+a+')">🪙 Lote '+a+' moedas</div>'}
+
+
+    function selectDealMoney(v){const el=document.getElementById('deal-my-money');const p=document.getElementById('deal-money-preview');v=parseInt(v||0,10)||0;if(el)el.value=v||'';if(!p)return;if(!v){p.classList.add('hidden');p.innerHTML='';return}p.classList.remove('hidden');p.innerHTML='<h3>Moedas selecionadas</h3><div style="font-size:28px">🪙 '+v+'</div><button class="btn-danger btn-small" onclick="clearDealMoney()">Anular / retirar moedas</button>'}
+    function clearDealMoney(){selectDealMoney(0)}
     function closeDealOverlay(){document.getElementById('deal-overlay')?.classList.add('hidden')}
 
-    function sendDealOffer(friendId){ensureQRTradeState();const offer={id:'deal_'+Date.now(),from:STATE.currentPlayer.id,to:friendId,status:'pending',type:'deal',myQr:document.getElementById('deal-my-qr').value,myMoney:document.getElementById('deal-my-money').value.trim(),friendQr:document.getElementById('deal-friend-qr').value,friendMoney:document.getElementById('deal-friend-money').value.trim(),createdAt:Date.now()};STATE.qrTrade.offers.push(offer);STATE.qrTrade.messages.push({id:'msg_'+Date.now(),from:STATE.currentPlayer.id,to:friendId,text:'Enviei uma proposta de venda/troca. Verifica em Pedidos.',read:false,createdAt:Date.now()});saveState();alert('Proposta enviada. O amigo tem de aceitar em Pedidos.');closeDealOverlay();renderFriendDialog(friendId)}
+    function sendDealOffer(friendId){ensureQRTradeState();const offer={id:'deal_'+Date.now(),from:STATE.currentPlayer.id,to:friendId,status:'pending',type:'deal',myQr:(currentDealBasket.qrs||[]).join(','),myQrs:[...(currentDealBasket.qrs||[])],myMoney:String(currentDealBasket.money||0),friendQr:document.getElementById('deal-friend-qr').value,friendMoney:document.getElementById('deal-friend-money').value.trim(),createdAt:Date.now()};STATE.qrTrade.offers.push(offer);STATE.qrTrade.messages.push({id:'msg_'+Date.now(),from:STATE.currentPlayer.id,to:friendId,text:'Enviei uma proposta com '+offer.myQrs.length+' QR(s) e '+offer.myMoney+' moedas. Verifica em Pedidos.',read:false,createdAt:Date.now()});saveState();alert('Proposta enviada. O amigo tem de aceitar em Pedidos.');currentDealBasket={qrs:[],money:0};closeDealOverlay();renderFriendDialog(friendId)}
 
-    function acceptDealOffer(id){const o=STATE.qrTrade.offers.find(x=>x.id===id);if(!o||o.status!=='pending')return;const a=getPlayerById(o.from),b=getPlayerById(o.to);function moveQr(from,to,code){if(!code)return;from.qrs=from.qrs||[];from.qrStorage=from.qrStorage||[];to.qrs=to.qrs||[];let idx=from.qrs.findIndex(q=>q.code===code);let arr=from.qrs;if(idx<0){idx=from.qrStorage.findIndex(q=>q.code===code);arr=from.qrStorage}if(idx>=0){const q=arr.splice(idx,1)[0];to.qrs.push({...q,ownerId:to.id,forSale:false,acquiredAt:Date.now()})}}function pay(from,to,amount){amount=parseInt(amount||'0',10)||0;if(amount<=0)return true;if((from.coins||0)<amount){alert(from.name+' nao tem moedas suficientes.');return false}from.coins=(from.coins||0)-amount;to.coins=(to.coins||0)+amount;return true}if(!pay(a,b,o.myMoney))return;if(!pay(b,a,o.friendMoney))return;moveQr(a,b,o.myQr);moveQr(b,a,o.friendQr);o.status='accepted';saveState();alert('Acordo aceite. QRs/moedas transferidos.');renderQRTradeTab('requests')}
+
+    function acceptDealOffer(id){const o=STATE.qrTrade.offers.find(x=>x.id===id);if(!o||o.status!=='pending')return;const a=getPlayerById(o.from),b=getPlayerById(o.to);function moveQr(from,to,code){if(!code)return;from.qrs=from.qrs||[];from.qrStorage=from.qrStorage||[];to.qrs=to.qrs||[];let idx=from.qrs.findIndex(q=>q.code===code);let arr=from.qrs;if(idx<0){idx=from.qrStorage.findIndex(q=>q.code===code);arr=from.qrStorage}if(idx>=0){const q=arr.splice(idx,1)[0];to.qrs.push({...q,ownerId:to.id,forSale:false,acquiredAt:Date.now()})}}function pay(from,to,amount){amount=parseInt(amount||'0',10)||0;if(amount<=0)return true;if((from.coins||0)<amount){alert(from.name+' nao tem moedas suficientes.');return false}from.coins=(from.coins||0)-amount;to.coins=(to.coins||0)+amount;return true}if(!pay(a,b,o.myMoney))return;if(!pay(b,a,o.friendMoney))return;(o.myQrs||((o.myQr||'').split(',').filter(Boolean))).forEach(code=>moveQr(a,b,code));moveQr(b,a,o.friendQr);o.status='accepted';saveState();alert('Acordo aceite. QRs/moedas transferidos.');renderQRTradeTab('requests')}
+
 
     function escapeQR(v){const d=document.createElement('div');d.textContent=v||'';return d.innerHTML}
     document.getElementById('ticker').textContent='Bem-vindo ao ZAP FLAGS!';console.log('ZAP FLAGS restaurado.');
