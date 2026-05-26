@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>ZAP FLAGS - Arena V1</title>
+  <title>ZAP FLAGS - ARENA COMERCIAL</title>
   
   <!-- Bibliotecas Externas -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -12,15 +12,13 @@
   
   <style>
     /* =========================================
-       RESET & BASE
+       RESET & BASE (Mantido)
        ========================================= */
     *{box-sizing:border-box}
     body{margin:0;font-family:Arial,sans-serif;background:#000;color:#0f0;overflow:hidden}
     .hidden{display:none!important}
     
-    /* =========================================
-       TELAS & SEÇÕES
-       ========================================= */
+    /* Telas Principais */
     .screen{display:none;position:fixed;inset:0;background:#000;z-index:10}
     .screen.active{display:flex!important}
     #landing,#auth-screen,#backoffice{flex-direction:column;justify-content:center;align-items:center;padding:20px}
@@ -29,7 +27,7 @@
     .watermark{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-45deg);font-size:clamp(2rem,8vw,5rem);font-weight:900;color:rgba(0,255,0,.12);pointer-events:none;z-index:0}
     h1{text-shadow:0 0 8px #0f0}.sub{color:#a7fca7;text-align:center}
     
-    /* Botões */
+    /* Botões Gerais */
     .btn{background:#0f0;color:#000;border:0;padding:12px 20px;border-radius:10px;font-weight:800;cursor:pointer;margin:8px;min-width:120px}
     .btn-dark{background:#181818;color:#0f0;border:1px solid #0f0}
     .btn-danger{background:#8b0000;color:#fff}
@@ -42,43 +40,28 @@
     
     /* Mensagens */
     .msg{min-height:20px;font-size:12px}.ok{color:#8fff8f}.danger{color:#ff8686}.warning{color:#ffb347;font-weight:bold}
-    .password-wrapper{position:relative}
-    .password-toggle{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:0;color:#0f0;cursor:pointer;font-size:18px}
     
-    /* Auth Background */
+    /* Auth */
     #auth-screen{background:radial-gradient(circle at 20% 20%,rgba(0,255,0,.12),transparent 25%),radial-gradient(circle at 80% 30%,rgba(0,255,255,.08),transparent 25%),linear-gradient(180deg,#000,#051005)}
-    
-    /* Abas */
     .auth-tabs,.pr-tabs{display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;justify-content:center}
     .auth-tab,.pr-tab{padding:10px 15px;background:#181818;border:1px solid #333;cursor:pointer;border-radius:8px}
     .auth-tab.active,.pr-tab.active{border-color:#0f0;background:rgba(0,255,0,.1)}
     .auth-form,.pr-content{display:none}
     .auth-form.active,.pr-content.active{display:block}
     
-    /* ==================== UI ELEMENTS ==================== */
-    
-    /* Top Bar */
+    /* ==================== UI ELEMENTS MAPA ==================== */
     #top-bar{position:fixed;top:0;left:0;right:0;z-index:3000;background:rgba(0,0,0,.9);border-bottom:1px solid #0f0;padding:10px 15px;display:flex;gap:12px;align-items:center;justify-content:space-between;font-weight:bold}
     .energy-bar{flex:1;max-width:260px;height:8px;background:#222;border-radius:999px;overflow:hidden;border:1px solid rgba(0,255,0,.35)}
     #energy-fill{height:100%;width:100%;background:linear-gradient(90deg,#008f1f,#00ff66);transition:width .3s}
     
-    /* Map Area */
     #map{display:block!important;position:absolute!important;inset:0!important;width:100%!important;height:100%!important;z-index:1!important;background:#fff!important}
-    
-    /* Game Mode Panel */
     #game-mode-panel{position:fixed;top:90px;left:50%;transform:translateX(-50%);z-index:3500;width:min(92vw,520px);background:rgba(0,0,0,.94);border:3px solid #0f0;border-radius:16px;padding:16px;box-shadow:0 0 28px rgba(0,255,0,.35);text-align:center}
     
-    /* D-Pad */
     #dpad-container{position:fixed;bottom:30px;left:30px;z-index:3600;display:grid;grid-template-columns:50px 50px 50px;grid-template-rows:auto auto 50px 50px 50px;gap:5px;background:rgba(0,0,0,.88);border:1px solid #0f0;border-radius:12px;padding:8px;touch-action:none;user-select:none}
     .dpad-drag-handle{font-size:14px;color:#bfffbf;margin-bottom:4px;padding:8px 2px;border-bottom:1px solid rgba(0,255,0,.25);cursor:grab;grid-column:1/-1;text-align:center;touch-action:none;user-select:none;background:rgba(0,255,0,.08);border-radius:8px}
     .dpad-size-row{display:flex;justify-content:center;gap:4px;grid-column:1/-1}
     .dpad-btn,.dpad-center{background:rgba(0,255,0,.2);border:2px solid #0f0;color:#0f0;font-size:1.2rem;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center}
     .dpad-center{background:#0f0;color:#000}
-    
-    /* Flag Markers */
-    .flag-marker{background:transparent;border:0}
-    .flag-icon{position:relative;width:24px;height:24px;border:2px solid #fff;border-radius:50% 50% 50% 0;transform:rotate(-45deg);box-shadow:0 0 14px currentColor}
-    .flag-zap{color:#00bfff;background:#00bfff}.flag-pr{color:#ff00ff;background:#ff00ff}
     
     /* Avatar System */
     #player-screen-avatar{position:fixed;left:50%;top:50%;z-index:2400;--step-x:0px;--step-y:0px;transform:translate(calc(-50% + var(--step-x)),calc(-50% + var(--step-y))) scale(2.25);pointer-events:none;transition:transform .12s ease-out}
@@ -86,101 +69,78 @@
     .vision-aura{width:160px;height:160px;border:3px dotted rgba(0,255,255,.95);background:rgba(0,255,255,.08)}
     .collect-aura{width:80px;height:80px;border:2px dashed rgba(255,255,0,.95);opacity:0}
     #player-screen-avatar.can-collect .collect-aura{opacity:1}
-    .player-marker{width:48px;height:44px;display:flex;align-items:center;justify-content:center;position:relative;z-index:2}
-    .avatar-head{position:absolute;top:0;left:10px;width:22px;height:24px;border-radius:45%;background:#ffd8a8;border:2px solid #fff}
-    .avatar-hand{position:absolute;top:20px;width:10px;height:10px;border-radius:50%;background:#ffd8a8;border:2px solid #fff}
-    .avatar-hand.left{left:0}.avatar-hand.right{right:0}
     
-    /* Dashboard & Items */
+    /* Dashboard Grid */
     .dashboard-grid{display:grid;grid-template-columns:1fr;gap:20px;width:100%;max-width:800px;padding:20px}
     .item-module{background:rgba(0,25,0,.16);border:1px solid #0f0;border-radius:10px;padding:15px}
     .package-item{background:#111;padding:10px;border-radius:8px;margin-bottom:8px;border:1px solid #333}
     
-    /* Modals */
+    /* Floating & Side Panels */
+    #floating-buttons{position:fixed;right:10px;bottom:90px;z-index:3100;display:flex;flex-direction:column;gap:8px}
+    .float-btn{width:46px;height:46px;border-radius:50%;padding:0}
+    
+    #side-panel{position:fixed;left:8px;right:8px;bottom:8px;z-index:3200;background:rgba(0,0,0,.92);border:2px solid #0f0;border-radius:14px;padding:12px;max-height:36vh;overflow-y:auto}
+    #ticker{position:fixed;bottom:0;left:0;right:0;height:30px;background:rgba(0,0,0,.9);color:#0f0;display:flex;align-items:center;padding:0 1rem;font-size:12px;z-index:900;border-top:1px solid #0f0}
+    
+    /* Modais e Janelas de Vendas */
     .modal{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:4000;width:92%;max-width:480px;background:#000;border:3px solid #0f0;border-radius:14px;padding:16px}
     .panel-header{display:flex;justify-content:space-between;align-items:center}
     .qr-code{display:inline-block;margin-top:8px;padding:8px;border-radius:10px;border:1px solid #0f0;background:#111;font-family:monospace;color:#fff}
     
-    /* Floating & Side Panels */
-    #floating-buttons{position:fixed;right:10px;bottom:90px;z-index:3100;display:flex;flex-direction:column;gap:8px}
-    .float-btn{width:46px;height:46px;border-radius:50%;padding:0}
-    #side-panel{position:fixed;left:8px;right:8px;bottom:8px;z-index:3200;background:rgba(0,0,0,.92);border:2px solid #0f0;border-radius:14px;padding:12px;max-height:36vh;overflow-y:auto}
-    #ticker{position:fixed;bottom:0;left:0;right:0;height:30px;background:rgba(0,0,0,.9);color:#0f0;display:flex;align-items:center;padding:0 1rem;font-size:12px;z-index:900;border-top:1px solid #0f0}
-    
-    /* QR Trade Specific */
-    .qr-trade-panel{position:fixed;left:8px;top:74px;z-index:3300;width:min(380px,94vw);max-height:72vh;overflow:auto;background:rgba(0,0,0,.94);border:2px solid #0f0;border-radius:14px;padding:12px;box-shadow:0 0 22px rgba(0,255,0,.22)}
-    .qr-trade-tabs button{min-width:auto;margin:0;padding:7px 9px}
-    .chat-trade-float{position:fixed;right:10px;bottom:295px;z-index:3150}
-    .chat-trade-float button{width:46px;height:46px;border-radius:50%;min-width:auto;padding:0;margin:0}
-    
-    /* Admin */
+    /* ADMIN */
     #admin-screen{position:absolute;inset:0;background:#000;z-index:9997;overflow-y:auto;padding:16px}
     .admin-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:8px}
     .admin-table th{background:#010;color:#0f0;padding:8px;text-align:left;border:1px solid #0f0}
     .admin-table td{padding:8px;border:1px solid #033;color:#bfffbf;vertical-align:top}
     
-    /* Ticker Animation */
+    /* TICKER ANIMATION */
     .ticker-wrap{position:fixed;bottom:0;left:0;right:0;z-index:9999;background:rgba(0,0,0,.92);border-top:1px solid #0f0;padding:6px 0;overflow:hidden}
     .ticker-text{display:inline-block;white-space:nowrap;animation:ticker 20s linear infinite;color:#0f0;font-size:13px;font-weight:bold;padding-left:100%}
     @keyframes ticker{0%{transform:translateX(0)}100%{transform:translateX(-100%)}}
-    
     .banner-box{position:fixed;bottom:30px;left:50%;transform:translateX(-50%);z-index:9000;background:rgba(0,0,0,.88);border:1px solid #0f0;border-radius:10px;padding:6px 16px;font-size:12px;color:#0f0;display:flex;gap:16px;align-items:center;pointer-events:none}
     
     .tab-row{display:flex;gap:8px;margin:10px 0;flex-wrap:wrap}
     .tab-btn{flex:1;background:#181818;color:#0f0;border:1px solid #0f0;border-radius:10px;padding:8px;font-size:13px;font-weight:700;cursor:pointer}
     .tab-btn.active{background:#0f0;color:#000}
     
-    /* =========================================
-       MAPA E AVATAR CONFIGURAÇÕES FINAIS
-       ========================================= */
-    
-    /* Simples GPS Map Base */
+    /* MAPA E AVATAR CONFIG */
     html,body{width:100%;height:100%;margin:0;overflow:hidden}
     #game-screen.screen.active{display:block!important;position:fixed!important;inset:0!important;background:#fff!important;overflow:hidden!important;padding:0!important}
     #map{position:fixed!important;inset:0!important;width:100vw!important;height:100vh!important;display:block!important;z-index:1!important;background:#cfe8ff!important}
     #map iframe{width:120%!important;height:120%!important;border:0!important;display:block!important;position:absolute!important;left:-10%!important;top:-10%!important;transform:translate(var(--map-shift-x,0px),var(--map-shift-y,0px));transition:transform .16s linear}
     #top-bar{z-index:3000!important}#game-mode-panel{z-index:3500!important}#dpad-container{z-index:3600!important}
     #floating-buttons,#side-panel,.chat-trade-float,.qr-trade-panel{z-index:3700!important}
-    #gps-fallback-map,#gps-fallback-map-inner,.gps-road,.gps-place{display:none!important}
     
-    /* Player Avatar Overrides */
+    /* PLAYER AVATAR STYLES */
     #player-screen-avatar{display:block!important;position:fixed!important;left:50%!important;top:50%!important;transform:translate(-50%,-50%) scale(1.5)!important;z-index:2500!important;pointer-events:none!important}
     .vision-aura{position:absolute;left:50%;top:50%;width:180px;height:180px;border:3px dotted rgba(0,255,255,.95);border-radius:50%;background:rgba(0,255,255,.08);transform:translate(-50%,-50%)}
     .collect-aura{position:absolute;left:50%;top:50%;width:76px;height:76px;border:3px dashed rgba(255,255,0,.95);border-radius:50%;background:rgba(255,255,0,.08);transform:translate(-50%,-50%)}
-    
-    /* Avatar Visual Logic */
     .avatar-body-visible{position:relative;width:54px;height:70px;filter:drop-shadow(0 3px 8px #000)}.avatar-body-visible .head{position:absolute;left:15px;top:0;width:26px;height:26px;border-radius:50%;background:#ffd8a8;border:3px solid #fff}.avatar-body-visible .torso{position:absolute;left:9px;top:27px;width:38px;height:34px;border-radius:14px 14px 8px 8px;background:#0877ff;border:3px solid #fff}.avatar-body-visible .arm{position:absolute;top:31px;width:13px;height:28px;border-radius:10px;background:#ffd8a8;border:2px solid #fff}.avatar-body-visible .arm.left{left:0}.avatar-body-visible .arm.right{right:0}.avatar-body-visible .leg{position:absolute;top:57px;width:14px;height:18px;border-radius:8px;background:#111;border:2px solid #fff}.avatar-body-visible .leg.left{left:12px}.avatar-body-visible .leg.right{right:10px}
-    
     .vision-aura,.collect-aura{display:none!important}
     #player-screen-avatar{display:block!important;visibility:visible!important;opacity:1!important;position:fixed!important;left:50%!important;top:50%!important;transform:translate(-50%,-50%) scale(2.2)!important;z-index:99999!important;width:80px!important;height:90px!important;pointer-events:none!important}
     .avatar-body-visible{z-index:100000!important}
-    
-    /* Stick Avatar */
     #player-screen-avatar{display:block!important;position:fixed!important;left:50%!important;top:50%!important;transform:translate(-50%,-50%)!important;z-index:2147483647!important;width:90px!important;height:120px!important;pointer-events:none!important;visibility:visible!important;opacity:1!important}
     .simple-avatar{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:70px;height:100px;z-index:2147483647!important}
     .simple-avatar .head{position:absolute;left:20px;top:0;width:30px;height:30px;border-radius:50%;background:#ffcc99;border:4px solid #fff;box-shadow:0 0 0 3px #000}
     .simple-avatar .body{position:absolute;left:17px;top:32px;width:36px;height:42px;border-radius:12px;background:#0066ff;border:4px solid #fff;box-shadow:0 0 0 3px #000}
     .simple-avatar .arm{position:absolute;top:38px;width:14px;height:36px;border-radius:10px;background:#ffcc99;border:3px solid #fff;box-shadow:0 0 0 2px #000}.simple-avatar .arm.l{left:0}.simple-avatar .arm.r{right:0}
     .simple-avatar .leg{position:absolute;top:74px;width:16px;height:28px;border-radius:10px;background:#111;border:3px solid #fff;box-shadow:0 0 0 2px #000}.simple-avatar .leg.l{left:17px}.simple-avatar .leg.r{right:17px}
-    
-    /* Map Layering Fix */
     #map{z-index:0!important;pointer-events:auto!important}
     #map iframe{z-index:0!important;position:absolute!important}
     #player-screen-avatar{z-index:2147483647!important;position:fixed!important;display:block!important;visibility:visible!important;opacity:1!important;isolation:isolate!important}
     #player-screen-avatar *{z-index:2147483647!important;visibility:visible!important;opacity:1!important}
     #game-mode-panel,#top-bar,#dpad-container,#floating-buttons,#side-panel,.chat-trade-float,.qr-trade-panel{position:fixed!important;z-index:2147483000!important}
     
-    /* Final Avatar Marker (Emoji) */
+    /* FINAL AVATAR MARKER */
     #player-screen-avatar{display:block!important;position:fixed!important;left:50%!important;top:50%!important;width:90px!important;height:110px!important;transform:translate(-50%,-50%)!important;z-index:2147483647!important;pointer-events:none!important;visibility:visible!important;opacity:1!important}
     #player-screen-avatar:before{content:'🚶';position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:58px;line-height:1;filter:drop-shadow(0 4px 5px #000);z-index:2147483647!important}
     .vision-aura{display:block!important;position:absolute!important;left:50%!important;top:50%!important;width:160px!important;height:160px!important;border:3px dotted rgba(0,255,255,.9)!important;border-radius:50%!important;background:rgba(0,255,255,.06)!important;transform:translate(-50%,-50%)!important;z-index:2147483646!important}
     .collect-aura{display:none!important;position:absolute!important;left:50%!important;top:50%!important;width:76px!important;height:76px!important;border:3px dashed rgba(255,255,0,.95)!important;border-radius:50%!important;background:rgba(255,255,0,.1)!important;transform:translate(-50%,-50%)!important;z-index:2147483646!important}
     #player-screen-avatar.can-collect .collect-aura{display:block!important}
-    
     #real-avatar{position:fixed!important;left:50%!important;top:50%!important;transform:translate(-50%,-50%)!important;z-index:2147483647!important;font-size:28px!important;line-height:1!important;display:block!important;visibility:visible!important;opacity:1!important;pointer-events:none!important;filter:drop-shadow(0 5px 5px #000)}
     .modal,#flag-modal,#game-mode-panel,#side-panel,.qr-trade-panel,.qr-big-view{z-index:2147483647!important;position:fixed!important}
     
-    /* HUD Stats */
+    /* HUD STATS */
     #top-bar{left:8px!important;top:8px!important;right:auto!important;width:auto!important;max-width:calc(100vw - 16px)!important;display:flex!important;gap:6px!important;flex-wrap:wrap!important;background:rgba(0,0,0,.72)!important;border:1px solid #0f0!important;border-radius:12px!important;padding:6px!important;color:#0f0!important;font-size:11px!important}
     .stat-card{min-width:62px;background:rgba(0,30,0,.88);border:1px solid rgba(0,255,0,.55);border-radius:9px;padding:5px 7px;text-align:center;box-shadow:0 0 8px rgba(0,255,0,.15)}
     .stat-card b{display:block;font-size:10px;color:#b7ffb7}.stat-card span{display:block;font-size:13px;font-weight:900;color:#fff}
@@ -191,26 +151,43 @@
     #side-panel{top:78px!important;left:8px!important;right:auto!important;width:min(360px,92vw)!important;max-height:42vh!important;overflow:auto!important}.qr-big-view{top:72px!important;align-items:flex-start!important;padding-top:8px!important}.qr-big-box{max-height:78vh!important;overflow:auto!important}
     #dpad-container{right:8px!important;left:auto!important;bottom:8px!important}
     .avatar-tired-note{position:fixed;left:50%;top:42%;transform:translate(-50%,-50%);z-index:2147483647;background:rgba(0,0,0,.85);border:1px solid #0f0;color:#fff;border-radius:12px;padding:8px 10px;font-size:12px;text-align:center;pointer-events:none}
-    
-    /* Restores Chat/QR */
     .chat-trade-float{display:block!important;position:fixed!important;right:8px!important;top:52px!important;z-index:2147483647!important}
     .chat-trade-float button{display:block!important;min-width:54px!important;height:38px!important;font-weight:900!important}
     #qr-trade-panel:not(.hidden){display:block!important;position:fixed!important;left:8px!important;top:86px!important;z-index:2147483647!important;visibility:visible!important;opacity:1!important}
     #qr-big-view:not(.hidden){display:flex!important;position:fixed!important;inset:0!important;z-index:2147483647!important;visibility:visible!important;opacity:1!important;background:rgba(0,0,0,.55)!important}
     
-    /* Deal Stack */
-    #qr-big-view.friend-dialog-open:not(.hidden){display:flex!important;align-items:flex-end!important;padding-bottom:8px!important;background:rgba(0,0,0,.18)!important;z-index:2147483600!important}
-    #qr-big-view.friend-dialog-open .qr-big-box{width:min(520px,96vw)!important;max-height:42vh!important;overflow:auto!important;margin-bottom:0!important}
-    #deal-overlay:not(.hidden){display:flex!important;align-items:flex-start!important;padding-top:70px!important;background:rgba(0,0,0,.48)!important;z-index:2147483647!important}
-    .deal-qr-pool{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:6px;max-height:170px;overflow:auto}.deal-qr-chip{border:1px solid #0f0;border-radius:9px;padding:6px;background:#081608;color:#fff;cursor:grab;font-size:12px}.deal-drop{min-height:42px;border:2px dashed #0f0;border-radius:10px;padding:8px;background:#050;color:#fff;font-weight:900}
-    #deal-selected-preview{margin-top:8px;border:2px solid #0f0;border-radius:12px;padding:8px;background:#050;text-align:center;color:#fff}
-    #deal-selected-preview img{max-width:170px;width:80%;background:#fff;border-radius:8px;padding:6px}
-    .money-chip{display:inline-block;border:1px solid #fc0;border-radius:999px;padding:6px 10px;margin:3px;background:#3b2b00;color:#fff;cursor:grab;font-weight:900}.money-preview{margin-top:8px;border:2px solid #fc0;border-radius:12px;padding:8px;background:#3b2b00;color:#fff;text-align:center}
-    .money-drawer{border:2px solid #fc0;border-radius:12px;padding:8px;background:#1f1600;color:#fff;margin-top:8px}.money-out-chip{display:inline-block;margin-top:8px;padding:10px 14px;border-radius:999px;background:#6b4a00;border:2px solid #fc0;color:#fff;font-weight:900;cursor:grab;box-shadow:0 0 10px #000}.money-drawer input{max-width:120px}
-    #deal-basket{border:2px solid #0f0;border-radius:12px;background:#041604;color:#fff;padding:8px;margin-top:8px}.basket-row{display:flex;justify-content:space-between;gap:6px;border-bottom:1px solid rgba(0,255,0,.25);padding:4px 0}.basket-total{font-size:16px;font-weight:900;color:#fc0;margin-top:6px}
-    .simple-deal-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.simple-bag,.simple-box{border:2px solid #0f0;border-radius:12px;background:#061406;color:#fff;padding:8px;max-height:300px;overflow:auto}.simple-item{border:1px solid rgba(0,255,0,.6);border-radius:8px;padding:6px;margin:5px 0;background:#101;cursor:pointer}.simple-money{border-color:#fc0;background:#261d00}.simple-accepted{color:#0f0;font-weight:900}.simple-pending{color:#fc0;font-weight:900}
-    .live-deal-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.live-box,.live-storage{border:2px solid #0f0;border-radius:12px;background:#061406;color:#fff;padding:8px;max-height:320px;overflow:auto}.live-box.friend{border-color:#0cf}.live-chip{border:1px solid rgba(0,255,0,.7);border-radius:8px;padding:7px;margin:5px 0;background:#101;cursor:pointer}.live-money{border-color:#fc0;background:#2b2000}.live-hand{display:inline-block;padding:9px 13px;border-radius:999px;background:#6b4a00;border:2px solid #fc0;color:#fff;font-weight:900;cursor:grab;margin-top:6px}.live-wait{color:#fc0;font-weight:900}.live-ok{color:#0f0;font-weight:900}
-    .simple-storage-wrap{display:grid;grid-template-columns:1fr 1fr;gap:10px;text-align:left}.simple-storage,.simple-trade-box{border:2px solid #0f0;border-radius:14px;background:#061406;color:#fff;padding:10px;min-height:260px;max-height:420px;overflow:auto}.simple-trade-box{border-color:#fc0;background:#181200}.simple-qr-item,.simple-coin-item{border:1px solid #0f0;border-radius:10px;padding:8px;margin:6px 0;background:#101;cursor:grab}.simple-coin-item{border-color:#fc0;background:#3b2b00}.simple-empty-box{border:2px dashed #fc0;border-radius:12px;min-height:120px;padding:10px;text-align:center;color:#fc0}.simple-trade-line{display:flex;justify-content:space-between;gap:8px;border-bottom:1px solid rgba(255,204,0,.35);padding:6px 0}.coin-stack{font-size:34px;line-height:1;margin:6px 0}
+    /* =========================================
+       NOVAS ESTILOS PARA LOJA, CHAT E TRADING
+       ========================================= */
+    
+    /* Botões de Ação Rápida */
+    .quick-action-btn{width:100%;margin:5px 0;background:#111;border:1px solid #0f0;color:#0f0;padding:10px;border-radius:8px;cursor:pointer;font-weight:bold;}
+    .quick-action-btn:hover{background:#0f0;color:#000}
+    
+    /* Janela de Vendas (Carteira) */
+    .sell-cards-container{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px;max-height:300px;overflow-y:auto;margin:10px 0}
+    .sell-card{border:1px solid #0f0;background:#050;padding:5px;border-radius:6px;text-align:center;cursor:pointer;position:relative;overflow:hidden}
+    .sell-card.selected{background:#003300;border-style:dashed}
+    .sell-card-icon{font-size:24px;margin-bottom:5px;display:block}
+    .sell-card-label{font-size:11px;word-break:break-all;}
+    .sell-card-remove{position:absolute;top:2px;right:2px;color:red;cursor:pointer;font-size:12px;}
+    
+    /* Lista de Chat */
+    .chat-list{list-style:none;padding:0;margin:0;overflow-y:auto;max-height:300px}
+    .chat-user-item{padding:10px;border-bottom:1px solid #222;display:flex;justify-content:space-between;align-items:center}
+    .chat-user-actions{display:flex;gap:5px;}
+    
+    /* Storage */
+    .storage-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:8px;max-height:250px;overflow-y:auto;}
+    .storage-item{border:1px solid #0f0;background:#111;padding:8px;border-radius:6px;font-size:12px;text-align:center;}
+    
+    /* Wallet */
+    .coin-slots{display:flex;flex-direction:column;gap:10px;margin:10px 0;}
+    .coin-slot{background:#111;padding:10px;border-radius:8px;display:flex;align-items:center;justify-content:space-between;border:1px solid #fc0}
+    
+    /* Modal de Detalhes da Venda */
+    .trade-detail-item{border-bottom:1px solid #333;padding:8px 0;display:flex;justify-content:space-between}
+    .trade-total-box{background:#111;padding:10px;border-radius:8px;margin-top:10px;border:1px solid #fc0}
   </style>
 </head>
 <body>
@@ -234,7 +211,6 @@
       <div class="auth-tab active" onclick="switchAuthTab('player')">JOGADOR</div>
       <div class="auth-tab" onclick="switchAuthTab('company')">EMPRESA</div>
     </div>
-
     <div id="auth-player" class="auth-form active">
       <p class="sub">Entra como jogador ou cria uma nova conta</p>
       <form id="form-player-login">
@@ -243,7 +219,6 @@
         <button class="btn">ENTRAR</button>
       </form>
       <button class="btn-dark btn-small" onclick="showPlayerRegister()">CRIAR CONTA</button>
-      
       <form id="form-player-register" class="hidden">
         <input id="p-name" placeholder="Nome completo">
         <input type="email" id="p-email" placeholder="Email">
@@ -256,10 +231,8 @@
         <button class="btn">REGISTAR</button>
         <button type="button" class="btn btn-dark" onclick="showPlayerLogin()">VOLTAR</button>
       </form>
-
       <div id="msg-player" class="msg"></div>
     </div>
-
     <div id="auth-company" class="auth-form">
       <p class="sub">Entra ou regista como empresa</p>
       <form id="form-company" onsubmit="event.preventDefault(); document.getElementById('form-company').classList.toggle('active')">
@@ -301,27 +274,7 @@
       <button class="dpad-btn" onclick="movePlayerDPad('sw')">SW</button><button class="dpad-btn" onclick="movePlayerDPad('s')">S</button><button class="dpad-btn" onclick="movePlayerDPad('se')">SE</button>
     </div>
 
-    <div id="qr-trade-panel" class="qr-trade-panel hidden">
-      <div class="panel-header">
-        <h2>Chat / Troca QR</h2>
-        <button class="btn-dark btn-small" onclick="toggleQRTradePanel()">X</button>
-      </div>
-      <div class="qr-trade-tabs">
-        <button class="btn-dark btn-small" onclick="renderQRTradeTab('players')">Jogadores</button>
-        <button class="btn-dark btn-small" onclick="renderQRTradeTab('storage')">Storage QR</button>
-        <button class="btn-dark btn-small" onclick="renderQRTradeTab('market')">Mercado</button>
-        <button class="btn-dark btn-small" onclick="renderQRTradeTab('requests')">Pedidos</button>
-      </div>
-      <div id="qr-trade-content" class="qr-trade-grid"></div>
-    </div>
-
-    <div class="chat-trade-float">
-      <button class="btn-dark" onclick="toggleQRTradePanel()" title="Chat e troca QR">QR</button>
-    </div>
-
-    <div id="qr-big-view" class="qr-big-view hidden"></div>
-    <div id="deal-overlay" class="qr-big-view hidden"></div>
-
+    <!-- BOTÕES FLUTUANTES EXPANDIDOS -->
     <div id="floating-buttons">
       <button class="float-btn btn-dark" onclick="openPanel('progress')" title="Progresso">📊</button>
       <button class="float-btn btn-dark" onclick="openPanel('qrs')" title="Cupões QR">🎟️</button>
@@ -330,6 +283,73 @@
       <button class="float-btn btn-dark" onclick="drainEnergyDemo()" title="Esgotar Energia">⚡</button>
       <button class="float-btn btn-dark" onclick="maxStatsDemo()" title="Max Stats">🔋</button>
       <button class="float-btn btn-dark" onclick="addTestCoinLot()" title="Lote 100 moedas">💰</button>
+      
+      <!-- Novos Botões Funcionais -->
+      <button class="float-btn btn-dark" onclick="toggleModal('chat-modal')" title="Chat e Amigos"><i class="fas fa-comment-dots"></i></button>
+      <button class="float-btn btn-dark" onclick="toggleModal('sales-modal')" title="Vender"><i class="fas fa-shopping-cart"></i></button>
+      <button class="float-btn btn-dark" onclick="toggleModal('storage-modal')" title="Storage"><i class="fas fa-boxes"></i></button>
+      <button class="float-btn btn-dark" onclick="toggleModal('wallet-modal')" title="Moeda"><i class="fas fa-wallet"></i></button>
+    </div>
+
+    <!-- MODAL CHAT -->
+    <div id="chat-modal" class="modal hidden">
+      <div class="panel-header">
+        <h3>Chat & Amigos</h3>
+        <button onclick="toggleModal('chat-modal')">✖</button>
+      </div>
+      <div style="margin:10px 0;">
+        <input id="chat-input-msg" type="text" placeholder="Escreve mensagem..." style="width:100%">
+        <button class="btn-small" onclick="sendChatMessage()">Enviar</button>
+      </div>
+      <ul id="chat-list" class="chat-list"></ul>
+    </div>
+
+    <!-- MODAL STORAGE (INVENTÁRIO) -->
+    <div id="storage-modal" class="modal hidden">
+      <div class="panel-header">
+        <h3>Teu Storage</h3>
+        <button onclick="toggleModal('storage-modal')">✖</button>
+      </div>
+      <div id="storage-grid" class="storage-grid"></div>
+      <div style="margin-top:10px;">
+        <button class="btn-small" onclick="transferAllToSell()">Transferir Todos para Vendas</button>
+      </div>
+    </div>
+
+    <!-- MODAL WALLET -->
+    <div id="wallet-modal" class="modal hidden">
+      <div class="panel-header">
+        <h3>Porta-Moedas</h3>
+        <button onclick="toggleModal('wallet-modal')">✖</button>
+      </div>
+      <div id="coin-slots" class="coin-slots"></div>
+      <button class="btn-small" style="width:100%; margin-top:10px;" onclick="transferMoneyToSell()">Adicionar à Venda</button>
+    </div>
+
+    <!-- MODAL VENDAS (TRADE WINDOW) -->
+    <div id="sales-modal" class="modal hidden" style="width:95%; max-width:600px;">
+      <div class="panel-header">
+        <h3>Janela de Vendas</h3>
+        <button onclick="toggleModal('sales-modal')">✖</button>
+      </div>
+      <p style="font-size:12px;color:#bbb">Seleciona itens aqui. Aceita para concluir.</p>
+      <div id="sell-area" class="sell-cards-container" style="border:1px dashed #0f0;padding:10px;"></div>
+      <div id="sell-details-preview" style="margin-top:10px;"></div>
+      
+      <div style="margin-top:15px;display:flex;gap:10px;justify-content:center;">
+         <button class="btn btn-danger" onclick="closeSalesTrade()">Rejeitar / Limpar</button>
+         <button class="btn" onclick="acceptSalesTrade()">Aceitar Venda</button>
+      </div>
+    </div>
+
+    <!-- MODAL DETALHES DA VENDA -->
+    <div id="sell-details-modal" class="modal hidden" style="width:95%; max-width:500px;">
+       <div class="panel-header">
+         <h3>Detalhes dos Bens</h3>
+         <button onclick="toggleModal('sell-details-modal')">✖</button>
+       </div>
+       <div id="details-content"></div>
+       <button class="btn-small" style="width:100%; margin-top:10px;" onclick="confirmDetailsClose()">OK, Regresso às Vendas</button>
     </div>
 
     <div id="side-panel" class="hidden">
@@ -339,7 +359,6 @@
       </div>
       <div id="side-panel-content"></div>
     </div>
-
     <div id="ticker"></div>
   </section>
 
@@ -406,33 +425,36 @@
     function loadState(){
         try{const s=localStorage.getItem(STATE_KEY);if(s)return JSON.parse(s)}catch{}
         return {
-            players:[{id:'player_1',name:'big 1',email:'big1@test.com',pass:'123456',energy:100,totalFlags:0,zapFlags:0,prFlags:0,skill:1,vision:5,lastActivityAt:Date.now(),position:{lat:38.7223,lng:-9.1393},qrs:[]}],
+            players:[
+                {id:'player_1',name:'big 1',email:'big1@test.com',pass:'123456',energy:100,totalFlags:0,zapFlags:0,prFlags:0,skill:1,vision:5,lastActivityAt:Date.now(),position:{lat:38.7223,lng:-9.1393},qrs:[],walletCoins:500,friends:['player_2']},
+                {id:'player_2',name:'jogador_teste',email:'test@test.com',pass:'123456',energy:100,totalFlags:0,zapFlags:0,prFlags:0,skill:1,vision:5,lastActivityAt:Date.now(),position:{lat:38.7300,lng:-9.1300},qrs:[],walletCoins:1000,friends:[]},
+                {id:'player_3',name:'comprador_online',email:'buyer@test.com',pass:'123456',energy:50,totalFlags:5,zapFlags:2,prFlags:3,skill:5,vision:5,lastActivityAt:Date.now(),position:{lat:38.7200,lng:-9.1400},qrs:[],walletCoins:2500,friends:[]}
+            ],
             companies:[{id:'company_1',name:'big 01',nif:'123456781',pass:'123456',packages:[],campaign:{rewardText:'Oferta'}}],
-            backoffice:{email:'ovo@ovo',pass:'258258258'},currentPlayer:null,currentCompany:null
+            backoffice:{email:'ovo@ovo',pass:'258258258'},currentPlayer:null,currentCompany:null,
+            // Estrutura auxiliar para o sistema de vendas
+            currentTradeItems:[], currentTradeAmount:0,
+            activeModal:null
         }
     }
     function saveState(){ localStorage.setItem(STATE_KEY,JSON.stringify(STATE)) }
     
-    function seedTestQRCodes(){
-        STATE.players.forEach(p=>{
-            p.qrs=p.qrs||[]; p.qrStorage=p.qrStorage||[];
-            for(let i=1;i<=5;i++){
-                const code='TEST-'+p.id.toUpperCase()+'-QR'+i;
-                if(!p.qrs.some(q=>q.code===code)&&!p.qrStorage.some(q=>q.code===code)){
-                    p.qrs.push({code,prName:'QR Teste '+i,rewardText:'Cupao de teste do '+p.name+' numero '+i,createdAt:Date.now(),expiresAt:Date.now()+30*864e5,status:'active',storageId:'test_'+p.id+'_'+i,salePrice:String(2*i),tradeText:'Aceito dinheiro ou outro QR'});
-                }
-            }
-        });saveState();
+    // Simulação de Base de Dados para Loja/Amizades
+    function seedTestData(){
+        // Adiciona alguns QRs fictícios ao 'big 1' se estiver vazio
+        const p = STATE.players.find(x => x.name === 'big 1');
+        if(p && p.qrs.length === 0){
+           p.qrs.push({code:'TEST-QR-01', value:10, desc:'QR Promoção'});
+           p.qrs.push({code:'TEST-QR-02', value:20, desc:'QR VIP'});
+        }
+        saveState();
     }
+    seedTestData();
 
-    let currentDealBasket={qrs:[],money:0};
-    let simpleDealState={friendId:null,items:[],money:0,meAccepted:false,friendAccepted:false};
-    let liveStorageDeal={friendId:null,requested:false,accepted:false,myItems:[],myMoney:0,friendItems:[],friendMoney:0,myOk:false,friendOk:false};
-    
-    let STATE=loadState();seedTestQRCodes();
     let map=null, playerMarker=null, flags=[], gpsWatchId=null, offlineMode=false, offlineStepCounter=0, visionCircle=null, mapLoadedOnce=false, mapShiftX=0, mapShiftY=0;
     const ENERGY_REGEN_INTERVAL_MS=15*60*1000, ENERGY_REGEN_AMOUNT=10;
 
+    // --- Core Navigation ---
     function goTo(id, tab){
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         document.getElementById(id).classList.add('active');
@@ -440,42 +462,34 @@
         if(id==='game-screen') initGame();
         if(id==='pr-screen') initPRDashboard();
     }
-    
     function switchAuthTab(t){
         document.querySelectorAll('.auth-tab').forEach(x => x.classList.remove('active'));
         document.querySelectorAll('.auth-form').forEach(x => x.classList.remove('active'));
         if(t==='player'){document.querySelectorAll('.auth-tab')[0].classList.add('active');document.getElementById('auth-player').classList.add('active')}
         else{document.querySelectorAll('.auth-tab')[1].classList.add('active');document.getElementById('auth-company').classList.add('active')}
     }
-    
     function showPlayerRegister(){document.getElementById('form-player-login').classList.add('hidden');document.getElementById('form-player-register').classList.remove('hidden')}
     function showPlayerLogin(){document.getElementById('form-player-register').classList.add('hidden');document.getElementById('form-player-login').classList.remove('hidden')}
     function pName(id){ return document.getElementById(id).value.trim() }
-    
-    // LOGIN PLAYER
+
+    // --- Login/Register Handlers ---
     document.getElementById('form-player-login').onsubmit=e=>{
         e.preventDefault();
         const p=STATE.players.find(x=>x.name.toLowerCase()===pName('p-login-name').toLowerCase());
         if(p&&p.pass===document.getElementById('p-login-pass').value){STATE.currentPlayer=p;applyOfflineEnergyRegen();goTo('game-screen')}
         else document.getElementById('msg-player').innerHTML='<span class="danger">Login invalido.</span>';
     };
-    
-    // REGISTER PLAYER
     document.getElementById('form-player-register').onsubmit=e=>{
         e.preventDefault();
-        const p={id:'player_'+Date.now(),name:pName('p-name'),email:pName('p-email'),pass:document.getElementById('p-pass').value,energy:100,totalFlags:0,zapFlags:0,prFlags:0,skill:1,vision:5,lastActivityAt:Date.now(),position:{lat:38.7223,lng:-9.1393},qrs:[]};
-        STATE.players.push(p);seedTestQRCodes();saveState();showPlayerLogin();
+        const p={id:'player_'+Date.now(),name:pName('p-name'),email:pName('p-email'),pass:document.getElementById('p-pass').value,energy:100,totalFlags:0,zapFlags:0,prFlags:0,skill:1,vision:5,lastActivityAt:Date.now(),position:{lat:38.7223,lng:-9.1393},qrs:[],walletCoins:100,friends:[]};
+        STATE.players.push(p);saveState();showPlayerLogin();
     };
-    
-    // LOGIN COMPANY
     document.getElementById('form-company').onsubmit=e=>{
         e.preventDefault();
         let c=STATE.companies.find(x=>x.nif===pName('c-nif'));
         if(!c){c={id:'company_'+Date.now(),name:pName('c-name'),nif:pName('c-nif'),pass:document.getElementById('c-pass').value,packages:[],campaign:{rewardText:'Oferta'}};STATE.companies.push(c)}
         STATE.currentCompany=c;saveState();goTo('pr-screen');
     };
-    
-    // BACKOFFICE
     document.getElementById('form-backoffice').onsubmit=e=>{
         e.preventDefault();
         if(pName('bo-email')===STATE.backoffice.email && document.getElementById('bo-pass').value===STATE.backoffice.pass){
@@ -485,111 +499,204 @@
     };
     function logoutBackoffice(){document.getElementById('form-backoffice').style.display='block';document.getElementById('bo-dashboard').style.display='none'}
 
+    // --- Gameplay Functions ---
     function renderScreenAvatar(){const el=document.getElementById('player-screen-avatar');if(el) el.innerHTML='<div class="vision-aura"></div><div class="collect-aura"></div>';}
-
-    // --- Jogo Functions ---
     function renderSimpleGPSMap(lat,lng,force=false){
       const mapEl=document.getElementById('map');
-      if(!mapEl)return;
-      if(mapLoadedOnce&&!force)return;
+      if(!mapEl)return;if(mapLoadedOnce&&!force)return;
       const d=0.00035;
       const bbox=[lng-d,lat-d,lng+d,lat+d].join('%2C');
       mapEl.innerHTML='<iframe title="Mapa GPS" src="https://www.openstreetmap.org/export/embed.html?bbox='+bbox+'&layer=mapnik"></iframe>';
-      mapEl.style.setProperty('--map-shift-x',mapShiftX+'px');
-      mapEl.style.setProperty('--map-shift-y',mapShiftY+'px');
-      mapLoadedOnce=true;
+      mapEl.style.setProperty('--map-shift-x',mapShiftX+'px');mapEl.style.setProperty('--map-shift-y',mapShiftY+'px');mapLoadedOnce=true;
     }
-
     function initGame(){
       if(!STATE.currentPlayer)return goTo('auth-screen','player');
       const pos=STATE.currentPlayer.position||{lat:38.7223,lng:-9.1393};
       STATE.currentPlayer.position=pos;
-      document.getElementById('game-mode-panel').classList.remove('hidden');
-      document.getElementById('dpad-container').classList.add('hidden');
-      renderSimpleGPSMap(pos.lat,pos.lng,true);
-      renderScreenAvatar();
-      renderTopBar();
+      document.getElementById('game-mode-panel').classList.remove('hidden');document.getElementById('dpad-container').classList.add('hidden');
+      renderSimpleGPSMap(pos.lat,pos.lng,true);renderScreenAvatar();renderTopBar();
     }
-
-    function activateHomeMode(){
-      offlineMode=true;
-      document.getElementById('game-mode-panel').classList.add('hidden');
-      document.getElementById('dpad-container').classList.remove('hidden');
-      if(gpsWatchId!==null){navigator.geolocation.clearWatch(gpsWatchId);gpsWatchId=null}
-      initDPad();
-      const pos=STATE.currentPlayer.position||{lat:38.7223,lng:-9.1393};
-      updatePlayerLocation(pos.lat,pos.lng,true);
-      renderTopBar();
-    }
-
-    function requestGPSMode(){
-      offlineMode=false;
-      document.getElementById('game-mode-panel').classList.add('hidden');
-      document.getElementById('dpad-container').classList.add('hidden');
-      const status=document.getElementById('map-status');
-      if(status)status.textContent='GPS: a procurar localização...';
-      if(!navigator.geolocation){activateHomeMode();return}
-      if(gpsWatchId!==null)navigator.geolocation.clearWatch(gpsWatchId);
-      navigator.geolocation.getCurrentPosition(
-        p=>{updatePlayerLocation(p.coords.latitude,p.coords.longitude,true);
-          gpsWatchId=navigator.geolocation.watchPosition(wp=>updatePlayerLocation(wp.coords.latitude,wp.coords.longitude,false),()=>activateHomeMode(),{enableHighAccuracy:true,maximumAge:5000,timeout:20000});
-        },
-        ()=>{document.getElementById('game-mode-panel').classList.remove('hidden');if(status)status.textContent='GPS falhou. Podes usar OFFLINE GPS.'},
-        {enableHighAccuracy:true,maximumAge:5000,timeout:20000}
-      );
-    }
-
-    function moveMapBackground(dx,dy){
-      mapShiftX-=dx*18;mapShiftY+=dy*18;
-      const mapEl=document.getElementById('map');if(mapEl){mapEl.style.setProperty('--map-shift-x',mapShiftX+'px');mapEl.style.setProperty('--map-shift-y',mapShiftY+'px')}
-    }
-
+    function activateHomeMode(){offlineMode=true;document.getElementById('game-mode-panel').classList.add('hidden');document.getElementById('dpad-container').classList.remove('hidden');if(gpsWatchId!==null){navigator.geolocation.clearWatch(gpsWatchId);gpsWatchId=null}initDPad();const pos=STATE.currentPlayer.position||{lat:38.7223,lng:-9.1393};updatePlayerLocation(pos.lat,pos.lng,true);renderTopBar();}
+    function requestGPSMode(){offlineMode=false;document.getElementById('game-mode-panel').classList.add('hidden');document.getElementById('dpad-container').classList.add('hidden');const status=document.getElementById('map-status');if(status)status.textContent='GPS: a procurar localização...';if(!navigator.geolocation){activateHomeMode();return}if(gpsWatchId!==null)navigator.geolocation.clearWatch(gpsWatchId);navigator.geolocation.getCurrentPosition(p=>{updatePlayerLocation(p.coords.latitude,p.coords.longitude,true);gpsWatchId=navigator.geolocation.watchPosition(wp=>updatePlayerLocation(wp.coords.latitude,wp.coords.longitude,false),()=>activateHomeMode(),{enableHighAccuracy:true,maximumAge:5000,timeout:20000});},()=>{document.getElementById('game-mode-panel').classList.remove('hidden');if(status)status.textContent='GPS falhou. Podes usar OFFLINE GPS.'},{enableHighAccuracy:true,maximumAge:5000,timeout:20000});}
+    function moveMapBackground(dx,dy){mapShiftX-=dx*18;mapShiftY+=dy*18;const mapEl=document.getElementById('map');if(mapEl){mapEl.style.setProperty('--map-shift-x',mapShiftX+'px');mapEl.style.setProperty('--map-shift-y',mapShiftY+'px')}}
     function renderTopBar(){
       if(!STATE.currentPlayer)return;
-      if(typeof STATE.currentPlayer.coins!=='number')STATE.currentPlayer.coins=150;
-      if(typeof STATE.currentPlayer.hunger!=='number')STATE.currentPlayer.hunger=80;
-      if(typeof STATE.currentPlayer.mood!=='number')STATE.currentPlayer.mood=75;
+      if(typeof STATE.currentPlayer.coins!=='number')STATE.currentPlayer.coins=150;if(typeof STATE.currentPlayer.hunger!=='number')STATE.currentPlayer.hunger=80;if(typeof STATE.currentPlayer.mood!=='number')STATE.currentPlayer.mood=75;
       const e=Math.floor(STATE.currentPlayer.energy||0);
       const set=(id,t)=>{const el=document.getElementById(id);if(el)el.textContent=t};
-      set('energy-text',e+'/100');set('hunger-text',STATE.currentPlayer.hunger+'/100');set('mood-text',STATE.currentPlayer.mood+'/100');set('coins-text',STATE.currentPlayer.coins);set('flags-text',STATE.currentPlayer.totalFlags||0);
+      set('energy-text',e+'/100');set('hunger-text',STATE.currentPlayer.hunger+'/100');set('mood-text',STATE.currentPlayer.mood+'/100');
+      // Usamos o valor da carteira (walletCoins)
+      set('coins-text',typeof STATE.currentPlayer.walletCoins !== 'undefined' ? STATE.currentPlayer.walletCoins : 150); 
+      set('flags-text',STATE.currentPlayer.totalFlags||0);
       set('mode-text',(offlineMode?'Modo: Offline GPS':'Modo: Online GPS')+' · ⌨️ Setas/WASD');
     }
-
-    function addTestCoinLot(){if(!STATE.currentPlayer)return;STATE.currentPlayer.coins=(STATE.currentPlayer.coins||0)+100;STATE.currentPlayer.testCoinLot=100;saveState();renderTopBar();alert('Lote de teste adicionado: 100 moedas')}
+    function addTestCoinLot(){if(!STATE.currentPlayer)return;STATE.currentPlayer.walletCoins=(STATE.currentPlayer.walletCoins||0)+100;STATE.currentPlayer.testCoinLot=100;saveState();renderTopBar();alert('Lote de teste adicionado: 100 moedas')}
     function downloadOfflineDemo(){alert('📥 Modo offline preparado para simulação.')}
     function drainEnergyDemo(){if(!STATE.currentPlayer)return;STATE.currentPlayer.energy=0;saveState();renderTopBar();showTiredNote()}
-    function maxStatsDemo(){if(!STATE.currentPlayer)return;STATE.currentPlayer.energy=100;STATE.currentPlayer.hunger=100;STATE.currentPlayer.mood=100;STATE.currentPlayer.coins=Math.max(STATE.currentPlayer.coins||0,150);saveState();renderTopBar()}
+    function maxStatsDemo(){if(!STATE.currentPlayer)return;STATE.currentPlayer.energy=100;STATE.currentPlayer.hunger=100;STATE.currentPlayer.mood=100;STATE.currentPlayer.walletCoins=Math.max(STATE.currentPlayer.walletCoins||0,150);saveState();renderTopBar()}
     function showTiredNote(){let n=document.getElementById('avatar-tired-note');if(!n){n=document.createElement('div');n.id='avatar-tired-note';n.className='avatar-tired-note';document.body.appendChild(n)}n.textContent='Estou cansado, preciso dormir 15 minutos';clearTimeout(showTiredNote.timer);showTiredNote.timer=setTimeout(()=>n.remove(),3500)}
-
     function applyOfflineEnergyRegen(){if(!STATE.currentPlayer)return;const now=Date.now(),last=STATE.currentPlayer.lastActivityAt||now,cycles=Math.floor((now-last)/ENERGY_REGEN_INTERVAL_MS);if(cycles>0){STATE.currentPlayer.energy=Math.min(100,STATE.currentPlayer.energy+cycles*ENERGY_REGEN_AMOUNT);STATE.currentPlayer.lastActivityAt=last+cycles*ENERGY_REGEN_INTERVAL_MS;saveState()}}
     function spendEnergy(a){STATE.currentPlayer.energy=Math.max(0,STATE.currentPlayer.energy-a);STATE.currentPlayer.lastActivityAt=Date.now();saveState();renderTopBar()}
     function getDistanceMeters(a,b,c,d){const R=6371e3,p1=a*Math.PI/180,p2=c*Math.PI/180,dp=(c-a)*Math.PI/180,dl=(d-b)*Math.PI/180,x=Math.sin(dp/2)**2+Math.cos(p1)*Math.cos(p2)*Math.sin(dl/2)**2;return R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x))}
     function randomOffset(lat,lng,r){const A=Math.random()*Math.PI*2,D=Math.random()*r;return{lat:lat+(D*Math.cos(A))/111320,lng:lng+(D*Math.sin(A))/(111320*Math.cos(lat*Math.PI/180))}}
-    function spawnFlags(){
-      flags=[];if(!STATE.currentPlayer)return;
-      const base=STATE.currentPlayer.position;
-      for(let i=0;i<8;i++){const type=i<4?'ZAP':'PR';const p=randomOffset(base.lat,base.lng,type==='ZAP'?8:12);const id=type.toLowerCase()+'_'+Date.now()+'_'+i;flags.push({id,type,lat:p.lat,lng:p.lng,marker:null});}
-      updateCollectAura();
-    }
+    function spawnFlags(){flags=[];if(!STATE.currentPlayer)return;const base=STATE.currentPlayer.position;for(let i=0;i<8;i++){const type=i<4?'ZAP':'PR';const p=randomOffset(base.lat,base.lng,type==='ZAP'?8:12);const id=type.toLowerCase()+'_'+Date.now()+'_'+i;flags.push({id,type,lat:p.lat,lng:p.lng,marker:null});}updateCollectAura();}
+    function updatePlayerLocation(lat,lng,centerMap=true){if(!STATE.currentPlayer)return;STATE.currentPlayer.position={lat,lng};renderScreenAvatar();saveState();renderTopBar();}
 
-    function updatePlayerLocation(lat,lng,centerMap=true){
-      if(!STATE.currentPlayer)return;
-      STATE.currentPlayer.position={lat,lng};renderScreenAvatar();saveState();renderTopBar();
-    }
-
-    /* PLACEHOLDERS PARA EVITAR ERROS NA ARENA */
+    /* PLACEHOLDERS */
     function initDPad(){console.log('Init DPad: Controles offline ativados.');}
     function updateCollectAura(){}
-    function resizeDPad(_size) {}
-    function movePlayerDPad(_dir) {}
-    function centerOnPlayer() {}
-    function toggleQRTradePanel() {}
-    function openPanel(_panel) {}
-    function closePanel() {}
-    function switchPRTab(_tab) {}
-    function initPRDashboard() {}
-    function renderQRTradeTab(_tab) {}
-    function closeFlagModal() {}
+    function resizeDPad(_size) {}function movePlayerDPad(_dir) {}function centerOnPlayer() {}function toggleQRTradePanel() {}function openPanel(_panel) {}function closePanel() {}function switchPRTab(_tab) {}function initPRDashboard() {}function renderQRTradeTab(_tab) {}function closeFlagModal() {}
+
+    /* =========================================
+       NOVAS FUNCIONALIDADES (CHAT/LOJA/SYS)
+       ========================================= */
+
+    // Gestão de Janelas
+    function toggleModal(modalId){
+        STATE.activeModal = modalId;
+        const el = document.getElementById(modalId);
+        if(el.classList.contains('hidden')){
+            el.classList.remove('hidden');
+            renderContentForModal(modalId);
+        }else{
+            el.classList.add('hidden');
+        }
+    }
+
+    // Carregar Conteúdos das Modais
+    function renderContentForModal(modalId){
+        if(modalId === 'chat-modal'){
+            const list = document.getElementById('chat-list');
+            list.innerHTML = '';
+            // Itera sobre todos os jogadores menos o atual
+            STATE.players.forEach(other => {
+                if(other.id === STATE.currentPlayer.id) return;
+                const li = document.createElement('li');
+                li.className = 'chat-user-item';
+                li.innerHTML = `
+                    <strong>${other.name}</strong>
+                    <div class="chat-user-actions">
+                        <button class="btn-small btn-dark" onclick="alert('Pedido de amigo enviado para ${other.name}')"><i class="fas fa-user-plus"></i></button>
+                        <button class="btn-small btn" onclick="alert('Abrindo chat privado com ${other.name}')">Msg</button>
+                    </div>
+                `;
+                list.appendChild(li);
+            });
+        } else if(modalId === 'storage-modal'){
+            const grid = document.getElementById('storage-grid');
+            grid.innerHTML = '';
+            const myQrs = STATE.currentPlayer.qrs || [];
+            if(myQrs.length === 0) grid.innerHTML = '<p style="text-align:center;width:100%">Nenhum QR em stock.</p>';
+            myQrs.forEach((qr, index) => {
+                const div = document.createElement('div');
+                div.className = 'storage-item';
+                div.innerText = qr.code;
+                div.onclick = () => { alert(`Item: ${qr.code}\nValor: ${qr.value}`); };
+                grid.appendChild(div);
+            });
+        } else if(modalId === 'wallet-modal'){
+             const slots = document.getElementById('coin-slots');
+             slots.innerHTML = '';
+             const amt = STATE.currentPlayer.walletCoins || 0;
+             const div = document.createElement('div');
+             div.className = 'coin-slot';
+             div.innerHTML = `<span>Balanço Total:</span> <span style="color:#fc0">${amt} 🪙</span>`;
+             slots.appendChild(div);
+        }
+    }
+
+    // Lógica de Vendas (Trade)
+    function addToTrade(type, value, label) {
+        STATE.currentTradeItems.push({type, value, label});
+        STATE.currentTradeAmount += parseInt(value); // Simplificação
+        renderSalesView();
+    }
+
+    function transferAllToSell() {
+        const qrs = STATE.currentPlayer.qrs || [];
+        qrs.forEach(qr => addToTrade('QR', qr.value, `${qr.code} (${qr.desc})`));
+        toggleModal('storage-modal');
+        toggleModal('sales-modal');
+    }
+
+    function transferMoneyToSell() {
+        const amt = STATE.currentPlayer.walletCoins || 0;
+        addToTrade('MOEDA', amt, `Saldo:${amt} 🪙`);
+        toggleModal('wallet-modal');
+    }
+
+    function renderSalesView() {
+        const area = document.getElementById('sell-area');
+        const preview = document.getElementById('sell-details-preview');
+        area.innerHTML = '';
+        
+        STATE.currentTradeItems.forEach((item, idx) => {
+            const card = document.createElement('div');
+            card.className = 'sell-card';
+            card.innerHTML = `
+                <div class="sell-card-remove" onclick="removeFromTrade(${idx})">✖</div>
+                <span class="sell-card-icon">${item.type === 'MOEDA' ? '🪙' : '📱'}</span>
+                <span class="sell-card-label">${item.label}</span>
+            `;
+            area.appendChild(card);
+        });
+
+        preview.innerHTML = `<div style="color:#0f0;text-align:center;font-size:12px;">Total Valor Estimado: ${STATE.currentTradeAmount}</div>`;
+    }
+
+    function removeFromTrade(index) {
+        STATE.currentTradeItems.splice(index, 1);
+        renderSalesView();
+    }
+
+    function acceptSalesTrade() {
+        if(STATE.currentTradeItems.length === 0) { alert('Acesta está vazio!'); return; }
+        
+        // Simular aceitação: Limpa o inventário baseado nos itens vendidos
+        // Nota: Em produção real, verificaria transação segura. Aqui, simplificamos.
+        // Removeimos itens do player para simular venda
+        
+        // Reset Estado
+        STATE.currentTradeItems = [];
+        STATE.currentTradeAmount = 0;
+        
+        alert('Venda concluída com sucesso! Os bens foram removidos do seu inventário (simulação).');
+        toggleModal('sales-modal');
+        saveState();
+        renderTopBar();
+    }
+
+    function closeSalesTrade() {
+        STATE.currentTradeItems = [];
+        STATE.currentTradeAmount = 0;
+        renderSalesView();
+        toggleModal('sales-modal');
+    }
+
+    function confirmDetailsClose() {
+        toggleModal('sell-details-modal');
+    }
+
+    function sendChatMessage() {
+        const val = document.getElementById('chat-input-msg').value;
+        if(val.trim() !== '') {
+            alert('Enviaste: "' + val + '" (Simulado)');
+            document.getElementById('chat-input-msg').value = '';
+        }
+    }
+    
+    // Backup renderTopBar para garantir atualização no início
+    function renderTopBarBackup(){
+       if(!STATE.currentPlayer)return;
+       if(typeof STATE.currentPlayer.coins!=='number')STATE.currentPlayer.coins=150;
+       if(typeof STATE.currentPlayer.hunger!=='number')STATE.currentPlayer.hunger=80;
+       if(typeof STATE.currentPlayer.mood!=='number')STATE.currentPlayer.mood=75;
+       const e=Math.floor(STATE.currentPlayer.energy||0);
+       const set=(id,t)=>{const el=document.getElementById(id);if(el)el.textContent=t};
+       set('energy-text',e+'/100');set('hunger-text',STATE.currentPlayer.hunger+'/100');set('mood-text',STATE.currentPlayer.mood+'/100');
+       set('coins-text',STATE.currentPlayer.coins);set('flags-text',STATE.currentPlayer.totalFlags||0);
+       set('mode-text',(offlineMode?'Modo: Offline GPS':'Modo: Online GPS')+' · ⌨️ Setas/WASD');
+    }
   </script>
 </body>
 </html>
