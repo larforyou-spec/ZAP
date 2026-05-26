@@ -97,6 +97,8 @@ html,body{width:100%;height:100%;margin:0;overflow:hidden}
 .simple-deal-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.simple-bag,.simple-box{border:2px solid #0f0;border-radius:12px;background:#061406;color:#fff;padding:8px;max-height:300px;overflow:auto}.simple-item{border:1px solid rgba(0,255,0,.6);border-radius:8px;padding:6px;margin:5px 0;background:#101;cursor:pointer}.simple-money{border-color:#fc0;background:#261d00}.simple-accepted{color:#0f0;font-weight:900}.simple-pending{color:#fc0;font-weight:900}
 /* LIVE STORAGE DEAL */
 .live-deal-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.live-box,.live-storage{border:2px solid #0f0;border-radius:12px;background:#061406;color:#fff;padding:8px;max-height:320px;overflow:auto}.live-box.friend{border-color:#0cf}.live-chip{border:1px solid rgba(0,255,0,.7);border-radius:8px;padding:7px;margin:5px 0;background:#101;cursor:pointer}.live-money{border-color:#fc0;background:#2b2000}.live-hand{display:inline-block;padding:9px 13px;border-radius:999px;background:#6b4a00;border:2px solid #fc0;color:#fff;font-weight:900;cursor:grab;margin-top:6px}.live-wait{color:#fc0;font-weight:900}.live-ok{color:#0f0;font-weight:900}
+/* SIMPLE STORAGE TRADE */
+.simple-storage-wrap{display:grid;grid-template-columns:1fr 1fr;gap:10px;text-align:left}.simple-storage,.simple-trade-box{border:2px solid #0f0;border-radius:14px;background:#061406;color:#fff;padding:10px;min-height:260px;max-height:420px;overflow:auto}.simple-trade-box{border-color:#fc0;background:#181200}.simple-qr-item,.simple-coin-item{border:1px solid #0f0;border-radius:10px;padding:8px;margin:6px 0;background:#101;cursor:grab}.simple-coin-item{border-color:#fc0;background:#3b2b00}.simple-empty-box{border:2px dashed #fc0;border-radius:12px;min-height:120px;padding:10px;text-align:center;color:#fc0}.simple-trade-line{display:flex;justify-content:space-between;gap:8px;border-bottom:1px solid rgba(255,204,0,.35);padding:6px 0}.coin-stack{font-size:34px;line-height:1;margin:6px 0}
 </style>
 </head>
 <body>
@@ -682,9 +684,10 @@ html,body{width:100%;height:100%;margin:0;overflow:hidden}
     function sendFriendMessage(friendId){ensureQRTradeState();const t=document.getElementById('friend-msg-text').value.trim();if(!t)return;const friend=getPlayerById(friendId);STATE.qrTrade.messages.push({id:'msg_'+Date.now(),from:STATE.currentPlayer.id,to:friendId,text:t,read:false,createdAt:Date.now()});saveState();alert('Mensagem enviada para '+(friend?friend.name:'amigo'));renderFriendDialog(friendId)}
     function openDealWindow(friendId){
       renderFriendDialog(friendId);
-      liveStorageDeal={friendId,requested:true,accepted:false,myItems:[],myMoney:0,friendItems:[],friendMoney:0,myOk:false,friendOk:false};
-      renderLiveStorageRequest();
+      liveStorageDeal={friendId,requested:true,accepted:true,myItems:[],myMoney:0,friendItems:[],friendMoney:0,myOk:false,friendOk:false};
+      renderSimpleStorageTrade();
     }
+
 
 
 
@@ -699,6 +702,23 @@ html,body{width:100%;height:100%;margin:0;overflow:hidden}
     function clearDealBasket(){currentDealBasket={qrs:[],money:0};renderDealBasket()}
     function removeDealQR(code){currentDealBasket.qrs=currentDealBasket.qrs.filter(q=>q!==code);renderDealBasket()}
     function renderDealBasket(){const b=document.getElementById('deal-basket');if(!b)return;const rows=currentDealBasket.qrs.map(q=>'<div class="basket-row"><span>QR: '+escapeQR(q)+'</span><button class="btn-danger btn-small" onclick="removeDealQR(&quot;'+escapeQR(q)+'&quot;)">X</button></div>').join('');b.innerHTML='<h3>Lista na caixa de troca</h3>'+(rows||'<p>Sem QRs na caixa.</p>')+'<div class="basket-total">Moedas: 🪙 '+currentDealBasket.money+'</div>'}
+
+    function renderSimpleStorageTrade(){
+      const friend=getPlayerById(liveStorageDeal.friendId);
+      const qrs=getNegotiableItems(STATE.currentPlayer);
+      const qrList=qrs.map((q,i)=>'<div class="simple-qr-item" draggable="true" ondragstart="event.dataTransfer.setData(&quot;text/simpleqr&quot;,&quot;'+i+'&quot;)" onclick="addSimpleStorageQR('+i+')"><b>'+escapeQR(q.code||'QR')+'</b><br>'+escapeQR(q.rewardText||q.prName||'QR ganho')+'</div>').join('')||'<p>Sem QRs ganhos para trocar.</p>';
+      const tradeList=(liveStorageDeal.myItems||[]).map((q,i)=>'<div class="simple-trade-line"><span>QR: '+escapeQR(q.code||'QR')+'</span><button class="btn-danger btn-small" onclick="removeSimpleStorageQR('+i+')">X</button></div>').join('');
+      const box=document.getElementById('deal-overlay');
+      box.innerHTML='<div class="qr-big-box"><h2>Storage simples de troca'+(friend?' com '+escapeQR(friend.name):'')+'</h2><div class="simple-storage-wrap"><div class="simple-storage"><h3>Lista de QRs ganhos</h3>'+qrList+'<h3>Porta-moedas</h3><div class="coin-stack">🪙🪙🪙</div><p>Montante: <b>'+(STATE.currentPlayer.coins||0)+'</b> moedas</p><input id="simple-coin-split" type="number" min="0" max="'+(STATE.currentPlayer.coins||0)+'" placeholder="Dividir montante"><button class="btn btn-small" onclick="prepareSimpleCoins()">Separar moedas</button><div id="simple-coin-hand"></div></div><div class="simple-trade-box" ondragover="event.preventDefault()" ondrop="dropSimpleStorageTrade(event)"><h3>Janela vazia da transação</h3><div class="simple-empty-box">Arrasta para aqui os QRs e as moedas</div><div id="simple-trade-list">'+(tradeList||'<p>Nada colocado ainda.</p>')+'</div><div class="simple-trade-line"><span>Moedas: 🪙 '+(liveStorageDeal.myMoney||0)+'</span><button class="btn-danger btn-small" onclick="clearSimpleStorageCoins()">X</button></div></div></div><div class="qr-trade-actions"><button class="btn-danger btn-small" onclick="clearSimpleStorageTrade()">Anular tudo</button><button class="btn btn-small" onclick="acceptLiveDealMe()">Aceitar</button><button class="btn-dark btn-small" onclick="closeDealOverlay()">Fechar</button></div></div>';
+      box.classList.remove('hidden');
+    }
+    function prepareSimpleCoins(){const v=parseInt(document.getElementById('simple-coin-split')?.value||0,10)||0;if(v<=0)return alert('Escolhe quantas moedas queres separar.');if(v>(STATE.currentPlayer.coins||0))return alert('Nao tens essas moedas.');document.getElementById('simple-coin-hand').innerHTML='<div class="simple-coin-item" draggable="true" ondragstart="event.dataTransfer.setData(&quot;text/simplecoins&quot;,&quot;'+v+'&quot;)" onclick="addSimpleStorageCoins('+v+')">🪙 '+v+' moedas separadas</div>'}
+    function addSimpleStorageQR(i){const q=getNegotiableItems(STATE.currentPlayer)[i];if(q&&!liveStorageDeal.myItems.some(x=>x.code===q.code))liveStorageDeal.myItems.push(q);liveStorageDeal.myOk=false;renderSimpleStorageTrade()}
+    function removeSimpleStorageQR(i){liveStorageDeal.myItems.splice(i,1);liveStorageDeal.myOk=false;renderSimpleStorageTrade()}
+    function addSimpleStorageCoins(v){v=parseInt(v||0,10)||0;if(v<=0)return;if(v>(STATE.currentPlayer.coins||0))return alert('Nao tens essas moedas.');liveStorageDeal.myMoney=v;liveStorageDeal.myOk=false;renderSimpleStorageTrade()}
+    function clearSimpleStorageCoins(){liveStorageDeal.myMoney=0;liveStorageDeal.myOk=false;renderSimpleStorageTrade()}
+    function clearSimpleStorageTrade(){liveStorageDeal.myItems=[];liveStorageDeal.myMoney=0;liveStorageDeal.myOk=false;renderSimpleStorageTrade()}
+    function dropSimpleStorageTrade(e){e.preventDefault();const qi=e.dataTransfer.getData('text/simpleqr');const coins=e.dataTransfer.getData('text/simplecoins');if(qi!=='')addSimpleStorageQR(parseInt(qi,10));if(coins)addSimpleStorageCoins(coins)}
 
     function renderLiveStorageRequest(){
       const friend=getPlayerById(liveStorageDeal.friendId);const box=document.getElementById('deal-overlay');
