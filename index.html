@@ -273,6 +273,15 @@
       box-shadow: 0 12px 26px rgba(0,0,0,0.28);
     }
 
+    .map-full .flag-pin {
+      transform: translate(-50%, -50%);
+      z-index: 3;
+    }
+
+    .map-full .avatar {
+      z-index: 4;
+    }
+
     .pin-1 { left: 18%; top: 26%; }
     .pin-2 { left: 72%; top: 22%; }
     .pin-3 { left: 66%; top: 68%; }
@@ -394,7 +403,7 @@
 
     .cards-row {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
       gap: 14px;
       margin-bottom: 18px;
     }
@@ -460,6 +469,50 @@
         #0a1d12;
     }
 
+    .map-full.placement-mode {
+      cursor: crosshair;
+      border-color: rgba(255, 215, 90, 0.72);
+      box-shadow: inset 0 0 0 2px rgba(255, 215, 90, 0.18), 0 0 28px rgba(255, 215, 90, 0.14);
+    }
+
+    .map-full.player-move-mode {
+      cursor: pointer;
+    }
+
+    .range-circle {
+      position: absolute;
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      border: 1px dashed rgba(78,231,255,0.55);
+      background: rgba(78,231,255,0.06);
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    .map-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+      padding: 12px;
+      margin: 12px 0;
+      border-radius: 18px;
+      background: rgba(0,0,0,0.22);
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .map-toolbar select {
+      width: auto;
+      min-width: 160px;
+    }
+
+    .placement-hint {
+      color: var(--yellow);
+      font-weight: 900;
+    }
+
     .bottom-bar {
       display: flex;
       flex-wrap: wrap;
@@ -490,6 +543,38 @@
 
     .toast.active {
       display: block;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 14px 0;
+    }
+
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      overflow: hidden;
+      border-radius: 18px;
+      margin-top: 14px;
+    }
+
+    .data-table th,
+    .data-table td {
+      padding: 12px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      text-align: left;
+      vertical-align: top;
+    }
+
+    .data-table th {
+      color: var(--green-soft);
+      background: rgba(53,255,122,0.08);
+    }
+
+    .auth-box {
+      max-width: 520px;
     }
 
     @media (max-width: 900px) {
@@ -618,6 +703,9 @@
             <h2>Backoffice</h2>
             <button class="btn" onclick="renderBackofficePanel('overview')">Resumo</button>
             <button class="btn secondary" onclick="renderBackofficePanel('users')">Utilizadores</button>
+            <button class="btn secondary" onclick="renderBackofficePanel('map')">Mapa e Áreas</button>
+            <button class="btn secondary" onclick="renderBackofficePanel('qrs')">QRs</button>
+            <button class="btn secondary" onclick="renderBackofficePanel('trades')">Trocas</button>
             <button class="btn secondary" onclick="renderBackofficePanel('audit')">Auditoria</button>
           </aside>
           <section class="panel content-area" id="backoffice-content"></section>
@@ -629,27 +717,155 @@
   <div id="toast" class="toast"></div>
 
   <script>
-    const demo = {
-      player: {
-        name: 'Avatar Demo', energy: 92, hunger: 80, mood: 76, coins: 150, flags: 12, zap: 8, pr: 4
-      },
-      qrs: [
-        { code: 'ZAP-CAF-2030', company: 'Café Central', value: '10% desconto', price: 24, type: 'QR' },
-        { code: 'FLAG-PREM-88A', company: 'Bandeira Premiada', value: 'Item negociável', price: 55, type: 'Premium Flag' },
-        { code: 'ZAP-GYM-4410', company: 'Urban Gym', value: 'Aula experimental', price: 40, type: 'QR' }
-      ],
-      companies: [
-        { name: 'Café Central', pack: 'Básico', flags: 4200, status: 'Ativo' },
-        { name: 'Urban Gym', pack: 'Pro', flags: 11800, status: 'Ativo' },
-        { name: 'Loja Norte', pack: 'Gratuito', flags: 900, status: 'Pendente' }
-      ]
-    };
+    const STORAGE_KEY = 'ZAP_FLAGS_3_STATE';
+    let placementType = 'ZAP';
+
+    function createInitialState() {
+      const now = Date.now();
+      return {
+        session: { type: null, id: null },
+        players: [
+          {
+            id: 'player_demo',
+            name: 'Avatar Demo',
+            email: 'jogador@demo.pt',
+            phone: '910000000',
+            password: '123456',
+            energy: 92,
+            hunger: 80,
+            mood: 76,
+            coins: 150,
+            flags: 12,
+            zap: 8,
+            pr: 4,
+            qrs: ['ZAP-CAF-2030'],
+            position: { x: 50, y: 50 },
+            createdAt: now
+          },
+          {
+            id: 'player_norte',
+            name: 'Jogador Norte',
+            email: 'norte@demo.pt',
+            phone: '920000000',
+            password: '123456',
+            energy: 88,
+            hunger: 75,
+            mood: 82,
+            coins: 95,
+            flags: 4,
+            zap: 3,
+            pr: 1,
+            qrs: [],
+            position: { x: 35, y: 35 },
+            createdAt: now
+          }
+        ],
+        companies: [
+          { id: 'company_cafe', name: 'Café Central', nif: '123456789', email: 'empresa@demo.pt', password: '123456', pack: 'Básico', flags: 4200, status: 'Ativo', createdAt: now },
+          { id: 'company_gym', name: 'Urban Gym', nif: '987654321', email: 'gym@demo.pt', password: '123456', pack: 'Pro', flags: 11800, status: 'Ativo', createdAt: now }
+        ],
+        qrs: [
+          { id: 'qr_1', code: 'ZAP-CAF-2030', company: 'Café Central', value: '10% desconto', price: 24, type: 'QR', ownerId: null, forSale: true },
+          { id: 'qr_2', code: 'FLAG-PREM-88A', company: 'Bandeira Premiada', value: 'Item negociável', price: 55, type: 'Premium Flag', ownerId: null, forSale: true },
+          { id: 'qr_3', code: 'ZAP-GYM-4410', company: 'Urban Gym', value: 'Aula experimental', price: 40, type: 'QR', ownerId: null, forSale: true }
+        ],
+        flags: [
+          { id: 'flag_1', type: 'ZAP', label: 'Flag ZAP Centro', x: 18, y: 26, reward: 3, active: true },
+          { id: 'flag_2', type: 'PR', label: 'Flag PR Café', x: 72, y: 22, reward: 1, active: true },
+          { id: 'flag_3', type: 'BINGO', label: 'Bingo Praça', x: 66, y: 68, reward: 25, active: true },
+          { id: 'flag_4', type: 'ZAP', label: 'Flag ZAP Norte', x: 22, y: 72, reward: 3, active: true }
+        ],
+        bingos: [
+          { id: 'bingo_1', name: 'Bingo Praça Verde', area: 'Centro', reward: 50, active: true }
+        ],
+        trades: [],
+        audit: [
+          { id: 'audit_1', at: now, text: 'Sistema ZAP-FLAGS 3.0 iniciado.' }
+        ]
+      };
+    }
+
+    let state = loadState();
+    if (!state.trades) state.trades = [];
+
+    function loadState() {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) return JSON.parse(saved);
+      } catch (error) {
+        console.warn(error);
+      }
+      return createInitialState();
+    }
+
+    function saveState() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }
+
+    function addAudit(text) {
+      state.audit.unshift({ id: 'audit_' + Date.now(), at: Date.now(), text });
+      state.audit = state.audit.slice(0, 80);
+      saveState();
+    }
+
+    function currentPlayer() {
+      return state.players.find(player => player.id === state.session.id);
+    }
+
+    function currentCompany() {
+      return state.companies.find(company => company.id === state.session.id);
+    }
+
+    function ensurePlayerPosition(player) {
+      if (!player.position) player.position = { x: 50, y: 50 };
+      return player.position;
+    }
+
+    function distanceBetween(a, b) {
+      const dx = Number(a.x) - Number(b.x);
+      const dy = Number(a.y) - Number(b.y);
+      return Math.sqrt(dx * dx + dy * dy);
+    }
+
+    function clampStat(value) {
+      return Math.max(0, Math.min(100, Number(value)));
+    }
+
+    function spendMovementStats(player) {
+      player.energy = clampStat(Number(player.energy) - 1);
+      player.hunger = clampStat(Number(player.hunger) - 1);
+      player.mood = clampStat(Number(player.mood) - (player.hunger < 20 ? 2 : 0));
+    }
+
+    function canMove(player) {
+      if (Number(player.energy) <= 0) {
+        notify('Energia esgotada. Descansa antes de continuar.');
+        return false;
+      }
+      if (Number(player.hunger) <= 0) {
+        notify('Fome no limite. Precisas de comer antes de continuar.');
+        return false;
+      }
+      return true;
+    }
+
+    function uid(prefix) {
+      return prefix + '_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[char]));
+    }
+
+    function escapeJs(value) {
+      return String(value ?? '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+    }
 
     function showScreen(id) {
       document.querySelectorAll('.screen').forEach(screen => screen.classList.remove('active'));
       document.getElementById(id).classList.add('active');
-      if (id === 'player') renderPlayerPanel('game');
-      if (id === 'company') renderCompanyPanel('dashboard');
+      if (id === 'player') renderPlayerGate();
+      if (id === 'company') renderCompanyGate();
       if (id === 'backoffice') renderBackofficePanel('overview');
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
@@ -662,39 +878,164 @@
       notify.timer = setTimeout(() => toast.classList.remove('active'), 2400);
     }
 
+    function logout() {
+      state.session = { type: null, id: null };
+      saveState();
+      notify('Sessão terminada');
+      showScreen('home');
+    }
+
+    function renderPlayerGate() {
+      if (state.session.type === 'player' && currentPlayer()) renderPlayerPanel('game');
+      else renderPlayerAuth();
+    }
+
+    function renderCompanyGate() {
+      if (state.session.type === 'company' && currentCompany()) renderCompanyPanel('dashboard');
+      else renderCompanyAuth();
+    }
+
+    function renderPlayerAuth() {
+      document.getElementById('player-content').innerHTML = `
+        <div class="grid two">
+          <div class="auth-box">
+            <h2>Login Jogador</h2>
+            <div class="input-group"><label>Email</label><input id="player-login-email" value="jogador@demo.pt"></div>
+            <div class="input-group"><label>Senha</label><input id="player-login-password" type="password" value="123456"></div>
+            <button class="btn" onclick="loginPlayer()">Entrar</button>
+          </div>
+          <div class="auth-box">
+            <h2>Registar Jogador</h2>
+            <div class="input-group"><label>Nome</label><input id="player-register-name" placeholder="Nome do jogador"></div>
+            <div class="input-group"><label>Email</label><input id="player-register-email" placeholder="email@exemplo.pt"></div>
+            <div class="input-group"><label>Contacto</label><input id="player-register-phone" placeholder="Contacto"></div>
+            <div class="input-group"><label>Senha</label><input id="player-register-password" type="password" placeholder="Senha"></div>
+            <button class="btn" onclick="registerPlayer()">Criar conta</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderCompanyAuth() {
+      document.getElementById('company-content').innerHTML = `
+        <div class="grid two">
+          <div class="auth-box">
+            <h2>Login Empresa</h2>
+            <div class="input-group"><label>NIF</label><input id="company-login-nif" value="123456789"></div>
+            <div class="input-group"><label>Senha</label><input id="company-login-password" type="password" value="123456"></div>
+            <button class="btn" onclick="loginCompany()">Entrar</button>
+          </div>
+          <div class="auth-box">
+            <h2>Registar Empresa</h2>
+            <div class="input-group"><label>Nome</label><input id="company-register-name" placeholder="Nome da empresa"></div>
+            <div class="input-group"><label>NIF</label><input id="company-register-nif" placeholder="NIF"></div>
+            <div class="input-group"><label>Email</label><input id="company-register-email" placeholder="empresa@exemplo.pt"></div>
+            <div class="input-group"><label>Senha</label><input id="company-register-password" type="password" placeholder="Senha"></div>
+            <button class="btn" onclick="registerCompany()">Criar empresa</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function value(id) {
+      return document.getElementById(id)?.value.trim() || '';
+    }
+
+    function loginPlayer() {
+      const email = value('player-login-email').toLowerCase();
+      const password = value('player-login-password');
+      const player = state.players.find(item => item.email.toLowerCase() === email && item.password === password);
+      if (!player) return notify('Login de jogador inválido');
+      state.session = { type: 'player', id: player.id };
+      saveState();
+      addAudit('Jogador entrou: ' + player.name);
+      renderPlayerPanel('game');
+      notify('Bem-vindo, ' + player.name);
+    }
+
+    function registerPlayer() {
+      const name = value('player-register-name');
+      const email = value('player-register-email').toLowerCase();
+      const phone = value('player-register-phone');
+      const password = value('player-register-password');
+      if (!name || !email || !password) return notify('Preenche nome, email e senha');
+      if (state.players.some(item => item.email.toLowerCase() === email)) return notify('Este email já existe');
+      const player = { id: uid('player'), name, email, phone, password, energy: 100, hunger: 80, mood: 80, coins: 150, flags: 0, zap: 0, pr: 0, qrs: [], position: { x: 50, y: 50 }, createdAt: Date.now() };
+      state.players.push(player);
+      state.session = { type: 'player', id: player.id };
+      saveState();
+      addAudit('Jogador registado: ' + player.name);
+      renderPlayerPanel('game');
+      notify('Conta de jogador criada');
+    }
+
+    function loginCompany() {
+      const nif = value('company-login-nif');
+      const password = value('company-login-password');
+      const company = state.companies.find(item => item.nif === nif && item.password === password);
+      if (!company) return notify('Login de empresa inválido');
+      state.session = { type: 'company', id: company.id };
+      saveState();
+      addAudit('Empresa entrou: ' + company.name);
+      renderCompanyPanel('dashboard');
+      notify('Bem-vindo, ' + company.name);
+    }
+
+    function registerCompany() {
+      const name = value('company-register-name');
+      const nif = value('company-register-nif');
+      const email = value('company-register-email').toLowerCase();
+      const password = value('company-register-password');
+      if (!name || !nif || !password) return notify('Preenche nome, NIF e senha');
+      if (state.companies.some(item => item.nif === nif)) return notify('Este NIF já existe');
+      const company = { id: uid('company'), name, nif, email, password, pack: 'Gratuito', flags: 1000, status: 'Ativo', createdAt: Date.now() };
+      state.companies.push(company);
+      state.session = { type: 'company', id: company.id };
+      saveState();
+      addAudit('Empresa registada: ' + company.name);
+      renderCompanyPanel('dashboard');
+      notify('Conta de empresa criada');
+    }
+
     function statCards() {
+      const player = currentPlayer();
       return `
         <div class="cards-row">
-          <div class="mini-card"><b>${demo.player.energy}</b><span>Energia</span></div>
-          <div class="mini-card"><b>${demo.player.coins}</b><span>Moedas</span></div>
-          <div class="mini-card"><b>${demo.player.flags}</b><span>Flags totais</span></div>
-          <div class="mini-card"><b>${demo.player.mood}</b><span>Humor</span></div>
+          <div class="mini-card"><b>${player.energy}</b><span>Energia</span></div>
+          <div class="mini-card"><b>${player.coins}</b><span>Moedas</span></div>
+          <div class="mini-card"><b>${player.flags}</b><span>Flags totais</span></div>
+          <div class="mini-card"><b>${player.hunger}</b><span>Fome</span></div>
+          <div class="mini-card"><b>${player.mood}</b><span>Humor</span></div>
         </div>
       `;
     }
 
     function renderPlayerPanel(panel) {
       const target = document.getElementById('player-content');
+      const player = currentPlayer();
+      if (!player) return renderPlayerAuth();
+      const position = ensurePlayerPosition(player);
       if (panel === 'game') {
         target.innerHTML = `
-          <h2>Mapa GPS do Jogador</h2>
+          <h2>Mapa GPS · ${escapeHtml(player.name)}</h2>
           ${statCards()}
-          <p>Modo visual com avatar central, área de visão, pins de flags ZAP/PR e pontos QR próximos.</p>
-          <div class="map-full">
+          <p>Clica no mapa para mover o avatar. Só consegues apanhar flags dentro do círculo de alcance.</p>
+          <div class="map-full player-move-mode" onclick="movePlayerOnMap(event)">
             <div class="map-road road-a"></div>
             <div class="map-road road-b"></div>
             <div class="map-road road-c"></div>
-            <div class="flag-pin pin-1">🏁</div>
-            <div class="flag-pin pin-2">🎟️</div>
-            <div class="flag-pin pin-3">🏆</div>
-            <div class="flag-pin pin-4">📍</div>
-            <div class="avatar">🚶</div>
+            <div class="range-circle" style="left:${position.x}%;top:${position.y}%;"></div>
+            ${state.flags.filter(flag => flag.active).map(flag => `<button class="flag-pin" title="${escapeHtml(flag.label)}" style="left:${flag.x}%;top:${flag.y}%;" onclick="event.stopPropagation();collectFlag('${flag.id}')">${flag.type === 'BINGO' ? '🏆' : flag.type === 'PR' ? '🎟️' : '🏁'}</button>`).join('')}
+            <div class="avatar" style="left:${position.x}%;top:${position.y}%;">🚶</div>
           </div>
           <div class="bottom-bar">
-            <span class="badge">Online GPS pronto</span>
+            <span class="badge">GPS simulado · X ${position.x}% / Y ${position.y}% · Alcance 15</span>
             <div>
-              <button class="btn" onclick="collectFlag()">Recolher Flag</button>
               <button class="btn secondary" onclick="notify('Modo Offline GPS ativado')">Offline GPS</button>
+              <button class="btn secondary" onclick="movePlayerRandomly()">Mover aleatório</button>
+              <button class="btn secondary" onclick="restPlayer()">Descansar</button>
+              <button class="btn secondary" onclick="feedPlayer()">Comer</button>
+              <button class="btn secondary" onclick="logout()">Sair</button>
             </div>
           </div>
         `;
@@ -705,57 +1046,101 @@
           <h2>Carteira e Progresso</h2>
           ${statCards()}
           <div class="grid two">
-            <div class="qr-card"><h3>Flags ZAP</h3><p>Flags que aumentam energia e progressão.</p><span class="badge">${demo.player.zap} recolhidas</span></div>
-            <div class="qr-card"><h3>Flags PR</h3><p>Flags ligadas a empresas e recompensas comerciais.</p><span class="badge">${demo.player.pr} recolhidas</span></div>
+            <div class="qr-card"><h3>Flags ZAP</h3><p>Flags que aumentam energia e progressão.</p><span class="badge">${player.zap} recolhidas</span></div>
+            <div class="qr-card"><h3>Flags PR</h3><p>Flags ligadas a empresas e recompensas comerciais.</p><span class="badge">${player.pr} recolhidas</span></div>
+            <div class="qr-card"><h3>Estado Vital</h3><p>Energia ${player.energy} · Fome ${player.hunger} · Humor ${player.mood}</p><button class="btn secondary" onclick="restPlayer()">Descansar</button> <button class="btn secondary" onclick="feedPlayer()">Comer</button></div>
+            <div class="qr-card"><h3>Regras</h3><p>Mover consome energia e fome. Se a energia ou fome chegar a zero, o avatar fica bloqueado até recuperar.</p></div>
           </div>
+          <h3>QRs do jogador</h3>
+          <div class="grid three">${player.qrs.length ? player.qrs.map(code => `<div class="qr-card"><div class="qr-code-box">QR</div><h3>${escapeHtml(code)}</h3></div>`).join('') : '<p>Ainda não tens QRs.</p>'}</div>
         `;
       }
 
       if (panel === 'market') {
+        const available = state.qrs.filter(qr => qr.forSale && qr.ownerId !== player.id);
         target.innerHTML = `
           <h2>QR Market</h2>
-          <p>Mercado público demo para compra, venda e troca de QRs negociáveis.</p>
+          <p>Mercado público persistente para compra, venda e troca de QRs negociáveis.</p>
           <div class="grid three">
-            ${demo.qrs.map((qr, index) => `
+            ${available.map(qr => `
               <div class="qr-card">
-                <span class="badge">${qr.type}</span>
+                <span class="badge">${escapeHtml(qr.type)}</span>
                 <div class="qr-code-box">QR</div>
-                <h3>${qr.company}</h3>
-                <p>${qr.value}</p>
+                <h3>${escapeHtml(qr.company)}</h3>
+                <p>${escapeHtml(qr.value)}</p>
                 <p><strong>${qr.price} moedas</strong></p>
-                <button class="btn" onclick="buyQr(${index})">Comprar</button>
-                <button class="btn secondary" onclick="notify('Proposta de troca enviada para ${qr.company}')">Propor troca</button>
+                <button class="btn" onclick="buyQr('${qr.id}')">Comprar</button>
+                <button class="btn secondary" onclick="notify('Proposta de troca enviada para ${escapeJs(qr.company)}')">Propor troca</button>
               </div>
-            `).join('')}
+            `).join('') || '<p>Sem QRs disponíveis no mercado.</p>'}
           </div>
         `;
       }
 
       if (panel === 'friends') {
+        const otherPlayers = state.players.filter(item => item.id !== player.id);
+        const incoming = state.trades.filter(item => item.toId === player.id && item.status === 'pending');
+        const outgoing = state.trades.filter(item => item.fromId === player.id && item.status === 'pending');
         target.innerHTML = `
           <h2>Amigos e Trocas</h2>
           <div class="grid two">
-            <div class="offer-card"><h3>Avatar QR Simulado</h3><p>Pedido de troca: QR Café + 10 moedas por bandeira premiada.</p><button class="btn" onclick="notify('Troca aceite')">Aceitar</button> <button class="btn danger" onclick="notify('Troca recusada')">Recusar</button></div>
-            <div class="offer-card"><h3>Jogador Norte</h3><p>Pedido de amizade pendente.</p><button class="btn" onclick="notify('Amizade aceite')">Aceitar amizade</button></div>
+            <div class="offer-card">
+              <h3>Criar proposta</h3>
+              <div class="input-group"><label>Jogador destino</label><select id="trade-target">${otherPlayers.map(item => `<option value="${item.id}">${escapeHtml(item.name)} · ${escapeHtml(item.email)}</option>`).join('')}</select></div>
+              <div class="input-group"><label>QR a oferecer</label><select id="trade-qr">${player.qrs.map(code => `<option value="${escapeHtml(code)}">${escapeHtml(code)}</option>`).join('')}</select></div>
+              <div class="input-group"><label>Moedas a oferecer</label><input id="trade-coins" type="number" min="0" value="0"></div>
+              <button class="btn" onclick="createTrade()">Enviar proposta</button>
+            </div>
+            <div class="offer-card">
+              <h3>Resumo</h3>
+              <p>Propostas recebidas: ${incoming.length}</p>
+              <p>Propostas enviadas: ${outgoing.length}</p>
+              <p>QRs disponíveis para troca: ${player.qrs.length}</p>
+            </div>
+          </div>
+          <h3>Propostas recebidas</h3>
+          <div class="grid two">
+            ${incoming.map(trade => tradeCard(trade, true)).join('') || '<p>Sem propostas recebidas.</p>'}
+          </div>
+          <h3>Propostas enviadas</h3>
+          <div class="grid two">
+            ${outgoing.map(trade => tradeCard(trade, false)).join('') || '<p>Sem propostas enviadas.</p>'}
           </div>
         `;
       }
     }
 
+    function tradeCard(trade, received) {
+      const from = state.players.find(player => player.id === trade.fromId);
+      const to = state.players.find(player => player.id === trade.toId);
+      return `
+        <div class="offer-card">
+          <span class="badge">${received ? 'Recebida' : 'Enviada'}</span>
+          <h3>${escapeHtml(from?.name || 'Jogador')} → ${escapeHtml(to?.name || 'Jogador')}</h3>
+          <p>QR oferecido: ${escapeHtml(trade.qrCode || 'Nenhum')}</p>
+          <p>Moedas oferecidas: ${trade.coins}</p>
+          <p>Estado: ${escapeHtml(trade.status)}</p>
+          ${received ? `<button class="btn" onclick="acceptTrade('${trade.id}')">Aceitar</button> <button class="btn danger" onclick="rejectTrade('${trade.id}')">Recusar</button>` : `<button class="btn danger" onclick="cancelTrade('${trade.id}')">Cancelar</button>`}
+        </div>
+      `;
+    }
+
     function renderCompanyPanel(panel) {
       const target = document.getElementById('company-content');
+      const company = currentCompany();
+      if (!company) return renderCompanyAuth();
       if (panel === 'dashboard') {
         target.innerHTML = `
-          <h2>Dashboard da Empresa</h2>
+          <h2>Dashboard · ${escapeHtml(company.name)}</h2>
           <div class="cards-row">
-            <div class="mini-card"><b>3</b><span>Campanhas</span></div>
-            <div class="mini-card"><b>16K</b><span>Flags disponíveis</span></div>
-            <div class="mini-card"><b>842</b><span>Interações</span></div>
-            <div class="mini-card"><b>94%</b><span>Estado</span></div>
+            <div class="mini-card"><b>${state.bingos.length}</b><span>Campanhas/Bingos</span></div>
+            <div class="mini-card"><b>${company.flags}</b><span>Flags disponíveis</span></div>
+            <div class="mini-card"><b>${state.qrs.filter(qr => qr.company === company.name).length}</b><span>QRs criados</span></div>
+            <div class="mini-card"><b>${escapeHtml(company.status)}</b><span>Estado</span></div>
           </div>
           <div class="grid two">
             <div class="package-card"><h3>Campanha ativa</h3><p>10% desconto para jogadores que recolham flags PR próximas da loja.</p><span class="badge">Ativa</span></div>
-            <div class="package-card"><h3>Recompensa QR</h3><p>QR gerado após interação válida com campanha da empresa.</p><span class="badge">Negociável</span></div>
+            <div class="package-card"><h3>Sessão</h3><p>NIF: ${escapeHtml(company.nif)}</p><button class="btn secondary" onclick="logout()">Sair</button></div>
           </div>
         `;
       }
@@ -764,9 +1149,9 @@
         target.innerHTML = `
           <h2>Packs de Flags</h2>
           <div class="grid three">
-            <div class="package-card"><h3>Gratuito</h3><p>1.000 flags demo</p><h2>0€</h2><button class="btn" onclick="notify('Pack Gratuito selecionado')">Selecionar</button></div>
-            <div class="package-card"><h3>Básico</h3><p>5.000 flags para campanhas locais</p><h2>15€</h2><button class="btn" onclick="notify('Pack Básico selecionado')">Comprar</button></div>
-            <div class="package-card"><h3>Pro</h3><p>15.000 flags com maior alcance</p><h2>39€</h2><button class="btn" onclick="notify('Pack Pro selecionado')">Comprar</button></div>
+            <div class="package-card"><h3>Gratuito</h3><p>1.000 flags demo</p><h2>0€</h2><button class="btn" onclick="buyPack('Gratuito',1000)">Selecionar</button></div>
+            <div class="package-card"><h3>Básico</h3><p>5.000 flags para campanhas locais</p><h2>15€</h2><button class="btn" onclick="buyPack('Básico',5000)">Comprar</button></div>
+            <div class="package-card"><h3>Pro</h3><p>15.000 flags com maior alcance</p><h2>39€</h2><button class="btn" onclick="buyPack('Pro',15000)">Comprar</button></div>
           </div>
         `;
       }
@@ -780,7 +1165,7 @@
             <div class="input-group"><label>Raio de ativação</label><input value="250 metros"></div>
             <div class="input-group"><label>Flags disponíveis</label><input value="5000"></div>
           </div>
-          <button class="btn" onclick="notify('Campanha guardada em modo demo')">Guardar campanha</button>
+          <button class="btn" onclick="createCompanyCampaign()">Guardar campanha</button>
         `;
       }
     }
@@ -791,28 +1176,96 @@
         target.innerHTML = `
           <h2>Resumo Administrativo</h2>
           <div class="cards-row">
-            <div class="mini-card"><b>128</b><span>Jogadores</span></div>
-            <div class="mini-card"><b>24</b><span>Empresas</span></div>
-            <div class="mini-card"><b>514</b><span>QRs mercado</span></div>
-            <div class="mini-card"><b>38</b><span>Trocas hoje</span></div>
+            <div class="mini-card"><b>${state.players.length}</b><span>Jogadores</span></div>
+            <div class="mini-card"><b>${state.companies.length}</b><span>Empresas</span></div>
+            <div class="mini-card"><b>${state.qrs.length}</b><span>QRs mercado</span></div>
+            <div class="mini-card"><b>${state.flags.length}</b><span>Flags/Bingos mapa</span></div>
           </div>
-          <div class="offer-card"><h3>Estado do sistema</h3><p>Protótipo visual sem backend real. Preparado para futura arquitetura com autenticação, API, base de dados, auditoria e sincronização.</p></div>
+          <div class="actions">
+            <button class="btn" onclick="createArtificialPlayer()">Criar jogador artificial</button>
+            <button class="btn" onclick="createArtificialCompany()">Criar empresa artificial</button>
+            <button class="btn" onclick="createArtificialFlag('ZAP')">Criar bandeira ZAP</button>
+            <button class="btn" onclick="createArtificialFlag('PR')">Criar bandeira PR</button>
+            <button class="btn" onclick="createArtificialFlag('BINGO')">Criar bingo no mapa</button>
+          </div>
+          <div class="actions">
+            <button class="btn danger" onclick="resetPlayers()">Resetar jogadores</button>
+            <button class="btn danger" onclick="resetCompanies()">Resetar empresas</button>
+            <button class="btn danger" onclick="resetFlags()">Resetar bandeiras e bingos</button>
+            <button class="btn danger" onclick="resetSystem()">Resetar sistema completo</button>
+          </div>
+          <div class="offer-card"><h3>Marcação de áreas</h3><p>Os botões de criar bandeira/PR/Bingo colocam pontos artificiais em áreas percentuais do mapa. Na próxima fase estes botões passam a abrir modo de marcação clicável diretamente no mapa.</p></div>
         `;
       }
 
       if (panel === 'users') {
         target.innerHTML = `
           <h2>Utilizadores e Empresas</h2>
-          <div class="grid three">
-            ${demo.companies.map(company => `
-              <div class="package-card">
-                <h3>${company.name}</h3>
-                <p>Pack: ${company.pack}</p>
-                <p>Flags: ${company.flags}</p>
-                <span class="badge">${company.status}</span>
-              </div>
-            `).join('')}
+          <h3>Jogadores</h3>
+          <table class="data-table">
+            <thead><tr><th>Nome</th><th>Email</th><th>Moedas</th><th>Flags</th><th>QRs</th><th>Ações</th></tr></thead>
+            <tbody>${state.players.map(player => `<tr><td>${escapeHtml(player.name)}</td><td>${escapeHtml(player.email)}</td><td>${player.coins}</td><td>${player.flags}</td><td>${player.qrs.length}</td><td><button class="btn secondary" onclick="adminBoostPlayer('${player.id}')">Boost</button> <button class="btn danger" onclick="adminRemovePlayer('${player.id}')">Remover</button></td></tr>`).join('')}</tbody>
+          </table>
+          <h3>Empresas</h3>
+          <table class="data-table">
+            <thead><tr><th>Nome</th><th>NIF</th><th>Pack</th><th>Flags</th><th>Estado</th><th>Ações</th></tr></thead>
+            <tbody>${state.companies.map(company => `<tr><td>${escapeHtml(company.name)}</td><td>${escapeHtml(company.nif)}</td><td>${escapeHtml(company.pack)}</td><td>${company.flags}</td><td>${escapeHtml(company.status)}</td><td><button class="btn secondary" onclick="adminToggleCompany('${company.id}')">Estado</button> <button class="btn danger" onclick="adminRemoveCompany('${company.id}')">Remover</button></td></tr>`).join('')}</tbody>
+          </table>
+        `;
+      }
+
+      if (panel === 'map') {
+        target.innerHTML = `
+          <h2>Mapa, Áreas, Bandeiras e Bingos</h2>
+          <div class="map-toolbar">
+            <span class="placement-hint">Escolhe o tipo e clica no mapa para colocar.</span>
+            <select id="placement-type" onchange="placementType = this.value">
+              <option value="ZAP" ${placementType === 'ZAP' ? 'selected' : ''}>Bandeira ZAP</option>
+              <option value="PR" ${placementType === 'PR' ? 'selected' : ''}>Bandeira PR</option>
+              <option value="BINGO" ${placementType === 'BINGO' ? 'selected' : ''}>Bingo</option>
+            </select>
+            <button class="btn" onclick="notify('Modo de marcação ativo: clique no mapa')">Modo marcação</button>
+            <button class="btn secondary" onclick="createArtificialFlag(placementType)">Criar aleatório</button>
+            <button class="btn danger" onclick="resetFlags()">Resetar mapa</button>
           </div>
+          <div class="map-full placement-mode" onclick="placeFlagOnMap(event)">
+            <div class="map-road road-a"></div>
+            <div class="map-road road-b"></div>
+            <div class="map-road road-c"></div>
+            ${state.flags.map(flag => `<button class="flag-pin" title="${escapeHtml(flag.label)}" style="left:${flag.x}%;top:${flag.y}%;opacity:${flag.active ? 1 : 0.35};" onclick="event.stopPropagation();toggleFlagActive('${flag.id}')">${flag.type === 'BINGO' ? '🏆' : flag.type === 'PR' ? '🎟️' : '🏁'}</button>`).join('')}
+            <div class="avatar">🛡️</div>
+          </div>
+          <table class="data-table">
+            <thead><tr><th>Tipo</th><th>Nome</th><th>Área X/Y</th><th>Estado</th><th>Ação</th></tr></thead>
+            <tbody>${state.flags.map(flag => `<tr><td>${escapeHtml(flag.type)}</td><td>${escapeHtml(flag.label)}</td><td>${flag.x}% / ${flag.y}%</td><td>${flag.active ? 'Ativa' : 'Apanhada/Inativa'}</td><td><button class="btn secondary" onclick="toggleFlagActive('${flag.id}')">Alternar</button> <button class="btn danger" onclick="adminRemoveFlag('${flag.id}')">Remover</button></td></tr>`).join('')}</tbody>
+          </table>
+        `;
+      }
+
+      if (panel === 'qrs') {
+        target.innerHTML = `
+          <h2>Gestão de QRs</h2>
+          <div class="actions">
+            <button class="btn" onclick="createArtificialQr()">Criar QR artificial</button>
+          </div>
+          <table class="data-table">
+            <thead><tr><th>Código</th><th>Empresa</th><th>Valor</th><th>Preço</th><th>Estado</th><th>Ações</th></tr></thead>
+            <tbody>${state.qrs.map(qr => `<tr><td>${escapeHtml(qr.code)}</td><td>${escapeHtml(qr.company)}</td><td>${escapeHtml(qr.value)}</td><td>${qr.price}</td><td>${qr.forSale ? 'À venda' : 'Em carteira'}</td><td><button class="btn secondary" onclick="adminToggleQrSale('${qr.id}')">Venda</button> <button class="btn danger" onclick="adminRemoveQr('${qr.id}')">Remover</button></td></tr>`).join('')}</tbody>
+          </table>
+        `;
+      }
+
+      if (panel === 'trades') {
+        target.innerHTML = `
+          <h2>Gestão de Trocas</h2>
+          <table class="data-table">
+            <thead><tr><th>De</th><th>Para</th><th>QR</th><th>Moedas</th><th>Estado</th><th>Ações</th></tr></thead>
+            <tbody>${state.trades.map(trade => {
+              const from = state.players.find(player => player.id === trade.fromId);
+              const to = state.players.find(player => player.id === trade.toId);
+              return `<tr><td>${escapeHtml(from?.name || 'Removido')}</td><td>${escapeHtml(to?.name || 'Removido')}</td><td>${escapeHtml(trade.qrCode || 'Nenhum')}</td><td>${trade.coins}</td><td>${escapeHtml(trade.status)}</td><td>${trade.status === 'pending' ? `<button class="btn danger" onclick="adminForceCancelTrade('${trade.id}')">Forçar cancelamento</button>` : '-'}</td></tr>`;
+            }).join('') || '<tr><td colspan="6">Sem trocas registadas.</td></tr>'}</tbody>
+          </table>
         `;
       }
 
@@ -820,35 +1273,409 @@
         target.innerHTML = `
           <h2>Auditoria</h2>
           <div class="grid">
-            <div class="offer-card"><span class="badge">10:02</span><h3>Compra QR</h3><p>Avatar Demo comprou ZAP-CAF-2030 por 24 moedas.</p></div>
-            <div class="offer-card"><span class="badge">10:07</span><h3>Troca proposta</h3><p>Jogador Norte propôs QR + moedas por bandeira premiada.</p></div>
-            <div class="offer-card"><span class="badge">10:12</span><h3>Campanha criada</h3><p>Café Central ativou campanha de desconto local.</p></div>
+            ${state.audit.map(item => `<div class="offer-card"><span class="badge">${new Date(item.at).toLocaleString('pt-PT')}</span><h3>Evento</h3><p>${escapeHtml(item.text)}</p></div>`).join('')}
           </div>
         `;
       }
     }
 
-    function collectFlag() {
-      demo.player.flags += 1;
-      demo.player.zap += 1;
-      demo.player.energy = Math.min(100, demo.player.energy + 3);
+    function collectFlag(flagId) {
+      const player = currentPlayer();
+      const flag = state.flags.find(item => item.id === flagId && item.active);
+      if (!player || !flag) return notify('Bandeira indisponível');
+      const distance = distanceBetween(ensurePlayerPosition(player), flag);
+      if (distance > 15) return notify('Aproxima-te da bandeira para recolher. Distância: ' + Math.round(distance));
+      flag.active = false;
+      player.flags += 1;
+      if (flag.type === 'ZAP') {
+        player.zap += 1;
+        player.energy = Math.min(100, player.energy + Number(flag.reward || 3));
+      }
+      if (flag.type === 'PR') {
+        player.pr += 1;
+        player.coins += 5;
+        const qr = { id: uid('qr'), code: 'PR-' + Math.random().toString(36).slice(2, 8).toUpperCase(), company: 'Campanha PR', value: 'Recompensa PR', price: 25, type: 'QR', ownerId: player.id, forSale: false };
+        state.qrs.push(qr);
+        player.qrs.push(qr.code);
+      }
+      if (flag.type === 'BINGO') {
+        player.coins += Number(flag.reward || 25);
+      }
+      saveState();
+      addAudit(player.name + ' apanhou ' + flag.type + ': ' + flag.label);
       renderPlayerPanel('game');
-      notify('Flag recolhida: +1 progresso e +3 energia');
+      notify(flag.type + ' recolhida');
     }
 
-    function buyQr(index) {
-      const qr = demo.qrs[index];
-      if (demo.player.coins < qr.price) {
+    function movePlayerOnMap(event) {
+      const player = currentPlayer();
+      if (!player) return renderPlayerAuth();
+      if (!canMove(player)) return;
+      const rect = event.currentTarget.getBoundingClientRect();
+      const x = Math.max(0, Math.min(100, Math.round(((event.clientX - rect.left) / rect.width) * 100)));
+      const y = Math.max(0, Math.min(100, Math.round(((event.clientY - rect.top) / rect.height) * 100)));
+      player.position = { x, y };
+      spendMovementStats(player);
+      saveState();
+      renderPlayerPanel('game');
+      notify('Avatar movido para X ' + x + '% / Y ' + y + '%');
+    }
+
+    function movePlayerRandomly() {
+      const player = currentPlayer();
+      if (!player) return renderPlayerAuth();
+      if (!canMove(player)) return;
+      player.position = { x: randomPercent(), y: randomPercent() };
+      spendMovementStats(player);
+      saveState();
+      renderPlayerPanel('game');
+      notify('GPS offline simulou nova posição');
+    }
+
+    function restPlayer() {
+      const player = currentPlayer();
+      if (!player) return renderPlayerAuth();
+      player.energy = clampStat(Number(player.energy) + 20);
+      player.mood = clampStat(Number(player.mood) + 5);
+      saveState();
+      renderPlayerPanel('game');
+      notify('Descanso concluído: energia +20');
+    }
+
+    function feedPlayer() {
+      const player = currentPlayer();
+      if (!player) return renderPlayerAuth();
+      if (Number(player.coins) < 10) return notify('Precisas de 10 moedas para comer');
+      player.coins -= 10;
+      player.hunger = clampStat(Number(player.hunger) + 30);
+      player.mood = clampStat(Number(player.mood) + 3);
+      saveState();
+      renderPlayerPanel('wallet');
+      notify('Comida comprada: fome +30');
+    }
+
+    function buyQr(qrId) {
+      const player = currentPlayer();
+      const qr = state.qrs.find(item => item.id === qrId && item.forSale);
+      if (!player || !qr) return notify('QR indisponível');
+      if (player.coins < qr.price) {
         notify('Moedas insuficientes para comprar este QR');
         return;
       }
-      demo.player.coins -= qr.price;
+      player.coins -= qr.price;
+      qr.ownerId = player.id;
+      qr.forSale = false;
+      player.qrs.push(qr.code);
+      saveState();
+      addAudit(player.name + ' comprou QR ' + qr.code + ' por ' + qr.price + ' moedas');
       renderPlayerPanel('market');
       notify(`QR comprado: ${qr.code}`);
     }
 
-    renderPlayerPanel('game');
-    renderCompanyPanel('dashboard');
+    function createTrade() {
+      const player = currentPlayer();
+      if (!player) return renderPlayerAuth();
+      const targetId = value('trade-target');
+      const qrCode = value('trade-qr');
+      const coins = Math.max(0, Number(value('trade-coins') || 0));
+      const target = state.players.find(item => item.id === targetId);
+      if (!target) return notify('Escolhe um jogador destino');
+      if (!qrCode && coins <= 0) return notify('Oferece um QR ou moedas');
+      if (qrCode && !player.qrs.includes(qrCode)) return notify('Esse QR já não está disponível');
+      if (coins > Number(player.coins)) return notify('Moedas insuficientes para a proposta');
+      state.trades.push({ id: uid('trade'), fromId: player.id, toId: target.id, qrCode, coins, status: 'pending', createdAt: Date.now() });
+      saveState();
+      addAudit(player.name + ' enviou proposta de troca para ' + target.name);
+      renderPlayerPanel('friends');
+      notify('Proposta enviada');
+    }
+
+    function acceptTrade(tradeId) {
+      const player = currentPlayer();
+      const trade = state.trades.find(item => item.id === tradeId && item.status === 'pending');
+      if (!player || !trade || trade.toId !== player.id) return notify('Proposta indisponível');
+      const from = state.players.find(item => item.id === trade.fromId);
+      const to = state.players.find(item => item.id === trade.toId);
+      if (!from || !to) return notify('Jogador indisponível');
+      if (trade.qrCode && !from.qrs.includes(trade.qrCode)) return notify('O QR oferecido já não está disponível');
+      if (Number(from.coins) < Number(trade.coins)) return notify('O jogador já não tem moedas suficientes');
+      if (trade.qrCode) {
+        from.qrs = from.qrs.filter(code => code !== trade.qrCode);
+        to.qrs.push(trade.qrCode);
+        const qr = state.qrs.find(item => item.code === trade.qrCode);
+        if (qr) qr.ownerId = to.id;
+      }
+      from.coins -= Number(trade.coins);
+      to.coins += Number(trade.coins);
+      trade.status = 'accepted';
+      trade.resolvedAt = Date.now();
+      saveState();
+      addAudit(to.name + ' aceitou troca de ' + from.name);
+      renderPlayerPanel('friends');
+      notify('Troca aceite');
+    }
+
+    function rejectTrade(tradeId) {
+      const player = currentPlayer();
+      const trade = state.trades.find(item => item.id === tradeId && item.status === 'pending');
+      if (!player || !trade || trade.toId !== player.id) return notify('Proposta indisponível');
+      trade.status = 'rejected';
+      trade.resolvedAt = Date.now();
+      saveState();
+      addAudit(player.name + ' recusou uma proposta de troca');
+      renderPlayerPanel('friends');
+      notify('Troca recusada');
+    }
+
+    function cancelTrade(tradeId) {
+      const player = currentPlayer();
+      const trade = state.trades.find(item => item.id === tradeId && item.status === 'pending');
+      if (!player || !trade || trade.fromId !== player.id) return notify('Proposta indisponível');
+      trade.status = 'cancelled';
+      trade.resolvedAt = Date.now();
+      saveState();
+      addAudit(player.name + ' cancelou uma proposta de troca');
+      renderPlayerPanel('friends');
+      notify('Troca cancelada');
+    }
+
+    function buyPack(name, flags) {
+      const company = currentCompany();
+      if (!company) return renderCompanyAuth();
+      company.pack = name;
+      company.flags += flags;
+      saveState();
+      addAudit(company.name + ' comprou pack ' + name);
+      renderCompanyPanel('dashboard');
+      notify('Pack aplicado: ' + name);
+    }
+
+    function createCompanyCampaign() {
+      const company = currentCompany();
+      if (!company) return renderCompanyAuth();
+      const bingo = { id: uid('bingo'), name: 'Campanha ' + company.name, area: 'Área da empresa', reward: 40, active: true };
+      const flag = { id: uid('flag'), type: 'PR', label: 'PR ' + company.name, x: randomPercent(), y: randomPercent(), reward: 1, active: true };
+      const qr = { id: uid('qr'), code: 'QR-' + company.name.slice(0, 3).toUpperCase() + '-' + Date.now().toString().slice(-4), company: company.name, value: 'Recompensa de campanha', price: 30, type: 'QR', ownerId: null, forSale: true };
+      state.bingos.push(bingo);
+      state.flags.push(flag);
+      state.qrs.push(qr);
+      company.flags = Math.max(0, company.flags - 1);
+      saveState();
+      addAudit(company.name + ' criou campanha com flag PR e QR');
+      renderCompanyPanel('dashboard');
+      notify('Campanha criada');
+    }
+
+    function randomPercent() {
+      return Math.floor(12 + Math.random() * 76);
+    }
+
+    function createArtificialPlayer() {
+      const n = state.players.length + 1;
+      state.players.push({ id: uid('player'), name: 'Jogador Artificial ' + n, email: 'jogador' + n + '@artificial.pt', phone: '91000' + String(n).padStart(4, '0'), password: '123456', energy: 100, hunger: 80, mood: 80, coins: 150, flags: 0, zap: 0, pr: 0, qrs: [], position: { x: randomPercent(), y: randomPercent() }, createdAt: Date.now() });
+      saveState();
+      addAudit('Backoffice criou jogador artificial ' + n);
+      renderBackofficePanel('overview');
+      notify('Jogador artificial criado');
+    }
+
+    function createArtificialCompany() {
+      const n = state.companies.length + 1;
+      state.companies.push({ id: uid('company'), name: 'Empresa Artificial ' + n, nif: String(200000000 + n), email: 'empresa' + n + '@artificial.pt', password: '123456', pack: 'Gratuito', flags: 1000, status: 'Ativo', createdAt: Date.now() });
+      saveState();
+      addAudit('Backoffice criou empresa artificial ' + n);
+      renderBackofficePanel('overview');
+      notify('Empresa artificial criada');
+    }
+
+    function createArtificialFlag(type) {
+      const label = type === 'BINGO' ? 'Bingo Artificial' : 'Bandeira ' + type;
+      state.flags.push({ id: uid('flag'), type, label: label + ' ' + (state.flags.length + 1), x: randomPercent(), y: randomPercent(), reward: type === 'BINGO' ? 30 : 3, active: true });
+      if (type === 'BINGO') state.bingos.push({ id: uid('bingo'), name: label + ' ' + state.bingos.length, area: 'Área artificial', reward: 30, active: true });
+      saveState();
+      addAudit('Backoffice criou ' + type + ' artificial');
+      renderBackofficePanel('map');
+      notify(type + ' criado no mapa');
+    }
+
+    function placeFlagOnMap(event) {
+      const rect = event.currentTarget.getBoundingClientRect();
+      const x = Math.max(0, Math.min(100, Math.round(((event.clientX - rect.left) / rect.width) * 100)));
+      const y = Math.max(0, Math.min(100, Math.round(((event.clientY - rect.top) / rect.height) * 100)));
+      const type = placementType || 'ZAP';
+      const label = type === 'BINGO' ? 'Bingo Marcado' : 'Bandeira ' + type;
+      state.flags.push({ id: uid('flag'), type, label: label + ' ' + (state.flags.length + 1), x, y, reward: type === 'BINGO' ? 30 : 3, active: true });
+      if (type === 'BINGO') state.bingos.push({ id: uid('bingo'), name: label + ' ' + state.bingos.length, area: x + '% / ' + y + '%', reward: 30, active: true });
+      saveState();
+      addAudit('Backoffice marcou ' + type + ' no mapa em ' + x + '%/' + y + '%');
+      renderBackofficePanel('map');
+      notify(type + ' colocado no mapa');
+    }
+
+    function createArtificialQr() {
+      const company = state.companies[0] || { name: 'ZAP-FLAGS' };
+      const qr = {
+        id: uid('qr'),
+        code: 'QR-ART-' + Date.now().toString().slice(-5),
+        company: company.name,
+        value: 'QR artificial criado pelo backoffice',
+        price: 20 + Math.floor(Math.random() * 40),
+        type: 'QR',
+        ownerId: null,
+        forSale: true
+      };
+      state.qrs.push(qr);
+      saveState();
+      addAudit('Backoffice criou QR artificial ' + qr.code);
+      renderBackofficePanel('qrs');
+      notify('QR artificial criado');
+    }
+
+    function toggleFlagActive(flagId) {
+      const flag = state.flags.find(item => item.id === flagId);
+      if (!flag) return;
+      flag.active = !flag.active;
+      saveState();
+      addAudit('Backoffice alternou estado da flag ' + flag.label);
+      renderBackofficePanel('map');
+    }
+
+    function adminBoostPlayer(playerId) {
+      const player = state.players.find(item => item.id === playerId);
+      if (!player) return;
+      player.coins += 100;
+      player.energy = 100;
+      player.hunger = 100;
+      player.mood = 100;
+      saveState();
+      addAudit('Backoffice aplicou boost ao jogador ' + player.name);
+      renderBackofficePanel('users');
+      notify('Boost aplicado');
+    }
+
+    function adminRemovePlayer(playerId) {
+      const player = state.players.find(item => item.id === playerId);
+      if (!player || !confirm('Remover jogador ' + player.name + '?')) return;
+      state.players = state.players.filter(item => item.id !== playerId);
+      state.qrs.forEach(qr => {
+        if (qr.ownerId === playerId) {
+          qr.ownerId = null;
+          qr.forSale = true;
+        }
+      });
+      state.trades.forEach(trade => {
+        if (trade.status === 'pending' && (trade.fromId === playerId || trade.toId === playerId)) trade.status = 'cancelled';
+      });
+      if (state.session.id === playerId) state.session = { type: null, id: null };
+      saveState();
+      addAudit('Backoffice removeu jogador ' + player.name);
+      renderBackofficePanel('users');
+      notify('Jogador removido');
+    }
+
+    function adminToggleCompany(companyId) {
+      const company = state.companies.find(item => item.id === companyId);
+      if (!company) return;
+      company.status = company.status === 'Ativo' ? 'Suspenso' : 'Ativo';
+      saveState();
+      addAudit('Backoffice alterou estado da empresa ' + company.name + ' para ' + company.status);
+      renderBackofficePanel('users');
+    }
+
+    function adminRemoveCompany(companyId) {
+      const company = state.companies.find(item => item.id === companyId);
+      if (!company || !confirm('Remover empresa ' + company.name + '?')) return;
+      state.companies = state.companies.filter(item => item.id !== companyId);
+      state.qrs = state.qrs.filter(qr => qr.company !== company.name);
+      if (state.session.id === companyId) state.session = { type: null, id: null };
+      saveState();
+      addAudit('Backoffice removeu empresa ' + company.name);
+      renderBackofficePanel('users');
+      notify('Empresa removida');
+    }
+
+    function adminRemoveFlag(flagId) {
+      const flag = state.flags.find(item => item.id === flagId);
+      if (!flag || !confirm('Remover flag ' + flag.label + '?')) return;
+      state.flags = state.flags.filter(item => item.id !== flagId);
+      saveState();
+      addAudit('Backoffice removeu flag ' + flag.label);
+      renderBackofficePanel('map');
+    }
+
+    function adminToggleQrSale(qrId) {
+      const qr = state.qrs.find(item => item.id === qrId);
+      if (!qr) return;
+      qr.forSale = !qr.forSale;
+      if (qr.forSale) qr.ownerId = null;
+      saveState();
+      addAudit('Backoffice alternou venda do QR ' + qr.code);
+      renderBackofficePanel('qrs');
+    }
+
+    function adminRemoveQr(qrId) {
+      const qr = state.qrs.find(item => item.id === qrId);
+      if (!qr || !confirm('Remover QR ' + qr.code + '?')) return;
+      state.qrs = state.qrs.filter(item => item.id !== qrId);
+      state.players.forEach(player => {
+        player.qrs = player.qrs.filter(code => code !== qr.code);
+      });
+      state.trades.forEach(trade => {
+        if (trade.status === 'pending' && trade.qrCode === qr.code) trade.status = 'cancelled';
+      });
+      saveState();
+      addAudit('Backoffice removeu QR ' + qr.code);
+      renderBackofficePanel('qrs');
+    }
+
+    function adminForceCancelTrade(tradeId) {
+      const trade = state.trades.find(item => item.id === tradeId);
+      if (!trade) return;
+      trade.status = 'cancelled';
+      trade.resolvedAt = Date.now();
+      saveState();
+      addAudit('Backoffice forçou cancelamento da troca ' + trade.id);
+      renderBackofficePanel('trades');
+    }
+
+    function resetPlayers() {
+      if (!confirm('Resetar todos os jogadores?')) return;
+      state.players = createInitialState().players;
+      state.session = { type: null, id: null };
+      saveState();
+      addAudit('Backoffice resetou jogadores');
+      renderBackofficePanel('overview');
+    }
+
+    function resetCompanies() {
+      if (!confirm('Resetar todas as empresas?')) return;
+      state.companies = createInitialState().companies;
+      state.session = { type: null, id: null };
+      saveState();
+      addAudit('Backoffice resetou empresas');
+      renderBackofficePanel('overview');
+    }
+
+    function resetFlags() {
+      if (!confirm('Resetar bandeiras e bingos?')) return;
+      const fresh = createInitialState();
+      state.flags = fresh.flags;
+      state.bingos = fresh.bingos;
+      saveState();
+      addAudit('Backoffice resetou bandeiras e bingos');
+      renderBackofficePanel('overview');
+    }
+
+    function resetSystem() {
+      if (!confirm('Resetar o sistema completo?')) return;
+      state = createInitialState();
+      saveState();
+      renderBackofficePanel('overview');
+      notify('Sistema resetado');
+    }
+
+    renderPlayerAuth();
+    renderCompanyAuth();
     renderBackofficePanel('overview');
   </script>
 </body>
