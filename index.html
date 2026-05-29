@@ -3,16 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ZAP-FLAGS 3.0</title>
+  <title>Larforyou · ZAP-FLAGS 3.0</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <style>
     :root {
-      --bg: #04100a;
-      --panel: rgba(7, 24, 15, 0.82);
-      --panel-strong: rgba(10, 42, 26, 0.94);
-      --green: #35ff7a;
-      --green-soft: #a8ffc5;
-      --cyan: #4ee7ff;
-      --yellow: #ffd75a;
+      --bg: #050807;
+      --panel: rgba(10, 18, 16, 0.82);
+      --panel-strong: rgba(16, 30, 26, 0.94);
+      --green: #42d77d;
+      --green-soft: #b9f5cc;
+      --cyan: #7ad7ff;
+      --yellow: #d7b35a;
       --red: #ff5a6f;
       --text: #ecfff2;
       --muted: #9ac9a8;
@@ -30,24 +31,41 @@
       font-family: Arial, Helvetica, sans-serif;
       color: var(--text);
       background:
-        radial-gradient(circle at 12% 12%, rgba(53, 255, 122, 0.22), transparent 28%),
-        radial-gradient(circle at 86% 18%, rgba(78, 231, 255, 0.16), transparent 30%),
-        radial-gradient(circle at 50% 92%, rgba(255, 215, 90, 0.12), transparent 32%),
-        linear-gradient(135deg, #020604 0%, #07150d 48%, #020302 100%);
+        radial-gradient(circle at 14% 8%, rgba(66, 215, 125, 0.16), transparent 28%),
+        radial-gradient(circle at 90% 16%, rgba(122, 215, 255, 0.10), transparent 30%),
+        linear-gradient(135deg, #020403 0%, #0b1110 52%, #020202 100%);
       overflow-x: hidden;
     }
 
     body::before {
-      content: "ZAP FLAGS 3.0";
+      content: "Larforyou ®";
       position: fixed;
-      inset: auto auto 8% 50%;
-      transform: translateX(-50%) rotate(-7deg);
-      font-size: clamp(42px, 10vw, 160px);
+      inset: 50% auto auto 50%;
+      transform: translate(-50%, -50%) rotate(-18deg);
+      font-size: clamp(64px, 14vw, 220px);
       font-weight: 900;
-      letter-spacing: 0.08em;
-      color: rgba(53, 255, 122, 0.045);
+      letter-spacing: 0.04em;
+      color: rgba(255, 255, 255, 0.035);
+      text-shadow:
+        0 0 28px rgba(53, 255, 122, 0.08),
+        0 0 80px rgba(78, 231, 255, 0.06);
       pointer-events: none;
       white-space: nowrap;
+      z-index: 0;
+    }
+
+    body::after {
+      content: "";
+      position: fixed;
+      right: -42px;
+      bottom: 90px;
+      transform: rotate(-90deg);
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: 0.28em;
+      color: rgba(168, 255, 197, 0.16);
+      pointer-events: none;
+      z-index: 0;
     }
 
     button, input, select {
@@ -73,9 +91,9 @@
       justify-content: space-between;
       gap: 20px;
       padding: 14px 16px;
-      border: 1px solid rgba(53, 255, 122, 0.25);
+      border: 1px solid rgba(255, 255, 255, 0.10);
       border-radius: 999px;
-      background: rgba(2, 8, 5, 0.72);
+      background: rgba(4, 7, 6, 0.78);
       box-shadow: var(--shadow);
       backdrop-filter: blur(14px);
       position: sticky;
@@ -97,9 +115,9 @@
       display: grid;
       place-items: center;
       border-radius: 14px;
-      background: linear-gradient(135deg, var(--green), var(--cyan));
-      color: #001506;
-      box-shadow: 0 0 22px rgba(53, 255, 122, 0.48);
+      background: linear-gradient(135deg, #f4f0df, #8fdcae);
+      color: #07110d;
+      box-shadow: 0 0 22px rgba(185, 245, 204, 0.20);
     }
 
     .nav-actions {
@@ -156,9 +174,11 @@
     }
 
     .hero-card, .panel {
-      border: 1px solid rgba(53, 255, 122, 0.24);
+      border: 1px solid rgba(255, 255, 255, 0.11);
       border-radius: var(--radius);
-      background: var(--panel);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.055), rgba(255,255,255,0.015)),
+        var(--panel);
       box-shadow: var(--shadow);
       backdrop-filter: blur(18px);
     }
@@ -184,9 +204,9 @@
 
     h1 {
       margin: 18px 0 12px;
-      font-size: clamp(42px, 7vw, 86px);
-      line-height: 0.92;
-      letter-spacing: -0.06em;
+      font-size: clamp(44px, 6.6vw, 82px);
+      line-height: 0.96;
+      letter-spacing: -0.055em;
     }
 
     h2 {
@@ -214,10 +234,12 @@
 
     .phone-preview {
       min-height: 620px;
-      padding: 18px;
+      padding: 22px;
       border-radius: 36px;
-      background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02));
-      border: 1px solid rgba(255,255,255,0.12);
+      background:
+        linear-gradient(145deg, rgba(255,255,255,0.11), rgba(255,255,255,0.025)),
+        radial-gradient(circle at 75% 20%, rgba(122,215,255,0.12), transparent 38%);
+      border: 1px solid rgba(255,255,255,0.14);
       box-shadow: var(--shadow);
     }
 
@@ -227,15 +249,30 @@
       border-radius: 28px;
       overflow: hidden;
       background:
-        linear-gradient(35deg, rgba(53,255,122,0.16) 12%, transparent 12% 24%, rgba(78,231,255,0.10) 24% 28%, transparent 28%),
-        linear-gradient(125deg, transparent 0 18%, rgba(255,255,255,0.08) 18% 20%, transparent 20% 50%, rgba(53,255,122,0.12) 50% 52%, transparent 52%),
-        #0b2214;
+        radial-gradient(circle at 72% 22%, rgba(122,215,255,0.16), transparent 24%),
+        radial-gradient(circle at 24% 70%, rgba(66,215,125,0.14), transparent 30%),
+        linear-gradient(135deg, rgba(255,255,255,0.10) 0 1px, transparent 1px 60px),
+        linear-gradient(45deg, rgba(255,255,255,0.055) 0 1px, transparent 1px 46px),
+        #08100e;
+      background-size: auto, auto, 60px 60px, 46px 46px, auto;
+    }
+
+    .mock-map::before {
+      content: "";
+      position: absolute;
+      inset: 26px;
+      border-radius: 24px;
+      border: 1px solid rgba(255,255,255,0.11);
+      background:
+        linear-gradient(135deg, rgba(255,255,255,0.08), transparent 40%),
+        radial-gradient(circle at 50% 50%, rgba(66,215,125,0.12), transparent 46%);
+      pointer-events: none;
     }
 
     .map-road {
       position: absolute;
-      background: rgba(224, 255, 229, 0.16);
-      border: 1px solid rgba(255,255,255,0.1);
+      background: rgba(255, 255, 255, 0.10);
+      border: 1px solid rgba(255,255,255,0.08);
       border-radius: 999px;
       transform-origin: center;
     }
@@ -254,10 +291,10 @@
       display: grid;
       place-items: center;
       border-radius: 50%;
-      background: rgba(53, 255, 122, 0.18);
-      border: 2px solid var(--green);
-      box-shadow: 0 0 0 28px rgba(78,231,255,0.08), 0 0 34px rgba(53,255,122,0.45);
-      font-size: 38px;
+      background: rgba(244, 240, 223, 0.14);
+      border: 1px solid rgba(244, 240, 223, 0.62);
+      box-shadow: 0 0 0 28px rgba(122,215,255,0.045), 0 0 34px rgba(66,215,125,0.20);
+      font-size: 26px;
     }
 
     .flag-pin {
@@ -267,8 +304,8 @@
       width: 44px;
       height: 44px;
       border-radius: 16px;
-      font-size: 24px;
-      background: rgba(2, 8, 5, 0.86);
+      font-size: 16px;
+      background: rgba(10, 18, 16, 0.90);
       border: 1px solid rgba(255,255,255,0.18);
       box-shadow: 0 12px 26px rgba(0,0,0,0.28);
     }
@@ -340,9 +377,11 @@
       place-items: center;
       border-radius: 18px;
       margin-bottom: 16px;
-      background: rgba(53,255,122,0.12);
-      border: 1px solid rgba(53,255,122,0.28);
-      font-size: 26px;
+      background: rgba(255,255,255,0.055);
+      border: 1px solid rgba(255,255,255,0.12);
+      color: var(--green-soft);
+      font-size: 18px;
+      font-weight: 900;
     }
 
     .section {
@@ -479,6 +518,133 @@
       cursor: pointer;
     }
 
+    .real-gps-map {
+      background:
+        linear-gradient(28deg, transparent 0 43%, rgba(255,255,255,0.82) 43% 45%, transparent 45%),
+        linear-gradient(118deg, transparent 0 48%, rgba(255,255,255,0.72) 48% 50%, transparent 50%),
+        linear-gradient(88deg, transparent 0 52%, rgba(255,255,255,0.58) 52% 53.4%, transparent 53.4%),
+        linear-gradient(0deg, transparent 0 38%, rgba(255,255,255,0.52) 38% 39.4%, transparent 39.4%),
+        radial-gradient(circle at 28% 32%, rgba(66,215,125,0.42), transparent 7%),
+        radial-gradient(circle at 68% 58%, rgba(122,215,255,0.34), transparent 9%),
+        radial-gradient(circle at 52% 74%, rgba(215,179,90,0.28), transparent 8%),
+        repeating-linear-gradient(45deg, rgba(255,255,255,0.06) 0 2px, transparent 2px 72px),
+        #8ec7a3;
+      border-color: rgba(255,255,255,0.14);
+      isolation: isolate;
+    }
+
+    .real-gps-map iframe {
+      position: absolute;
+      left: -10%;
+      top: -10%;
+      width: 120%;
+      height: 120%;
+      border: 0;
+      filter: saturate(0.82) contrast(0.98) brightness(0.86);
+      z-index: 1;
+      pointer-events: none;
+      display: block;
+      transform: translate(var(--map-shift-x, 0px), var(--map-shift-y, 0px));
+      transition: transform .16s linear;
+    }
+
+    .leaflet-gps-map {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+    }
+
+    .leaflet-container {
+      background: #cfe8ff;
+      font-family: inherit;
+    }
+
+    .offline-local-map {
+      position: absolute;
+      inset: -80%;
+      z-index: 2;
+      background:
+        linear-gradient(28deg, transparent 0 43%, rgba(255,255,255,0.82) 43% 45%, transparent 45%),
+        linear-gradient(118deg, transparent 0 48%, rgba(255,255,255,0.72) 48% 50%, transparent 50%),
+        linear-gradient(88deg, transparent 0 52%, rgba(255,255,255,0.58) 52% 53.4%, transparent 53.4%),
+        linear-gradient(0deg, transparent 0 38%, rgba(255,255,255,0.52) 38% 39.4%, transparent 39.4%),
+        radial-gradient(circle at 28% 32%, rgba(66,215,125,0.42), transparent 7%),
+        radial-gradient(circle at 68% 58%, rgba(122,215,255,0.34), transparent 9%),
+        radial-gradient(circle at 52% 74%, rgba(215,179,90,0.28), transparent 8%),
+        repeating-linear-gradient(45deg, rgba(255,255,255,0.06) 0 2px, transparent 2px 72px),
+        #8ec7a3;
+      transform: translate(var(--map-shift-x, 0px), var(--map-shift-y, 0px));
+      transition: transform .16s linear;
+    }
+
+    .real-gps-map .range-circle,
+    .real-gps-map .avatar {
+      left: 50% !important;
+      top: 50% !important;
+    }
+
+    .real-gps-map::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(circle at 50% 50%, transparent 0 42%, rgba(5,8,7,0.08) 78%),
+        linear-gradient(180deg, rgba(5,8,7,0.04), rgba(5,8,7,0.12));
+      pointer-events: none;
+      z-index: 3;
+    }
+
+    .real-gps-map .range-circle,
+    .real-gps-map .flag-pin,
+    .real-gps-map .avatar,
+    .avatar-vitals {
+      z-index: 5;
+    }
+
+    .avatar-vitals {
+      position: absolute;
+      left: 50%;
+      top: 14px;
+      width: min(420px, calc(100% - 28px));
+      transform: translateX(-50%);
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      pointer-events: none;
+    }
+
+    .vital-wrap {
+      display: grid;
+      gap: 4px;
+      color: white;
+      font-size: 11px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.65);
+    }
+
+    .vital-line {
+      height: 8px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: rgba(0,0,0,0.58);
+      border: 1px solid rgba(255,255,255,0.16);
+    }
+
+    .vital-fill {
+      height: 100%;
+      border-radius: inherit;
+    }
+
+    .vital-fill.energy {
+      background: linear-gradient(90deg, #42d77d, #b9f5cc);
+    }
+
+    .vital-fill.hunger {
+      background: linear-gradient(90deg, #d7b35a, #ffe39a);
+    }
+
     .range-circle {
       position: absolute;
       width: 120px;
@@ -543,6 +709,30 @@
 
     .toast.active {
       display: block;
+    }
+
+    .brand-footer {
+      margin: 28px 0 0;
+      text-align: center;
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      color: rgba(168, 255, 197, 0.58);
+    }
+
+    .ghost-admin {
+      padding: 0;
+      min-height: auto;
+      color: inherit;
+      background: transparent;
+      border: 0;
+      box-shadow: none;
+      opacity: 0.72;
+    }
+
+    .ghost-admin:hover {
+      opacity: 1;
+      color: var(--green-soft);
     }
 
     .actions {
@@ -610,14 +800,14 @@
   <div class="app-shell">
     <nav class="top-nav">
       <div class="brand">
-        <div class="brand-mark">🏁</div>
-        <div>ZAP-FLAGS 3.0</div>
+        <div class="brand-mark">LFY</div>
+        <div>Larforyou · ZAP-FLAGS 3.0</div>
       </div>
       <div class="nav-actions">
         <button class="btn secondary" onclick="showScreen('home')">Início</button>
         <button class="btn secondary" onclick="showScreen('player')">Jogador</button>
         <button class="btn secondary" onclick="showScreen('company')">Empresa</button>
-        <button class="btn secondary" onclick="showScreen('backoffice')">Backoffice</button>
+        <button class="btn secondary ghost-admin" onclick="showScreen('backoffice')">Larforyou</button>
       </div>
     </nav>
 
@@ -625,13 +815,13 @@
       <section id="home" class="screen active">
         <div class="hero">
           <div class="hero-card hero-copy">
-            <span class="eyebrow">Arquitetura visual nova · Sem código legado</span>
-            <h1>Caça flags. Ganha QR. Troca valor.</h1>
-            <p>Uma proposta visual de raiz para o ZAP-FLAGS 3.0: jogo geolocalizado, avatar com energia, empresas com campanhas, backoffice e mercado de QRs negociáveis.</p>
+            <span class="eyebrow">Larforyou apresenta · ZAP-FLAGS 3.0</span>
+            <h1>Experiência urbana de recompensas digitais.</h1>
+            <p>Uma plataforma Larforyou para ativação local, campanhas geolocalizadas, carteiras digitais, QRs negociáveis e gestão operacional em tempo real.</p>
             <div class="hero-actions">
               <button class="btn" onclick="showScreen('player')">Entrar como Jogador</button>
               <button class="btn secondary" onclick="showScreen('company')">Painel Empresa</button>
-              <button class="btn secondary" onclick="showScreen('backoffice')">Ver Backoffice</button>
+              <button class="btn secondary ghost-admin" onclick="showScreen('backoffice')">Larforyou</button>
             </div>
           </div>
           <div class="phone-preview">
@@ -644,28 +834,28 @@
                 <div class="stat"><strong>150</strong><span>Moedas</span></div>
                 <div class="stat"><strong>12</strong><span>Flags</span></div>
               </div>
-              <div class="flag-pin pin-1">🏁</div>
-              <div class="flag-pin pin-2">🎟️</div>
-              <div class="flag-pin pin-3">🏆</div>
-              <div class="flag-pin pin-4">📍</div>
-              <div class="avatar">🚶</div>
+              <div class="flag-pin pin-1">ZF</div>
+              <div class="flag-pin pin-2">PR</div>
+              <div class="flag-pin pin-3">QR</div>
+              <div class="flag-pin pin-4">GPS</div>
+              <div class="avatar">LFY</div>
             </div>
           </div>
         </div>
 
         <div class="section grid three">
           <div class="panel">
-            <div class="module-icon">🧍</div>
+            <div class="module-icon">01</div>
             <h3>Jogador</h3>
             <p>Mapa, GPS online/offline, energia, humor, fome, moedas, flags e bolsa de QRs.</p>
           </div>
           <div class="panel">
-            <div class="module-icon">🏪</div>
+            <div class="module-icon">02</div>
             <h3>Empresa</h3>
             <p>Packs, campanhas, recompensas e presença no ecossistema de flags PR.</p>
           </div>
           <div class="panel">
-            <div class="module-icon">🛡️</div>
+            <div class="module-icon">03</div>
             <h3>Backoffice</h3>
             <p>Visão administrativa para utilizadores, empresas, mercado, transações e auditoria.</p>
           </div>
@@ -712,13 +902,23 @@
         </div>
       </section>
     </main>
+    <div class="brand-footer"><button class="ghost-admin" onclick="showScreen('backoffice')">Larforyou ®</button></div>
   </div>
 
   <div id="toast" class="toast"></div>
 
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
     const STORAGE_KEY = 'ZAP_FLAGS_3_STATE';
+    const WALK_STEP_METERS = 0.5;
+    const RUN_STEP_METERS = 1.5;
+    const GPS_METERS_TO_PERCENT = 0.1;
+    const GPS_BASE_LAT = 38.7223;
+    const GPS_BASE_LNG = -9.1393;
     let placementType = 'ZAP';
+    let spacePressed = false;
+    let gpsMode = 'offline';
+    let playerLeafletMap = null;
 
     function createInitialState() {
       const now = Date.now();
@@ -780,7 +980,8 @@
         ],
         trades: [],
         audit: [
-          { id: 'audit_1', at: now, text: 'Sistema ZAP-FLAGS 3.0 iniciado.' }
+          { id: 'audit_1', at: now, text: 'Sistema ZAP-FLAGS 3.0 iniciado.' },
+          { id: 'audit_2', at: now, text: 'Mapa GPS real com avatar centralizado, movimento offline por setas e corrida 3x registado no backoffice.' }
         ]
       };
     }
@@ -1019,22 +1220,25 @@
         target.innerHTML = `
           <h2>Mapa GPS · ${escapeHtml(player.name)}</h2>
           ${statCards()}
-          <p>Clica no mapa para mover o avatar. Só consegues apanhar flags dentro do círculo de alcance.</p>
-          <div class="map-full player-move-mode" onclick="movePlayerOnMap(event)">
-            <div class="map-road road-a"></div>
-            <div class="map-road road-b"></div>
-            <div class="map-road road-c"></div>
-            <div class="range-circle" style="left:${position.x}%;top:${position.y}%;"></div>
+          <p>Usa as setas para caminhar em passos de 0,5 m. Mantém Espaço pressionado com uma seta para correr até 1,5 m.</p>
+          <div class="map-full player-move-mode real-gps-map" onclick="movePlayerOnMap(event)">
+            <iframe id="gps-map-frame" title="Mapa real GPS" style="transform: translate(${(50 - position.x) * 3}px, ${(50 - position.y) * 3}px);" src="https://www.openstreetmap.org/export/embed.html?bbox=-9.1780%2C38.7200%2C-9.1620%2C38.7320&amp;layer=mapnik"></iframe>
+            <div id="gps-range-circle" class="range-circle" style="left:${position.x}%;top:${position.y}%;"></div>
             ${state.flags.filter(flag => flag.active).map(flag => `<button class="flag-pin" title="${escapeHtml(flag.label)}" style="left:${flag.x}%;top:${flag.y}%;" onclick="event.stopPropagation();collectFlag('${flag.id}')">${flag.type === 'BINGO' ? '🏆' : flag.type === 'PR' ? '🎟️' : '🏁'}</button>`).join('')}
-            <div class="avatar" style="left:${position.x}%;top:${position.y}%;">🚶</div>
+            <div id="gps-avatar" class="avatar" style="left:${position.x}%;top:${position.y}%;">🚶</div>
+            <div class="avatar-vitals">
+              <div class="vital-wrap"><span>Energia</span><div class="vital-line" title="Energia"><div id="gps-energy-fill" class="vital-fill energy" style="width:${player.energy}%;"></div></div></div>
+              <div class="vital-wrap"><span>Fome</span><div class="vital-line" title="Fome"><div id="gps-hunger-fill" class="vital-fill hunger" style="width:${player.hunger}%;"></div></div></div>
+            </div>
           </div>
           <div class="bottom-bar">
-            <span class="badge">GPS simulado · X ${position.x}% / Y ${position.y}% · Alcance 15</span>
+            <span id="gps-position-badge" class="badge">GPS simulado · X ${Number(position.x).toFixed(2)}% / Y ${Number(position.y).toFixed(2)}% · Alcance 15</span>
             <div>
               <button class="btn secondary" onclick="notify('Modo Offline GPS ativado')">Offline GPS</button>
               <button class="btn secondary" onclick="movePlayerRandomly()">Mover aleatório</button>
               <button class="btn secondary" onclick="restPlayer()">Descansar</button>
-              <button class="btn secondary" onclick="feedPlayer()">Comer</button>
+              <button class="btn secondary" onclick="feedPlayer()">Comer · 10 moedas</button>
+              <button class="btn secondary" onclick="resetPlayerVitalsTest()">Repor teste</button>
               <button class="btn secondary" onclick="logout()">Sair</button>
             </div>
           </div>
@@ -1123,6 +1327,50 @@
           ${received ? `<button class="btn" onclick="acceptTrade('${trade.id}')">Aceitar</button> <button class="btn danger" onclick="rejectTrade('${trade.id}')">Recusar</button>` : `<button class="btn danger" onclick="cancelTrade('${trade.id}')">Cancelar</button>`}
         </div>
       `;
+    }
+
+    function playerPositionToLatLng(position) {
+      return [
+        GPS_BASE_LAT + ((50 - position.y) * 0.00001),
+        GPS_BASE_LNG + ((position.x - 50) * 0.00001)
+      ];
+    }
+
+    function initPlayerLeafletMap(position) {
+      const mapEl = document.getElementById('leaflet-gps-map');
+      if (!mapEl || !window.L) return;
+      gpsMode = 'online';
+      const offlineMap = document.getElementById('offline-local-map');
+      if (offlineMap) offlineMap.style.display = 'none';
+      mapEl.style.display = 'block';
+      if (playerLeafletMap) {
+        playerLeafletMap.remove();
+        playerLeafletMap = null;
+      }
+      playerLeafletMap = L.map(mapEl, {
+        zoomControl: false,
+        attributionControl: false,
+        dragging: false,
+        scrollWheelZoom: false,
+        doubleClickZoom: false,
+        boxZoom: false,
+        keyboard: false,
+        tap: false,
+        touchZoom: false
+      }).setView(playerPositionToLatLng(position), 18);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        crossOrigin: true
+      }).addTo(playerLeafletMap);
+      setTimeout(() => playerLeafletMap.invalidateSize(), 80);
+    }
+
+    function activateOfflineLocalMap() {
+      gpsMode = 'offline';
+      const offlineMap = document.getElementById('offline-local-map');
+      const leafletMap = document.getElementById('leaflet-gps-map');
+      if (offlineMap) offlineMap.style.display = 'block';
+      if (leafletMap) leafletMap.style.display = 'none';
     }
 
     function renderCompanyPanel(panel) {
@@ -1314,10 +1562,12 @@
       const rect = event.currentTarget.getBoundingClientRect();
       const x = Math.max(0, Math.min(100, Math.round(((event.clientX - rect.left) / rect.width) * 100)));
       const y = Math.max(0, Math.min(100, Math.round(((event.clientY - rect.top) / rect.height) * 100)));
+      const current = ensurePlayerPosition(player);
+      if (current.x === x && current.y === y) return notify('Sem deslocação');
       player.position = { x, y };
       spendMovementStats(player);
       saveState();
-      renderPlayerPanel('game');
+      updateGpsView(player.position);
       notify('Avatar movido para X ' + x + '% / Y ' + y + '%');
     }
 
@@ -1330,6 +1580,49 @@
       saveState();
       renderPlayerPanel('game');
       notify('GPS offline simulou nova posição');
+    }
+
+    function movePlayerByKeyboard(dx, dy, running) {
+      const player = currentPlayer();
+      if (!player || state.session.type !== 'player') return;
+      if (!document.getElementById('player')?.classList.contains('active')) return;
+      if (!canMove(player)) return;
+      const position = ensurePlayerPosition(player);
+      const speed = (running ? RUN_STEP_METERS : WALK_STEP_METERS) * GPS_METERS_TO_PERCENT;
+      const nextPosition = {
+        x: position.x + (dx * speed),
+        y: position.y + (dy * speed)
+      };
+      player.position = nextPosition;
+      spendMovementStats(player);
+      if (running) {
+        spendMovementStats(player);
+        spendMovementStats(player);
+      }
+      saveState();
+      updateGpsView(player.position);
+      notify(running ? 'Corrida offline 3x' : 'Movimento offline');
+    }
+
+    function updateGpsView(position) {
+      const mapFrame = document.getElementById('gps-map-frame');
+      const avatar = document.getElementById('gps-avatar');
+      const range = document.getElementById('gps-range-circle');
+      const badge = document.getElementById('gps-position-badge');
+      const energyFill = document.getElementById('gps-energy-fill');
+      const hungerFill = document.getElementById('gps-hunger-fill');
+      if (!mapFrame || !avatar || !range || !badge) return renderPlayerPanel('game');
+      mapFrame.style.transform = `translate(${(50 - position.x) * 3}px, ${(50 - position.y) * 3}px)`;
+      avatar.style.left = position.x + '%';
+      avatar.style.top = position.y + '%';
+      range.style.left = position.x + '%';
+      range.style.top = position.y + '%';
+      badge.textContent = 'GPS simulado · X ' + Number(position.x).toFixed(2) + '% / Y ' + Number(position.y).toFixed(2) + '% · Alcance 15';
+      const player = currentPlayer();
+      if (player && energyFill && hungerFill) {
+        energyFill.style.width = clampStat(player.energy) + '%';
+        hungerFill.style.width = clampStat(player.hunger) + '%';
+      }
     }
 
     function restPlayer() {
@@ -1352,6 +1645,17 @@
       saveState();
       renderPlayerPanel('wallet');
       notify('Comida comprada: fome +30');
+    }
+
+    function resetPlayerVitalsTest() {
+      const player = currentPlayer();
+      if (!player) return renderPlayerAuth();
+      player.energy = 100;
+      player.hunger = 100;
+      player.mood = 100;
+      saveState();
+      updateGpsView(ensurePlayerPosition(player));
+      notify('Teste: energia, fome e humor repostos');
     }
 
     function buyQr(qrId) {
@@ -1673,6 +1977,28 @@
       renderBackofficePanel('overview');
       notify('Sistema resetado');
     }
+
+    window.addEventListener('keydown', event => {
+      if (event.code === 'Space') {
+        spacePressed = true;
+        if (document.getElementById('player')?.classList.contains('active')) event.preventDefault();
+      }
+      const directions = {
+        ArrowUp: [0, -1],
+        ArrowDown: [0, 1],
+        ArrowLeft: [-1, 0],
+        ArrowRight: [1, 0]
+      };
+      if (!directions[event.key]) return;
+      if (['INPUT', 'SELECT', 'TEXTAREA'].includes(document.activeElement?.tagName)) return;
+      event.preventDefault();
+      const [dx, dy] = directions[event.key];
+      movePlayerByKeyboard(dx, dy, spacePressed);
+    });
+
+    window.addEventListener('keyup', event => {
+      if (event.code === 'Space') spacePressed = false;
+    });
 
     renderPlayerAuth();
     renderCompanyAuth();
