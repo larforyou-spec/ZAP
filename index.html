@@ -794,6 +794,30 @@
         min-height: 484px;
       }
     }
+
+    /* GPS Mode Selector */
+    .gps-mode-selector {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .gps-mode-btn {
+      flex: 1;
+      min-height: 36px;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      transition: all 0.3s ease;
+    }
+
+    .gps-mode-btn.active {
+      background: linear-gradient(135deg, var(--green), #baffce) !important;
+      color: #001506 !important;
+      border: 1px solid var(--green) !important;
+      box-shadow: 0 4px 12px rgba(53, 255, 122, 0.3) !important;
+    }
   </style>
 </head>
 <body>
@@ -866,7 +890,8 @@
         <div class="dashboard">
           <aside class="panel sidebar">
             <h2>Jogador</h2>
-            <button class="btn" onclick="renderPlayerPanel('game')">Mapa GPS</button>
+            <button class="btn" onclick="renderPlayerPanel('game')">GPS Online</button>
+            <button class="btn secondary" onclick="renderPlayerPanel('game-offline')">GPS Offline</button>
             <button class="btn secondary" onclick="renderPlayerPanel('wallet')">Carteira</button>
             <button class="btn secondary" onclick="renderPlayerPanel('market')">QR Market</button>
             <button class="btn secondary" onclick="renderPlayerPanel('friends')">Amigos e Trocas</button>
@@ -1063,10 +1088,17 @@
     }
 
     function showScreen(id) {
+      console.log('showScreen called with:', id);
       document.querySelectorAll('.screen').forEach(screen => screen.classList.remove('active'));
       document.getElementById(id).classList.add('active');
-      if (id === 'player') renderPlayerGate();
-      if (id === 'company') renderCompanyGate();
+      if (id === 'player') {
+        console.log('Calling renderPlayerGate');
+        renderPlayerGate();
+      }
+      if (id === 'company') {
+        console.log('Calling renderCompanyGate');
+        renderCompanyGate();
+      }
       if (id === 'backoffice') renderBackofficePanel('overview');
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
@@ -1087,8 +1119,16 @@
     }
 
     function renderPlayerGate() {
-      if (state.session.type === 'player' && currentPlayer()) renderPlayerPanel('game');
-      else renderPlayerAuth();
+      console.log('renderPlayerGate called');
+      console.log('Session state:', state.session);
+      console.log('Current player:', currentPlayer());
+      if (state.session.type === 'player' && currentPlayer()) {
+        console.log('Player has session, showing panel');
+        renderPlayerPanel('game');
+      } else {
+        console.log('No player session, showing auth');
+        renderPlayerAuth();
+      }
     }
 
     function renderCompanyGate() {
@@ -1097,12 +1137,23 @@
     }
 
     function renderPlayerAuth() {
-      document.getElementById('player-content').innerHTML = `
+      console.log('renderPlayerAuth called');
+      const content = `
         <div class="grid two">
           <div class="auth-box">
             <h2>Login Jogador</h2>
             <div class="input-group"><label>Email</label><input id="player-login-email" value="jogador@demo.pt"></div>
             <div class="input-group"><label>Senha</label><input id="player-login-password" type="password" value="123456"></div>
+            
+            <!-- Seleção GPS Online/Offline -->
+            <div class="input-group">
+              <label>Modo GPS</label>
+              <div class="gps-mode-selector">
+                <button id="gps-online-btn" class="btn gps-mode-btn" onclick="selectGpsMode('online')">GPS Online</button>
+                <button id="gps-offline-btn" class="btn secondary gps-mode-btn" onclick="selectGpsMode('offline')">GPS Offline</button>
+              </div>
+            </div>
+            
             <button class="btn" onclick="loginPlayer()">Entrar</button>
           </div>
           <div class="auth-box">
@@ -1115,6 +1166,40 @@
           </div>
         </div>
       `;
+      console.log('Setting player-content innerHTML');
+      document.getElementById('player-content').innerHTML = content;
+      console.log('Player auth rendered');
+      
+      // Inicializar seleção GPS padrão (Online)
+      setTimeout(() => {
+        selectGpsMode('online');
+      }, 100);
+    }
+
+    function selectGpsMode(mode) {
+      console.log('selectGpsMode called with:', mode);
+      
+      // Remover classe active de todos os botões
+      const onlineBtn = document.getElementById('gps-online-btn');
+      const offlineBtn = document.getElementById('gps-offline-btn');
+      
+      if (onlineBtn) onlineBtn.classList.remove('active');
+      if (offlineBtn) offlineBtn.classList.remove('active');
+      
+      // Adicionar classe active ao botão selecionado
+      if (mode === 'online' && onlineBtn) {
+        onlineBtn.classList.add('active');
+        onlineBtn.className = 'btn gps-mode-btn active';
+        if (offlineBtn) offlineBtn.className = 'btn secondary gps-mode-btn';
+      } else if (mode === 'offline' && offlineBtn) {
+        offlineBtn.classList.add('active');
+        offlineBtn.className = 'btn gps-mode-btn active';
+        if (onlineBtn) onlineBtn.className = 'btn secondary gps-mode-btn';
+      }
+      
+      // Guardar seleção no estado
+      state.selectedGpsMode = mode;
+      console.log('GPS mode selected:', mode);
     }
 
     function renderCompanyAuth() {
@@ -1235,6 +1320,39 @@
             <span id="gps-position-badge" class="badge">GPS simulado · X ${Number(position.x).toFixed(2)}% / Y ${Number(position.y).toFixed(2)}% · Alcance 15</span>
             <div>
               <button class="btn secondary" onclick="notify('Modo Offline GPS ativado')">Offline GPS</button>
+              <button class="btn secondary" onclick="movePlayerRandomly()">Mover aleatório</button>
+              <button class="btn secondary" onclick="restPlayer()">Descansar</button>
+              <button class="btn secondary" onclick="feedPlayer()">Comer · 10 moedas</button>
+              <button class="btn secondary" onclick="resetPlayerVitalsTest()">Repor teste</button>
+              <button class="btn secondary" onclick="logout()">Sair</button>
+            </div>
+          </div>
+        `;
+      }
+
+      if (panel === 'game-offline') {
+        target.innerHTML = `
+          <h2>GPS Offline · ${escapeHtml(player.name)}</h2>
+          ${statCards()}
+          <p>Modo offline com mapa simulado. Usa as setas para te moveres no mapa local.</p>
+          <div class="map-full player-move-mode" onclick="movePlayerOnMap(event)">
+            <div class="mock-map" style="position:relative;width:100%;height:400px;background:radial-gradient(circle at 72% 22%, rgba(122,215,255,0.16), transparent 24%),radial-gradient(circle at 24% 70%, rgba(66,215,125,0.14), transparent 30%),linear-gradient(135deg, rgba(255,255,255,0.10) 0 1px, transparent 1px 60px),linear-gradient(45deg, rgba(255,255,255,0.055) 0 1px, transparent 1px 46px),#08100e;background-size: auto, auto, 60px 60px, 46px 46px, auto;border-radius:24px;overflow:hidden;">
+              <div class="map-road" style="position:absolute;background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.08);border-radius:999px;width:680px;height:28px;left:-80px;top:180px;transform:rotate(-24deg);"></div>
+              <div class="map-road" style="position:absolute;background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.08);border-radius:999px;width:640px;height:24px;left:-60px;top:380px;transform:rotate(18deg);"></div>
+              <div class="map-road" style="position:absolute;background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.08);border-radius:999px;width:28px;height:700px;left:250px;top:-40px;transform:rotate(12deg);"></div>
+              <div id="offline-range-circle" class="range-circle" style="left:${position.x}%;top:${position.y}%;"></div>
+              ${state.flags.filter(flag => flag.active).map(flag => `<button class="flag-pin" title="${escapeHtml(flag.label)}" style="left:${flag.x}%;top:${flag.y}%;" onclick="event.stopPropagation();collectFlag('${flag.id}')">${flag.type === 'BINGO' ? '🏆' : flag.type === 'PR' ? '🎟️' : '🏁'}</button>`).join('')}
+              <div id="offline-avatar" class="avatar" style="left:${position.x}%;top:${position.y}%;">🚶</div>
+              <div class="avatar-vitals">
+                <div class="vital-wrap"><span>Energia</span><div class="vital-line" title="Energia"><div id="offline-energy-fill" class="vital-fill energy" style="width:${player.energy}%;"></div></div></div>
+                <div class="vital-wrap"><span>Fome</span><div class="vital-line" title="Fome"><div id="offline-hunger-fill" class="vital-fill hunger" style="width:${player.hunger}%;"></div></div></div>
+              </div>
+            </div>
+          </div>
+          <div class="bottom-bar">
+            <span id="offline-position-badge" class="badge">GPS Offline · X ${Number(position.x).toFixed(2)}% / Y ${Number(position.y).toFixed(2)}% · Alcance 15</span>
+            <div>
+              <button class="btn" onclick="notify('Modo Online GPS ativado')">GPS Online</button>
               <button class="btn secondary" onclick="movePlayerRandomly()">Mover aleatório</button>
               <button class="btn secondary" onclick="restPlayer()">Descansar</button>
               <button class="btn secondary" onclick="feedPlayer()">Comer · 10 moedas</button>
@@ -2000,9 +2118,25 @@
       if (event.code === 'Space') spacePressed = false;
     });
 
-    renderPlayerAuth();
-    renderCompanyAuth();
-    renderBackofficePanel('overview');
+    // Inicialização
+    function init() {
+      // Carregar estado
+      loadState();
+      
+      // Se não houver sessão ativa, mostrar páginas de login
+      if (state.session.type !== 'player' || !currentPlayer()) {
+        renderPlayerAuth();
+      }
+      if (state.session.type !== 'company' || !currentCompany()) {
+        renderCompanyAuth();
+      }
+      
+      // Inicializar backoffice
+      renderBackofficePanel('overview');
+    }
+
+    // Chamar inicialização
+    init();
   </script>
 </body>
 </html>
