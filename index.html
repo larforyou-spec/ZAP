@@ -943,6 +943,50 @@
       box-shadow: var(--shadow) !important;
     }
 
+    /* Bingo Selection Styles */
+    .bingo-card {
+      position: relative;
+      transition: all 0.3s ease;
+    }
+
+    .bingo-card.selected {
+      border: 2px solid var(--green);
+      background: linear-gradient(135deg, rgba(53, 255, 122, 0.1), rgba(53, 255, 122, 0.05));
+      transform: scale(1.02);
+    }
+
+    .selection-badge {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      width: 24px;
+      height: 24px;
+      background: var(--green);
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: bold;
+      z-index: 10;
+    }
+
+    .bulk-actions-panel {
+      animation: slideUp 0.3s ease;
+    }
+
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
     /* Porta-moedas Styles */
     .wallet-display {
       background: linear-gradient(135deg, rgba(53, 255, 122, 0.1), rgba(53, 255, 122, 0.05));
@@ -1136,6 +1180,7 @@
             </div>
             <button class="btn" onclick="renderPlayerPanel('players')">Lista de Jogadores</button>
             <button class="btn secondary" onclick="renderPlayerPanel('wallet')">Carteira</button>
+            <button class="btn secondary" onclick="renderPlayerPanel('bingo')">🎲 Bingos</button>
             <button class="btn secondary" onclick="renderPlayerPanel('market')">QR Market</button>
             <button class="btn secondary" onclick="renderPlayerPanel('friends')">Amigos e Trocas</button>
           </aside>
@@ -1149,7 +1194,7 @@
             <h2>Empresa</h2>
             <button class="btn" onclick="renderCompanyPanel('dashboard')">Dashboard</button>
             <button class="btn secondary" onclick="renderCompanyPanel('packs')">Packs</button>
-            <button class="btn secondary" onclick="renderCompanyPanel('campaign')">Campanha</button>
+            <button id="campaign-btn" class="btn secondary" onclick="renderCompanyPanel('campaign')" style="background: var(--green); color: white; border: 1px solid var(--green);">Campanha</button>
           </aside>
           <section class="panel content-area" id="company-content"></section>
         </div>
@@ -1269,6 +1314,8 @@
 
     let state = loadState();
     if (!state.trades) state.trades = [];
+    if (!state.selectedBingos) state.selectedBingos = [];
+    if (!state.bulkPrizes) state.bulkPrizes = [];
 
     function loadState() {
       try {
@@ -1879,6 +1926,354 @@
       renderPlayerPanel('market-buy');
     }
 
+    // Funções para seleção múltipla de bingos
+    function toggleBingoSelection(bingoId) {
+      const index = state.selectedBingos.indexOf(bingoId);
+      if (index > -1) {
+        state.selectedBingos.splice(index, 1);
+      } else {
+        state.selectedBingos.push(bingoId);
+      }
+      saveState();
+      renderPlayerPanel('bingo');
+    }
+
+    function clearBingoSelection() {
+      state.selectedBingos = [];
+      saveState();
+      renderPlayerPanel('bingo');
+    }
+
+    function selectAllBingos() {
+      const player = currentPlayer();
+      if (!player) return;
+      
+      const playerBingos = state.bingos.filter(bingo => bingo.ownerId === player.id);
+      state.selectedBingos = playerBingos.map(bingo => bingo.id);
+      saveState();
+      renderPlayerPanel('bingo');
+    }
+
+    function openBulkBingoActions() {
+      const selectedBingos = state.selectedBingos;
+      if (selectedBingos.length === 0) {
+        return notify('Seleciona pelo menos um bingo');
+      }
+      
+      openBulkPrizeDialog();
+    }
+
+    function openBulkPrizeDialog() {
+      const selectedBingos = state.selectedBingos;
+      if (selectedBingos.length === 0) {
+        return notify('Seleciona pelo menos um bingo');
+      }
+      
+      const dialogHtml = `
+        <div class="dialog-overlay" onclick="closeBulkPrizeDialog()"></div>
+        <div class="player-dialog">
+          <div class="dialog-header">
+            <h2>🎁 Criar Prémio Livre - ${selectedBingos.length} Bingo(s)</h2>
+            <button class="dialog-close" onclick="closeBulkPrizeDialog()">×</button>
+          </div>
+          
+          <div class="info-box">
+            <p><strong>Bingos selecionados:</strong> ${selectedBingos.length}</p>
+            <p><strong>Atenção:</strong> Esta ação criará prémios livres para todos os bingos selecionados.</p>
+          </div>
+          
+          <div class="input-group">
+            <label>Descrição do Prémio</label>
+            <textarea id="bulk-prize-description" placeholder="Descreve o prémio livre (ex: Café grátis, 10% desconto, Brinde especial)..." rows="3"></textarea>
+          </div>
+          
+          <div class="input-group">
+            <label>Ativação</label>
+            <select id="bulk-prize-activation">
+              <option value="now">🟢 Ativar Já</option>
+              <option value="schedule">⏰ Agendar para mais tarde</option>
+            </select>
+          </div>
+          
+          <div id="schedule-options" style="display: none;">
+            <div class="input-group">
+              <label>⏰ Data e Hora de Ativação</label>
+              <input type="datetime-local" id="bulk-prize-schedule-time">
+            </div>
+          </div>
+          
+          <div class="input-group">
+            <label>🔄 Tipo de Terminação</label>
+            <select id="bulk-prize-termination">
+              <option value="prize">🏆 Quando prémio for levantado</option>
+              <option value="deadline">⏰ No prazo definido</option>
+              <option value="both">🔄 Qualquer dos dois (o que acontecer primeiro)</option>
+            </select>
+          </div>
+          
+          <div id="deadline-options" style="display: none;">
+            <div class="input-group">
+              <label>⏰ Prazo para Levantamento</label>
+              <select id="bulk-prize-deadline">
+                <option value="1">1 dia</option>
+                <option value="3">3 dias</option>
+                <option value="7">7 dias</option>
+                <option value="15">15 dias</option>
+                <option value="30">30 dias</option>
+                <option value="60">2 meses</option>
+                <option value="90">3 meses</option>
+                <option value="180">6 meses</option>
+                <option value="365">1 ano</option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="dialog-actions">
+            <button class="btn" onclick="submitBulkPrize()">Criar Prémio(s) Livre(s)</button>
+            <button class="btn secondary" onclick="closeBulkPrizeDialog()">Cancelar</button>
+          </div>
+        </div>
+      `;
+      
+      // Adicionar diálogo ao body
+      const dialogContainer = document.createElement('div');
+      dialogContainer.id = 'bulk-prize-dialog-container';
+      dialogContainer.innerHTML = dialogHtml;
+      document.body.appendChild(dialogContainer);
+      
+      // Adicionar eventos para mostrar/esconder opções
+      setTimeout(() => {
+        const activationSelect = document.getElementById('bulk-prize-activation');
+        const terminationSelect = document.getElementById('bulk-prize-termination');
+        const scheduleOptions = document.getElementById('schedule-options');
+        const deadlineOptions = document.getElementById('deadline-options');
+        
+        if (activationSelect) {
+          activationSelect.addEventListener('change', () => {
+            scheduleOptions.style.display = activationSelect.value === 'schedule' ? 'block' : 'none';
+          });
+        }
+        
+        if (terminationSelect) {
+          terminationSelect.addEventListener('change', () => {
+            deadlineOptions.style.display = 
+              terminationSelect.value === 'deadline' || terminationSelect.value === 'both' 
+              ? 'block' : 'none';
+          });
+        }
+        
+        // Definir data/hora padrão para 1 hora a partir de agora
+        const scheduleTime = document.getElementById('bulk-prize-schedule-time');
+        if (scheduleTime) {
+          const now = new Date();
+          now.setHours(now.getHours() + 1);
+          scheduleTime.value = now.toISOString().slice(0, 16);
+        }
+      }, 100);
+    }
+
+    function closeBulkPrizeDialog() {
+      const dialogContainer = document.getElementById('bulk-prize-dialog-container');
+      if (dialogContainer) {
+        dialogContainer.remove();
+      }
+    }
+
+    function submitBulkPrize() {
+      const player = currentPlayer();
+      if (!player) return renderPlayerAuth();
+      
+      const selectedBingos = state.selectedBingos;
+      if (selectedBingos.length === 0) {
+        return notify('Seleciona pelo menos um bingo');
+      }
+      
+      const description = document.getElementById('bulk-prize-description')?.value.trim();
+      const activation = document.getElementById('bulk-prize-activation')?.value;
+      const termination = document.getElementById('bulk-prize-termination')?.value;
+      const deadlineDays = document.getElementById('bulk-prize-deadline')?.value;
+      const scheduleTime = document.getElementById('bulk-prize-schedule-time')?.value;
+      
+      if (!description) {
+        return notify('Descreve o prémio');
+      }
+      
+      // Criar prémios para todos os bingos selecionados
+      const prizes = [];
+      const now = Date.now();
+      
+      selectedBingos.forEach(bingoId => {
+        const bingo = state.bingos.find(b => b.id === bingoId);
+        if (!bingo) return;
+        
+        const prize = {
+          id: uid('prize'),
+          bingoId: bingoId,
+          description: description,
+          activation: activation,
+          termination: termination,
+          createdAt: now,
+          status: activation === 'now' ? 'active' : 'scheduled',
+          ownerId: player.id
+        };
+        
+        // Definir tempo de ativação
+        if (activation === 'schedule' && scheduleTime) {
+          prize.scheduledAt = new Date(scheduleTime).getTime();
+        } else {
+          prize.activatedAt = now;
+        }
+        
+        // Definir prazo de terminação
+        if (termination === 'deadline' || termination === 'both') {
+          const deadlineMs = parseInt(deadlineDays) * 24 * 60 * 60 * 1000;
+          prize.deadlineAt = now + deadlineMs;
+        }
+        
+        prizes.push(prize);
+      });
+      
+      // Adicionar prémios ao estado
+      if (!state.bulkPrizes) state.bulkPrizes = [];
+      state.bulkPrizes.push(...prizes);
+      
+      saveState();
+      addAudit(`${player.name} criou ${prizes.length} prémio(s) livre(s) para ${selectedBingos.length} bingo(s)`);
+      notify(`✅ ${prizes.length} prémio(s) livre(s) criado(s) com sucesso!`);
+      
+      closeBulkPrizeDialog();
+      clearBingoSelection();
+    }
+
+    function openBulkScheduleDialog() {
+      const selectedBingos = state.selectedBingos;
+      if (selectedBingos.length === 0) {
+        return notify('Seleciona pelo menos um bingo');
+      }
+      
+      const dialogHtml = `
+        <div class="dialog-overlay" onclick="closeBulkScheduleDialog()"></div>
+        <div class="player-dialog">
+          <div class="dialog-header">
+            <h2>⏰ Agendar Ativação - ${selectedBingos.length} Bingo(s)</h2>
+            <button class="dialog-close" onclick="closeBulkScheduleDialog()">×</button>
+          </div>
+          
+          <div class="info-box">
+            <p><strong>Bingos selecionados:</strong> ${selectedBingos.length}</p>
+            <p>Define quando os bingos selecionados serão ativados automaticamente.</p>
+          </div>
+          
+          <div class="input-group">
+            <label>📅 Data de Ativação</label>
+            <input type="date" id="bulk-schedule-date">
+          </div>
+          
+          <div class="input-group">
+            <label>⏰ Hora de Ativação</label>
+            <input type="time" id="bulk-schedule-time">
+          </div>
+          
+          <div class="input-group">
+            <label>📝 Nota (opcional)</label>
+            <textarea id="bulk-schedule-note" placeholder="Adiciona uma nota para este agendamento..." rows="2"></textarea>
+          </div>
+          
+          <div class="dialog-actions">
+            <button class="btn" onclick="submitBulkSchedule()">Agendar Ativação</button>
+            <button class="btn secondary" onclick="closeBulkScheduleDialog()">Cancelar</button>
+          </div>
+        </div>
+      `;
+      
+      // Adicionar diálogo ao body
+      const dialogContainer = document.createElement('div');
+      dialogContainer.id = 'bulk-schedule-dialog-container';
+      dialogContainer.innerHTML = dialogHtml;
+      document.body.appendChild(dialogContainer);
+      
+      // Definir valores padrão
+      setTimeout(() => {
+        const dateInput = document.getElementById('bulk-schedule-date');
+        const timeInput = document.getElementById('bulk-schedule-time');
+        
+        if (dateInput) {
+          const tomorrow = new Date();
+          tomorrow.setDate(tomorrow.getDate() + 1);
+          dateInput.value = tomorrow.toISOString().split('T')[0];
+        }
+        
+        if (timeInput) {
+          timeInput.value = '09:00';
+        }
+      }, 100);
+    }
+
+    function closeBulkScheduleDialog() {
+      const dialogContainer = document.getElementById('bulk-schedule-dialog-container');
+      if (dialogContainer) {
+        dialogContainer.remove();
+      }
+    }
+
+    function submitBulkSchedule() {
+      const selectedBingos = state.selectedBingos;
+      if (selectedBingos.length === 0) {
+        return notify('Seleciona pelo menos um bingo');
+      }
+      
+      const dateInput = document.getElementById('bulk-schedule-date');
+      const timeInput = document.getElementById('bulk-schedule-time');
+      const noteInput = document.getElementById('bulk-schedule-note');
+      
+      if (!dateInput?.value || !timeInput?.value) {
+        return notify('Define data e hora para o agendamento');
+      }
+      
+      const player = currentPlayer();
+      if (!player) return renderPlayerAuth();
+      
+      // Combinar data e hora
+      const scheduleDateTime = new Date(`${dateInput.value}T${timeInput.value}`);
+      const scheduleTimestamp = scheduleDateTime.getTime();
+      
+      // Verificar se a data é no futuro
+      if (scheduleTimestamp <= Date.now()) {
+        return notify('A data de agendamento deve ser no futuro');
+      }
+      
+      // Criar agendamento para todos os bingos selecionados
+      const schedules = [];
+      
+      selectedBingos.forEach(bingoId => {
+        const bingo = state.bingos.find(b => b.id === bingoId);
+        if (!bingo) return;
+        
+        const schedule = {
+          id: uid('schedule'),
+          bingoId: bingoId,
+          scheduledAt: scheduleTimestamp,
+          note: noteInput?.value.trim() || '',
+          status: 'scheduled',
+          createdAt: Date.now(),
+          ownerId: player.id
+        };
+        
+        schedules.push(schedule);
+      });
+      
+      // Adicionar agendamentos ao estado
+      if (!state.bingoSchedules) state.bingoSchedules = [];
+      state.bingoSchedules.push(...schedules);
+      
+      saveState();
+      addAudit(`${player.name} agendou ativação de ${schedules.length} bingo(s) para ${scheduleDateTime.toLocaleString('pt-PT')}`);
+      notify(`✅ ${schedules.length} bingo(s) agendado(s) para ${scheduleDateTime.toLocaleString('pt-PT')}!`);
+      
+      closeBulkScheduleDialog();
+      clearBingoSelection();
+    }
+
     // Funções para diálogos de venda
     function openSellQrDialog(qrCode) {
       const player = currentPlayer();
@@ -2318,13 +2713,13 @@
       const password = value('company-register-password');
       if (!name || !nif || !password) return notify('Preenche nome, NIF e senha');
       if (state.companies.some(item => item.nif === nif)) return notify('Este NIF já existe');
-      const company = { id: uid('company'), name, nif, email, password, pack: 'Gratuito', flags: 1000, status: 'Ativo', createdAt: Date.now() };
+      const company = { id: uid('company'), name, nif, email, password, pack: 'Starter', flags: 1000, status: 'Ativo', createdAt: Date.now(), packActivatedAt: Date.now() };
       state.companies.push(company);
       state.session = { type: 'company', id: company.id };
       saveState();
-      addAudit('Empresa registada: ' + company.name);
+      addAudit('Empresa registada: ' + company.name + ' com pack Starter');
       renderCompanyPanel('dashboard');
-      notify('Conta de empresa criada');
+      notify('🎉 Conta de empresa criada com pack Starter! 1.000 flags disponíveis');
     }
 
     function statCards() {
@@ -2700,6 +3095,70 @@
         `;
       }
 
+      if (panel === 'bingo') {
+        const playerBingos = state.bingos.filter(bingo => bingo.ownerId === player.id);
+        const selectedBingos = state.selectedBingos || [];
+        
+        target.innerHTML = `
+          <div class="wallet-header">
+            <span class="coins-icon">🎲</span>
+            <div class="coins-amount">${playerBingos.length} Bingos</div>
+            <div class="wallet-label">Bingos disponíveis</div>
+          </div>
+          
+          <div class="nav-actions" style="margin-bottom: 16px;">
+            <button class="btn secondary" onclick="clearBingoSelection()">Limpar Seleção</button>
+            <button class="btn secondary" onclick="selectAllBingos()">Selecionar Todos</button>
+            ${selectedBingos.length > 0 ? `
+              <button class="btn" onclick="openBulkBingoActions()">
+                Ações em Massa (${selectedBingos.length})
+              </button>
+            ` : ''}
+          </div>
+          
+          <h2>Meus Bingos</h2>
+          <p>Seleciona múltiplos bingos para ações em massa ou crie prémios livres.</p>
+          
+          <div class="info-box">
+            <p><strong>Como funciona:</strong></p>
+            <ul>
+              <li>🎯 <strong>Seleção múltipla:</strong> Clica nos bingos para selecionar múltiplos itens</li>
+              <li>🎁 <strong>Prémio livre:</strong> Cria prémios instantâneos sem necessidade de QR</li>
+              <li>⏰ <strong>Agendamento:</strong> Define ativação futura com relógio programável</li>
+              <li>🔄 <strong>Terminação automática:</strong> Por prazo ou quando prémio for levantado</li>
+            </ul>
+          </div>
+          
+          <div class="grid three" id="bingos-grid">
+            ${playerBingos.map(bingo => {
+              const isSelected = selectedBingos.includes(bingo.id);
+              return `
+                <div class="qr-card bingo-card ${isSelected ? 'selected' : ''}" onclick="toggleBingoSelection('${bingo.id}')" style="cursor: pointer; position: relative;">
+                  ${isSelected ? '<div class="selection-badge">✓</div>' : ''}
+                  <span class="badge">BINGO</span>
+                  <h3>${escapeHtml(bingo.name)}</h3>
+                  <p><strong>Área:</strong> ${escapeHtml(bingo.area)}</p>
+                  <p><strong>Prémio:</strong> ${bingo.reward} moedas</p>
+                  <div class="actions">
+                    <button class="btn secondary" onclick="event.stopPropagation(); sellBingo('${bingo.id}')">Vender</button>
+                  </div>
+                </div>
+              `;
+            }).join('') || '<p>Ainda não tens Bingos.</p>'}
+          </div>
+          
+          ${selectedBingos.length > 0 ? `
+            <div class="bulk-actions-panel" style="background: var(--light); padding: 20px; border-radius: 12px; margin-top: 20px;">
+              <h3>🎯 Ações em Massa - ${selectedBingos.length} Bingo(s) Selecionado(s)</h3>
+              <div class="grid two">
+                <button class="btn" onclick="openBulkPrizeDialog()">🎁 Criar Prémio Livre</button>
+                <button class="btn secondary" onclick="openBulkScheduleDialog()">⏰ Agendar Ativação</button>
+              </div>
+            </div>
+          ` : ''}
+        `;
+      }
+
       if (panel === 'friends') {
         const otherPlayers = state.players.filter(item => item.id !== player.id);
         const incoming = state.trades.filter(item => item.toId === player.id && item.status === 'pending');
@@ -2739,32 +3198,70 @@
 
       if (panel === 'players') {
         const otherPlayers = state.players.filter(item => item.id !== player.id);
+        const companies = state.companies || [];
+        
         target.innerHTML = `
           <div class="wallet-header">
             <span class="coins-icon">🪙</span>
             <div class="coins-amount">${player.coins} moedas</div>
             <div class="wallet-label">Saldo disponível</div>
           </div>
-          <h2>Lista de Jogadores</h2>
-          <p>Encontra outros jogadores, pede amizade, faz propostas e inicia conversas.</p>
+          <h2>Comunidade ZAP-FLAGS</h2>
+          <p>Encontra jogadores e empresas, pede amizade, faz propostas e inicia conversas.</p>
+          
+          <div class="info-box">
+            <p><strong>Como funciona:</strong></p>
+            <ul>
+              <li>👥 <strong>Jogadores:</strong> Conecta-te com outros jogadores para trocas e amizades</li>
+              <li>🏢 <strong>Empresas:</strong> Contacta empresas para parcerias e oportunidades</li>
+              <li>🤝 <strong>Amizades:</strong> Constrói a tua rede de contactos no ecossistema</li>
+              <li>💱 <strong>Trocas:</strong> Faz propostas diretas de QRs e moedas</li>
+            </ul>
+          </div>
+          
+          <h3>👥 Jogadores Online (${otherPlayers.length})</h3>
           <div class="grid three">
             ${otherPlayers.map(otherPlayer => `
               <div class="qr-card">
+                <span class="badge">JOGADOR</span>
                 <h3>${escapeHtml(otherPlayer.name)}</h3>
-                <p>${escapeHtml(otherPlayer.email)}</p>
-                <p>Contacto: ${escapeHtml(otherPlayer.phone || 'Não definido')}</p>
+                <p>📧 ${escapeHtml(otherPlayer.email)}</p>
+                <p>📱 ${escapeHtml(otherPlayer.phone || 'Não definido')}</p>
                 <div class="stats-row">
                   <span class="badge">⚡ ${otherPlayer.energy}</span>
                   <span class="badge">🪙 ${otherPlayer.coins}</span>
                   <span class="badge">🏁 ${otherPlayer.flags}</span>
                 </div>
                 <div class="actions">
-                  <button class="btn" onclick="openPlayerDialog('${otherPlayer.id}')">Abrir Diálogo</button>
-                  <button class="btn secondary" onclick="sendFriendRequest('${otherPlayer.id}')">Pedir Amizade</button>
-                  <button class="btn secondary" onclick="quickTradeProposal('${otherPlayer.id}')">Propor Troca</button>
+                  <button class="btn" onclick="openPlayerDialog('${otherPlayer.id}')">💬 Conversar</button>
+                  <button class="btn secondary" onclick="sendFriendRequest('${otherPlayer.id}')">🤝 Amizade</button>
+                  <button class="btn secondary" onclick="quickTradeProposal('${otherPlayer.id}')">💱 Trocar</button>
                 </div>
               </div>
             `).join('') || '<p>Não há outros jogadores disponíveis.</p>'}
+          </div>
+          
+          <h3>🏢 Empresas Parceiras (${companies.length})</h3>
+          <div class="grid two">
+            ${companies.map(company => `
+              <div class="qr-card" style="border-color: var(--cyan);">
+                <span class="badge" style="background: var(--cyan); color: var(--bg);">EMPRESA</span>
+                <h3>${escapeHtml(company.name)}</h3>
+                <p>📧 ${escapeHtml(company.email)}</p>
+                <p>🆔 NIF: ${escapeHtml(company.nif)}</p>
+                <p>📦 Pack: ${escapeHtml(company.pack || 'Não definido')}</p>
+                <p>🏁 Flags: ${company.flags || 0}</p>
+                <div class="stats-row">
+                  <span class="badge" style="background: var(--cyan); color: var(--bg);">📊 ${company.status || 'Ativo'}</span>
+                  <span class="badge">🏁 ${company.flags || 0}</span>
+                </div>
+                <div class="actions">
+                  <button class="btn" onclick="openCompanyDialog('${company.id}')">📩 Contactar</button>
+                  <button class="btn secondary" onclick="sendCompanyFriendRequest('${company.id}')">🤝 Amizade</button>
+                  <button class="btn secondary" onclick="viewCompanyProfile('${company.id}')">👁️ Ver Perfil</button>
+                </div>
+              </div>
+            `).join('') || '<p>Não há empresas registadas.</p>'}
           </div>
         `;
       }
@@ -2830,9 +3327,18 @@
     }
 
     function renderCompanyPanel(panel) {
+      console.log('🔍 renderCompanyPanel chamado com panel:', panel);
       const target = document.getElementById('company-content');
       const company = currentCompany();
-      if (!company) return renderCompanyAuth();
+      console.log('🏢 Empresa atual:', company ? company.name : 'Nenhuma');
+      console.log('🎯 Target element:', target);
+      
+      if (!company) {
+        console.log('❌ Empresa não encontrada, redirecionando para auth');
+        return renderCompanyAuth();
+      }
+      
+      console.log('✅ Empresa encontrada, processando panel:', panel);
       if (panel === 'dashboard') {
         target.innerHTML = `
           <h2>Dashboard · ${escapeHtml(company.name)}</h2>
@@ -2842,6 +3348,11 @@
             <div class="mini-card"><b>${state.qrs.filter(qr => qr.company === company.name).length}</b><span>QRs criados</span></div>
             <div class="mini-card"><b>${escapeHtml(company.status)}</b><span>Estado</span></div>
           </div>
+          
+          <div class="actions" style="margin: 20px 0;">
+            <button class="btn secondary" onclick="renderCompanyPanel('campaign')">📢 Criar Campanha</button>
+          </div>
+          
           <div class="grid two">
             <div class="package-card"><h3>Campanha ativa</h3><p>10% desconto para jogadores que recolham flags PR próximas da loja.</p><span class="badge">Ativa</span></div>
             <div class="package-card"><h3>Sessão</h3><p>NIF: ${escapeHtml(company.nif)}</p><button class="btn secondary" onclick="logout()">Sair</button></div>
@@ -2850,27 +3361,766 @@
       }
 
       if (panel === 'packs') {
+        const company = currentCompany();
+        const currentFlags = company?.flags || 0;
+        const currentPack = company?.pack || 'Starter';
+        
+        // Definição dos 6 pacotes
+        const packages = [
+          {
+            id: 'Starter',
+            name: '🆓 Starter',
+            badge: 'Gratuito',
+            flags: 1000,
+            bingos: 1,
+            pecs: Math.floor(1000 / 20), // 50 pecs
+            radius: 250, // metros
+            price: 0,
+            priceWithIva: 0,
+            color: 'var(--green)',
+            features: [
+              '✅ 1 Bingo (250m raio)',
+              '✅ 50 prémios disponíveis',
+              '✅ Campanhas básicas',
+              '✅ Flags PR locais'
+            ]
+          },
+          {
+            id: 'Basic',
+            name: '🚀 Basic',
+            badge: 'Popular',
+            flags: 5000,
+            bingos: 5,
+            pecs: Math.floor(5000 / 20), // 250 pecs
+            radius: 5000, // 5km
+            price: 10,
+            priceWithIva: 12.30, // 10€ + 23% IVA
+            validityDays: 60, // 60 dias
+            color: 'var(--orange)',
+            features: [
+              '✅ 5 Bingos (5km raio)',
+              '✅ 250 prémios disponíveis',
+              '✅ Campanhas avançadas',
+              '✅ Flags PR regionais',
+              '✅ Suporte email',
+              '✅ Validade: 60 dias'
+            ]
+          },
+          {
+            id: 'Professional',
+            name: '💼 Professional',
+            badge: 'Recomendado',
+            flags: 10000,
+            bingos: 15,
+            pecs: Math.floor(10000 / 20), // 500 pecs
+            radius: 15000, // 15km
+            price: 20,
+            priceWithIva: 24.60, // 20€ + 23% IVA
+            validityDays: 90, // 90 dias
+            color: 'var(--cyan)',
+            features: [
+              '✅ 15 Bingos (15km raio)',
+              '✅ 500 prémios disponíveis',
+              '✅ Campanhas ilimitadas',
+              '✅ Flags PR nacionais',
+              '✅ Analytics básicos',
+              '✅ Suporte prioritário',
+              '✅ Validade: 90 dias'
+            ]
+          },
+          {
+            id: 'Enterprise',
+            name: '🏢 Enterprise',
+            badge: 'Avançado',
+            flags: 25000,
+            bingos: 50,
+            pecs: Math.floor(25000 / 20), // 1250 pecs
+            radius: 50000, // 50km
+            price: 30,
+            priceWithIva: 36.90, // 30€ + 23% IVA
+            validityDays: 125, // 125 dias
+            color: 'var(--blue)',
+            features: [
+              '✅ 50 Bingos (50km raio)',
+              '✅ 1.250 prémios disponíveis',
+              '✅ Campanhas premium',
+              '✅ Flags PR ilimitadas',
+              '✅ Analytics avançados',
+              '✅ Suporte dedicado',
+              '✅ API access',
+              '✅ Validade: 125 dias'
+            ]
+          },
+          {
+            id: 'Premium',
+            name: '💎 Premium',
+            badge: 'Elite',
+            flags: 60000,
+            bingos: 100,
+            pecs: Math.floor(60000 / 20), // 3000 pecs
+            radius: 100000, // 100km
+            price: 50,
+            priceWithIva: 61.50, // 50€ + 23% IVA
+            validityDays: 180, // 180 dias
+            color: 'var(--purple)',
+            features: [
+              '✅ 100 Bingos (100km raio)',
+              '✅ 3.000 prémios disponíveis',
+              '✅ Campanhas premium',
+              '✅ Flags PR ilimitadas',
+              '✅ Analytics avançados',
+              '✅ Suporte dedicado',
+              '✅ API access',
+              '✅ Validade: 180 dias'
+            ]
+          },
+          {
+            id: 'Ultimate',
+            name: '🏆 Ultimate',
+            badge: 'Supremo',
+            flags: 100000,
+            bingos: 200,
+            pecs: Math.floor(100000 / 20), // 5000 pecs
+            radius: -1, // ilimitado
+            price: 80,
+            priceWithIva: 98.40, // 80€ + 23% IVA
+            validityDays: 250, // 250 dias
+            color: 'var(--red)',
+            features: [
+              '✅ 200 Bingos (raio ilimitado)',
+              '✅ 5.000 prémios disponíveis',
+              '✅ Campanhas ilimitadas',
+              '✅ Flags PR ilimitadas',
+              '✅ Analytics enterprise',
+              '✅ Consultoria dedicada',
+              '✅ API personalizada',
+              '✅ White label completo',
+              '✅ Validade: 250 dias'
+            ]
+          },
+          {
+            id: 'Platinum',
+            name: '⭐ Platinum',
+            badge: 'Lendário',
+            flags: 250000,
+            bingos: 500,
+            pecs: Math.floor(250000 / 20), // 12500 pecs
+            radius: -1, // ilimitado
+            price: 120,
+            priceWithIva: 147.60, // 120€ + 23% IVA
+            validityDays: 365, // 1 ano
+            color: 'var(--gold)',
+            features: [
+              '✅ 500 Bingos (raio ilimitado)',
+              '✅ 12.500 prémios disponíveis',
+              '✅ Campanhas ilimitadas',
+              '✅ Flags PR ilimitadas',
+              '✅ Analytics enterprise',
+              '✅ Consultoria dedicada',
+              '✅ API personalizada',
+              '✅ White label completo',
+              '✅ Servidor dedicado',
+              '✅ Validade: 1 ano'
+            ]
+          }
+        ];
+        
         target.innerHTML = `
-          <h2>Packs de Flags</h2>
-          <div class="grid three">
-            <div class="package-card"><h3>Gratuito</h3><p>1.000 flags demo</p><h2>0€</h2><button class="btn" onclick="buyPack('Gratuito',1000)">Selecionar</button></div>
-            <div class="package-card"><h3>Básico</h3><p>5.000 flags para campanhas locais</p><h2>15€</h2><button class="btn" onclick="buyPack('Básico',5000)">Comprar</button></div>
-            <div class="package-card"><h3>Pro</h3><p>15.000 flags com maior alcance</p><h2>39€</h2><button class="btn" onclick="buyPack('Pro',15000)">Comprar</button></div>
+          <h2>🛒 Comprar Pacotes de Flags</h2>
+          
+          <div class="info-box">
+            <h3>💡 Como funcionam os pacotes?</h3>
+            <ul>
+              <li>🏁 <strong>Flags:</strong> Usadas para criar flags PR no mapa</li>
+              <li>🎯 <strong>Pecs:</strong> Cada 20 flags = 1 prémio disponível</li>
+              <li>🎲 <strong>Bingos:</strong> Campanhas interativas para jogadores</li>
+              <li>📍 <strong>Raio:</strong> Área de cobertura das tuas campanhas</li>
+            </ul>
+          </div>
+          
+          <div class="offer-card" style="padding: 15px; background: linear-gradient(135deg, #f8f9ff, #fff8f9); border-radius: 8px; border-left: 4px solid var(--blue);">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <span style="font-size: 18px;">🌟</span>
+                <div>
+                  <strong style="color: var(--dark); font-size: 14px;">${escapeHtml(currentPack)}</strong>
+                  <div style="font-size: 11px; color: #666;">Pack Atual</div>
+                </div>
+              </div>
+              
+              <div style="display: flex; gap: 20px; align-items: center;">
+                <div style="text-align: center;">
+                  <div style="font-size: 16px; font-weight: bold; color: var(--orange);">🏁</div>
+                  <div style="font-size: 12px; color: #666;">${currentFlags.toLocaleString('pt-PT')}</div>
+                  <div style="font-size: 10px; color: #999;">Flags</div>
+                </div>
+                
+                <div style="text-align: center;">
+                  <div style="font-size: 16px; font-weight: bold; color: var(--purple);">🎲</div>
+                  <div style="font-size: 12px; color: #666;">${currentPack.bingos}</div>
+                  <div style="font-size: 10px; color: #999;">Bingos</div>
+                </div>
+                
+                <div style="text-align: center;">
+                  <div style="font-size: 16px; font-weight: bold; color: var(--green);">🎁</div>
+                  <div style="font-size: 12px; color: #666;">${Math.floor(currentFlags / 20).toLocaleString('pt-PT')}</div>
+                  <div style="font-size: 10px; color: #999;">Prémios</div>
+                </div>
+                
+                <div style="text-align: center;">
+                  <div style="font-size: 16px; font-weight: bold; color: var(--blue);">📍</div>
+                  <div style="font-size: 12px; color: #666;">${currentPack.radius === -1 ? 'Ilimitado' : (currentPack.radius >= 1000 ? (currentPack.radius/1000) + 'km' : currentPack.radius + 'm')}</div>
+                  <div style="font-size: 10px; color: #999;">Raio</div>
+                </div>
+                
+                <div style="text-align: center;">
+                  <div style="font-size: 16px; font-weight: bold; color: var(--red);">⏰</div>
+                  <div style="font-size: 12px; color: #666;">${currentPack.validityDays || 'Ilimitado'}</div>
+                  <div style="font-size: 10px; color: #999;">Validade</div>
+                </div>
+              </div>
+            </div>
+            
+            <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #e0e0e0;">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div style="font-size: 11px; color: #666;">
+                  ${Math.round((currentFlags / currentPack.flags) * 100)}% das flags utilizadas
+                </div>
+                <div style="font-size: 10px; color: #999;">
+                  Esta janela pode ser fechada - não é essencial
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="grid two">
+            ${packages.map(pkg => `
+              <div class="package-card ${currentPack === pkg.id ? 'selected' : ''}" style="border-color: ${pkg.color};">
+                <div class="package-header">
+                  <h3>${pkg.name}</h3>
+                  <span class="badge" style="background: ${pkg.color};">${pkg.badge}</span>
+                </div>
+                <div class="package-content">
+                  <div class="package-stats">
+                    <div class="stat-item">
+                      <span class="stat-icon">🏁</span>
+                      <div>
+                        <strong>${pkg.flags.toLocaleString('pt-PT')}</strong>
+                        <small>Flags</small>
+                      </div>
+                    </div>
+                    <div class="stat-item">
+                      <span class="stat-icon">🎲</span>
+                      <div>
+                        <strong>${pkg.bingos}</strong>
+                        <small>Bingos</small>
+                      </div>
+                    </div>
+                    <div class="stat-item">
+                      <span class="stat-icon">🎯</span>
+                      <div>
+                        <strong>${pkg.pecs.toLocaleString('pt-PT')}</strong>
+                        <small>Prémios</small>
+                      </div>
+                    </div>
+                    <div class="stat-item">
+                      <span class="stat-icon">📍</span>
+                      <div>
+                        <strong>${pkg.radius === -1 ? 'Ilimitado' : (pkg.radius >= 1000 ? (pkg.radius/1000) + 'km' : pkg.radius + 'm')}</strong>
+                        <small>Raio</small>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <ul class="package-features">
+                    ${pkg.features.map(feature => `<li>${feature}</li>`).join('')}
+                  </ul>
+                  
+                  <div class="package-price">
+                    <div class="price-main">
+                      <h2>${pkg.price === 0 ? 'GRÁTIS' : pkg.priceWithIva.toFixed(2) + '€'}</h2>
+                      <small>${pkg.price === 0 ? 'Para sempre' : (pkg.price + '€ + 23% IVA')}</small>
+                    </div>
+                  </div>
+                </div>
+                <button class="btn ${currentPack === pkg.id ? 'secondary' : ''}" onclick="buyPack('${pkg.id}', ${pkg.flags})">
+                  ${currentPack === pkg.id ? '✓ Pack Ativo' : (pkg.price === 0 ? '🛒 Ativar' : '🛒 Comprar Agora')}
+                </button>
+              </div>
+            `).join('')}
+          </div>
+          
+          <div class="info-box" style="margin-top: 30px;">
+            <h3>💳 Métodos de Pagamento</h3>
+            <p>Aceitamos todos os métodos de pagamento seguros:</p>
+            <div class="stats-row">
+              <span class="badge">💳 Cartão</span>
+              <span class="badge">🏦 Transferência</span>
+              <span class="badge">📱 MB Way</span>
+              <span class="badge">💰 Multibanco</span>
+              <span class="badge">📱 PayPal</span>
+            </div>
+          </div>
+          
+          <div class="info-box">
+            <h3>🔒 Segurança e Garantia</h3>
+            <ul>
+              <li>🛡️ Pagamento 100% seguro via SSL</li>
+              <li>🔄 Garantia de 14 dias para reembolso</li>
+              <li>📞 Suporte técnico 24/7 para packs pagos</li>
+              <li>🚀 Ativação imediata após pagamento</li>
+            </ul>
           </div>
         `;
       }
 
       if (panel === 'campaign') {
+        console.log('🎯 Entrando na condição campaign!');
+        const company = currentCompany();
+        console.log('🏢 Empresa na campanha:', company ? company.name : 'Nenhuma');
+        if (!company) {
+          console.log('❌ Empresa não encontrada na campanha');
+          return renderCompanyAuth();
+        }
+        
+        // Definição dos pacotes para mostrar informações
+        const packages = {
+          'Starter': { 
+            name: '🆓 Starter', 
+            flags: 1000, 
+            bingos: 1, 
+            pecs: 50, 
+            radius: 250, 
+            color: 'var(--green)',
+            features: ['1 Bingo (250m raio)', '50 prémios disponíveis', 'Campanhas básicas', 'Flags PR locais']
+          },
+          'Basic': { 
+            name: '🚀 Basic', 
+            flags: 5000, 
+            bingos: 5, 
+            pecs: 250, 
+            radius: 5000, 
+            color: 'var(--orange)',
+            features: ['5 Bingos (5km raio)', '250 prémios disponíveis', 'Campanhas avançadas', 'Flags PR regionais', 'Suporte email']
+          },
+          'Professional': { 
+            name: '💼 Professional', 
+            flags: 15000, 
+            bingos: 15, 
+            pecs: 750, 
+            radius: 15000, 
+            color: 'var(--cyan)',
+            features: ['15 Bingos (15km raio)', '750 prémios disponíveis', 'Campanhas ilimitadas', 'Flags PR nacionais', 'Analytics básicos', 'Suporte prioritário']
+          },
+          'Enterprise': { 
+            name: '🏢 Enterprise', 
+            flags: 50000, 
+            bingos: 50, 
+            pecs: 2500, 
+            radius: 50000, 
+            color: 'var(--blue)',
+            features: ['50 Bingos (50km raio)', '2.500 prémios disponíveis', 'Campanhas premium', 'Flags PR ilimitadas', 'Analytics avançados', 'Suporte dedicado', 'API access']
+          },
+          'Corporate': { 
+            name: '🌟 Corporate', 
+            flags: 150000, 
+            bingos: 150, 
+            pecs: 7500, 
+            radius: 150000, 
+            color: 'var(--purple)',
+            features: ['150 Bingos (150km raio)', '7.500 prémios disponíveis', 'Campanhas corporativas', 'Flags PR premium', 'Analytics completos', 'Consultoria mensal', 'API completa', 'White label']
+          },
+          'Unlimited': { 
+            name: '♾️ Unlimited', 
+            flags: 500000, 
+            bingos: 500, 
+            pecs: 25000, 
+            radius: -1, 
+            color: 'var(--red)',
+            features: ['500 Bingos (raio ilimitado)', '25.000 prémios disponíveis', 'Campanhas ilimitadas', 'Flags PR ilimitadas', 'Analytics enterprise', 'Consultoria dedicada', 'API personalizada', 'White label completo', 'Servidor dedicado']
+          }
+        };
+        
+        const currentPack = packages[company.pack] || packages['Starter'];
+        const usedFlags = company.flagsUsed || 0;
+        const availableFlags = company.flags - usedFlags;
+        
+        console.log('📦 Pack atual:', currentPack.name);
+        console.log('🏁 Flags disponíveis:', availableFlags);
+        console.log('🎯 Target antes de atribuir HTML:', target);
+        
         target.innerHTML = `
-          <h2>Configurar Campanha</h2>
-          <div class="form-grid">
-            <div class="input-group"><label>Nome da campanha</label><input value="Oferta de boas-vindas"></div>
-            <div class="input-group"><label>Tipo de recompensa</label><select><option>QR negociável</option><option>Desconto direto</option><option>Bandeira premiada</option></select></div>
-            <div class="input-group"><label>Raio de ativação</label><input value="250 metros"></div>
-            <div class="input-group"><label>Flags disponíveis</label><input value="5000"></div>
+          <h2>📢 Configurar Campanha</h2>
+          
+          <div class="offer-card" style="border-color: ${currentPack.color};">
+            <div class="package-header">
+              <h3>${currentPack.name}</h3>
+              <span class="badge" style="background: ${currentPack.color};">Pack Atual</span>
+            </div>
+            <div class="package-stats">
+              <div class="stat-item">
+                <span class="stat-icon">🏁</span>
+                <div>
+                  <strong>${availableFlags.toLocaleString('pt-PT')} / ${currentPack.flags.toLocaleString('pt-PT')}</strong>
+                  <small>Flags Disponíveis</small>
+                </div>
+              </div>
+              <div class="stat-item">
+                <span class="stat-icon">🎲</span>
+                <div>
+                  <strong>${currentPack.bingos}</strong>
+                  <small>Bingos Disponíveis</small>
+                </div>
+              </div>
+              <div class="stat-item">
+                <span class="stat-icon">🎁</span>
+                <div>
+                  <strong>${currentPack.pecs}</strong>
+                  <small>Prémios Máximos</small>
+                </div>
+              </div>
+              <div class="stat-item">
+                <span class="stat-icon">📍</span>
+                <div>
+                  <strong>${currentPack.radius === -1 ? 'Ilimitado' : (currentPack.radius >= 1000 ? (currentPack.radius/1000) + 'km' : currentPack.radius + 'm')}</strong>
+                  <small>Raio Máximo</small>
+                </div>
+              </div>
+            </div>
+            <div class="progress-bar">
+              <div class="progress-fill" style="width: ${(availableFlags / currentPack.flags) * 100}%; background: ${currentPack.color};"></div>
+            </div>
+            <div class="progress-text">${Math.round((availableFlags / currentPack.flags) * 100)}% das flags utilizadas</div>
           </div>
-          <button class="btn" onclick="createCompanyCampaign()">Guardar campanha</button>
+          
+          <!-- Container Principal com Sistema de Colapso -->
+            <div id="campaign-main-container" class="campaign-main-container" style="background: var(--light); border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); overflow: hidden;">
+              <!-- Header com Botão de Colapso e Fechar -->
+              <div class="campaign-header" style="background: linear-gradient(135deg, var(--blue), var(--purple)); color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="toggleCampaignCollapse()">
+                <div>
+                  <h3 style="margin: 0; font-size: 18px;">📋 Configurar Nova Campanha</h3>
+                  <div style="font-size: 12px; opacity: 0.9;">${company.name} - Pacote ${currentPack.name}</div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                  <div id="campaign-status-badge" style="background: ${company.campaignActive ? 'var(--green)' : 'var(--orange)'}; color: white; padding: 4px 8px; border-radius: 12px; font-size: 11px;">
+                    ${company.campaignActive ? 'ATIVA' : 'INATIVA'}
+                  </div>
+                  <button id="campaign-toggle-btn" style="background: rgba(255,255,255,0.2); border: none; color: white; padding: 5px 10px; border-radius: 5px; cursor: pointer;" onclick="event.stopPropagation(); toggleCampaignCollapse()">
+                    <span id="toggle-icon">▼</span>
+                  </button>
+                  <button id="campaign-close-btn" style="background: rgba(255,255,255,0.2); border: none; color: white; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-weight: bold;" onclick="event.stopPropagation(); closeCampaignPage()" title="Fechar página de campanha">
+                    ✕
+                  </button>
+                </div>
+              </div>
+              
+              <!-- Linha de Estatísticas Quando Fechada -->
+              <div id="campaign-collapsed-stats" style="display: none; background: white; padding: 10px 20px; border-bottom: 1px solid #ddd;">
+                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px;">
+                  <div style="display: flex; gap: 20px;">
+                    <span>🏁 <strong>${getCompanyFlagsCollected()}</strong>/${company.flags} bandeiras</span>
+                    <span>🎁 <strong>${getCompanyPrizesCollected()}</strong>/${Math.floor(company.flags / 20)} prémios</span>
+                  </div>
+                  <div style="color: #666;">
+                    ${company.packExpiresAt ? '⏰ ' + formatTimeRemaining(company.packExpiresAt) : '⏰ Ilimitado'}
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Conteúdo Colapsável -->
+              <div id="campaign-content" class="campaign-content" style="display: block;">
+                <!-- Layout em Duas Colunas -->
+                <div class="campaign-layout" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; padding: 20px;">
+                  
+                  <!-- COLUNA ESQUERDA: Pacote de Bandeiras -->
+                  <div class="campaign-left-column" style="display: flex; flex-direction: column; gap: 15px;">
+                    <div class="column-header" style="background: var(--light); padding: 10px; border-radius: 8px; border-left: 4px solid var(--orange);">
+                      <h4 style="margin: 0; color: var(--dark);">🏁 Pacote de Bandeiras</h4>
+                    </div>
+                    
+                    <!-- 1º Nome da campanha -->
+                    <div class="input-group">
+                      <label>1º Nome da campanha</label>
+                      <input id="campaign-name" value="Campanha ${company.name}" placeholder="Nome da tua campanha">
+                    </div>
+                    
+                    <!-- 2º Raio onde pretende implantar as bandeiras -->
+                    <div class="input-group">
+                      <label>2º Raio de implantação das bandeiras (máximo: ${currentPack.radius === -1 ? 'Ilimitado' : (currentPack.radius >= 1000 ? (currentPack.radius/1000) + 'km' : currentPack.radius + 'm')})</label>
+                      <input id="campaign-radius" type="number" min="0.25" max="${currentPack.radius === -1 ? 999999 : (currentPack.radius >= 1000 ? currentPack.radius/1000 : currentPack.radius/1000)}" step="0.25" value="${Math.min(0.25, currentPack.radius >= 1000 ? currentPack.radius/1000 : currentPack.radius/1000)}" placeholder="XX KM">
+                    </div>
+                    
+                    <!-- 3º Tipo de prémio -->
+                    <div class="input-group">
+                      <label>3º Tipo de prémio</label>
+                      <textarea id="campaign-reward-type" placeholder="Descreva livremente o tipo de prémio (ex: 10% de desconto em todos os produtos, compre 2 leve 3 em roupas, uma refeição gratuita, serviço de massagem, etc.)" rows="3" style="resize: vertical; min-height: 80px;"></textarea>
+                      <small style="color: #666; font-size: 12px;">
+                        💡 Dica: Seja específico na descrição do prémio para evitar confusões
+                      </small>
+                    </div>
+                    
+                    <!-- 4º Número de PECs -->
+                    <div class="input-group">
+                      <label>4º Número de PECs (Prémios Especiais)</label>
+                      <div style="display: flex; gap: 15px; align-items: center;">
+                        <input id="campaign-pecs-count" type="number" min="0" max="${Math.floor(getCompanyFlagsRemaining() / 20)}" value="0" placeholder="0" style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                        <div style="display: flex; flex-direction: column; gap: 5px; font-size: 11px; color: #666;">
+                          <span>💡 Cada PEC usa 20 bandeiras</span>
+                          <span>📊 Máximo possível: ${Math.floor(getCompanyFlagsRemaining() / 20)} PECs</span>
+                          <span>🏁 Bandeiras disponíveis: ${getCompanyFlagsRemaining()}</span>
+                        </div>
+                      </div>
+                      <small style="color: #666; font-size: 12px;">
+                        🎁 PECs são prémios especiais criados a partir de grupos de 20 bandeiras
+                      </small>
+                    </div>
+                    
+                    <!-- 5º Informação adicional -->
+                    <div class="input-group">
+                      <label>5º Informação adicional</label>
+                      <textarea id="campaign-additional-info" placeholder="Informações complementares sobre a campanha, regras especiais, etc..." rows="3"></textarea>
+                    </div>
+                    
+                    <!-- 6º Prazo de validade dos prémios -->
+                    <div class="input-group">
+                      <label>6º Prazo de validade dos prémios</label>
+                      <div class="validade-info">
+                        <small style="color: var(--orange);">⚠️ Validade mínima: 30 dias após término do pacote</small>
+                        <div style="display: flex; gap: 10px; margin-top: 5px;">
+                          <input id="campaign-prize-validity" type="number" min="30" max="300" value="60" placeholder="XX Dias">
+                          <select id="campaign-validity-type">
+                            <option value="minimum">Mínimo (30 dias)</option>
+                            <option value="custom">Personalizado</option>
+                            <option value="extended">Extendido (até 300 dias)</option>
+                          </select>
+                        </div>
+                        <small>Período para levantamento de prémios após coletar 20 bandeiras</small>
+                      </div>
+                    </div>
+                    
+                    <!-- Informações do pacote e validade -->
+                    <div class="input-group">
+                      <label>Informações de validade do pacote</label>
+                      <div class="pack-validity-info" style="background: var(--light); padding: 10px; border-radius: 5px;">
+                        <div><strong>Pacote atual:</strong> ${currentPack.name}</div>
+                        <div><strong>Validade do pacote:</strong> ${company.pack === 'Starter' ? 'Ilimitado' : '30 dias'}</div>
+                        <div><strong>Validade mínima para prémios:</strong> 30 dias após término</div>
+                        <div><strong>Data limite atual:</strong> <span id="current-deadline">${calculateDeadline()}</span></div>
+                      </div>
+                    </div>
+                    
+                    <!-- Campos adicionais para expansão -->
+                    <div class="input-group">
+                      <label>Campanha ativa em</label>
+                      <select id="campaign-regions">
+                        <option value="national">Nacional</option>
+                        <option value="regional">Regional</option>
+                        <option value="local">Local</option>
+                        <option value="online">Online</option>
+                      </select>
+                    </div>
+                    
+                    <div class="input-group">
+                      <label>Público-alvo</label>
+                      <input id="campaign-target" placeholder="Ex: Jovens 18-25, Famílias, etc.">
+                    </div>
+                  </div>
+                  
+                  <!-- COLUNA DIREITA: Sistema de Bingo -->
+                  <div class="campaign-right-column" style="display: flex; flex-direction: column; gap: 15px;">
+                    <div class="column-header" style="background: var(--light); padding: 10px; border-radius: 8px; border-left: 4px solid var(--purple);">
+                      <h4 style="margin: 0; color: var(--dark);">🎮 Sistema de Bingo</h4>
+                    </div>
+                    
+                    <!-- 4º Sistema de Bingo -->
+                    <div class="input-group">
+                      <label>4º Sistema de Bingo</label>
+                      <select id="campaign-bingo-type" onchange="toggleBingoOptions()">
+                        <option value="free">Prémio Livre (sem Bingo)</option>
+                        <option value="bingo">Prémio de Bingo/S</option>
+                      </select>
+                      <small>Escolha entre prémio livre ou associado a Bingos</small>
+                    </div>
+                    
+                    <!-- 4.1 Configuração de Bingos -->
+                    <div id="bingo-config" style="display: none;">
+                      <div class="input-group">
+                        <label>4.1 Número de Bingos disponíveis</label>
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                          <input id="campaign-total-bingos" type="number" min="1" max="${currentPack.bingos}" value="${Math.min(10, currentPack.bingos)}" placeholder="Nº de Bingos">
+                          <span style="color: var(--orange);">Máximo: ${currentPack.bingos} Bingos</span>
+                        </div>
+                      </div>
+                      
+                      <!-- 4.2 Lista de Programação de Bingos -->
+                      <div class="input-group">
+                        <label>4.2 Programação de Bingos e Prémios</label>
+                        <div id="bingo-schedule-list" style="background: var(--light); padding: 15px; border-radius: 8px; margin-top: 10px;">
+                          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                            <h4 style="margin: 0;">📋 Lista de Programação</h4>
+                            <button class="btn" onclick="addBingoSchedule()" style="background: var(--green); color: white; padding: 5px 10px; font-size: 12px;">
+                              + Adicionar
+                            </button>
+                          </div>
+                          <div id="bingo-schedule-items">
+                            <!-- Items serão adicionados dinamicamente -->
+                            <div style="text-align: center; color: #666; padding: 20px;">
+                              Nenhuma programação criada ainda
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <!-- 4.3 Configuração de Bingos Locais -->
+                      <div class="input-group">
+                        <label>4.3 Configuração de Bingos Locais</label>
+                        <div id="local-bingos-config" style="background: var(--light); padding: 15px; border-radius: 8px; margin-top: 10px;">
+                          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                            <h4 style="margin: 0;">🎲 Bingos Locais Disponíveis</h4>
+                            <button class="btn" onclick="addLocalBingo()" style="background: var(--green); color: white; padding: 5px 10px; font-size: 12px;">
+                              + Adicionar Bingo
+                            </button>
+                          </div>
+                          <div id="local-bingos-items">
+                            <!-- Bingos locais serão adicionados dinamicamente -->
+                            <div style="text-align: center; color: #666; padding: 20px;">
+                              Nenhum bingo local configurado ainda
+                            </div>
+                          </div>
+                        </div>
+                        <small style="color: #666; font-size: 12px;">
+                          💡 Cada bingo gera um QR com uma única bandeira para campanhas rápidas e locais
+                        </small>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- Painel de Estatísticas e Controlo da Campanha -->
+                <div class="campaign-control-panel" style="background: var(--light); padding: 20px; margin: 0 20px 20px 20px; border-top: 1px solid #ddd;">
+                  <h3 style="margin-top: 0; color: var(--dark);">📊 Estatísticas da Campanha</h3>
+              
+              <!-- Tempo de Duração do Pacote -->
+              <div class="campaign-timer" style="background: white; padding: 15px; border-radius: 5px; margin-bottom: 15px; border-left: 4px solid var(--blue);">
+                <h4 style="margin: 0 0 10px 0; color: var(--dark);">⏰ Tempo de Duração do Pacote</h4>
+                <div id="pack-timer-display" style="font-size: 18px; font-weight: bold; color: var(--blue);">
+                  ${company.packExpiresAt ? formatTimeRemaining(company.packExpiresAt) : 'Ilimitado'}
+                </div>
+                <div style="font-size: 12px; color: #666; margin-top: 5px;">
+                  ${company.packExpiresAt ? `Expira em: ${new Date(company.packExpiresAt).toLocaleString('pt-PT')}` : 'Pacote sem validade'}
+                </div>
+              </div>
+              
+              <!-- Estatísticas de Bandeiras -->
+              <div class="campaign-stats" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                <div class="flags-stats" style="background: white; padding: 15px; border-radius: 5px; border-left: 4px solid var(--orange);">
+                  <h4 style="margin: 0 0 10px 0; color: var(--dark);">🏁 Bandeiras</h4>
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; text-align: center;">
+                    <div>
+                      <div style="font-size: 24px; font-weight: bold; color: var(--green);" id="flags-collected">${getCompanyFlagsCollected()}</div>
+                      <div style="font-size: 11px; color: #666;">Apanhadas</div>
+                    </div>
+                    <div>
+                      <div style="font-size: 24px; font-weight: bold; color: var(--orange);" id="flags-remaining">${getCompanyFlagsRemaining()}</div>
+                      <div style="font-size: 11px; color: #666;">Restantes</div>
+                    </div>
+                  </div>
+                  <div style="margin-top: 10px; background: #f0f0f0; border-radius: 3px; height: 8px; overflow: hidden;">
+                    <div id="flags-progress-bar" style="height: 100%; background: var(--orange); width: ${(getCompanyFlagsCollected() / company.flags) * 100}%"></div>
+                  </div>
+                  <div style="font-size: 11px; color: #666; margin-top: 5px;">
+                    ${Math.round((getCompanyFlagsCollected() / company.flags) * 100)}% utilizadas
+                  </div>
+                </div>
+                
+                <!-- Estatísticas de Prémios -->
+                <div class="prizes-stats" style="background: white; padding: 15px; border-radius: 5px; border-left: 4px solid var(--purple);">
+                  <h4 style="margin: 0 0 10px 0; color: var(--dark);">🎁 Prémios</h4>
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; text-align: center;">
+                    <div>
+                      <div style="font-size: 24px; font-weight: bold; color: var(--green);" id="prizes-collected">${getCompanyPrizesCollected()}</div>
+                      <div style="font-size: 11px; color: #666;">Apanhados</div>
+                    </div>
+                    <div>
+                      <div style="font-size: 24px; font-weight: bold; color: var(--purple);" id="prizes-remaining">${getCompanyPrizesRemaining()}</div>
+                      <div style="font-size: 11px; color: #666;">Restantes</div>
+                    </div>
+                  </div>
+                  <div style="margin-top: 10px; background: #f0f0f0; border-radius: 3px; height: 8px; overflow: hidden;">
+                    <div id="prizes-progress-bar" style="height: 100%; background: var(--purple); width: ${(getCompanyPrizesCollected() / Math.floor(company.flags / 20)) * 100}%"></div>
+                  </div>
+                  <div style="font-size: 11px; color: #666; margin-top: 5px;">
+                    ${Math.round((getCompanyPrizesCollected() / Math.floor(company.flags / 20)) * 100)}% utilizados
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Controlo de Ativação -->
+              <div class="campaign-activation" style="background: white; padding: 15px; border-radius: 5px; border-left: 4px solid var(--green);">
+                <h4 style="margin: 0 0 10px 0; color: var(--dark);">🚀 Controlo de Ativação</h4>
+                <div id="campaign-status-info" style="margin-bottom: 10px; padding: 10px; background: ${company.campaignActive ? '#d4edda' : '#f8d7da'}; border-radius: 5px;">
+                  <div style="font-weight: bold; color: ${company.campaignActive ? 'var(--green)' : 'var(--red)'};">
+                    ${company.campaignActive ? '🟢 Campanha ATIVA' : '🔴 Campanha INATIVA'}
+                  </div>
+                  <div style="font-size: 12px; color: #666; margin-top: 5px;">
+                    ${company.campaignActive ? 
+                      `${company.flagsUsed || 0} bandeiras fixas em jogo.` : 
+                      'Ative a campanha para fixar bandeiras no mapa.'
+                    }
+                  </div>
+                  ${company.campaignActive && company.pecs && company.pecs.length > 0 ? `
+                    <div style="font-size: 11px; color: var(--purple); margin-top: 5px;">
+                      🎁 ${company.pecs.filter(pec => !pec.used).length} PECs ativos (protegidos)
+                    </div>
+                  ` : ''}
+                </div>
+                
+                <div style="display: flex; gap: 10px;">
+                  ${!company.campaignActive ? `
+                    <button class="btn" onclick="activateCampaign()" style="background: var(--green); color: white; flex: 1;">
+                      🚀 Ativar Campanha
+                    </button>
+                    <button class="btn" onclick="deactivateCampaign()" style="background: var(--red); color: white; flex: 1;" disabled>
+                      ⏹️ Inativo
+                    </button>
+                  ` : `
+                    <button class="btn" onclick="activateCampaign()" style="background: var(--green); color: white; flex: 1;">
+                      🔄 Ativar
+                    </button>
+                    <button class="btn" onclick="deactivateRemainingFlags()" style="background: var(--orange); color: white; flex: 1;">
+                      ⏹️ Inativo
+                    </button>
+                  `}
+                </div>
+                
+                ${company.campaignActive && getCompanyFlagsRemaining() >= 20 ? `
+                  <div style="margin-top: 10px; padding: 10px; background: #e7f3ff; border-radius: 5px;">
+                    <div style="font-size: 12px; color: var(--blue);">
+                      💡 Pode criar ${Math.floor(getCompanyFlagsRemaining() / 20)} PECs adicionais com as bandeiras restantes
+                    </div>
+                  </div>
+                ` : ''}
+              </div>
+            </div>
+            
+            <div class="form-actions">
+              <button class="btn" onclick="createCampaign()" style="background: var(--green); color: white;">
+                🚀 Criar Campanha
+              </button>
+              <button class="btn secondary" onclick="saveCampaignDraft()">
+                💾 Guardar Rascunho
+              </button>
+            </div>
+          </div>
         `;
+        
+        console.log('✅ HTML da campanha atribuído ao target!');
+        console.log('🎯 Target após atribuir HTML:', target.innerHTML.length, 'caracteres');
+        
+        // Restaurar estado de colapso após renderização
+        setTimeout(() => {
+          restoreCampaignCollapseState();
+        }, 100);
       }
     }
 
@@ -3386,15 +4636,316 @@
       });
     }
 
-    function buyPack(name, flags) {
+    function buyPack(packId, flags) {
       const company = currentCompany();
       if (!company) return renderCompanyAuth();
-      company.pack = name;
-      company.flags += flags;
+      
+      // Definição dos pacotes com validades específicas
+      const packages = {
+        'Starter': { name: 'Starter', price: 0, flags: 1000, validityDays: 0 },
+        'Basic': { name: 'Basic', price: 10, flags: 5000, validityDays: 60 },
+        'Professional': { name: 'Professional', price: 20, flags: 10000, validityDays: 90 },
+        'Enterprise': { name: 'Enterprise', price: 30, flags: 25000, validityDays: 125 },
+        'Premium': { name: 'Premium', price: 50, flags: 60000, validityDays: 180 },
+        'Ultimate': { name: 'Ultimate', price: 80, flags: 100000, validityDays: 250 },
+        'Platinum': { name: 'Platinum', price: 120, flags: 250000, validityDays: 365 }
+      };
+      
+      const pack = packages[packId];
+      if (!pack) return notify('Pacote inválido');
+      
+      // Para teste, vamos permitir compra imediata sem validação de pagamento
+      // Em produção, aqui seria integrado com sistema de pagamento real
+      
+      // Atualizar dados da empresa com validade específica
+      company.pack = pack.name;
+      company.flags = flags; // Define flags exatas do pacote
+      company.packActivatedAt = Date.now();
+      
+      // Calcular data de expiração baseada nos dias de validade
+      if (pack.validityDays === 0) {
+        // Pack Starter - ilimitado
+        company.packExpiresAt = null;
+      } else {
+        // Packs pagos - validade específica
+        const expiryTime = Date.now() + (pack.validityDays * 24 * 60 * 60 * 1000);
+        company.packExpiresAt = expiryTime;
+      }
+      
+      // Criar backup automático do pacote
+      const packBackup = {
+        companyId: company.id,
+        pack: pack.name,
+        flags: flags,
+        packActivatedAt: company.packActivatedAt,
+        packExpiresAt: company.packExpiresAt,
+        validityDays: pack.validityDays,
+        timestamp: Date.now()
+      };
+      localStorage.setItem('ZAP_FLAGS_3_PACK_BACKUP', JSON.stringify(packBackup));
+      
       saveState();
-      addAudit(company.name + ' comprou pack ' + name);
-      renderCompanyPanel('dashboard');
-      notify('Pack aplicado: ' + name);
+      addAudit(`${company.name} comprou pack ${pack.name} com ${flags} flags (validade: ${pack.validityDays === 0 ? 'Ilimitado' : pack.validityDays + ' dias'})`);
+      
+      // Notificação detalhada com validade
+      if (pack.price === 0) {
+        notify(`🎉 Pack ${pack.name} ativado com sucesso! +${flags} flags disponíveis (Validade: Ilimitada)`);
+      } else {
+        notify(`✅ Pack ${pack.name} comprado com sucesso! +${flags} flags disponíveis (€${pack.price.toFixed(2)} + IVA - Validade: ${pack.validityDays} dias)`);
+      }
+      
+      // Redirecionar para página de campanha após compra
+      renderCompanyPanel('campaign');
+    }
+
+    // Funções para interação com empresas
+    function openCompanyDialog(companyId) {
+      const player = currentPlayer();
+      if (!player) return renderPlayerAuth();
+      const company = state.companies.find(c => c.id === companyId);
+      if (!company) return notify('Empresa não encontrada');
+      
+      // Criar diálogo de empresa (tamanho reduzido)
+      const dialogOverlay = document.createElement('div');
+      dialogOverlay.className = 'dialog-overlay';
+      dialogOverlay.innerHTML = `
+        <div class="player-dialog" style="max-width: 400px;">
+          <div class="dialog-header">
+            <h3>📩 Contactar Empresa</h3>
+            <button class="dialog-close" onclick="closeDialog()">&times;</button>
+          </div>
+          <div class="dialog-content">
+            <h4>${escapeHtml(company.name)}</h4>
+            <p><strong>📧 Email:</strong> ${escapeHtml(company.email)}</p>
+            <p><strong>📊 Status:</strong> ${escapeHtml(company.status || 'Ativo')}</p>
+            <p><strong>🏁 Flags:</strong> ${company.flags || 0}</p>
+            
+            <div class="message-area" style="margin-top: 12px;">
+              <p><strong>Mensagem:</strong></p>
+              <textarea class="message-input" id="company-message" placeholder="Digite a sua mensagem aqui..." rows="3"></textarea>
+            </div>
+          </div>
+          <div class="dialog-actions" style="display: flex; gap: 8px;">
+            <button class="btn" onclick="sendCompanyMessage('${company.id}')">📩 Enviar</button>
+            <button class="btn secondary" onclick="sendCompanyFriendRequest('${company.id}')">🤝 Amizade</button>
+            <button class="btn secondary" onclick="closeDialog()">Fechar</button>
+          </div>
+        </div>
+      `;
+      
+      document.body.appendChild(dialogOverlay);
+    }
+
+    function sendCompanyMessage(companyId) {
+      const player = currentPlayer();
+      const company = state.companies.find(c => c.id === companyId);
+      const message = document.getElementById('company-message')?.value.trim();
+      
+      if (!player || !company) return notify('Erro ao processar mensagem');
+      if (!message) return notify('Digite uma mensagem');
+      
+      // Adicionar à auditoria
+      addAudit(`${player.name} enviou mensagem para empresa ${company.name}: "${message}"`);
+      
+      // Notificar sucesso
+      notify(`Mensagem enviada para ${company.name}!`);
+      
+      // Fechar diálogo
+      closeDialog();
+    }
+
+    function viewCompanyProfile(companyId) {
+      const player = currentPlayer();
+      if (!player) return renderPlayerAuth();
+      const company = state.companies.find(c => c.id === companyId);
+      if (!company) return notify('Empresa não encontrada');
+      
+      // Criar diálogo de perfil da empresa (tamanho reduzido)
+      const dialogOverlay = document.createElement('div');
+      dialogOverlay.className = 'dialog-overlay';
+      dialogOverlay.innerHTML = `
+        <div class="player-dialog" style="max-width: 400px;">
+          <div class="dialog-header">
+            <h3>👁️ Perfil da Empresa</h3>
+            <button class="dialog-close" onclick="closeDialog()">&times;</button>
+          </div>
+          <div class="dialog-content">
+            <h4>${escapeHtml(company.name)}</h4>
+            <div class="stats-row">
+              <span class="badge" style="background: var(--cyan); color: var(--bg);">📊 ${company.status || 'Ativo'}</span>
+              <span class="badge">🏁 ${company.flags || 0}</span>
+            </div>
+            
+            <div style="margin: 12px 0;">
+              <p><strong>📧 Email:</strong> ${escapeHtml(company.email)}</p>
+              <p><strong>📦 Pack:</strong> ${escapeHtml(company.pack || 'Não definido')}</p>
+              <p><strong>QRs à venda:</strong> ${state.qrs.filter(qr => qr.company === company.name && qr.forSale).length}</p>
+            </div>
+          </div>
+          <div class="dialog-actions" style="display: flex; gap: 8px;">
+            <button class="btn" onclick="openCompanyDialog('${company.id}')">📩 Contactar</button>
+            <button class="btn secondary" onclick="sendCompanyFriendRequest('${company.id}')">🤝 Amizade</button>
+            <button class="btn secondary" onclick="closeDialog()">Fechar</button>
+          </div>
+        </div>
+      `;
+      
+      document.body.appendChild(dialogOverlay);
+    }
+
+    function closeDialog() {
+      const dialogOverlay = document.querySelector('.dialog-overlay');
+      if (dialogOverlay) {
+        dialogOverlay.remove();
+      }
+    }
+
+    // Funções de amizade bidirecionais
+    function sendCompanyFriendRequest(companyId) {
+      const player = currentPlayer();
+      if (!player) return renderPlayerAuth();
+      const company = state.companies.find(c => c.id === companyId);
+      if (!company) return notify('Empresa não encontrada');
+      
+      // Inicializar arrays de amizade se não existirem
+      if (!state.friendRequests) state.friendRequests = [];
+      if (!company.friendRequests) company.friendRequests = [];
+      
+      // Verificar se já existe pedido
+      const existingRequest = state.friendRequests.find(req => 
+        req.fromId === player.id && req.toId === companyId && req.status === 'pending'
+      );
+      
+      if (existingRequest) {
+        return notify('Já enviaste um pedido de amizade para esta empresa!');
+      }
+      
+      // Criar pedido de amizade
+      const request = {
+        id: uid('friend'),
+        fromId: player.id,
+        toId: companyId,
+        fromType: 'player',
+        toType: 'company',
+        status: 'pending',
+        createdAt: Date.now()
+      };
+      
+      state.friendRequests.push(request);
+      company.friendRequests.push(player.id);
+      
+      saveState();
+      addAudit(`${player.name} enviou pedido de amizade para empresa ${company.name}`);
+      notify(`Pedido de amizade enviado para ${company.name}!`);
+      
+      closeDialog();
+    }
+
+    function sendPlayerFriendRequest(playerId) {
+      const company = currentCompany();
+      if (!company) return renderCompanyAuth();
+      const targetPlayer = state.players.find(p => p.id === playerId);
+      if (!targetPlayer) return notify('Jogador não encontrado');
+      
+      // Inicializar arrays de amizade se não existirem
+      if (!state.friendRequests) state.friendRequests = [];
+      if (!targetPlayer.friendRequests) targetPlayer.friendRequests = [];
+      
+      // Verificar se já existe pedido
+      const existingRequest = state.friendRequests.find(req => 
+        req.fromId === company.id && req.toId === playerId && req.status === 'pending'
+      );
+      
+      if (existingRequest) {
+        return notify('Já enviaste um pedido de amizade para este jogador!');
+      }
+      
+      // Criar pedido de amizade
+      const request = {
+        id: uid('friend'),
+        fromId: company.id,
+        toId: playerId,
+        fromType: 'company',
+        toType: 'player',
+        status: 'pending',
+        createdAt: Date.now()
+      };
+      
+      state.friendRequests.push(request);
+      targetPlayer.friendRequests.push(company.id);
+      
+      saveState();
+      addAudit(`${company.name} enviou pedido de amizade para jogador ${targetPlayer.name}`);
+      notify(`Pedido de amizade enviado para ${targetPlayer.name}!`);
+      
+      closeDialog();
+    }
+
+    function acceptFriendRequest(requestId) {
+      const player = currentPlayer();
+      const company = currentCompany();
+      const currentUser = player || company;
+      
+      if (!currentUser) return;
+      
+      const request = state.friendRequests.find(req => req.id === requestId);
+      if (!request) return notify('Pedido não encontrado');
+      
+      // Aceitar amizade
+      request.status = 'accepted';
+      request.acceptedAt = Date.now();
+      
+      // Adicionar às listas de amigos
+      if (!currentUser.friends) currentUser.friends = [];
+      
+      const otherId = request.fromId === currentUser.id ? request.toId : request.fromId;
+      currentUser.friends.push(otherId);
+      
+      // Adicionar também ao outro utilizador
+      if (request.fromType === 'player') {
+        const fromPlayer = state.players.find(p => p.id === request.fromId);
+        if (fromPlayer) {
+          if (!fromPlayer.friends) fromPlayer.friends = [];
+          fromPlayer.friends.push(request.toId);
+        }
+      } else if (request.fromType === 'company') {
+        const fromCompany = state.companies.find(c => c.id === request.fromId);
+        if (fromCompany) {
+          if (!fromCompany.friends) fromCompany.friends = [];
+          fromCompany.friends.push(request.toId);
+        }
+      }
+      
+      saveState();
+      addAudit(`${currentUser.name} aceitou pedido de amizade`);
+      notify('Amizade aceita com sucesso!');
+      
+      // Atualizar interface
+      if (player) renderPlayerPanel('players');
+      if (company) renderCompanyPanel('players');
+    }
+
+    function rejectFriendRequest(requestId) {
+      const player = currentPlayer();
+      const company = currentCompany();
+      const currentUser = player || company;
+      
+      if (!currentUser) return;
+      
+      const request = state.friendRequests.find(req => req.id === requestId);
+      if (!request) return notify('Pedido não encontrado');
+      
+      // Rejeitar pedido
+      request.status = 'rejected';
+      request.rejectedAt = Date.now();
+      
+      saveState();
+      addAudit(`${currentUser.name} rejeitou pedido de amizade`);
+      notify('Pedido de amizade rejeitado!');
+      
+      // Atualizar interface
+      if (player) renderPlayerPanel('players');
+      if (company) renderCompanyPanel('players');
     }
 
     function createCompanyCampaign() {
@@ -3665,8 +5216,1227 @@
       renderBackofficePanel('overview');
     }
 
+    // Função para diagnosticar e recuperar dados perdidos
+    function diagnoseAndRecoverData() {
+      console.log('🔍 Diagnosticando estado atual do sistema...');
+      
+      // Verificar estado atual
+      const currentState = loadState();
+      const currentCompany = currentState.companies.find(c => c.id === currentState.session?.id);
+      
+      console.log('📊 Estado atual:', {
+        hasSession: !!currentState.session,
+        sessionType: currentState.session?.type,
+        companyId: currentState.session?.id,
+        currentCompany: currentCompany ? {
+          name: currentCompany.name,
+          pack: currentCompany.pack,
+          flags: currentCompany.flags,
+          packActivatedAt: currentCompany.packActivatedAt,
+          packExpiresAt: currentCompany.packExpiresAt
+        } : null
+      });
+      
+      // Se houver empresa mas sem pacote, tentar recuperar
+      if (currentCompany && !currentCompany.pack) {
+        console.log('⚠️ Empresa sem pacote definido, tentando recuperar...');
+        
+        // Verificar se há dados de pack no localStorage separado
+        const packBackup = localStorage.getItem('ZAP_FLAGS_3_PACK_BACKUP');
+        if (packBackup) {
+          try {
+            const packData = JSON.parse(packBackup);
+            if (packData.companyId === currentCompany.id) {
+              console.log('📦 Recuperando dados do pacote do backup...');
+              currentCompany.pack = packData.pack;
+              currentCompany.flags = packData.flags;
+              currentCompany.packActivatedAt = packData.packActivatedAt;
+              currentCompany.packExpiresAt = packData.packExpiresAt;
+              saveState();
+              console.log('✅ Pacote recuperado com sucesso!');
+            }
+          } catch (e) {
+            console.error('❌ Erro ao recuperar backup:', e);
+          }
+        }
+      }
+      
+      // Forçar atualização da interface se houver empresa
+      if (currentCompany) {
+        console.log('🔄 Forçando atualização da interface...');
+        renderCompanyPanel('dashboard');
+      }
+      
+      return currentState;
+    }
+    
     // Chamar inicialização
     init();
+    
+    // Funções auxiliares para evitar erros
+    function createCampaign() {
+      console.log('📢 createCampaign() chamado - função placeholder');
+      notify('🚀 Funcionalidade de criar campanha em desenvolvimento');
+    }
+    
+    function saveCampaignDraft() {
+      console.log('💾 saveCampaignDraft() chamado - função placeholder');
+      notify('📝 Rascunho guardado temporariamente');
+    }
+    
+    function updateRewardFields() {
+      console.log('🔄 updateRewardFields() chamado - função placeholder');
+      const rewardType = document.getElementById('campaign-reward-type')?.value;
+      const rewardValue = document.getElementById('reward-value');
+      
+      if (rewardValue) {
+        const placeholders = {
+          'free': 'Acesso livre à área VIP',
+          'discount': 'Ex: 10% de desconto em todas as compras',
+          'purchase': 'Ex: Compre 2 produtos e leve 3 grátis',
+          'clothing': 'Ex: Uma peça de roupa à escolha até 50€',
+          'surprise': 'Ex: Caixa surpresa com produtos exclusivos'
+        };
+        rewardValue.placeholder = placeholders[rewardType] || 'Especifique o valor...';
+      }
+    }
+    
+    function calculateDeadline() {
+      const company = currentCompany();
+      if (!company) return 'Data não disponível';
+      
+      const now = new Date();
+      const additionalDays = parseInt(document.getElementById('campaign-prize-validity')?.value) || 60;
+      
+      if (company.pack === 'Starter') {
+        const deadline = new Date(now.getTime() + (additionalDays * 24 * 60 * 60 * 1000));
+        return deadline.toLocaleDateString('pt-PT');
+      } else if (company.packExpiresAt) {
+        const deadline = new Date(company.packExpiresAt + (additionalDays * 24 * 60 * 60 * 1000));
+        return deadline.toLocaleDateString('pt-PT');
+      }
+      
+      return new Date(now.getTime() + (additionalDays * 24 * 60 * 60 * 1000)).toLocaleDateString('pt-PT');
+    }
+
+    // Função para inicializar event listener do botão campanha
+    function initCompanyButtonListeners() {
+      try {
+        console.log('🔧 Configurando botão campanha...');
+        
+        const campaignBtn = document.getElementById('campaign-btn');
+        if (campaignBtn) {
+          // Remover listeners antigos para evitar duplicação
+          campaignBtn.removeEventListener('click', arguments.callee);
+          
+          // Adicionar event listener direto
+          campaignBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            console.log('🎯 Botão Campanha clicado!');
+            renderCompanyPanel('campaign');
+            
+            // Manter estilo verde
+            this.style.background = 'var(--green)';
+            this.style.color = 'white';
+            this.style.border = '1px solid var(--green)';
+          });
+          console.log('✅ Botão campanha configurado com sucesso!');
+        } else {
+          console.log('❌ Botão campanha não encontrado!');
+        }
+      } catch (error) {
+        console.error('❌ Erro ao configurar botão campanha:', error);
+      }
+    }
+    
+    // Função para criar backup completo do sistema
+    function createSystemBackup() {
+      console.log('💾 Criando backup completo do sistema...');
+      
+      try {
+        const currentState = loadState();
+        const fullBackup = {
+          timestamp: Date.now(),
+          version: 'ZAP-FLAGS-3.0-STABLE',
+          state: currentState,
+          localStorage: {
+            main: localStorage.getItem('ZAP_FLAGS_3_STATE'),
+            packBackup: localStorage.getItem('ZAP_FLAGS_3_PACK_BACKUP'),
+            // Capturar todos os localStorage relacionados
+            allKeys: Object.keys(localStorage).filter(key => key.includes('ZAP_FLAGS'))
+          },
+          session: {
+            user: currentState.session,
+            company: currentState.companies.find(c => c.id === currentState.session?.id),
+            player: currentState.players.find(p => p.id === currentState.session?.id)
+          }
+        };
+        
+        // Salvar backup completo
+        localStorage.setItem('ZAP_FLAGS_3_FULL_BACKUP', JSON.stringify(fullBackup));
+        
+        // Também criar backup em JSON para download opcional
+        const backupBlob = new Blob([JSON.stringify(fullBackup, null, 2)], {
+          type: 'application/json'
+        });
+        
+        console.log('✅ Backup completo criado com sucesso!');
+        console.log('📊 Dados backup:', {
+          players: currentState.players.length,
+          companies: currentState.companies.length,
+          qrs: currentState.qrs.length,
+          flags: currentState.flags.length,
+          timestamp: new Date(fullBackup.timestamp).toLocaleString('pt-PT')
+        });
+        
+        return fullBackup;
+      } catch (error) {
+        console.error('❌ Erro ao criar backup:', error);
+        return null;
+      }
+    }
+
+    // Função para restaurar backup completo
+    function restoreSystemBackup() {
+      console.log('🔄 Restaurando backup completo do sistema...');
+      
+      try {
+        const backupData = localStorage.getItem('ZAP_FLAGS_3_FULL_BACKUP');
+        if (!backupData) {
+          console.log('⚠️ Nenhum backup completo encontrado');
+          return false;
+        }
+        
+        const backup = JSON.parse(backupData);
+        console.log('📦 Backup encontrado:', new Date(backup.timestamp).toLocaleString('pt-PT'));
+        
+        // Restaurar estado principal
+        if (backup.state) {
+          Object.assign(state, backup.state);
+          saveState();
+        }
+        
+        // Restaurar localStorage
+        if (backup.localStorage) {
+          Object.keys(backup.localStorage).forEach(key => {
+            if (backup.localStorage[key]) {
+              localStorage.setItem(key, backup.localStorage[key]);
+            }
+          });
+        }
+        
+        console.log('✅ Backup restaurado com sucesso!');
+        return true;
+      } catch (error) {
+        console.error('❌ Erro ao restaurar backup:', error);
+        return false;
+      }
+    }
+
+    // Funções para o Sistema de Bingo
+    let bingoSchedules = [];
+    let pecConfigs = [];
+    let bingoScheduleId = 1;
+    let pecConfigId = 1;
+
+    function toggleBingoOptions() {
+      const bingoType = document.getElementById('campaign-bingo-type').value;
+      const bingoConfig = document.getElementById('bingo-config');
+      
+      if (bingoType === 'bingo') {
+        bingoConfig.style.display = 'block';
+      } else {
+        bingoConfig.style.display = 'none';
+      }
+    }
+
+    function addBingoSchedule() {
+      const totalBingos = parseInt(document.getElementById('campaign-total-bingos').value) || 10;
+      
+      const schedule = {
+        id: bingoScheduleId++,
+        name: `Programação ${bingoScheduleId - 1}`,
+        bingosUsed: 0,
+        discount: 90,
+        durationHours: 48,
+        prizeValidityDays: 7,
+        activationType: 'manual', // manual, auto, scheduled
+        scheduledTime: null,
+        isActive: false,
+        expiresAt: null
+      };
+      
+      bingoSchedules.push(schedule);
+      renderBingoSchedules();
+    }
+
+    function renderBingoSchedules() {
+      const container = document.getElementById('bingo-schedule-items');
+      
+      if (bingoSchedules.length === 0) {
+        container.innerHTML = `
+          <div style="text-align: center; color: #666; padding: 20px;">
+            Nenhuma programação criada ainda
+          </div>
+        `;
+        return;
+      }
+      
+      container.innerHTML = bingoSchedules.map(schedule => `
+        <div class="bingo-schedule-item" style="background: white; border: 1px solid #ddd; border-radius: 5px; padding: 15px; margin-bottom: 10px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <h5 style="margin: 0; color: var(--dark);">${schedule.name}</h5>
+            <div style="display: flex; gap: 5px;">
+              <button class="btn" onclick="toggleScheduleActivation(${schedule.id})" style="background: ${schedule.isActive ? 'var(--orange)' : 'var(--green)'}; color: white; padding: 3px 8px; font-size: 11px;">
+                ${schedule.isActive ? 'Desativar' : 'Ativar'}
+              </button>
+              <button class="btn" onclick="removeBingoSchedule(${schedule.id})" style="background: var(--red); color: white; padding: 3px 8px; font-size: 11px;">
+                Remover
+              </button>
+            </div>
+          </div>
+          
+          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+            <div>
+              <label style="font-size: 12px; color: #666;">Bingos:</label>
+              <input type="number" value="${schedule.bingosUsed}" min="1" max="50" onchange="updateScheduleField(${schedule.id}, 'bingosUsed', this.value)" style="width: 100%; padding: 3px;">
+            </div>
+            <div>
+              <label style="font-size: 12px; color: #666;">Desconto (%):</label>
+              <input type="number" value="${schedule.discount}" min="10" max="100" onchange="updateScheduleField(${schedule.id}, 'discount', this.value)" style="width: 100%; padding: 3px;">
+            </div>
+            <div>
+              <label style="font-size: 12px; color: #666;">Duração (h):</label>
+              <input type="number" value="${schedule.durationHours}" min="1" max="168" onchange="updateScheduleField(${schedule.id}, 'durationHours', this.value)" style="width: 100%; padding: 3px;">
+            </div>
+          </div>
+          
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+            <div>
+              <label style="font-size: 12px; color: #666;">Validade Prémio (dias):</label>
+              <select onchange="updateScheduleField(${schedule.id}, 'prizeValidityDays', this.value)" style="width: 100%; padding: 3px;">
+                <option value="5" ${schedule.prizeValidityDays === 5 ? 'selected' : ''}>5 dias</option>
+                <option value="8" ${schedule.prizeValidityDays === 8 ? 'selected' : ''}>8 dias</option>
+                <option value="15" ${schedule.prizeValidityDays === 15 ? 'selected' : ''}>15 dias</option>
+                <option value="30" ${schedule.prizeValidityDays === 30 ? 'selected' : ''}>30 dias</option>
+              </select>
+            </div>
+            <div>
+              <label style="font-size: 12px; color: #666;">Ativação:</label>
+              <select onchange="updateScheduleField(${schedule.id}, 'activationType', this.value)" style="width: 100%; padding: 3px;">
+                <option value="manual" ${schedule.activationType === 'manual' ? 'selected' : ''}>Manual</option>
+                <option value="auto" ${schedule.activationType === 'auto' ? 'selected' : ''}>Automático</option>
+                <option value="scheduled" ${schedule.activationType === 'scheduled' ? 'selected' : ''}>Programado</option>
+              </select>
+            </div>
+          </div>
+          
+          ${schedule.activationType === 'scheduled' ? `
+            <div style="margin-bottom: 10px;">
+              <label style="font-size: 12px; color: #666;">Data/Hora Programada:</label>
+              <input type="datetime-local" onchange="updateScheduleField(${schedule.id}, 'scheduledTime', this.value)" style="width: 100%; padding: 3px;">
+            </div>
+          ` : ''}
+          
+          <div style="font-size: 11px; color: #666;">
+            ${schedule.isActive ? '🟢 ATIVO' : '🔴 INATIVO'} 
+            ${schedule.expiresAt ? `| Expira: ${new Date(schedule.expiresAt).toLocaleString('pt-PT')}` : ''}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function updateScheduleField(scheduleId, field, value) {
+      const schedule = bingoSchedules.find(s => s.id === scheduleId);
+      if (schedule) {
+        schedule[field] = field === 'bingosUsed' || field === 'discount' || field === 'durationHours' || field === 'prizeValidityDays' 
+          ? parseInt(value) 
+          : value;
+      }
+    }
+
+    function toggleScheduleActivation(scheduleId) {
+      const schedule = bingoSchedules.find(s => s.id === scheduleId);
+      if (schedule) {
+        schedule.isActive = !schedule.isActive;
+        if (schedule.isActive) {
+          schedule.expiresAt = Date.now() + (schedule.durationHours * 60 * 60 * 1000);
+        } else {
+          schedule.expiresAt = null;
+        }
+        renderBingoSchedules();
+      }
+    }
+
+    function removeBingoSchedule(scheduleId) {
+      bingoSchedules = bingoSchedules.filter(s => s.id !== scheduleId);
+      renderBingoSchedules();
+    }
+
+    function addPECConfig() {
+      const totalBingos = parseInt(document.getElementById('campaign-total-bingos').value) || 10;
+      
+      const pec = {
+        id: pecConfigId++,
+        name: `PEC ${pecConfigId - 1}`,
+        bingosRequired: 15,
+        prizeDescription: 'Prémio Especial',
+        validityDays: 15,
+        isActive: false,
+        quantity: 1
+      };
+      
+      pecConfigs.push(pec);
+      renderPECConfigs();
+    }
+
+    function renderPECConfigs() {
+      const container = document.getElementById('pecs-config-items');
+      
+      if (pecConfigs.length === 0) {
+        container.innerHTML = `
+          <div style="text-align: center; color: #666; padding: 20px;">
+            Nenhum PEC configurado ainda
+          </div>
+        `;
+        return;
+      }
+      
+      container.innerHTML = pecConfigs.map(pec => `
+        <div class="pec-config-item" style="background: white; border: 1px solid #ddd; border-radius: 5px; padding: 15px; margin-bottom: 10px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <h5 style="margin: 0; color: var(--dark);">${pec.name}</h5>
+            <div style="display: flex; gap: 5px;">
+              <button class="btn" onclick="togglePECActivation(${pec.id})" style="background: ${pec.isActive ? 'var(--orange)' : 'var(--purple)'}; color: white; padding: 3px 8px; font-size: 11px;">
+                ${pec.isActive ? 'Desativar' : 'Ativar'}
+              </button>
+              <button class="btn" onclick="removePECConfig(${pec.id})" style="background: var(--red); color: white; padding: 3px 8px; font-size: 11px;">
+                Remover
+              </button>
+            </div>
+          </div>
+          
+          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+            <div>
+              <label style="font-size: 12px; color: #666;">Bingos Necessários:</label>
+              <input type="number" value="${pec.bingosRequired}" min="1" max="50" onchange="updatePECField(${pec.id}, 'bingosRequired', this.value)" style="width: 100%; padding: 3px;">
+            </div>
+            <div>
+              <label style="font-size: 12px; color: #666;">Quantidade:</label>
+              <input type="number" value="${pec.quantity}" min="1" max="100" onchange="updatePECField(${pec.id}, 'quantity', this.value)" style="width: 100%; padding: 3px;">
+            </div>
+            <div>
+              <label style="font-size: 12px; color: #666;">Validade (dias):</label>
+              <select onchange="updatePECField(${pec.id}, 'validityDays', this.value)" style="width: 100%; padding: 3px;">
+                <option value="5" ${pec.validityDays === 5 ? 'selected' : ''}>5 dias</option>
+                <option value="8" ${pec.validityDays === 8 ? 'selected' : ''}>8 dias</option>
+                <option value="15" ${pec.validityDays === 15 ? 'selected' : ''}>15 dias</option>
+                <option value="30" ${pec.validityDays === 30 ? 'selected' : ''}>30 dias</option>
+              </select>
+            </div>
+          </div>
+          
+          <div style="margin-bottom: 10px;">
+            <label style="font-size: 12px; color: #666;">Descrição do Prémio:</label>
+            <input type="text" value="${pec.prizeDescription}" onchange="updatePECField(${pec.id}, 'prizeDescription', this.value)" placeholder="Descrição do prémio especial" style="width: 100%; padding: 3px;">
+          </div>
+          
+          <div style="font-size: 11px; color: #666;">
+            ${pec.isActive ? '🟢 ATIVO' : '🔴 INATIVO'} | ${pec.quantity} disponíveis
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function updatePECField(pecId, field, value) {
+      const pec = pecConfigs.find(p => p.id === pecId);
+      if (pec) {
+        pec[field] = field === 'bingosRequired' || field === 'quantity' || field === 'validityDays' 
+          ? parseInt(value) 
+          : value;
+      }
+    }
+
+    function togglePECActivation(pecId) {
+      const pec = pecConfigs.find(p => p.id === pecId);
+      if (pec) {
+        pec.isActive = !pec.isActive;
+        renderPECConfigs();
+      }
+    }
+
+    function removePECConfig(pecId) {
+      pecConfigs = pecConfigs.filter(p => p.id !== pecId);
+      renderPECConfigs();
+    }
+
+    // Funções para Estatísticas e Controlo de Campanha
+    function getCompanyFlagsCollected() {
+      const company = currentCompany();
+      if (!company) return 0;
+      
+      const companyFlags = state.flags.filter(flag => 
+        flag.owner === company.id && 
+        flag.type === 'PR' && 
+        !flag.active
+      );
+      
+      return companyFlags.length;
+    }
+
+    function getCompanyFlagsRemaining() {
+      const company = currentCompany();
+      if (!company) return 0;
+      
+      return company.flags - getCompanyFlagsCollected();
+    }
+
+    function getCompanyPrizesCollected() {
+      const company = currentCompany();
+      if (!company) return 0;
+      
+      // Contar prémios baseados em grupos de 20 bandeiras apanhadas
+      return Math.floor(getCompanyFlagsCollected() / 20);
+    }
+
+    function getCompanyPrizesRemaining() {
+      const company = currentCompany();
+      if (!company) return 0;
+      
+      const totalPrizes = Math.floor(company.flags / 20);
+      return totalPrizes - getCompanyPrizesCollected();
+    }
+
+    function updateCampaignStats() {
+      const company = currentCompany();
+      if (!company) return;
+      
+      // Atualizar contadores de bandeiras
+      const flagsCollectedEl = document.getElementById('flags-collected');
+      const flagsRemainingEl = document.getElementById('flags-remaining');
+      const flagsProgressBarEl = document.getElementById('flags-progress-bar');
+      
+      if (flagsCollectedEl) flagsCollectedEl.textContent = getCompanyFlagsCollected();
+      if (flagsRemainingEl) flagsRemainingEl.textContent = getCompanyFlagsRemaining();
+      if (flagsProgressBarEl) {
+        const percentage = (getCompanyFlagsCollected() / company.flags) * 100;
+        flagsProgressBarEl.style.width = percentage + '%';
+      }
+      
+      // Atualizar contadores de prémios
+      const prizesCollectedEl = document.getElementById('prizes-collected');
+      const prizesRemainingEl = document.getElementById('prizes-remaining');
+      const prizesProgressBarEl = document.getElementById('prizes-progress-bar');
+      
+      if (prizesCollectedEl) prizesCollectedEl.textContent = getCompanyPrizesCollected();
+      if (prizesRemainingEl) prizesRemainingEl.textContent = getCompanyPrizesRemaining();
+      if (prizesProgressBarEl) {
+        const totalPrizes = Math.floor(company.flags / 20);
+        const percentage = (getCompanyPrizesCollected() / totalPrizes) * 100;
+        prizesProgressBarEl.style.width = percentage + '%';
+      }
+      
+      // Atualizar timer do pacote
+      updatePackTimer();
+    }
+
+    function updatePackTimer() {
+      const company = currentCompany();
+      if (!company) return;
+      
+      const timerDisplayEl = document.getElementById('pack-timer-display');
+      if (timerDisplayEl) {
+        if (company.packExpiresAt) {
+          const now = Date.now();
+          if (now < company.packExpiresAt) {
+            timerDisplayEl.textContent = formatTimeRemaining(company.packExpiresAt);
+          } else {
+            timerDisplayEl.textContent = 'EXPIRADO';
+            timerDisplayEl.style.color = 'var(--red)';
+          }
+        } else {
+          timerDisplayEl.textContent = 'Ilimitado';
+        }
+      }
+    }
+
+    function activateCampaign() {
+      const company = currentCompany();
+      if (!company) return;
+      
+      // Verificar se há bandeiras suficientes
+      const availableFlags = getCompanyFlagsRemaining();
+      const minFlagsRequired = 100; // Mínimo 100 bandeiras para ativar
+      
+      if (availableFlags < minFlagsRequired) {
+        notify(`❌ Necessárias pelo menos ${minFlagsRequired} bandeiras para ativar a campanha. Disponíveis: ${availableFlags}`);
+        return;
+      }
+      
+      // Confirmar ativação
+      const confirmActivation = confirm(`🚀 Ativar campanha com ${availableFlags} bandeiras?\n\n⚠️ ATENÇÃO: As bandeiras ativadas não poderão ser desativadas posteriormente.\n\nEsta ação irá fixar ${availableFlags} bandeiras no mapa e criar ${Math.floor(availableFlags / 20)} prémios disponíveis.`);
+      
+      if (!confirmActivation) return;
+      
+      // Ativar campanha
+      company.campaignActive = true;
+      company.flagsUsed = availableFlags;
+      company.campaignActivatedAt = Date.now();
+      
+      // Criar bandeiras fixas no mapa
+      createFixedCampaignFlags(company, availableFlags);
+      
+      // Atualizar estatísticas
+      updateCampaignStats();
+      
+      // Guardar estado
+      saveState();
+      
+      // Notificar
+      notify(`✅ Campanha ativada com sucesso!\n🏁 ${availableFlags} bandeiras fixas\n🎁 ${Math.floor(availableFlags / 20)} prémios criados`);
+      
+      // Atualizar interface
+      renderCompanyPanel('campaign');
+      
+      // Adicionar auditoria
+      addAudit(`${company.name} ativou campanha com ${availableFlags} bandeiras`);
+    }
+
+    function createFixedCampaignFlags(company, count) {
+      // Criar bandeiras fixas para a campanha
+      for (let i = 0; i < count; i++) {
+        const flag = {
+          id: `campaign_${company.id}_${Date.now()}_${i}`,
+          type: 'PR',
+          label: `${company.name} - Campanha ${i + 1}`,
+          x: Math.random() * 90 + 5, // Distribuir pelo mapa
+          y: Math.random() * 80 + 10,
+          owner: company.id,
+          active: true, // Bandeiras ativas para serem apanhadas
+          isFixed: true, // Marcar como fixa da campanha
+          campaignId: company.campaignActivatedAt
+        };
+        
+        state.flags.push(flag);
+      }
+    }
+
+    function deactivateRemainingFlags() {
+      const company = currentCompany();
+      if (!company) return;
+      
+      if (!company.campaignActive) {
+        notify('❌ Campanha não está ativa');
+        return;
+      }
+      
+      // Calcular bandeiras usadas em PECs
+      const activePECs = company.pecs ? company.pecs.filter(pec => !pec.used) : [];
+      const flagsInPECs = activePECs.length * 20;
+      const totalUsedFlags = company.flagsUsed || 0;
+      const regularCampaignFlags = totalUsedFlags - flagsInPECs;
+      
+      // Calcular bandeiras restantes (não usadas)
+      const totalFlags = company.flags || 0;
+      const remainingFlags = totalFlags - totalUsedFlags;
+      
+      if (remainingFlags === 0) {
+        notify('ℹ️ Não há bandeiras restantes para desativar');
+        return;
+      }
+      
+      const confirmDeactivation = confirm(`⏹️ Desativar ${remainingFlags} bandeiras restantes?\n\nEsta ação irá:\n• Manter ${flagsInPECs} bandeiras fixas em PECs (protegidos)\n• Manter ${regularCampaignFlags} bandeiras fixas da campanha\n• Remover apenas ${remainingFlags} bandeiras não utilizadas\n\nOs PECs criados continuarão ativos e protegidos.`);
+      
+      if (!confirmDeactivation) return;
+      
+      // Remover apenas bandeiras não fixas (restantes)
+      const flagsToRemove = state.flags.filter(flag => 
+        flag.owner === company.id && 
+        flag.type === 'PR' && 
+        !flag.isFixed
+      );
+      
+      flagsToRemove.forEach(flag => {
+        const index = state.flags.findIndex(f => f.id === flag.id);
+        if (index > -1) {
+          state.flags.splice(index, 1);
+        }
+      });
+      
+      // Atualizar o contador de flags usados para refletir apenas os protegidos
+      company.flagsUsed = flagsInPECs + regularCampaignFlags;
+      
+      // Atualizar estatísticas
+      updateCampaignStats();
+      
+      // Guardar estado
+      saveState();
+      
+      // Notificar
+      notify(`✅ ${remainingFlags} bandeiras desativadas com sucesso\n🎁 ${activePECs.length} PECs mantidos ativos\n🏁 ${flagsInPECs + regularCampaignFlags} bandeiras fixas protegidas`);
+      
+      // Adicionar auditoria
+      addAudit(`${company.name} desativou ${remainingFlags} bandeiras restantes (manteve PECs)`);
+    }
+
+    function addMorePECs() {
+      const company = currentCompany();
+      if (!company) return;
+      
+      const remainingFlags = getCompanyFlagsRemaining();
+      const maxPECs = Math.floor(remainingFlags / 20);
+      
+      if (maxPECs === 0) {
+        notify('❌ Não há bandeiras suficientes para criar PECs (mínimo: 20)');
+        return;
+      }
+      
+      const pecCount = prompt(`🎁 Quantos PECs deseja criar?\n\nMáximo disponível: ${maxPECs} PECs\nCada PEC requer 20 bandeiras`, maxPECs);
+      
+      if (!pecCount || isNaN(pecCount)) return;
+      
+      const numPECs = parseInt(pecCount);
+      
+      if (numPECs < 1 || numPECs > maxPECs) {
+        notify(`❌ Número inválido. Escolha entre 1 e ${maxPECs}`);
+        return;
+      }
+      
+      // Garantir que a campanha esteja ativa
+      if (!company.campaignActive) {
+        company.campaignActive = true;
+        company.campaignActivatedAt = Date.now();
+        notify('🔄 Campanha reativada automaticamente para novos PECs');
+      }
+      
+      // Criar PECs
+      if (!company.pecs) company.pecs = [];
+      
+      for (let i = 0; i < numPECs; i++) {
+        const pec = {
+          id: `pec_${company.id}_${Date.now()}_${i}`,
+          name: `PEC ${(company.pecs.length + i + 1)}`,
+          description: document.getElementById('campaign-reward-type')?.value || 'Prémio Especial Adicional',
+          validity: parseInt(document.getElementById('campaign-prize-validity')?.value) || 60,
+          createdAt: Date.now(),
+          expiresAt: Date.now() + ((parseInt(document.getElementById('campaign-prize-validity')?.value) || 60) * 24 * 60 * 60 * 1000),
+          used: false,
+          companyId: company.id,
+          isProtected: true // Marcar PECs como protegidos
+        };
+        
+        company.pecs.push(pec);
+      }
+      
+      // Marcar bandeiras como usadas para PECs
+      const flagsUsedForPECs = numPECs * 20;
+      company.flagsUsedForPECs = (company.flagsUsedForPECs || 0) + flagsUsedForPECs;
+      
+      // Atualizar interface
+      updateCampaignStats();
+      renderPECConfigs();
+      
+      // Guardar estado
+      saveState();
+      
+      // Notificar
+      notify(`✅ ${numPECs} PECs criados com sucesso!\n🏁 ${flagsUsedForPECs} bandeiras utilizadas`);
+      
+      // Adicionar auditoria
+      addAudit(`${company.name} criou ${numPECs} PECs (${flagsUsedForPECs} bandeiras)`);
+    }
+
+    // Funções para Sistema de Colapso da Campanha
+    let campaignCollapsed = false;
+
+    function toggleCampaignCollapse() {
+      const content = document.getElementById('campaign-content');
+      const toggleIcon = document.getElementById('toggle-icon');
+      const container = document.getElementById('campaign-main-container');
+      const collapsedStats = document.getElementById('campaign-collapsed-stats');
+      const closeBtn = document.getElementById('campaign-close-btn');
+      
+      campaignCollapsed = !campaignCollapsed;
+      
+      if (campaignCollapsed) {
+        content.style.display = 'none';
+        collapsedStats.style.display = 'block';
+        toggleIcon.textContent = '▶';
+        container.style.maxHeight = '110px'; // Header + stats
+        closeBtn.style.display = 'inline-block';
+        
+        // Guardar estado
+        localStorage.setItem('campaign_collapsed', 'true');
+        
+        // Atualizar estatísticas no modo colapsado
+        updateCollapsedStats();
+      } else {
+        content.style.display = 'block';
+        collapsedStats.style.display = 'none';
+        toggleIcon.textContent = '▼';
+        container.style.maxHeight = 'none';
+        closeBtn.style.display = 'inline-block';
+        
+        // Guardar estado
+        localStorage.setItem('campaign_collapsed', 'false');
+        
+        // Atualizar estatísticas ao abrir
+        setTimeout(() => {
+          updateCampaignStats();
+        }, 100);
+      }
+    }
+
+    function updateCollapsedStats() {
+      const company = currentCompany();
+      if (!company) return;
+      
+      const collapsedStats = document.getElementById('campaign-collapsed-stats');
+      if (collapsedStats && campaignCollapsed) {
+        collapsedStats.innerHTML = `
+          <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px;">
+            <div style="display: flex; gap: 20px;">
+              <span>🏁 <strong>${getCompanyFlagsCollected()}</strong>/${company.flags} bandeiras</span>
+              <span>🎁 <strong>${getCompanyPrizesCollected()}</strong>/${Math.floor(company.flags / 20)} prémios</span>
+            </div>
+            <div style="color: #666;">
+              ${company.packExpiresAt ? '⏰ ' + formatTimeRemaining(company.packExpiresAt) : '⏰ Ilimitado'}
+            </div>
+          </div>
+        `;
+      }
+    }
+
+    function closeCampaignPage() {
+      const confirmClose = confirm(
+        '❌ Fechar página de campanha?\n\n' +
+        'Esta ação irá remover completamente a página de campanha.\n' +
+        'Pode reabrir a qualquer momento através do menu "Campanha".\n\n' +
+        'Deseja continuar?'
+      );
+      
+      if (confirmClose) {
+        // Remover a página de campanha
+        const campaignContainer = document.getElementById('campaign-main-container');
+        if (campaignContainer) {
+          campaignContainer.style.display = 'none';
+        }
+        
+        // Limpar estado de colapso
+        localStorage.removeItem('campaign_collapsed');
+        
+        // Notificar
+        notify('📦 Página de campanha fechada. Pode reabrir através do menu "Campanha".');
+        
+        // Adicionar auditoria
+        const company = currentCompany();
+        if (company) {
+          addAudit(`${company.name} fechou página de campanha`);
+        }
+      }
+    }
+
+    function restoreCampaignCollapseState() {
+      const collapsedState = localStorage.getItem('campaign_collapsed');
+      if (collapsedState === 'true') {
+        // Forçar estado colapsado sem animação
+        const content = document.getElementById('campaign-content');
+        const toggleIcon = document.getElementById('toggle-icon');
+        const container = document.getElementById('campaign-main-container');
+        const collapsedStats = document.getElementById('campaign-collapsed-stats');
+        
+        if (content && toggleIcon && container && collapsedStats) {
+          content.style.display = 'none';
+          collapsedStats.style.display = 'block';
+          toggleIcon.textContent = '▶';
+          container.style.maxHeight = '110px';
+          campaignCollapsed = true;
+          
+          // Atualizar estatísticas no modo colapsado
+          updateCollapsedStats();
+        }
+      }
+    }
+
+    function askToCollapseCampaign() {
+      const confirmCollapse = confirm(
+        '🎉 Configuração de prémios concluída!\n\n' +
+        'Deseja fechar a página de campanha para ocupar menos espaço?\n\n' +
+        '✅ Pode reabrir a qualquer momento clicando no cabeçalho\n' +
+        '✅ Ideal para gerir múltiplos pacotes\n' +
+        '✅ Mantém todas as configurações salvas'
+      );
+      
+      if (confirmCollapse) {
+        if (!campaignCollapsed) {
+          toggleCampaignCollapse();
+        }
+        notify('📦 Página de campanha minimizada. Clique no cabeçalho para reabrir.');
+      }
+    }
+
+    // Modificar a função activateCampaign para perguntar sobre colapso
+    const originalActivateCampaign = activateCampaign;
+    activateCampaign = function() {
+      const company = currentCompany();
+      if (!company) return;
+      
+      // Verificar se há bandeiras suficientes
+      const availableFlags = getCompanyFlagsRemaining();
+      const minFlagsRequired = 100; // Mínimo 100 bandeiras para ativar
+      
+      if (availableFlags < minFlagsRequired) {
+        notify(`❌ Necessárias pelo menos ${minFlagsRequired} bandeiras para ativar a campanha. Disponíveis: ${availableFlags}`);
+        return;
+      }
+      
+      // Obter número de PECs definido pelo utilizador
+      const pecsInput = document.getElementById('campaign-pecs-count');
+      const userDefinedPECs = parseInt(pecsInput?.value) || 0;
+      
+      // Calcular bandeiras necessárias para os PECs
+      const flagsForPECs = userDefinedPECs * 20;
+      
+      // Validar se há bandeiras suficientes para os PECs
+      if (flagsForPECs > availableFlags) {
+        notify(`❌ Bandeiras insuficientes para ${userDefinedPECs} PECs!\nNecessárias: ${flagsForPECs}, Disponíveis: ${availableFlags}`);
+        return;
+      }
+      
+      // Calcular bandeiras restantes para prémios regulares
+      const remainingFlags = availableFlags - flagsForPECs;
+      const regularPrizes = Math.floor(remainingFlags / 20);
+      const totalPrizes = userDefinedPECs + regularPrizes;
+      
+      // Confirmar ativação
+      const confirmActivation = confirm(`🚀 Ativar campanha com ${availableFlags} bandeiras?\n\n⚠️ ATENÇÃO: As bandeiras ativadas não poderão ser desativadas posteriormente.\n\nEsta ação irá:\n• Fixar ${availableFlags} bandeiras no mapa\n• Criar ${userDefinedPECs} PECs (definidos por si)\n• Criar ${regularPrizes} prémios regulares\n• Total: ${totalPrizes} prémios disponíveis`);
+      
+      if (!confirmActivation) return;
+      
+      // Ativar campanha
+      company.campaignActive = true;
+      company.flagsUsed = availableFlags;
+      company.campaignActivatedAt = Date.now();
+      
+      // Criar PECs se definidos
+      if (userDefinedPECs > 0) {
+        if (!company.pecs) company.pecs = [];
+        
+        const rewardType = document.getElementById('campaign-reward-type')?.value || 'Prémio Especial';
+        const prizeValidity = parseInt(document.getElementById('campaign-prize-validity')?.value) || 60;
+        
+        for (let i = 0; i < userDefinedPECs; i++) {
+          const pec = {
+            id: 'pec_' + Date.now() + '_' + i,
+            name: `PEC ${i + 1}`,
+            description: rewardType,
+            validity: prizeValidity,
+            createdAt: Date.now(),
+            expiresAt: Date.now() + (prizeValidity * 24 * 60 * 60 * 1000),
+            used: false,
+            companyId: company.id,
+            isProtected: true // Marcar PECs como protegidos
+          };
+          
+          company.pecs.push(pec);
+        }
+      }
+      
+      // Criar bandeiras fixas no mapa
+      createFixedCampaignFlags(company, availableFlags);
+      
+      // Atualizar estatísticas
+      updateCampaignStats();
+      
+      // Guardar estado
+      saveState();
+      
+      // Notificar
+      notify(`✅ Campanha ativada com sucesso!\n🏁 ${availableFlags} bandeiras fixas\n🎁 ${userDefinedPECs} PECs criados\n🎯 ${regularPrizes} prémios regulares\n📊 Total: ${totalPrizes} prémios disponíveis`);
+      
+      // Atualizar interface
+      renderCompanyPanel('campaign');
+      
+      // Adicionar auditoria
+      addAudit(`${company.name} ativou campanha com ${availableFlags} bandeiras`);
+      
+      // Perguntar sobre colapso após ativação bem-sucedida
+      setTimeout(() => {
+        askToCollapseCampaign();
+      }, 2000);
+    };
+
+    
+    // Inicializar atualização automática das estatísticas
+    setInterval(() => {
+      if (document.getElementById('flags-collected')) {
+        updateCampaignStats();
+      }
+    }, 5000); // Atualizar a cada 5 segundos
+
+    // Diagnóstico e backup após inicialização
+    setTimeout(() => {
+      console.log('🚀 Iniciando diagnóstico e backup...');
+      
+      // Criar backup automático
+      createSystemBackup();
+      
+      // Diagnóstico de dados
+      diagnoseAndRecoverData();
+      
+      // Configurar botões
+      initCompanyButtonListeners();
+      
+      console.log('🎯 Sistema inicializado e protegido!');
+    }, 1000);
+
+    // Sistema de Bingos Locais
+    let localBingos = [];
+
+    function addLocalBingo() {
+      const company = currentCompany();
+      if (!company) return;
+      
+      const maxBingos = currentPack.bingos;
+      const currentBingos = localBingos.length;
+      
+      if (currentBingos >= maxBingos) {
+        notify(`❌ Já atingiu o máximo de ${maxBingos} bingos disponíveis`);
+        return;
+      }
+      
+      const bingoName = prompt(`🎲 Nome do Bingo Local #${currentBingos + 1}:`, `Bingo Local ${currentBingos + 1}`);
+      if (!bingoName) return;
+      
+      const prizeDescription = prompt(`🎁 Descrição do Prémio:`, 'Prémio instantâneo especial');
+      if (!prizeDescription) return;
+      
+      const validityDays = prompt(`⏰ Validade em dias (máximo: 30):`, '7');
+      if (!validityDays || isNaN(validityDays)) return;
+      
+      const days = Math.min(30, Math.max(1, parseInt(validityDays)));
+      
+      const bingo = {
+        id: `local_bingo_${company.id}_${Date.now()}`,
+        name: bingoName,
+        prizeDescription: prizeDescription,
+        validityDays: days,
+        createdAt: Date.now(),
+        expiresAt: Date.now() + (days * 24 * 60 * 60 * 1000),
+        isActive: false,
+        found: false,
+        companyId: company.id,
+        qrGenerated: false
+      };
+      
+      localBingos.push(bingo);
+      
+      if (!company.localBingos) company.localBingos = [];
+      company.localBingos.push(bingo);
+      
+      renderLocalBingos();
+      saveState();
+      
+      notify(`✅ Bingo local "${bingoName}" criado com sucesso!\n🎁 Prémio: ${prizeDescription}\n⏰ Validade: ${days} dias`);
+      
+      addAudit(`${company.name} criou bingo local: ${bingoName}`);
+    }
+
+    function renderLocalBingos() {
+      const container = document.getElementById('local-bingos-items');
+      if (!container) return;
+      
+      if (localBingos.length === 0) {
+        container.innerHTML = `
+          <div style="text-align: center; color: #666; padding: 20px;">
+            Nenhum bingo local configurado ainda
+          </div>
+        `;
+        return;
+      }
+      
+      container.innerHTML = localBingos.map(bingo => {
+        const isExpired = Date.now() > bingo.expiresAt;
+        const timeRemaining = formatTimeRemaining(bingo.expiresAt);
+        
+        return `
+          <div style="background: white; border: 1px solid #ddd; border-radius: 8px; padding: 15px; margin-bottom: 10px; ${isExpired ? 'opacity: 0.6;' : ''}">
+            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px;">
+              <div>
+                <h5 style="margin: 0; color: var(--dark);">${bingo.name}</h5>
+                <div style="font-size: 12px; color: #666; margin-top: 5px;">
+                  🎁 ${bingo.prizeDescription}
+                </div>
+              </div>
+              <div style="text-align: right;">
+                <div style="font-size: 11px; color: ${isExpired ? 'var(--red)' : 'var(--green)'};">
+                  ${isExpired ? '⏰ Expirado' : `⏰ ${timeRemaining}`}
+                </div>
+                <div style="font-size: 10px; color: #999;">
+                  ${bingo.found ? '✅ Encontrado' : (bingo.isActive ? '🟢 Ativo' : '⚪ Inativo')}
+                </div>
+              </div>
+            </div>
+            
+            <div style="display: flex; gap: 10px; margin-top: 10px;">
+              ${!bingo.isActive && !isExpired && !bingo.found ? `
+                <button class="btn" onclick="activateLocalBingo('${bingo.id}')" style="background: var(--green); color: white; padding: 4px 8px; font-size: 11px; flex: 1;">
+                  🚀 Ativar
+                </button>
+              ` : ''}
+              
+              ${bingo.isActive && !bingo.found && !isExpired ? `
+                <button class="btn" onclick="generateBingoQR('${bingo.id}')" style="background: var(--blue); color: white; padding: 4px 8px; font-size: 11px; flex: 1;">
+                  📱 Gerar QR
+                </button>
+              ` : ''}
+              
+              ${bingo.qrGenerated && !bingo.found && !isExpired ? `
+                <div style="font-size: 11px; color: var(--green); text-align: center; flex: 1;">
+                  📱 QR Gerado
+                </div>
+              ` : ''}
+              
+              ${bingo.found ? `
+                <div style="font-size: 11px; color: var(--green); text-align: center; flex: 1;">
+                  🏆 Prémio Entregue
+                </div>
+              ` : ''}
+              
+              ${isExpired && !bingo.found ? `
+                <div style="font-size: 11px; color: var(--red); text-align: center; flex: 1;">
+                  ⚠️ Não encontrado
+                </div>
+              ` : ''}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function activateLocalBingo(bingoId) {
+      const company = currentCompany();
+      if (!company) return;
+      
+      const bingo = localBingos.find(b => b.id === bingoId);
+      if (!bingo) return;
+      
+      if (bingo.isActive) {
+        notify('⚠️ Este bingo já está ativo e não pode ser desativado');
+        return;
+      }
+      
+      if (Date.now() > bingo.expiresAt) {
+        notify('❌ Este bingo expirou');
+        return;
+      }
+      
+      const confirmActivation = confirm(`🚀 Ativar bingo "${bingo.name}"?\n\n⚠️ ATENÇÃO: Uma vez ativado, o bingo não poderá ser desativado!\n\n• Prémio: ${bingo.prizeDescription}\n• Validade: ${bingo.validityDays} dias\n• Será gerado um QR com uma única bandeira`);
+      
+      if (!confirmActivation) return;
+      
+      bingo.isActive = true;
+      bingo.activatedAt = Date.now();
+      
+      renderLocalBingos();
+      saveState();
+      
+      notify(`✅ Bingo "${bingo.name}" ativado com sucesso!\n🎁 Prémio: ${bingo.prizeDescription}\n⏰ Validade: ${bingo.validityDays} dias\n📱 Clique em "Gerar QR" para criar o código`);
+      
+      addAudit(`${company.name} ativou bingo local: ${bingo.name}`);
+    }
+
+    function generateBingoQR(bingoId) {
+      const company = currentCompany();
+      if (!company) return;
+      
+      const bingo = localBingos.find(b => b.id === bingoId);
+      if (!bingo) return;
+      
+      if (!bingo.isActive) {
+        notify('❌ Este bingo não está ativo');
+        return;
+      }
+      
+      if (bingo.qrGenerated) {
+        notify('ℹ️ QR já foi gerado para este bingo');
+        return;
+      }
+      
+      // Criar QR com uma única bandeira
+      const flag = {
+        id: `bingo_${bingo.id}`,
+        type: 'BL', // Bingo Local
+        label: `${bingo.name} - QR Instantâneo`,
+        x: company.location?.x || 0,
+        y: company.location?.y || 0,
+        owner: company.id,
+        active: true,
+        isBingoQR: true,
+        bingoId: bingo.id,
+        createdAt: Date.now()
+      };
+      
+      state.flags.push(flag);
+      bingo.qrGenerated = true;
+      bingo.flagId = flag.id;
+      
+      renderLocalBingos();
+      saveState();
+      
+      notify(`✅ QR gerado com sucesso!\n🎲 Bingo: ${bingo.name}\n📍 Localização: Próximo da empresa\n🏁 1 bandeira criada\n🎁 Prémio: ${bingo.prizeDescription}`);
+      
+      addAudit(`${company.name} gerou QR para bingo local: ${bingo.name}`);
+    }
+
+    function checkExpiredLocalBingos() {
+      const company = currentCompany();
+      if (!company) return;
+      
+      const expiredBingos = localBingos.filter(bingo => 
+        !bingo.found && Date.now() > bingo.expiresAt
+      );
+      
+      if (expiredBingos.length > 0) {
+        expiredBingos.forEach(bingo => {
+          bingo.expired = true;
+          
+          // Adicionar ao histórico
+          if (!company.expiredBingosHistory) company.expiredBingosHistory = [];
+          company.expiredBingosHistory.push({
+            ...bingo,
+            expiredAt: Date.now()
+          });
+          
+          // Remover flag se existir
+          if (bingo.flagId) {
+            const flagIndex = state.flags.findIndex(f => f.id === bingo.flagId);
+            if (flagIndex > -1) {
+              state.flags.splice(flagIndex, 1);
+            }
+          }
+        });
+        
+        renderLocalBingos();
+        saveState();
+        
+        notify(`⚠️ ${expiredBingos.length} bingo(s) local(is) expiraram sem ser encontrado(s)\n📊 Verifique o histórico para mais detalhes`);
+        
+        addAudit(`${company.name} teve ${expiredBingos.length} bingo(s) expirado(s)`);
+      }
+    }
+
+    // Verificar bingos expirados a cada hora
+    setInterval(checkExpiredLocalBingos, 60 * 60 * 1000);
+
+    // Carregar bingos locais ao inicializar
+    setTimeout(() => {
+      const company = currentCompany();
+      if (company && company.localBingos) {
+        localBingos = company.localBingos;
+        renderLocalBingos();
+      }
+    }, 1500);
   </script>
 </body>
 </html>
