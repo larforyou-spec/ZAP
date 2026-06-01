@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZAP-FLAGS 3.1 - Empresa</title>
+    <style>
+        body { margin: 0; font-family: Arial, sans-serif; background: #f8fafc; color: #0f172a; }
+        main { max-width: 1200px; margin: 0 auto; padding: 24px; }
+        .grid { display: grid; grid-template-columns: minmax(280px, 380px) 1fr; gap: 16px; }
+        .card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 18px; box-shadow: 0 10px 25px rgba(15, 23, 42, 0.08); }
+        label { display: block; margin-top: 10px; font-weight: 700; }
+        input, select { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #cbd5e1; border-radius: 10px; box-sizing: border-box; }
+        button { margin-top: 14px; border: 0; border-radius: 10px; padding: 10px 14px; font-weight: 700; background: #2563eb; color: white; cursor: pointer; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 10px; border-bottom: 1px solid #e2e8f0; text-align: left; }
+        pre { white-space: pre-wrap; background: #f1f5f9; padding: 10px; border-radius: 10px; }
+    </style>
+</head>
+<body>
+    <main>
+        <h1>ZAP-FLAGS 3.1 - Backoffice Comercial</h1>
+        <p>Interface para criar e listar campanhas usando JWT e endpoints de empresa.</p>
+
+        <section class="grid">
+            <article class="card">
+                <h2>Nova campanha</h2>
+                <form id="campaign-form">
+                    <label for="title">Título</label>
+                    <input id="title" required value="Nova Campanha">
+
+                    <label for="type">Tipo</label>
+                    <select id="type">
+                        <option value="standard">standard</option>
+                        <option value="discount">discount</option>
+                        <option value="event">event / QR</option>
+                    </select>
+
+                    <label for="lat">Latitude</label>
+                    <input id="lat" type="number" step="any" value="38.7225" required>
+
+                    <label for="lng">Longitude</label>
+                    <input id="lng" type="number" step="any" value="-9.1395" required>
+
+                    <label for="reward">Moedas</label>
+                    <input id="reward" type="number" value="25" min="0">
+
+                    <label><input id="premium" type="checkbox"> Premium</label>
+                    <button type="submit">Criar campanha</button>
+                </form>
+                <pre id="status">Aguardando ação...</pre>
+            </article>
+
+            <article class="card">
+                <h2>Campanhas</h2>
+                <button id="reload">Atualizar lista</button>
+                <table>
+                    <thead><tr><th>ID</th><th>Título</th><th>Tipo</th><th>Prémio</th><th>Estado</th></tr></thead>
+                    <tbody id="rows"><tr><td colspan="5">Aguardando carregamento...</td></tr></tbody>
+                </table>
+            </article>
+        </section>
+    </main>
+
+    <script>
+        const rows = document.getElementById('rows');
+        const statusBox = document.getElementById('status');
+
+        function getToken() {
+            return localStorage.getItem('token') || '';
+        }
+
+        function headers() {
+            return {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${getToken()}`
+            };
+        }
+
+        async function loadFlags() {
+            const response = await fetch('/api/company/flags', { headers: headers() });
+            const data = await response.json();
+
+            if (!data.success) {
+                rows.innerHTML = `<tr><td colspan="5">${data.error || 'Erro'}</td></tr>`;
+                return;
+            }
+
+            rows.innerHTML = data.flags.map(flag => `
+                <tr>
+                    <td>${flag.id}</td>
+                    <td>${flag.title || flag.type}</td>
+                    <td>${flag.type}</td>
+                    <td>${flag.reward_coins || 0}</td>
+                    <td>${flag.is_captured ? 'Capturada' : 'Ativa'}</td>
+                </tr>
+            `).join('') || '<tr><td colspan="5">Sem campanhas.</td></tr>';
+        }
+
+        async function createFlag(event) {
+            event.preventDefault();
+            const type = document.getElementById('type').value;
+            const payload = {
+                title: document.getElementById('title').value,
+                type,
+                latitude: Number(document.getElementById('lat').value),
+                longitude: Number(document.getElementById('lng').value),
+                reward_coins: Number(document.getElementById('reward').value),
+                is_premium: document.getElementById('premium').checked,
+                is_qr_code: type === 'event'
+            };
+
+            const response = await fetch('/api/company/flags', {
+                method: 'POST',
+                headers: headers(),
+                body: JSON.stringify(payload)
+            });
+            const data = await response.json();
+            statusBox.textContent = JSON.stringify(data, null, 2);
+            await loadFlags();
+        }
+
+        document.getElementById('campaign-form').addEventListener('submit', createFlag);
+        document.getElementById('reload').addEventListener('click', loadFlags);
+        loadFlags();
+    </script>
+</body>
+</html>
