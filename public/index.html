@@ -75,9 +75,34 @@
         const moveOutput = document.getElementById('move-output');
         let map = null;
         let playerMarker = null;
+        let captureCircle = null;
+        let visionCircle = null;
         let isMovingDrone = false;
         let testVirtualModeEnabled = true;
         window.currentPlayer = null;
+
+        const playerAvatarIcon = L.icon({
+            iconUrl: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+                <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+                    <defs>
+                        <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+                            <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+                            <feMerge>
+                                <feMergeNode in="coloredBlur"/>
+                                <feMergeNode in="SourceGraphic"/>
+                            </feMerge>
+                        </filter>
+                    </defs>
+                    <circle cx="32" cy="32" r="25" fill="#0f172a" stroke="#22c55e" stroke-width="4" filter="url(#glow)"/>
+                    <path d="M18 33h28M32 19v28M23 24l18 18M41 24L23 42" stroke="#38bdf8" stroke-width="4" stroke-linecap="round"/>
+                    <circle cx="32" cy="32" r="7" fill="#22c55e"/>
+                    <circle cx="32" cy="32" r="3" fill="#ecfeff"/>
+                </svg>
+            `),
+            iconSize: [46, 46],
+            iconAnchor: [23, 23],
+            popupAnchor: [0, -24]
+        });
 
         function getToken() {
             return localStorage.getItem('token') || '';
@@ -216,20 +241,50 @@
                 setTimeout(() => map.invalidateSize(), 0);
             }
 
-            if (playerMarker) {
-                playerMarker.setLatLng([latitude, longitude]);
-            } else {
-                const playerMarkerOptions = {
-                    // Avatar futuro: substituir por L.icon({ iconUrl: '/avatar.png', iconSize: [40, 40], iconAnchor: [20, 40] })
-                };
-                playerMarker = L.marker([latitude, longitude], playerMarkerOptions).addTo(map);
-            }
+            updatePlayerMapLayers(latitude, longitude);
 
             playerMarker.bindPopup(`Jogador: ${getPlayerName(player) || 'sem nome'}`).openPopup();
             setTimeout(() => {
                 map.invalidateSize();
                 window.focus();
             }, 0);
+        }
+
+        function updatePlayerMapLayers(latitude, longitude) {
+            const position = [latitude, longitude];
+
+            if (playerMarker) {
+                playerMarker.setLatLng(position);
+            } else {
+                playerMarker = L.marker(position, { icon: playerAvatarIcon, zIndexOffset: 1000 }).addTo(map);
+            }
+
+            if (captureCircle) {
+                captureCircle.setLatLng(position);
+            } else {
+                captureCircle = L.circle(position, {
+                    radius: 2.5,
+                    color: '#22c55e',
+                    weight: 3,
+                    opacity: 0.95,
+                    fillColor: '#22c55e',
+                    fillOpacity: 0.15
+                }).addTo(map);
+            }
+
+            if (visionCircle) {
+                visionCircle.setLatLng(position);
+            } else {
+                visionCircle = L.circle(position, {
+                    radius: 30,
+                    color: '#94a3b8',
+                    weight: 2,
+                    opacity: 0.75,
+                    fillColor: '#64748b',
+                    fillOpacity: 0.06,
+                    dashArray: '8 8'
+                }).addTo(map);
+            }
         }
 
         function setCurrentPlayer(player) {
@@ -310,8 +365,8 @@
                 const movedPlayer = setCurrentPlayer(result.player);
                 const latitude = Number(result.latitude ?? result.new_position?.latitude ?? movedPlayer.virtual_latitude);
                 const longitude = Number(result.longitude ?? result.new_position?.longitude ?? movedPlayer.virtual_longitude);
-                if (playerMarker && Number.isFinite(latitude) && Number.isFinite(longitude)) {
-                    playerMarker.setLatLng([latitude, longitude]);
+                if (Number.isFinite(latitude) && Number.isFinite(longitude)) {
+                    updatePlayerMapLayers(latitude, longitude);
                     map.setView([latitude, longitude], map.getZoom());
                 }
                 updatePlayerIdentity(window.currentPlayer);
