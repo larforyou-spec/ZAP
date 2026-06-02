@@ -28,13 +28,13 @@
             <h2>Entrar ou criar conta</h2>
             <label for="auth-name">Nome</label>
             <input id="auth-name" placeholder="Nome do jogador">
-            <label for="auth-email">Email</label>
-            <input id="auth-email" type="email" placeholder="jogador@email.com">
-            <label for="auth-password">Password</label>
-            <input id="auth-password" type="password" placeholder="Password">
+            <label for="auth-email">Email ou nome de login</label>
+            <input id="auth-email" type="text" placeholder="Quim, Gina ou jogador@email.com">
+            <label for="auth-password">Contra-senha</label>
+            <input id="auth-password" type="password" placeholder="Contra-senha" required>
             <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:10px;">
-                <button class="primary" id="login-player">Entrar</button>
-                <button class="secondary" id="register-player">Registar jogador</button>
+                <button type="button" class="primary" id="login-player">Entrar</button>
+                <button type="button" class="secondary" id="register-player">Registar jogador</button>
             </div>
             <pre id="auth-output">Se já tens token em localStorage.token, o perfil carrega automaticamente.</pre>
         </section>
@@ -76,6 +76,7 @@
         let map = null;
         let playerMarker = null;
         let isMovingDrone = false;
+        let testVirtualModeEnabled = true;
         window.currentPlayer = null;
 
         function getToken() {
@@ -94,27 +95,63 @@
             authContainer.style.display = 'none';
             gameContainer.style.display = 'block';
             initMap(player);
+            await enableVirtualModeForTesting(player);
             configureKeyboardControls(player);
+            window.focus();
         }
 
-        async function authenticate(mode) {
-            const email = document.getElementById('auth-email').value.trim();
+        function buildAuthPayload(mode) {
+            const identifier = document.getElementById('auth-email').value.trim();
             const password = document.getElementById('auth-password').value;
-            const displayName = document.getElementById('auth-name').value.trim();
-            const endpoint = mode === 'register' ? '/api/auth/register' : '/api/auth/login';
-            const payload = mode === 'register'
+            const typedName = document.getElementById('auth-name').value.trim();
+            const displayName = typedName || identifier;
+            const email = identifier.includes('@')
+                ? identifier
+                : `${identifier || displayName}`.toLowerCase().replace(/[^a-z0-9._-]/g, '') + '@local.test';
+
+            if (!identifier && !displayName) {
+                throw new Error('Escreve o nome do jogador ou o email.');
+            }
+
+            if (!password) {
+                throw new Error('Escreve a contra-senha.');
+            }
+
+            return mode === 'register'
                 ? { email, password, display_name: displayName, account_type: 'player' }
-                : { email, password };
+                : { email: identifier, password };
+        }
 
-            const response = await fetch(endpoint, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-            const result = await response.json();
+        async function authenticate(mode, event) {
+            if (event) event.preventDefault();
 
-            if (!response.ok || !result.success) {
-                authOutput.textContent = JSON.stringify(result, null, 2);
+            const endpoint = mode === 'register' ? '/api/auth/register' : '/api/auth/login';
+            let payload;
+
+            try {
+                payload = buildAuthPayload(mode);
+            } catch (error) {
+                authOutput.textContent = error.message;
+                return;
+            }
+
+            let response;
+            let result;
+
+            try {
+                response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                result = await response.json();
+            } catch (error) {
+                authOutput.textContent = 'Não foi possível contactar o servidor. Confirma se o start.bat está ativo.';
+                return;
+            }
+
+            if (!response.ok || !result.success || !result.token) {
+                authOutput.textContent = result.error || 'Não foi possível autenticar. Confirma os dados e tenta novamente.';
                 return;
             }
 
@@ -125,7 +162,9 @@
                 return;
             }
 
-            authOutput.textContent = 'Autenticação concluída. A carregar jogador...';
+            authOutput.textContent = mode === 'register'
+                ? 'Conta criada com sucesso. A carregar o mapa...'
+                : 'Entrada concluída. A carregar o mapa...';
             await initializePlayerExperience();
         }
 
@@ -134,12 +173,12 @@
             const player = await response.json();
 
             if (!response.ok || player.error) {
-                playerOutput.textContent = JSON.stringify(player, null, 2);
+                playerOutput.textContent = player.error || 'Erro ao carregar jogador.';
                 throw new Error(player.error || 'Erro ao carregar jogador.');
             }
 
             const currentPlayer = setCurrentPlayer(player);
-            playerOutput.textContent = JSON.stringify(currentPlayer, null, 2);
+            playerOutput.textContent = `Perfil carregado: ${getPlayerName(currentPlayer)} | Energia: ${Number(currentPlayer.current_energy || 0).toFixed(1)}%`;
             updatePlayerIdentity(currentPlayer);
             return currentPlayer;
         }
@@ -152,7 +191,7 @@
             const playerName = getPlayerName(player);
             usernameDisplay.innerText = playerName || 'sem nome';
             energyDisplay.innerText = Number(player.current_energy || 0).toFixed(1);
-            droneStatus.innerText = player.is_virtual_mode
+            droneStatus.innerText = player.is_virtual_mode || testVirtualModeEnabled
                 ? 'Modo drone ativo. Usa W, A, S, D para mover.'
                 : 'Modo drone inativo. Ativa o modo virtual para usar W, A, S, D.';
         }
@@ -180,10 +219,17 @@
             if (playerMarker) {
                 playerMarker.setLatLng([latitude, longitude]);
             } else {
-                playerMarker = L.marker([latitude, longitude]).addTo(map);
+                const playerMarkerOptions = {
+                    // Avatar futuro: substituir por L.icon({ iconUrl: '/avatar.png', iconSize: [40, 40], iconAnchor: [20, 40] })
+                };
+                playerMarker = L.marker([latitude, longitude], playerMarkerOptions).addTo(map);
             }
 
             playerMarker.bindPopup(`Jogador: ${getPlayerName(player) || 'sem nome'}`).openPopup();
+            setTimeout(() => {
+                map.invalidateSize();
+                window.focus();
+            }, 0);
         }
 
         function setCurrentPlayer(player) {
@@ -195,10 +241,43 @@
         }
 
         function configureKeyboardControls(player) {
-            const active = Boolean(player && getPlayerName(player) && player.is_virtual_mode);
+            const active = Boolean(player && getPlayerName(player) && (player.is_virtual_mode || testVirtualModeEnabled));
             droneStatus.innerText = active
                 ? 'Controlos ativos: W, A, S, D.'
                 : 'Controlos inativos: jogador sem nome ou modo drone desligado.';
+        }
+
+        async function enableVirtualModeForTesting(player) {
+            if (!testVirtualModeEnabled || !player || player.is_virtual_mode) {
+                return;
+            }
+
+            const { latitude, longitude } = getPlayerCoordinates(player);
+            if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+                return;
+            }
+
+            window.currentPlayer = {
+                ...window.currentPlayer,
+                is_virtual_mode: true,
+                virtual_latitude: latitude,
+                virtual_longitude: longitude
+            };
+
+            try {
+                const response = await fetch('/api/player/me/location', {
+                    method: 'PUT',
+                    headers: headers(),
+                    body: JSON.stringify({ latitude, longitude, is_virtual: true })
+                });
+                const result = await response.json();
+                if (response.ok && !result.error) {
+                    setCurrentPlayer({ ...result.player, is_virtual_mode: true });
+                    playerOutput.textContent = `Perfil carregado: ${getPlayerName(window.currentPlayer)} | Energia: ${Number(window.currentPlayer.current_energy || 0).toFixed(1)}%`;
+                }
+            } catch (error) {
+                moveOutput.textContent = 'Modo virtual de teste ativo no frontend. Se o servidor rejeitar o movimento, verifica is_virtual_mode no perfil.';
+            }
         }
 
         async function moveDrone(direction) {
@@ -206,7 +285,7 @@
                 return;
             }
 
-            if (!window.currentPlayer.is_virtual_mode) {
+            if (!window.currentPlayer.is_virtual_mode && !testVirtualModeEnabled) {
                 droneStatus.innerText = 'Modo drone inativo no perfil. Movimento WASD cancelado.';
                 return;
             }
@@ -243,8 +322,8 @@
             }
         }
 
-        document.getElementById('login-player').addEventListener('click', () => authenticate('login'));
-        document.getElementById('register-player').addEventListener('click', () => authenticate('register'));
+        document.getElementById('login-player').addEventListener('click', (event) => authenticate('login', event));
+        document.getElementById('register-player').addEventListener('click', (event) => authenticate('register', event));
         document.getElementById('load-player').addEventListener('click', initializePlayerExperience);
 
         window.addEventListener('keydown', (event) => {
