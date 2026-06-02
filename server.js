@@ -1143,6 +1143,19 @@ app.post('/api/trades/:tradeId/respond', verifyJWT, async (req, res) => {
     }
 });
 
+app.get('/api/admin/recharge-ze', async (req, res) => {
+    if (process.env.NODE_ENV === 'production') {
+        return res.status(403).send('Rota de emergência indisponível em produção.');
+    }
+
+    try {
+        await db.query("UPDATE players SET current_energy = 300 WHERE id = 9 OR LOWER(username) = 'ze'");
+        res.send('<h1>🔋 O Zé foi recarregado com 300 de energia com sucesso! Podes voltar ao jogo e fazer Ctrl+F5.</h1>');
+    } catch (err) {
+        res.status(500).send('Erro ao recarregar: ' + err.message);
+    }
+});
+
 app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
