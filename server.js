@@ -434,7 +434,8 @@ app.post('/api/player/me/virtual-move', verifyJWT, async (req, res) => {
             }
 
             const settingsResult = await client.query('SELECT virtual_step_size FROM player_settings WHERE player_id = $1', [playerId]);
-            const stepSize = Number(settingsResult.rows[0]?.virtual_step_size || 10);
+            const configuredStepSize = Number(settingsResult.rows[0]?.virtual_step_size || 1);
+            const stepSize = Math.min(Math.max(configuredStepSize, 0.1), 1);
             const currentLat = player.virtual_latitude || player.last_latitude;
             const currentLng = player.virtual_longitude || player.last_longitude;
             let newLat = currentLat;
