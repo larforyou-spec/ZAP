@@ -11,12 +11,23 @@
         .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
         .card { background: #1e293b; border: 1px solid #334155; border-radius: 16px; padding: 18px; }
         #game-container { display: none; }
+        #company-container { display: none; }
         #map { min-height: 460px; border-radius: 16px; overflow: hidden; }
         button { border: 0; border-radius: 10px; padding: 10px 14px; font-weight: 700; cursor: pointer; }
-        input { width: 100%; box-sizing: border-box; margin: 5px 0 10px; padding: 10px; border-radius: 10px; border: 1px solid #334155; }
+        input, select, textarea { width: 100%; box-sizing: border-box; margin: 5px 0 10px; padding: 10px; border-radius: 10px; border: 1px solid #334155; background: #1e293b; color: #e2e8f0; }
+        textarea { resize: vertical; min-height: 60px; }
         .primary { background: #22c55e; color: #052e16; }
         .secondary { background: #38bdf8; color: #082f49; }
+        .company-btn { background: #2563eb; color: white; }
         pre { white-space: pre-wrap; background: #020617; padding: 12px; border-radius: 10px; overflow: auto; }
+        .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 16px; }
+        .stat-box { background: #0f172a; border: 1px solid #334155; border-radius: 12px; padding: 14px; text-align: center; }
+        .stat-box .stat-value { font-size: 1.8em; font-weight: 800; color: #22c55e; }
+        .stat-box .stat-label { font-size: 0.85em; color: #94a3b8; margin-top: 4px; }
+        .captures-table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+        .captures-table th, .captures-table td { padding: 8px 10px; border-bottom: 1px solid #1e293b; text-align: left; font-size: 0.9em; }
+        .captures-table th { color: #94a3b8; font-weight: 600; }
+        label.company-label { display: block; margin-top: 10px; font-weight: 600; color: #94a3b8; font-size: 0.9em; }
     </style>
 </head>
 <body>
@@ -59,6 +70,101 @@
             <section class="card" style="margin-top:16px;">
                 <h2>Mapa Leaflet</h2>
                 <div id="map"></div>
+            </section>
+        </section>
+
+        <section id="company-container">
+            <section class="card" style="margin-bottom:16px;">
+                <h2>Painel de Controlo da Empresa</h2>
+                <p style="color:#94a3b8;">Resumo das campanhas e capturas da tua empresa.</p>
+                <button class="company-btn" id="refresh-dashboard">Atualizar painel</button>
+
+                <div class="stat-grid" id="dashboard-stats" style="margin-top:16px;">
+                    <div class="stat-box">
+                        <div class="stat-value" id="stat-active">--</div>
+                        <div class="stat-label">Bandeiras ativas</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value" id="stat-captures">--</div>
+                        <div class="stat-label">Capturas totais</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value" id="stat-coins">--</div>
+                        <div class="stat-label">Moedas distribu&iacute;das</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value" id="stat-total">--</div>
+                        <div class="stat-label">Total de bandeiras</div>
+                    </div>
+                </div>
+
+                <h3 style="margin-top:18px;">Capturas recentes</h3>
+                <table class="captures-table">
+                    <thead>
+                        <tr><th>Bandeira</th><th>Tipo</th><th>Moedas</th><th>Jogador</th><th>Data</th></tr>
+                    </thead>
+                    <tbody id="captures-rows">
+                        <tr><td colspan="5" style="color:#64748b;">A carregar...</td></tr>
+                    </tbody>
+                </table>
+                <pre id="dashboard-output" style="margin-top:12px;"></pre>
+            </section>
+
+            <section class="grid">
+                <article class="card">
+                    <h2>Semear Campanha</h2>
+                    <p style="color:#94a3b8;">Cria uma nova bandeira com pr&eacute;mio f&iacute;sico para os jogadores.</p>
+                    <form id="seed-campaign-form">
+                        <label class="company-label" for="camp-title">T&iacute;tulo da campanha</label>
+                        <input id="camp-title" placeholder="Ex: Caf&eacute; gr&aacute;tis na Loja X" required>
+
+                        <label class="company-label" for="camp-type">Tipo</label>
+                        <select id="camp-type">
+                            <option value="standard">Standard</option>
+                            <option value="discount">Desconto</option>
+                            <option value="event">Evento / QR</option>
+                        </select>
+
+                        <label class="company-label" for="camp-lat">Latitude</label>
+                        <input id="camp-lat" type="number" step="any" value="38.7225" required>
+
+                        <label class="company-label" for="camp-lng">Longitude</label>
+                        <input id="camp-lng" type="number" step="any" value="-9.1395" required>
+
+                        <label class="company-label" for="camp-coins">Moedas (recompensa virtual)</label>
+                        <input id="camp-coins" type="number" value="25" min="0">
+
+                        <label class="company-label"><input id="camp-premium" type="checkbox" style="width:auto;margin-right:6px;"> Premium (expira em 15 dias)</label>
+
+                        <hr style="border-color:#334155; margin:14px 0;">
+                        <h3 style="margin:0 0 8px;">Pr&eacute;mio F&iacute;sico</h3>
+
+                        <label class="company-label" for="camp-prize-name">Nome do pr&eacute;mio</label>
+                        <input id="camp-prize-name" placeholder="Ex: T-shirt exclusiva, Voucher 10EUR">
+
+                        <label class="company-label" for="camp-prize-desc">Descri&ccedil;&atilde;o do pr&eacute;mio</label>
+                        <textarea id="camp-prize-desc" placeholder="Detalhes: onde levantar, validade, condi&ccedil;&otilde;es..."></textarea>
+
+                        <label class="company-label" for="camp-prize-value">Valor estimado do pr&eacute;mio</label>
+                        <input id="camp-prize-value" placeholder="Ex: 10 EUR, 1 caf&eacute; expresso">
+
+                        <button type="submit" class="company-btn" style="margin-top:14px; width:100%;">Semear Campanha</button>
+                    </form>
+                    <pre id="seed-output" style="margin-top:10px;">Preenche os campos e semeia a tua campanha.</pre>
+                </article>
+
+                <article class="card">
+                    <h2>Campanhas da Empresa</h2>
+                    <button class="company-btn" id="reload-company-flags">Atualizar lista</button>
+                    <table class="captures-table" style="margin-top:12px;">
+                        <thead>
+                            <tr><th>ID</th><th>T&iacute;tulo</th><th>Tipo</th><th>Moedas</th><th>Pr&eacute;mio</th><th>Estado</th></tr>
+                        </thead>
+                        <tbody id="company-flags-rows">
+                            <tr><td colspan="6" style="color:#64748b;">A carregar...</td></tr>
+                        </tbody>
+                    </table>
+                </article>
             </section>
         </section>
     </main>
@@ -182,8 +288,11 @@
 
             localStorage.setItem('token', result.token);
 
-            if (result.redirect_url && result.redirect_url !== '/index.html') {
-                window.location.href = result.redirect_url;
+            const isCompany = result.redirect_url === '/empresa.html';
+
+            if (isCompany) {
+                authOutput.textContent = 'Entrada de empresa concluída. A carregar painel...';
+                await initializeCompanyDashboard();
                 return;
             }
 
@@ -377,12 +486,141 @@
             }
         }
 
+        async function initializeCompanyDashboard() {
+            authContainer.style.display = 'none';
+            gameContainer.style.display = 'none';
+            document.getElementById('company-container').style.display = 'block';
+            await loadCompanyDashboard();
+            await loadCompanyFlags();
+        }
+
+        async function loadCompanyDashboard() {
+            const dashboardOutput = document.getElementById('dashboard-output');
+            try {
+                const response = await fetch('/api/company/dashboard', { headers: headers() });
+                const data = await response.json();
+
+                if (!data.success) {
+                    dashboardOutput.textContent = data.error || 'Erro ao carregar painel.';
+                    return;
+                }
+
+                const d = data.dashboard;
+                document.getElementById('stat-active').textContent = d.active_flags;
+                document.getElementById('stat-captures').textContent = d.total_captures;
+                document.getElementById('stat-coins').textContent = d.total_coins_distributed;
+                document.getElementById('stat-total').textContent = d.total_flags;
+
+                const capturesRows = document.getElementById('captures-rows');
+                if (d.recent_captures && d.recent_captures.length > 0) {
+                    capturesRows.innerHTML = d.recent_captures.map(c => `
+                        <tr>
+                            <td>#${c.flag_id}</td>
+                            <td>${c.type || '--'}</td>
+                            <td>${c.coin_value || 0}</td>
+                            <td>${c.captured_by_username || 'Desconhecido'}</td>
+                            <td>${c.captured_at ? new Date(c.captured_at).toLocaleString('pt-PT') : '--'}</td>
+                        </tr>
+                    `).join('');
+                } else {
+                    capturesRows.innerHTML = '<tr><td colspan="5" style="color:#64748b;">Nenhuma captura registada.</td></tr>';
+                }
+
+                dashboardOutput.textContent = '';
+            } catch (error) {
+                dashboardOutput.textContent = 'Erro ao contactar o servidor.';
+            }
+        }
+
+        async function loadCompanyFlags() {
+            const flagsRows = document.getElementById('company-flags-rows');
+            try {
+                const response = await fetch('/api/company/flags', { headers: headers() });
+                const data = await response.json();
+
+                if (!data.success) {
+                    flagsRows.innerHTML = `<tr><td colspan="6" style="color:#64748b;">${data.error || 'Erro'}</td></tr>`;
+                    return;
+                }
+
+                if (data.flags.length === 0) {
+                    flagsRows.innerHTML = '<tr><td colspan="6" style="color:#64748b;">Sem campanhas. Semeia a primeira!</td></tr>';
+                    return;
+                }
+
+                flagsRows.innerHTML = data.flags.map(flag => `
+                    <tr>
+                        <td>${flag.id}</td>
+                        <td>${flag.title || flag.type}</td>
+                        <td>${flag.type}</td>
+                        <td>${flag.reward_coins || 0}</td>
+                        <td>${flag.physical_prize_name || '--'}</td>
+                        <td>${flag.is_captured ? 'Capturada' : 'Ativa'}</td>
+                    </tr>
+                `).join('');
+            } catch (error) {
+                flagsRows.innerHTML = '<tr><td colspan="6" style="color:#64748b;">Erro ao carregar campanhas.</td></tr>';
+            }
+        }
+
+        async function seedCampaign(event) {
+            event.preventDefault();
+            const seedOutput = document.getElementById('seed-output');
+            const campType = document.getElementById('camp-type').value;
+
+            const payload = {
+                title: document.getElementById('camp-title').value.trim(),
+                type: campType,
+                latitude: Number(document.getElementById('camp-lat').value),
+                longitude: Number(document.getElementById('camp-lng').value),
+                reward_coins: Number(document.getElementById('camp-coins').value),
+                is_premium: document.getElementById('camp-premium').checked,
+                is_qr_code: campType === 'event',
+                physical_prize_name: document.getElementById('camp-prize-name').value.trim(),
+                physical_prize_description: document.getElementById('camp-prize-desc').value.trim(),
+                physical_prize_value: document.getElementById('camp-prize-value').value.trim()
+            };
+
+            if (!payload.title) {
+                seedOutput.textContent = 'O titulo da campanha e obrigatorio.';
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/company/flags', {
+                    method: 'POST',
+                    headers: headers(),
+                    body: JSON.stringify(payload)
+                });
+                const data = await response.json();
+
+                if (!data.success) {
+                    seedOutput.textContent = data.error || 'Erro ao criar campanha.';
+                    return;
+                }
+
+                seedOutput.textContent = 'Campanha semeada com sucesso! ID: ' + data.flag.id;
+                document.getElementById('seed-campaign-form').reset();
+                await loadCompanyDashboard();
+                await loadCompanyFlags();
+            } catch (error) {
+                seedOutput.textContent = 'Erro ao contactar o servidor.';
+            }
+        }
+
         document.getElementById('login-player').addEventListener('click', (event) => authenticate('login', event));
         document.getElementById('register-player').addEventListener('click', (event) => authenticate('register', event));
         document.getElementById('load-player').addEventListener('click', initializePlayerExperience);
+        document.getElementById('seed-campaign-form').addEventListener('submit', seedCampaign);
+        document.getElementById('refresh-dashboard').addEventListener('click', async () => {
+            await loadCompanyDashboard();
+            await loadCompanyFlags();
+        });
+        document.getElementById('reload-company-flags').addEventListener('click', loadCompanyFlags);
 
         window.addEventListener('keydown', (event) => {
             if (!event || !event.key) return;
+            if (document.getElementById('company-container').style.display === 'block') return;
             const key = event.key.toLowerCase();
             const directionByKey = {
                 w: 'n',
@@ -400,9 +638,24 @@
         });
 
         if (getToken()) {
-            initializePlayerExperience().catch((error) => {
-                playerOutput.textContent = error.message || 'Erro ao inicializar jogador.';
-            });
+            fetch('/api/auth/me', { headers: headers() })
+                .then(r => r.json())
+                .then(user => {
+                    if (user.account_type === 'company') {
+                        initializeCompanyDashboard().catch(error => {
+                            authOutput.textContent = error.message || 'Erro ao inicializar painel da empresa.';
+                        });
+                    } else {
+                        initializePlayerExperience().catch(error => {
+                            playerOutput.textContent = error.message || 'Erro ao inicializar jogador.';
+                        });
+                    }
+                })
+                .catch(() => {
+                    initializePlayerExperience().catch(error => {
+                        playerOutput.textContent = error.message || 'Erro ao inicializar jogador.';
+                    });
+                });
         }
     </script>
 </body>
