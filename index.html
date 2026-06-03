@@ -1328,7 +1328,12 @@
     }
 
     function saveState() {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      } catch (error) {
+        console.error('Failed to save state:', error);
+        notify('Erro ao guardar dados. Verifica o espaço de armazenamento.');
+      }
     }
 
     function addAudit(text) {
@@ -1391,15 +1396,18 @@
     }
 
     function showScreen(id) {
-      console.log('showScreen called with:', id);
       document.querySelectorAll('.screen').forEach(screen => screen.classList.remove('active'));
-      document.getElementById(id).classList.add('active');
+      const target = document.getElementById(id);
+      if (!target) {
+        console.error('Screen not found:', id);
+        notify('Ecrã não encontrado: ' + id);
+        return;
+      }
+      target.classList.add('active');
       if (id === 'player') {
-        console.log('Calling renderPlayerGate');
         renderPlayerGate();
       }
       if (id === 'company') {
-        console.log('Calling renderCompanyGate');
         renderCompanyGate();
       }
       if (id === 'backoffice') renderBackofficePanel('overview');
@@ -1447,14 +1455,9 @@
     }
 
     function renderPlayerGate() {
-      console.log('renderPlayerGate called');
-      console.log('Session state:', state.session);
-      console.log('Current player:', currentPlayer());
       if (state.session.type === 'player' && currentPlayer()) {
-        console.log('Player has session, showing panel');
         renderPlayerPanel('game');
       } else {
-        console.log('No player session, showing auth');
         renderPlayerAuth();
       }
     }
@@ -1465,7 +1468,6 @@
     }
 
     function renderPlayerAuth() {
-      console.log('renderPlayerAuth called');
       const content = `
         <div class="grid two">
           <div class="auth-box">
@@ -1484,13 +1486,10 @@
           </div>
         </div>
       `;
-      console.log('Setting player-content innerHTML');
       document.getElementById('player-content').innerHTML = content;
-      console.log('Player auth rendered');
     }
 
     function selectGpsMode(mode) {
-      console.log('selectGpsMode called with:', mode);
       
       // Remover classe active de todos os botões
       const onlineBtn = document.getElementById('gps-online-btn');
@@ -1512,7 +1511,6 @@
       
       // Guardar seleção no estado
       state.selectedGpsMode = mode;
-      console.log('GPS mode selected:', mode);
     }
 
     // Funções para Lista de Jogadores
@@ -1582,10 +1580,14 @@
       const player = currentPlayer();
       const targetPlayer = state.players.find(p => p.id === playerId);
       
-      if (!input || !messageArea || !player || !targetPlayer) return;
+      if (!input || !messageArea) {
+        console.error('Dialog message elements not found');
+        return;
+      }
+      if (!player || !targetPlayer) return notify('Jogador não encontrado');
       
       const message = input.value.trim();
-      if (!message) return;
+      if (!message) return notify('Escreve uma mensagem');
       
       // Adicionar mensagem à área
       const messageHtml = `<p><strong>${player.name}:</strong> ${escapeHtml(message)}</p>`;
@@ -1702,7 +1704,11 @@
       const coinsInput = document.getElementById('quick-trade-coins');
       const messageInput = document.getElementById('quick-trade-message');
       
-      if (!qrSelect || !coinsInput) return;
+      if (!qrSelect || !coinsInput) {
+        console.error('Quick trade form elements not found');
+        notify('Erro no formulário de troca');
+        return;
+      }
       
       const qrCode = qrSelect.value;
       const coins = parseInt(coinsInput.value) || 0;
@@ -1711,7 +1717,7 @@
       const player = currentPlayer();
       const targetPlayer = state.players.find(p => p.id === playerId);
       
-      if (!player || !targetPlayer) return;
+      if (!player || !targetPlayer) return notify('Jogador não encontrado');
       
       if (!qrCode && coins <= 0) return notify('Oferece um QR ou moedas');
       if (coins > player.coins) return notify('Moedas insuficientes');
@@ -1946,7 +1952,7 @@
 
     function selectAllBingos() {
       const player = currentPlayer();
-      if (!player) return;
+      if (!player) return notify('Sessão de jogador não encontrada');
       
       const playerBingos = state.bingos.filter(bingo => bingo.ownerId === player.id);
       state.selectedBingos = playerBingos.map(bingo => bingo.id);
@@ -3291,7 +3297,12 @@
 
     function initPlayerLeafletMap(position) {
       const mapEl = document.getElementById('leaflet-gps-map');
-      if (!mapEl || !window.L) return;
+      if (!mapEl) return;
+      if (!window.L) {
+        console.error('Leaflet library not loaded');
+        notify('Mapa GPS indisponível. Biblioteca não carregada.');
+        return;
+      }
       gpsMode = 'online';
       const offlineMap = document.getElementById('offline-local-map');
       if (offlineMap) offlineMap.style.display = 'none';
@@ -4296,8 +4307,8 @@
       const position = ensurePlayerPosition(player);
       const speed = (running ? RUN_STEP_METERS : WALK_STEP_METERS) * GPS_METERS_TO_PERCENT;
       const nextPosition = {
-        x: position.x + (dx * speed),
-        y: position.y + (dy * speed)
+        x: Math.max(0, Math.min(100, position.x + (dx * speed))),
+        y: Math.max(0, Math.min(100, position.y + (dy * speed)))
       };
       player.position = nextPosition;
       spendMovementStats(player);
@@ -4434,15 +4445,13 @@
       const to = state.players.find(item => item.id === trade.toId);
       if (!from || !to) return notify('Jogador indisponível');
       if (trade.qrCode && !from.qrs.includes(trade.qrCode)) return notify('O QR oferecido já não está disponível');
-      if (Number(from.coins) < Number(trade.coins)) return notify('O jogador já não tem moedas suficientes');
       if (trade.qrCode) {
         from.qrs = from.qrs.filter(code => code !== trade.qrCode);
         to.qrs.push(trade.qrCode);
         const qr = state.qrs.find(item => item.code === trade.qrCode);
         if (qr) qr.ownerId = to.id;
       }
-      from.coins -= Number(trade.coins);
-      to.coins += Number(trade.coins);
+      to.coins += Number(trade.escrowCoins || trade.coins);
       trade.status = 'accepted';
       trade.resolvedAt = Date.now();
       saveState();
@@ -4583,7 +4592,7 @@
     // Função para atualizar todos os relógios
     function updateAllTimers() {
       const player = currentPlayer();
-      if (!player) return;
+      if (!player) return notify('Sessão de jogador não encontrada');
       
       const trades = state.trades.filter(trade => 
         (trade.fromId === player.id || trade.toId === player.id) && 
@@ -4886,7 +4895,7 @@
       const company = currentCompany();
       const currentUser = player || company;
       
-      if (!currentUser) return;
+      if (!currentUser) return notify('Sessão não encontrada');
       
       const request = state.friendRequests.find(req => req.id === requestId);
       if (!request) return notify('Pedido não encontrado');
@@ -4930,7 +4939,7 @@
       const company = currentCompany();
       const currentUser = player || company;
       
-      if (!currentUser) return;
+      if (!currentUser) return notify('Sessão não encontrada');
       
       const request = state.friendRequests.find(req => req.id === requestId);
       if (!request) return notify('Pedido não encontrado');
@@ -5031,7 +5040,7 @@
 
     function toggleFlagActive(flagId) {
       const flag = state.flags.find(item => item.id === flagId);
-      if (!flag) return;
+      if (!flag) return notify('Bandeira não encontrada');
       flag.active = !flag.active;
       saveState();
       addAudit('Backoffice alternou estado da flag ' + flag.label);
@@ -5040,7 +5049,7 @@
 
     function adminBoostPlayer(playerId) {
       const player = state.players.find(item => item.id === playerId);
-      if (!player) return;
+      if (!player) return notify('Jogador não encontrado');
       player.coins += 100;
       player.energy = 100;
       player.hunger = 100;
@@ -5073,7 +5082,7 @@
 
     function adminToggleCompany(companyId) {
       const company = state.companies.find(item => item.id === companyId);
-      if (!company) return;
+      if (!company) return notify('Empresa não encontrada');
       company.status = company.status === 'Ativo' ? 'Suspenso' : 'Ativo';
       saveState();
       addAudit('Backoffice alterou estado da empresa ' + company.name + ' para ' + company.status);
@@ -5103,7 +5112,7 @@
 
     function adminToggleQrSale(qrId) {
       const qr = state.qrs.find(item => item.id === qrId);
-      if (!qr) return;
+      if (!qr) return notify('QR não encontrado');
       qr.forSale = !qr.forSale;
       if (qr.forSale) qr.ownerId = null;
       saveState();
@@ -5128,7 +5137,7 @@
 
     function adminForceCancelTrade(tradeId) {
       const trade = state.trades.find(item => item.id === tradeId);
-      if (!trade) return;
+      if (!trade) return notify('Troca não encontrada');
       trade.status = 'cancelled';
       trade.resolvedAt = Date.now();
       saveState();
@@ -5256,7 +5265,8 @@
               console.log('✅ Pacote recuperado com sucesso!');
             }
           } catch (e) {
-            console.error('❌ Erro ao recuperar backup:', e);
+            console.error('Failed to recover pack backup:', e);
+            notify('Erro ao recuperar dados do pacote.');
           }
         }
       }
@@ -5345,7 +5355,7 @@
           console.log('❌ Botão campanha não encontrado!');
         }
       } catch (error) {
-        console.error('❌ Erro ao configurar botão campanha:', error);
+        console.error('Failed to configure campaign button:', error);
       }
     }
     
@@ -5391,7 +5401,8 @@
         
         return fullBackup;
       } catch (error) {
-        console.error('❌ Erro ao criar backup:', error);
+        console.error('Failed to create backup:', error);
+        notify('Erro ao criar backup do sistema.');
         return null;
       }
     }
@@ -5428,7 +5439,8 @@
         console.log('✅ Backup restaurado com sucesso!');
         return true;
       } catch (error) {
-        console.error('❌ Erro ao restaurar backup:', error);
+        console.error('Failed to restore backup:', error);
+        notify('Erro ao restaurar backup do sistema.');
         return false;
       }
     }
