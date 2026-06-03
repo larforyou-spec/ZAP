@@ -791,6 +791,61 @@ app.put('/api/player/me/settings', verifyJWT, async (req, res) => {
     }
 });
 
+app.get('/api/company/dashboard', verifyJWT, async (req, res) => {
+    if (req.user.accountType !== 'company') {
+        return res.status(403).json({ error: 'Apenas empresas podem aceder ao painel.' });
+    }
+
+    try {
+        const companyId = req.user.userId;
+
+        const statsResult = await db.query(`
+            SELECT
+                COUNT(*) FILTER (WHERE captured_at IS NULL)::int   AS active_flags,
+                COUNT(*) FILTER (WHERE captured_at IS NOT NULL)::int AS total_captures,
+                COALESCE(SUM(coin_value) FILTER (WHERE captured_at IS NOT NULL), 0)::int AS total_coins_distributed,
+                COUNT(*)::int AS total_flags
+            FROM flags
+            WHERE company_id = $1
+        `, [companyId]);
+
+        const recentCaptures = await db.query(`
+            SELECT
+                f.id AS flag_id,
+                f.type,
+                f.coin_value,
+                f.captured_at,
+                p.username AS captured_by_username
+            FROM flags f
+            LEFT JOIN players p ON p.user_id = f.captured_by
+            WHERE f.company_id = $1 AND f.captured_at IS NOT NULL
+            ORDER BY f.captured_at DESC
+            LIMIT 10
+        `, [companyId]);
+
+        const stats = statsResult.rows[0] || {
+            active_flags: 0,
+            total_captures: 0,
+            total_coins_distributed: 0,
+            total_flags: 0
+        };
+
+        res.json({
+            success: true,
+            dashboard: {
+                active_flags: stats.active_flags,
+                total_captures: stats.total_captures,
+                total_coins_distributed: stats.total_coins_distributed,
+                total_flags: stats.total_flags,
+                recent_captures: recentCaptures.rows
+            }
+        });
+    } catch (error) {
+        console.error('Erro ao carregar dashboard da empresa:', error);
+        res.status(500).json({ error: 'Erro interno ao carregar painel.' });
+    }
+});
+
 app.get('/api/company/flags', verifyJWT, async (req, res) => {
     if (req.user.accountType !== 'company') {
         return res.status(403).json({ error: 'Apenas empresas podem consultar campanhas.' });
@@ -808,6 +863,9 @@ app.get('/api/company/flags', verifyJWT, async (req, res) => {
                 qr_code_token,
                 latitude,
                 longitude,
+                physical_prize_name,
+                physical_prize_description,
+                physical_prize_value,
                 captured_at IS NOT NULL AS is_captured,
                 created_at
             FROM flags
@@ -827,7 +885,8 @@ app.post('/api/company/flags', verifyJWT, async (req, res) => {
         return res.status(403).json({ error: 'Apenas empresas podem criar campanhas.' });
     }
 
-    const { title, type, latitude, longitude, reward_coins, is_premium, is_qr_code } = req.body;
+    const { title, type, latitude, longitude, reward_coins, is_premium, is_qr_code,
+            physical_prize_name, physical_prize_description, physical_prize_value } = req.body;
     const numericLatitude = Number(latitude);
     const numericLongitude = Number(longitude);
     const numericReward = Number(reward_coins || 0);
@@ -841,11 +900,18 @@ app.post('/api/company/flags', verifyJWT, async (req, res) => {
     }
 
     const qrToken = is_qr_code ? crypto.randomBytes(16).toString('hex') : null;
+    const sanitizedPrizeName = String(physical_prize_name || '').trim();
+    const sanitizedPrizeDesc = String(physical_prize_description || '').trim();
+    const sanitizedPrizeValue = String(physical_prize_value || '').trim();
 
     try {
         const result = await db.query(`
-            INSERT INTO flags (company_id, type, is_premium, is_qr_code, qr_code_token, latitude, longitude, coin_value, energy_value, premium_expires_at)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 0, CASE WHEN $3 THEN NOW() + INTERVAL '15 days' ELSE NULL END)
+            INSERT INTO flags (company_id, type, is_premium, is_qr_code, qr_code_token, latitude, longitude,
+                               coin_value, energy_value, premium_expires_at,
+                               physical_prize_name, physical_prize_description, physical_prize_value)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 0,
+                    CASE WHEN $3 THEN NOW() + INTERVAL '15 days' ELSE NULL END,
+                    NULLIF($9, ''), NULLIF($10, ''), NULLIF($11, ''))
             RETURNING
                 id,
                 type,
@@ -856,9 +922,14 @@ app.post('/api/company/flags', verifyJWT, async (req, res) => {
                 qr_code_token,
                 latitude,
                 longitude,
+                physical_prize_name,
+                physical_prize_description,
+                physical_prize_value,
                 captured_at IS NOT NULL AS is_captured,
                 created_at
-        `, [req.user.userId, title || type || 'Campanha', Boolean(is_premium), Boolean(is_qr_code), qrToken, numericLatitude, numericLongitude, numericReward]);
+        `, [req.user.userId, title || type || 'Campanha', Boolean(is_premium), Boolean(is_qr_code), qrToken,
+            numericLatitude, numericLongitude, numericReward,
+            sanitizedPrizeName, sanitizedPrizeDesc, sanitizedPrizeValue]);
 
         res.status(201).json({ success: true, flag: result.rows[0] });
     } catch (error) {
