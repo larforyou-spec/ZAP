@@ -734,6 +734,18 @@
     .dormant-badge.standby { background: rgba(122,215,255,0.12); color: var(--cyan); border: 1px solid rgba(122,215,255,0.30); }
     .stock-section { border: 1px solid rgba(255,255,255,0.08); border-radius: 18px; padding: 20px; margin: 16px 0; background: rgba(255,255,255,0.02); }
     .stock-section h3 { margin-bottom: 12px; }
+    /* ── Financial System ── */
+    .vault-display { text-align: center; padding: 24px; border: 2px solid var(--yellow); border-radius: 18px; background: rgba(215,179,90,0.06); margin: 16px 0; }
+    .vault-amount { font-size: clamp(36px, 5vw, 56px); font-weight: 900; color: var(--yellow); letter-spacing: -0.03em; }
+    .vault-label { font-size: 14px; color: var(--muted); margin-top: 4px; }
+    .payment-ref { font-family: monospace; font-size: 18px; letter-spacing: 0.12em; color: var(--cyan); background: rgba(122,215,255,0.08); padding: 12px 18px; border-radius: 12px; border: 1px solid rgba(122,215,255,0.25); display: inline-block; margin: 8px 0; }
+    .invoice-preview { border: 1px solid rgba(255,255,255,0.12); border-radius: 14px; padding: 18px; background: rgba(255,255,255,0.03); font-size: 13px; margin: 12px 0; }
+    .invoice-preview h4 { margin: 0 0 8px; color: var(--green-soft); }
+    .pending-badge { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 800; background: rgba(215,179,90,0.18); color: var(--yellow); border: 1px solid rgba(215,179,90,0.35); }
+    .paid-badge { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 800; background: rgba(66,215,125,0.14); color: var(--green); border: 1px solid rgba(66,215,125,0.35); }
+    .distribution-bar { display: flex; height: 20px; border-radius: 999px; overflow: hidden; background: rgba(255,255,255,0.06); margin: 8px 0; }
+    .distribution-active { background: linear-gradient(90deg, var(--green), var(--cyan)); transition: width .4s ease; }
+    .distribution-reserve { background: rgba(215,179,90,0.25); }
 
     .ghost-admin {
       padding: 0;
@@ -1227,6 +1239,8 @@
             <button class="btn secondary" onclick="renderBackofficePanel('audit')">Auditoria</button>
             <button class="btn secondary" onclick="renderBackofficePanel('stockCentral')" style="border-color: var(--cyan); color: var(--cyan);">Stock Central</button>
             <button class="btn secondary" onclick="renderBackofficePanel('dormantFlags')" style="border-color: var(--yellow); color: var(--yellow);">Bandeiras Dormentes</button>
+            <button class="btn secondary" onclick="renderBackofficePanel('bancoCentral')" style="border-color: var(--yellow); color: var(--yellow);">Banco Central</button>
+            <button class="btn secondary" onclick="renderBackofficePanel('payments')" style="border-color: var(--cyan); color: var(--cyan);">Pagamentos</button>
           </aside>
           <section class="panel content-area" id="backoffice-content"></section>
         </div>
@@ -1335,7 +1349,21 @@
           teleportMinMeters: 50,
           teleportMaxMeters: 100,
           companies: []
-        }
+        },
+        globalVault: {
+          balance: 0,
+          totalCollected: 0,
+          totalInjected: 0,
+          activeDistributionPct: 50,
+          activeDistributionBudget: 0,
+          reserveBudget: 0,
+          lastInjectionAt: null,
+          taxRate: 0.025,
+          auctionDailyFee: 2,
+          history: []
+        },
+        pendingPayments: [],
+        invoices: []
       };
     }
 
@@ -1348,6 +1376,9 @@
     if (!state.stockCentral.activationRadiusMeters) state.stockCentral.activationRadiusMeters = 20;
     if (!state.stockCentral.teleportMinMeters) state.stockCentral.teleportMinMeters = 50;
     if (!state.stockCentral.teleportMaxMeters) state.stockCentral.teleportMaxMeters = 100;
+    if (!state.globalVault) state.globalVault = { balance: 0, totalCollected: 0, totalInjected: 0, activeDistributionPct: 50, activeDistributionBudget: 0, reserveBudget: 0, lastInjectionAt: null, taxRate: 0.025, auctionDailyFee: 2, history: [] };
+    if (!state.pendingPayments) state.pendingPayments = [];
+    if (!state.invoices) state.invoices = [];
 
     function loadState() {
       try {
@@ -1921,7 +1952,7 @@
       if (qr.ownerId === player.id) return notify('Não podes comprar o teu próprio QR');
       
       const price = qr.price;
-      const fee = Math.floor(price * 0.05); // 5% de taxa
+      const fee = Math.ceil(price * (state.globalVault?.taxRate || 0.025)); // 2.5% taxa -> Banco Central
       const totalPrice = price;
       const netPrice = price - fee;
       
@@ -1936,6 +1967,9 @@
       player.coins -= totalPrice;
       seller.coins += netPrice;
       
+      // Taxa vai para o Banco Central (global_vault)
+      depositToVault(fee, 'Taxa mercado QR: ' + qr.code);
+      
       // Transferir QR
       qr.ownerId = player.id;
       qr.forSale = false;
@@ -1948,7 +1982,7 @@
       }
       
       saveState();
-      addAudit(`${player.name} comprou QR ${qr.code} de ${seller.name} por ${totalPrice} moedas (taxa: ${fee})`);
+      addAudit(`${player.name} comprou QR ${qr.code} de ${seller.name} por ${totalPrice} moedas (taxa: ${fee} -> Banco Central)`);
       notify(`QR ${qr.code} comprado com sucesso!`);
       
       // Atualizar porta-moedas
@@ -4166,6 +4200,8 @@
       const target = document.getElementById('backoffice-content');
       if (panel === 'stockCentral') return renderStockCentralPanel();
       if (panel === 'dormantFlags') return renderDormantFlagsPanel();
+      if (panel === 'bancoCentral') return renderBancoCentralPanel();
+      if (panel === 'payments') return renderPaymentsPanel();
 
       if (panel === 'overview') {
         const flagStats = getDormantFlagStats();
@@ -4180,6 +4216,10 @@
             <div class="mini-card"><b>${state.flags.length}</b><span>Flags/Bingos mapa</span></div>
             <div class="mini-card"><b>${flagStats.dormant}</b><span><span class="dormant-badge dormant">Dormant</span></span></div>
             <div class="mini-card"><b>${flagStats.active}</b><span><span class="dormant-badge active">Active</span></span></div>
+            <div class="mini-card"><b>${state.globalVault.balance.toLocaleString('pt-PT')}</b><span>Cofre (Vault)</span></div>
+            <div class="mini-card"><b>${state.globalVault.activeDistributionBudget.toLocaleString('pt-PT')}</b><span>Budget Ativo</span></div>
+            <div class="mini-card"><b>${state.pendingPayments.filter(p=>p.status==='Pending_Payment').length}</b><span>Pagamentos Pend.</span></div>
+            <div class="mini-card"><b>${state.invoices.length}</b><span>Faturas</span></div>
           </div>
           <div class="actions">
             <button class="btn" onclick="createArtificialPlayer()">Criar jogador artificial</button>
@@ -4288,24 +4328,30 @@
       flag.active = false;
       flag.dormant = false;
       player.flags += 1;
+      let coinReward = 0;
       if (flag.type === 'ZAP') {
         player.zap += 1;
         player.energy = Math.min(100, player.energy + Number(flag.reward || 3));
+        coinReward = getFlagCoinReward(Number(flag.reward || 3));
+        player.coins += coinReward;
       }
       if (flag.type === 'PR') {
         player.pr += 1;
-        player.coins += 5;
+        coinReward = getFlagCoinReward(5);
+        player.coins += coinReward;
         const qr = { id: uid('qr'), code: 'PR-' + Math.random().toString(36).slice(2, 8).toUpperCase(), company: 'Campanha PR', value: 'Recompensa PR', price: 25, type: 'QR', ownerId: player.id, forSale: false };
         state.qrs.push(qr);
         player.qrs.push(qr.code);
       }
       if (flag.type === 'BINGO') {
-        player.coins += Number(flag.reward || 25);
+        coinReward = getFlagCoinReward(Number(flag.reward || 25));
+        player.coins += coinReward;
       }
       saveState();
-      addAudit(player.name + ' apanhou ' + flag.type + ': ' + flag.label);
+      const rewardMsg = coinReward > 0 ? ' (+' + coinReward + ' moedas)' : ' (Skill/Energia apenas)';
+      addAudit(player.name + ' apanhou ' + flag.type + ': ' + flag.label + rewardMsg);
       renderPlayerPanel('game');
-      notify(flag.type + ' recolhida');
+      notify(flag.type + ' recolhida' + rewardMsg);
     }
 
     function movePlayerOnMap(event) {
@@ -4686,66 +4732,216 @@
       });
     }
 
+    const PACK_DEFINITIONS = {
+      'Starter': { name: 'Starter', price: 0, flags: 1000, validityDays: 0 },
+      'Basic': { name: 'Basic', price: 10, flags: 5000, validityDays: 60 },
+      'Professional': { name: 'Professional', price: 20, flags: 10000, validityDays: 90 },
+      'Enterprise': { name: 'Enterprise', price: 30, flags: 25000, validityDays: 125 },
+      'Premium': { name: 'Premium', price: 50, flags: 60000, validityDays: 180 },
+      'Ultimate': { name: 'Ultimate', price: 80, flags: 100000, validityDays: 250 },
+      'Platinum': { name: 'Platinum', price: 120, flags: 250000, validityDays: 365 }
+    };
+
+    function generateBankReference() {
+      const entity = '21947';
+      const ref = String(Math.floor(100000000 + Math.random() * 900000000));
+      return entity + ' ' + ref.slice(0, 3) + ' ' + ref.slice(3, 6) + ' ' + ref.slice(6);
+    }
+
+    function generatePaymentQR(reference, amount) {
+      return 'ZAPQR|' + reference.replace(/\s/g, '') + '|EUR' + amount.toFixed(2) + '|' + Date.now();
+    }
+
     function buyPack(packId, flags) {
       const company = currentCompany();
       if (!company) return renderCompanyAuth();
       
-      // Definição dos pacotes com validades específicas
-      const packages = {
-        'Starter': { name: 'Starter', price: 0, flags: 1000, validityDays: 0 },
-        'Basic': { name: 'Basic', price: 10, flags: 5000, validityDays: 60 },
-        'Professional': { name: 'Professional', price: 20, flags: 10000, validityDays: 90 },
-        'Enterprise': { name: 'Enterprise', price: 30, flags: 25000, validityDays: 125 },
-        'Premium': { name: 'Premium', price: 50, flags: 60000, validityDays: 180 },
-        'Ultimate': { name: 'Ultimate', price: 80, flags: 100000, validityDays: 250 },
-        'Platinum': { name: 'Platinum', price: 120, flags: 250000, validityDays: 365 }
-      };
-      
-      const pack = packages[packId];
+      const pack = PACK_DEFINITIONS[packId];
       if (!pack) return notify('Pacote inválido');
       
-      // Para teste, vamos permitir compra imediata sem validação de pagamento
-      // Em produção, aqui seria integrado com sistema de pagamento real
-      
-      // Atualizar dados da empresa com validade específica
-      company.pack = pack.name;
-      company.flags = flags; // Define flags exatas do pacote
-      company.packActivatedAt = Date.now();
-      
-      // Calcular data de expiração baseada nos dias de validade
-      if (pack.validityDays === 0) {
-        // Pack Starter - ilimitado
+      // Starter gratuito: ativação imediata
+      if (pack.price === 0) {
+        company.pack = pack.name;
+        company.flags = flags;
+        company.packActivatedAt = Date.now();
         company.packExpiresAt = null;
-      } else {
-        // Packs pagos - validade específica
-        const expiryTime = Date.now() + (pack.validityDays * 24 * 60 * 60 * 1000);
-        company.packExpiresAt = expiryTime;
+        saveState();
+        addAudit(`${company.name} ativou pack ${pack.name} (gratuito) com ${flags} flags`);
+        notify(`Pack ${pack.name} ativado com sucesso! +${flags} flags`);
+        renderCompanyPanel('campaign');
+        return;
       }
       
-      // Criar backup automático do pacote
-      const packBackup = {
+      // Packs pagos: gerar referência bancária + QR de pagamento
+      const bankRef = generateBankReference();
+      const priceWithIva = Math.round(pack.price * 1.23 * 100) / 100;
+      const paymentQR = generatePaymentQR(bankRef, priceWithIva);
+      
+      const payment = {
+        id: uid('payment'),
         companyId: company.id,
-        pack: pack.name,
+        companyName: company.name,
+        packId: pack.name,
         flags: flags,
+        validityDays: pack.validityDays,
+        priceBase: pack.price,
+        priceWithIva: priceWithIva,
+        bankReference: bankRef,
+        paymentQR: paymentQR,
+        status: 'Pending_Payment',
+        createdAt: Date.now(),
+        paidAt: null,
+        invoiceId: null
+      };
+      
+      state.pendingPayments.push(payment);
+      saveState();
+      addAudit(`${company.name} iniciou compra do pack ${pack.name}: ref. ${bankRef} (${priceWithIva} EUR)`);
+      
+      // Mostrar referência de pagamento
+      const target = document.getElementById('company-content');
+      target.innerHTML = `
+        <h2>Pagamento Pendente</h2>
+        <div class="stock-section">
+          <h3>Pack ${escapeHtml(pack.name)} · ${flags} flags</h3>
+          <p>Para ativar o pacote, efetua o pagamento com os dados abaixo:</p>
+          <div style="text-align:center; margin: 20px 0;">
+            <p><strong>Referência Bancária:</strong></p>
+            <div class="payment-ref">${escapeHtml(bankRef)}</div>
+            <p><strong>Montante:</strong> <span style="color:var(--yellow);font-weight:900;">${priceWithIva.toFixed(2)} EUR</span> (IVA incluído)</p>
+            <p><strong>QR de Pagamento:</strong></p>
+            <div class="payment-ref" style="font-size:12px; word-break:break-all;">${escapeHtml(paymentQR)}</div>
+          </div>
+          <p><span class="pending-badge">Pending_Payment</span> O pacote será libertado automaticamente após confirmação do pagamento.</p>
+          <div class="actions" style="justify-content:center;">
+            <button class="btn" onclick="simulatePaymentWebhook('${payment.id}')">Simular Pagamento (Webhook)</button>
+            <button class="btn secondary" onclick="renderCompanyPanel('packs')">Voltar aos Packs</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function simulatePaymentWebhook(paymentId) {
+      processPaymentCallback(paymentId);
+    }
+
+    function processPaymentCallback(paymentId) {
+      const payment = state.pendingPayments.find(p => p.id === paymentId);
+      if (!payment) return notify('Pagamento não encontrado');
+      if (payment.status === 'Paid') return notify('Este pagamento já foi processado');
+      
+      const company = state.companies.find(c => c.id === payment.companyId) || 
+                       state.stockCentral.companies.find(c => c.id === payment.companyId);
+      if (!company) return notify('Empresa não encontrada');
+      
+      // Marcar como pago
+      payment.status = 'Paid';
+      payment.paidAt = Date.now();
+      
+      // Ativar pacote na empresa
+      company.pack = payment.packId;
+      company.flags = payment.flags;
+      company.packActivatedAt = Date.now();
+      if (payment.validityDays > 0) {
+        company.packExpiresAt = Date.now() + (payment.validityDays * 24 * 60 * 60 * 1000);
+      } else {
+        company.packExpiresAt = null;
+      }
+      
+      // Gerar fatura PDF (simulada)
+      const invoice = generateInvoice(payment, company);
+      payment.invoiceId = invoice.id;
+      
+      // Backup do pacote
+      localStorage.setItem('ZAP_FLAGS_3_PACK_BACKUP', JSON.stringify({
+        companyId: company.id,
+        pack: payment.packId,
+        flags: payment.flags,
         packActivatedAt: company.packActivatedAt,
         packExpiresAt: company.packExpiresAt,
-        validityDays: pack.validityDays,
+        validityDays: payment.validityDays,
         timestamp: Date.now()
-      };
-      localStorage.setItem('ZAP_FLAGS_3_PACK_BACKUP', JSON.stringify(packBackup));
+      }));
       
       saveState();
-      addAudit(`${company.name} comprou pack ${pack.name} com ${flags} flags (validade: ${pack.validityDays === 0 ? 'Ilimitado' : pack.validityDays + ' dias'})`);
+      addAudit(`Webhook pagamento: ${company.name} pagou pack ${payment.packId} (ref: ${payment.bankReference}). Fatura #${invoice.number} gerada.`);
+      notify(`Pagamento confirmado! Pack ${payment.packId} ativado. Fatura #${invoice.number} gerada.`);
       
-      // Notificação detalhada com validade
-      if (pack.price === 0) {
-        notify(`🎉 Pack ${pack.name} ativado com sucesso! +${flags} flags disponíveis (Validade: Ilimitada)`);
-      } else {
-        notify(`✅ Pack ${pack.name} comprado com sucesso! +${flags} flags disponíveis (€${pack.price.toFixed(2)} + IVA - Validade: ${pack.validityDays} dias)`);
+      // Redirecionar para campanha se sessão ativa
+      if (state.session.type === 'company' && state.session.id === company.id) {
+        renderCompanyPanel('campaign');
       }
-      
-      // Redirecionar para página de campanha após compra
-      renderCompanyPanel('campaign');
+    }
+
+    function generateInvoice(payment, company) {
+      const invoiceNum = 'FT-' + new Date().getFullYear() + '/' + String(state.invoices.length + 1).padStart(4, '0');
+      const invoice = {
+        id: uid('invoice'),
+        number: invoiceNum,
+        companyId: company.id,
+        companyName: company.name,
+        companyNif: company.nif,
+        packId: payment.packId,
+        priceBase: payment.priceBase,
+        iva: Math.round((payment.priceWithIva - payment.priceBase) * 100) / 100,
+        priceWithIva: payment.priceWithIva,
+        bankReference: payment.bankReference,
+        status: 'Emitida',
+        createdAt: Date.now(),
+        pdfContent: buildInvoicePDF(invoiceNum, payment, company)
+      };
+      state.invoices.push(invoice);
+      return invoice;
+    }
+
+    function buildInvoicePDF(invoiceNum, payment, company) {
+      return [
+        '═══════════════════════════════════════',
+        '         FATURA · Larforyou ZAP-FLAGS',
+        '═══════════════════════════════════════',
+        '',
+        'Fatura N.º:    ' + invoiceNum,
+        'Data:          ' + new Date().toLocaleString('pt-PT'),
+        '',
+        'CLIENTE:',
+        '  Nome:   ' + company.name,
+        '  NIF:    ' + (company.nif || 'N/A'),
+        '  Email:  ' + (company.email || 'N/A'),
+        '',
+        'DESCRIÇÃO:',
+        '  Pack ' + payment.packId,
+        '  Flags: ' + payment.flags,
+        '  Validade: ' + (payment.validityDays === 0 ? 'Ilimitado' : payment.validityDays + ' dias'),
+        '',
+        'VALORES:',
+        '  Base:       ' + payment.priceBase.toFixed(2) + ' EUR',
+        '  IVA (23%):  ' + (payment.priceWithIva - payment.priceBase).toFixed(2) + ' EUR',
+        '  TOTAL:      ' + payment.priceWithIva.toFixed(2) + ' EUR',
+        '',
+        'PAGAMENTO:',
+        '  Ref. Bancária: ' + payment.bankReference,
+        '  Estado: PAGO em ' + new Date(payment.paidAt).toLocaleString('pt-PT'),
+        '',
+        '═══════════════════════════════════════',
+        '  Larforyou ® · NIF 999999999',
+        '  Este documento é uma simulação.',
+        '═══════════════════════════════════════'
+      ].join('\n');
+    }
+
+    function downloadInvoice(invoiceId) {
+      const invoice = state.invoices.find(i => i.id === invoiceId);
+      if (!invoice) return notify('Fatura não encontrada');
+      const blob = new Blob([invoice.pdfContent], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = invoice.number.replace(/\//g, '-') + '.txt';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      notify('Fatura ' + invoice.number + ' descarregada');
     }
 
     // Funções para interação com empresas
@@ -5611,6 +5807,230 @@
             <p><strong>Verificação:</strong> O motor de proximidade executa a cada <b>500ms</b> enquanto um jogador está ativo.</p>
           </div>
         </div>
+      `;
+    }
+
+    // ══════════════════════════════════════════════════════════════
+    //  SISTEMA FINANCEIRO · Banco Central + Válvula de Liquidez
+    // ══════════════════════════════════════════════════════════════
+
+    function depositToVault(amount, reason) {
+      if (amount <= 0) return;
+      const vault = state.globalVault;
+      vault.balance += amount;
+      vault.totalCollected += amount;
+      vault.history.push({ type: 'deposit', amount, reason, at: Date.now() });
+      if (vault.history.length > 200) vault.history = vault.history.slice(-200);
+    }
+
+    function adminInjectLiquidity(totalAmount, distributionPct) {
+      const vault = state.globalVault;
+      if (totalAmount <= 0 || totalAmount > vault.balance) return notify('Montante inválido ou saldo insuficiente no cofre');
+      const activePortion = Math.floor(totalAmount * (distributionPct / 100));
+      const reservePortion = totalAmount - activePortion;
+      vault.balance -= totalAmount;
+      vault.activeDistributionBudget += activePortion;
+      vault.reserveBudget += reservePortion;
+      vault.totalInjected += totalAmount;
+      vault.activeDistributionPct = distributionPct;
+      vault.lastInjectionAt = Date.now();
+      vault.history.push({
+        type: 'injection',
+        amount: totalAmount,
+        activePortion,
+        reservePortion,
+        distributionPct,
+        reason: 'Admin injetou liquidez: ' + activePortion + ' ativas + ' + reservePortion + ' reserva',
+        at: Date.now()
+      });
+      saveState();
+      addAudit('Banco Central: Admin injetou ' + totalAmount + ' moedas (' + activePortion + ' no mapa, ' + reservePortion + ' em reserva)');
+      notify('Liquidez injetada: ' + activePortion + ' moedas ativas no mapa');
+    }
+
+    function getFlagCoinReward(baseReward) {
+      const vault = state.globalVault;
+      if (vault.activeDistributionBudget <= 0) return 0;
+      const reward = Math.min(baseReward, vault.activeDistributionBudget);
+      vault.activeDistributionBudget -= reward;
+      if (vault.activeDistributionBudget <= 0) {
+        addAudit('Banco Central: Orçamento ativo esgotado. Bandeiras dão apenas Skill/Energia até nova injeção.');
+      }
+      return reward;
+    }
+
+    function collectAuctionDailyFees() {
+      const fee = state.globalVault.auctionDailyFee || 2;
+      const activeQrs = state.qrs.filter(q => q.forSale);
+      const totalFees = activeQrs.length * fee;
+      if (totalFees > 0) {
+        depositToVault(totalFees, 'Taxas diárias de leilão: ' + activeQrs.length + ' QRs x ' + fee + ' moedas');
+        saveState();
+      }
+      return totalFees;
+    }
+
+    setInterval(collectAuctionDailyFees, 24 * 60 * 60 * 1000);
+
+    // ── GATILHO DE RENOVAÇÃO DE LIQUIDEZ ──
+
+    function checkLiquidityRenewal() {
+      const sc = state.stockCentral;
+      const activeCompanies = sc.companies.filter(c => c.status === 'active');
+      let renewed = 0;
+      activeCompanies.forEach(company => {
+        const companyFlags = state.flags.filter(f => f.companyId === company.id && (f.active || f.dormant));
+        if (companyFlags.length <= 100) {
+          const oldLat = company.lat;
+          const oldLng = company.lng;
+          state.flags = state.flags.filter(f => f.companyId !== company.id);
+          company.status = 'standby';
+          company.lat = null;
+          company.lng = null;
+          company.activatedAt = null;
+          company.activatedForPlayer = null;
+          const available = sc.companies.filter(c => c.status === 'standby');
+          if (available.length > 0) {
+            const replacement = available[0];
+            replacement.lat = oldLat;
+            replacement.lng = oldLng;
+            replacement.status = 'active';
+            replacement.activatedAt = Date.now();
+            replacement.activatedForPlayer = 'Auto-Renovação';
+            spawnDormantFlags(replacement.id, sc.flagsPerCompany, oldLat, oldLng);
+            renewed++;
+            addAudit('Renovação de liquidez: "' + company.name + '" (<=100 flags) substituída por "' + replacement.name + '" (5000 flags) na mesma coordenada');
+          } else {
+            addAudit('Renovação: "' + company.name + '" removida, mas Stock Central vazio. Zona não reabastecida.');
+          }
+        }
+      });
+      if (renewed > 0) saveState();
+      return renewed;
+    }
+
+    setInterval(checkLiquidityRenewal, 5000);
+
+    // ── BACKOFFICE: BANCO CENTRAL PANEL ──
+
+    function renderBancoCentralPanel() {
+      const target = document.getElementById('backoffice-content');
+      const vault = state.globalVault;
+      const totalBudget = vault.activeDistributionBudget + vault.reserveBudget;
+      const activePct = totalBudget > 0 ? Math.round((vault.activeDistributionBudget / totalBudget) * 100) : 0;
+      target.innerHTML = `
+        <h2>Banco Central · Válvula de Liquidez</h2>
+        <div class="vault-display">
+          <div class="vault-amount">${vault.balance.toLocaleString('pt-PT')} moedas</div>
+          <div class="vault-label">Saldo do Cofre (global_vault)</div>
+        </div>
+        <div class="cards-row">
+          <div class="mini-card"><b>${vault.totalCollected.toLocaleString('pt-PT')}</b><span>Total Recolhido</span></div>
+          <div class="mini-card"><b>${vault.totalInjected.toLocaleString('pt-PT')}</b><span>Total Injetado</span></div>
+          <div class="mini-card"><b>${vault.activeDistributionBudget.toLocaleString('pt-PT')}</b><span>Orçamento Ativo</span></div>
+          <div class="mini-card"><b>${vault.reserveBudget.toLocaleString('pt-PT')}</b><span>Reserva</span></div>
+        </div>
+        <div class="stock-section">
+          <h3>Distribuição Ativa vs Reserva</h3>
+          <div class="distribution-bar">
+            <div class="distribution-active" style="width:${activePct}%;"></div>
+            <div class="distribution-reserve" style="width:${100 - activePct}%;"></div>
+          </div>
+          <p style="font-size:13px;color:var(--muted);">${vault.activeDistributionBudget.toLocaleString('pt-PT')} ativas (${activePct}%) · ${vault.reserveBudget.toLocaleString('pt-PT')} reserva (${100 - activePct}%)</p>
+          ${vault.activeDistributionBudget <= 0 ? '<p style="color:var(--red);font-weight:800;">Orçamento ativo esgotado. Bandeiras dão apenas Skill/Energia (0 moedas) até nova injeção.</p>' : ''}
+        </div>
+        <div class="stock-section">
+          <h3>Injetar Liquidez</h3>
+          <p>Retira moedas do cofre e distribui: parte ativa (moedas nas bandeiras) e reserva.</p>
+          <div class="geo-config-row">
+            <label>Montante a Injetar:</label>
+            <input type="number" id="inject-amount" value="${Math.min(50000, vault.balance)}" min="0" max="${vault.balance}" step="1000">
+          </div>
+          <div class="geo-config-row">
+            <label>% Distribuição Ativa:</label>
+            <input type="range" id="inject-pct" value="${vault.activeDistributionPct}" min="0" max="100" step="5" oninput="document.getElementById('inject-pct-label').textContent=this.value+'%'">
+            <span id="inject-pct-label" style="color:var(--green);font-weight:800;">${vault.activeDistributionPct}%</span>
+          </div>
+          <div class="actions">
+            <button class="btn" onclick="adminInjectLiquidity(Number(document.getElementById('inject-amount').value), Number(document.getElementById('inject-pct').value)); renderBackofficePanel('bancoCentral');">Injetar no Mapa</button>
+          </div>
+        </div>
+        <div class="stock-section">
+          <h3>Configuração de Taxas</h3>
+          <div class="geo-config-row">
+            <label>Taxa de Mercado (%):</label>
+            <input type="number" id="cfg-tax-rate" value="${(vault.taxRate * 100).toFixed(1)}" min="0" max="10" step="0.5">
+            <button class="btn secondary" onclick="state.globalVault.taxRate=Number(document.getElementById('cfg-tax-rate').value)/100;saveState();renderBackofficePanel('bancoCentral');notify('Taxa atualizada');">Guardar</button>
+          </div>
+          <div class="geo-config-row">
+            <label>Taxa Diária Leilão (moedas):</label>
+            <input type="number" id="cfg-auction-fee" value="${vault.auctionDailyFee}" min="0" max="50" step="1">
+            <button class="btn secondary" onclick="state.globalVault.auctionDailyFee=Number(document.getElementById('cfg-auction-fee').value);saveState();renderBackofficePanel('bancoCentral');notify('Taxa atualizada');">Guardar</button>
+          </div>
+          <div class="actions">
+            <button class="btn secondary" onclick="const f=collectAuctionDailyFees();renderBackofficePanel('bancoCentral');notify('Taxas recolhidas: '+f+' moedas');">Forçar Recolha Taxas Leilão</button>
+            <button class="btn secondary" onclick="depositToVault(10000,'Admin creditou 10000 moedas de teste');saveState();renderBackofficePanel('bancoCentral');notify('10000 moedas adicionadas ao cofre');">Creditar 10000 (teste)</button>
+          </div>
+        </div>
+        <div class="stock-section">
+          <h3>Historial Recente</h3>
+          ${vault.history.length === 0 ? '<p>Sem movimentos.</p>' : `
+          <table class="data-table">
+            <thead><tr><th>Tipo</th><th>Montante</th><th>Razão</th><th>Data</th></tr></thead>
+            <tbody>${vault.history.slice(-20).reverse().map(h => `<tr>
+              <td>${h.type === 'deposit' ? '<span class="dormant-badge active">Depósito</span>' : '<span class="dormant-badge dormant">Injeção</span>'}</td>
+              <td>${h.amount.toLocaleString('pt-PT')}</td>
+              <td>${escapeHtml(h.reason)}</td>
+              <td>${new Date(h.at).toLocaleString('pt-PT')}</td>
+            </tr>`).join('')}</tbody>
+          </table>`}
+        </div>
+      `;
+    }
+
+    // ── BACKOFFICE: PAYMENTS PANEL ──
+
+    function renderPaymentsPanel() {
+      const target = document.getElementById('backoffice-content');
+      const pending = state.pendingPayments.filter(p => p.status === 'Pending_Payment');
+      const paid = state.pendingPayments.filter(p => p.status === 'Paid');
+      target.innerHTML = `
+        <h2>Gestão de Pagamentos</h2>
+        <div class="cards-row">
+          <div class="mini-card"><b>${pending.length}</b><span><span class="pending-badge">Pendentes</span></span></div>
+          <div class="mini-card"><b>${paid.length}</b><span><span class="paid-badge">Pagos</span></span></div>
+          <div class="mini-card"><b>${state.invoices.length}</b><span>Faturas</span></div>
+        </div>
+        ${pending.length > 0 ? `
+        <div class="stock-section">
+          <h3>Pagamentos Pendentes</h3>
+          <table class="data-table">
+            <thead><tr><th>Empresa</th><th>Pack</th><th>Valor</th><th>Referência</th><th>Data</th><th>Ação</th></tr></thead>
+            <tbody>${pending.map(p => `<tr>
+              <td>${escapeHtml(p.companyName)}</td>
+              <td>${escapeHtml(p.packId)}</td>
+              <td>${p.priceWithIva.toFixed(2)} EUR</td>
+              <td><span class="payment-ref" style="font-size:11px;padding:4px 8px;">${escapeHtml(p.bankReference)}</span></td>
+              <td>${new Date(p.createdAt).toLocaleString('pt-PT')}</td>
+              <td><button class="btn" onclick="processPaymentCallback('${p.id}');renderBackofficePanel('payments');">Confirmar</button></td>
+            </tr>`).join('')}</tbody>
+          </table>
+        </div>` : ''}
+        ${state.invoices.length > 0 ? `
+        <div class="stock-section">
+          <h3>Faturas Emitidas</h3>
+          <table class="data-table">
+            <thead><tr><th>N.º</th><th>Empresa</th><th>Pack</th><th>Total</th><th>Data</th><th>Ação</th></tr></thead>
+            <tbody>${state.invoices.map(inv => `<tr>
+              <td>${escapeHtml(inv.number)}</td>
+              <td>${escapeHtml(inv.companyName)}</td>
+              <td>${escapeHtml(inv.packId)}</td>
+              <td>${inv.priceWithIva.toFixed(2)} EUR</td>
+              <td>${new Date(inv.createdAt).toLocaleString('pt-PT')}</td>
+              <td><button class="btn secondary" onclick="downloadInvoice('${inv.id}')">Download</button></td>
+            </tr>`).join('')}</tbody>
+          </table>
+        </div>` : ''}
       `;
     }
 
