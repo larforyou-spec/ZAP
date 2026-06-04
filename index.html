@@ -1219,6 +1219,76 @@
       pointer-events: none;
     }
 
+    /* ── Loading / Splash Screen ── */
+    .splash-screen {
+      position: fixed;
+      inset: 0;
+      z-index: 99999;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(145deg, #0a0f0d 0%, #0d1a14 50%, #0a0f0d 100%);
+      transition: opacity 0.8s ease;
+    }
+    .splash-screen.fade-out {
+      opacity: 0;
+      pointer-events: none;
+    }
+    .splash-logo {
+      width: 180px;
+      height: auto;
+      animation: splashFadeIn 1.2s ease forwards, splashPulse 2s ease-in-out 1.2s infinite;
+      opacity: 0;
+    }
+    @keyframes splashFadeIn {
+      0% { opacity: 0; transform: scale(0.7); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+    @keyframes splashPulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.06); opacity: 0.85; }
+    }
+    .splash-text {
+      margin-top: 24px;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--green-soft);
+      opacity: 0;
+      animation: splashFadeIn 1s ease 0.6s forwards;
+    }
+    .splash-bar {
+      margin-top: 28px;
+      width: 160px;
+      height: 3px;
+      border-radius: 3px;
+      background: rgba(255,255,255,0.08);
+      overflow: hidden;
+      opacity: 0;
+      animation: splashFadeIn 0.8s ease 1s forwards;
+    }
+    .splash-bar-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--green), var(--green-soft));
+      border-radius: 3px;
+      animation: splashBarFill 2s ease 1.2s forwards;
+    }
+    @keyframes splashBarFill {
+      0% { width: 0%; }
+      100% { width: 100%; }
+    }
+
+    /* ── Navbar logo ── */
+    .brand-logo-img {
+      height: 42px;
+      width: auto;
+      object-fit: contain;
+      border-radius: 8px;
+    }
+
     /* ── Stock Central Badge ── */
     .stock-badge {
       display: inline-flex;
@@ -1265,11 +1335,18 @@
   </style>
 </head>
 <body>
+  <!-- Splash / Loading Screen -->
+  <div id="splash-screen" class="splash-screen">
+    <img src="larforyou_logo_inovador_cores_1.png" alt="Larforyou" class="splash-logo">
+    <div class="splash-text">ZAP-FLAGS 3.0</div>
+    <div class="splash-bar"><div class="splash-bar-fill"></div></div>
+  </div>
+
   <div class="app-shell">
     <nav class="top-nav">
       <div class="brand">
-        <div class="brand-mark">LFY</div>
-        <div>Larforyou · ZAP-FLAGS 3.0</div>
+        <img src="larforyou_logo_inovador_cores_1.png" alt="Larforyou" class="brand-logo-img">
+        <div>ZAP-FLAGS 3.0</div>
       </div>
       <div class="nav-actions">
         <button class="btn secondary" onclick="showScreen('home')">Início</button>
@@ -4396,7 +4473,7 @@
           <h3>Empresas</h3>
           <table class="data-table">
             <thead><tr><th>Nome</th><th>NIF</th><th>Pack</th><th>Flags</th><th>Estado</th><th>Ações</th></tr></thead>
-            <tbody>${state.companies.map(company => `<tr><td>${escapeHtml(company.name)}</td><td>${escapeHtml(company.nif)}</td><td>${escapeHtml(company.pack)}</td><td>${company.flags}</td><td>${escapeHtml(company.status)}</td><td><button class="btn secondary" onclick="adminToggleCompany('${company.id}')">Estado</button> <button class="btn danger" onclick="adminRemoveCompany('${company.id}')">Remover</button></td></tr>`).join('')}</tbody>
+            <tbody>${state.companies.map(company => `<tr><td>${escapeHtml(company.name)}</td><td>${escapeHtml(company.nif)}</td><td>${escapeHtml(company.pack)}</td><td>${company.flags}</td><td>${escapeHtml(company.status)}</td><td><button class="btn secondary" onclick="adminToggleCompany('${company.id}')">Estado</button> <button class="btn secondary" onclick="generateInvoicePDF('${company.id}')">Fatura</button> <button class="btn danger" onclick="adminRemoveCompany('${company.id}')">Remover</button></td></tr>`).join('')}</tbody>
           </table>
         `;
       }
@@ -6805,6 +6882,15 @@
       }
       
       console.log('🎯 Sistema inicializado e protegido!');
+
+      // Dismiss splash screen after initialization
+      setTimeout(function() {
+        var splash = document.getElementById('splash-screen');
+        if (splash) {
+          splash.classList.add('fade-out');
+          setTimeout(function() { splash.remove(); }, 900);
+        }
+      }, 2200);
     }, 1000);
 
     // Sistema de Bingos Locais
@@ -7054,6 +7140,107 @@
         renderLocalBingos();
       }
     }, 1500);
+
+    /* ═══════════════════════════════════════════════════════════════
+       PDF Invoice Generation with Logo
+       ═══════════════════════════════════════════════════════════════ */
+
+    var _logoDataUrl = null;
+
+    function loadLogoAsDataUrl(callback) {
+      if (_logoDataUrl) return callback(_logoDataUrl);
+      var img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = function() {
+        var canvas = document.createElement('canvas');
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        var ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+        _logoDataUrl = canvas.toDataURL('image/png');
+        callback(_logoDataUrl);
+      };
+      img.onerror = function() { callback(null); };
+      img.src = 'larforyou_logo_inovador_cores_1.png';
+    }
+
+    function generateInvoicePDF(companyId) {
+      var company = state.companies.find(function(c) { return c.id === companyId; });
+      if (!company) return notify('Empresa não encontrada');
+
+      loadLogoAsDataUrl(function(logoUrl) {
+        var invoiceNum = 'FT-' + Date.now().toString().slice(-8);
+        var date = new Date().toLocaleDateString('pt-PT');
+        var packPrice = { 'Gratuito': 0, 'Starter': 49, 'Básico': 99, 'Pro': 249, 'Enterprise': 499 };
+        var price = packPrice[company.pack] || 0;
+        var iva = Math.round(price * 0.23 * 100) / 100;
+        var total = Math.round((price + iva) * 100) / 100;
+
+        var w = window.open('', '_blank', 'width=800,height=1000');
+        if (!w) return notify('Popup bloqueado — permite popups para gerar a fatura');
+
+        w.document.write('<!DOCTYPE html><html><head><title>Fatura ' + invoiceNum + '</title>');
+        w.document.write('<style>');
+        w.document.write('* { margin: 0; padding: 0; box-sizing: border-box; }');
+        w.document.write('body { font-family: "Segoe UI", Arial, sans-serif; color: #1a1a1a; padding: 40px; max-width: 800px; margin: 0 auto; }');
+        w.document.write('.invoice-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 40px; padding-bottom: 20px; border-bottom: 2px solid #e8e8e8; }');
+        w.document.write('.invoice-logo { height: 60px; width: auto; object-fit: contain; }');
+        w.document.write('.invoice-title { text-align: right; }');
+        w.document.write('.invoice-title h1 { font-size: 28px; color: #e85d25; margin-bottom: 4px; }');
+        w.document.write('.invoice-title p { font-size: 13px; color: #666; }');
+        w.document.write('.invoice-parties { display: flex; justify-content: space-between; margin-bottom: 30px; }');
+        w.document.write('.invoice-party { flex: 1; }');
+        w.document.write('.invoice-party h3 { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #999; margin-bottom: 8px; }');
+        w.document.write('.invoice-party p { font-size: 13px; line-height: 1.6; }');
+        w.document.write('table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }');
+        w.document.write('th { background: #f7f7f7; padding: 10px 14px; text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: #666; border-bottom: 2px solid #e8e8e8; }');
+        w.document.write('td { padding: 12px 14px; border-bottom: 1px solid #f0f0f0; font-size: 13px; }');
+        w.document.write('.text-right { text-align: right; }');
+        w.document.write('.totals { margin-left: auto; width: 280px; }');
+        w.document.write('.totals tr td { padding: 6px 14px; font-size: 13px; }');
+        w.document.write('.totals .total-row td { font-weight: 700; font-size: 16px; border-top: 2px solid #1a1a1a; padding-top: 10px; }');
+        w.document.write('.invoice-footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #e8e8e8; font-size: 11px; color: #999; text-align: center; }');
+        w.document.write('@media print { body { padding: 20px; } .no-print { display: none; } }');
+        w.document.write('</style></head><body>');
+
+        w.document.write('<div class="invoice-header">');
+        w.document.write('<div>');
+        if (logoUrl) {
+          w.document.write('<img src="' + logoUrl + '" alt="Larforyou" class="invoice-logo">');
+        } else {
+          w.document.write('<div style="font-size:24px;font-weight:900;color:#e85d25;">Larforyou</div>');
+        }
+        w.document.write('</div>');
+        w.document.write('<div class="invoice-title"><h1>FATURA</h1><p>N.º ' + escapeHtml(invoiceNum) + '</p><p>Data: ' + date + '</p></div>');
+        w.document.write('</div>');
+
+        w.document.write('<div class="invoice-parties">');
+        w.document.write('<div class="invoice-party"><h3>Emitente</h3><p><strong>Larforyou, Lda.</strong><br>NIF: 517 000 000<br>Rua da Inovação, 42<br>1200-000 Lisboa, Portugal<br>geral@larforyou.pt</p></div>');
+        w.document.write('<div class="invoice-party"><h3>Cliente</h3><p><strong>' + escapeHtml(company.name) + '</strong><br>NIF: ' + escapeHtml(company.nif) + '<br>Email: ' + escapeHtml(company.email || '-') + '<br>Pack: ' + escapeHtml(company.pack) + '</p></div>');
+        w.document.write('</div>');
+
+        w.document.write('<table><thead><tr><th>Descrição</th><th>Qtd</th><th class="text-right">Preço Unit.</th><th class="text-right">Total</th></tr></thead>');
+        w.document.write('<tbody><tr><td>Pack ' + escapeHtml(company.pack) + ' — ZAP-FLAGS 3.0<br><small style="color:#666">Inclui ' + (company.flags || 0) + ' bandeiras, acesso BackOffice, campanhas geolocalizadas</small></td><td>1</td><td class="text-right">' + price.toFixed(2) + ' €</td><td class="text-right">' + price.toFixed(2) + ' €</td></tr></tbody></table>');
+
+        w.document.write('<table class="totals"><tbody>');
+        w.document.write('<tr><td>Subtotal</td><td class="text-right">' + price.toFixed(2) + ' €</td></tr>');
+        w.document.write('<tr><td>IVA (23%)</td><td class="text-right">' + iva.toFixed(2) + ' €</td></tr>');
+        w.document.write('<tr class="total-row"><td>TOTAL</td><td class="text-right">' + total.toFixed(2) + ' €</td></tr>');
+        w.document.write('</tbody></table>');
+
+        w.document.write('<div class="invoice-footer">');
+        w.document.write('<p>Larforyou, Lda. · NIF 517 000 000 · geral@larforyou.pt · www.larforyou.pt</p>');
+        w.document.write('<p style="margin-top:4px">Documento gerado automaticamente pelo sistema ZAP-FLAGS 3.0</p>');
+        w.document.write('<button class="no-print" onclick="window.print()" style="margin-top:16px;padding:10px 28px;background:#e85d25;color:white;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:14px;">Imprimir / Guardar PDF</button>');
+        w.document.write('</div>');
+
+        w.document.write('</body></html>');
+        w.document.close();
+
+        addAudit('Fatura ' + invoiceNum + ' gerada para ' + company.name);
+        notify('Fatura ' + invoiceNum + ' gerada — pode imprimir ou guardar como PDF');
+      });
+    }
   </script>
 </body>
 </html>
