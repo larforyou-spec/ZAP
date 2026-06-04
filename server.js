@@ -353,6 +353,28 @@ app.get('/api/player/me', verifyJWT, async (req, res) => {
     }
 });
 
+// List player's prize codes (MUST be before /api/player/:id to avoid route conflict)
+app.get('/api/player/prize-codes', verifyJWT, async (req, res) => {
+    if (req.user.accountType !== 'player') {
+        return res.status(403).json({ error: 'Apenas jogadores.' });
+    }
+
+    try {
+        const result = await db.query(`
+            SELECT pc.*, u.company_name
+            FROM prize_codes pc
+            LEFT JOIN users u ON u.id = pc.company_id
+            WHERE pc.player_id = $1
+            ORDER BY pc.created_at DESC
+        `, [req.user.userId]);
+
+        res.json({ success: true, prize_codes: result.rows });
+    } catch (error) {
+        console.error('Erro ao listar prize codes:', error);
+        res.status(500).json({ error: 'Erro interno.' });
+    }
+});
+
 app.get('/api/player/:id', async (req, res) => {
     try {
         const player = await getPlayer(await resolvePlayerId(req));
@@ -1618,28 +1640,6 @@ app.post('/api/player/fuse-prize', verifyJWT, async (req, res) => {
         res.status(500).json({ error: 'Erro interno ao fundir bandeiras.' });
     } finally {
         client.release();
-    }
-});
-
-// List player's prize codes
-app.get('/api/player/prize-codes', verifyJWT, async (req, res) => {
-    if (req.user.accountType !== 'player') {
-        return res.status(403).json({ error: 'Apenas jogadores.' });
-    }
-
-    try {
-        const result = await db.query(`
-            SELECT pc.*, u.company_name
-            FROM prize_codes pc
-            LEFT JOIN users u ON u.id = pc.company_id
-            WHERE pc.player_id = $1
-            ORDER BY pc.created_at DESC
-        `, [req.user.userId]);
-
-        res.json({ success: true, prize_codes: result.rows });
-    } catch (error) {
-        console.error('Erro ao listar prize codes:', error);
-        res.status(500).json({ error: 'Erro interno.' });
     }
 });
 
