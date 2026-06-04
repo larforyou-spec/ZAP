@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Larforyou · ZAP-FLAGS 3.0</title>
+  <title>Larforyou · ZAP-FLAGS 3.0 · BackOffice Admin</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <style>
     :root {
@@ -1535,7 +1535,7 @@
       pointer-events: none; z-index: 3;
     }
     .game-map-vp .flag-pin { position: absolute; transform: translate(-50%, -50%); z-index: 4; }
-    .game-map-vp .dormant { opacity: 0.35; pointer-events: none; }
+    .game-map-vp .dormant { opacity: 0; pointer-events: none; }
     .game-map-vp .bingo-glow { box-shadow: 0 0 18px 4px rgba(255, 204, 0, 0.65); }
 
     /* Offline mock map inside game layer */
@@ -1553,18 +1553,6 @@
       transform: translate(var(--map-shift-x, 0px), var(--map-shift-y, 0px));
       transition: transform .16s linear;
     }
-
-    .game-wallet-pill {
-      position: absolute; top: 52px; left: 50%; transform: translateX(-50%); z-index: 10;
-      background: linear-gradient(135deg, rgba(24,52,38,0.92), rgba(8,18,14,0.9));
-      border: 1px solid var(--accent); border-radius: 16px;
-      padding: 6px 18px; display: flex; align-items: center; gap: 8px;
-      box-shadow: 0 4px 20px rgba(66,215,125,0.18);
-      pointer-events: auto; cursor: pointer;
-    }
-    .game-wallet-pill .gw-icon { font-size: 18px; }
-    .game-wallet-pill .gw-amount { font-size: 16px; font-weight: 900; color: var(--gold, #d7b35a); }
-    .game-wallet-pill .gw-label { font-size: 10px; color: var(--muted); }
 
     .game-hud-top {
       position: absolute; top: 0; left: 0; right: 0; z-index: 10;
@@ -1676,14 +1664,13 @@
         <div>ZAP-FLAGS 3.0</div>
       </div>
       <div class="nav-actions">
-        <button class="btn secondary" onclick="showScreen('home')">Início</button>
-        <button class="btn secondary" onclick="showScreen('player')">Jogador</button>
-        <button class="btn secondary" onclick="showScreen('company')">Empresa</button>
+        <span style="color:var(--accent);font-weight:700;">BackOffice Admin</span>
+        <a href="index.html" class="btn secondary" style="text-decoration:none;">Voltar ao Jogo</a>
       </div>
     </nav>
 
     <main>
-      <section id="home" class="screen active">
+      <section id="home" class="screen" style="display:none">
         <div class="hero">
           <div class="hero-card hero-copy">
             <span class="eyebrow">Larforyou apresenta · ZAP-FLAGS 3.0</span>
@@ -1762,8 +1749,25 @@
         </div>
       </section>
 
+      <section id="backoffice" class="screen active">
+        <div class="dashboard">
+          <aside class="panel sidebar">
+            <h2>Backoffice</h2>
+            <button class="btn" onclick="renderBackofficePanel('overview')">Resumo</button>
+            <button class="btn secondary" onclick="renderBackofficePanel('users')">Utilizadores</button>
+            <button class="btn secondary" onclick="renderBackofficePanel('map')">Mapa e Áreas</button>
+            <button class="btn secondary" onclick="renderBackofficePanel('qrs')">QRs</button>
+            <button class="btn secondary" onclick="renderBackofficePanel('trades')">Trocas</button>
+            <button class="btn secondary" onclick="renderBackofficePanel('audit')">Auditoria</button>
+            <button class="btn secondary" onclick="renderBackofficePanel('engine')">Motor Geo & Bingo</button>
+            <button class="btn report" onclick="renderBackofficePanel('security')">Segurança & Alertas</button>
+            <button class="btn secondary" onclick="renderBackofficePanel('bans')">Bans & Moderação</button>
+          </aside>
+          <section class="panel content-area" id="backoffice-content"></section>
+        </div>
+      </section>
     </main>
-    <div class="brand-footer"><span class="ghost-admin" style="cursor:default;">Larforyou ®</span></div>
+    <div class="brand-footer"><button class="ghost-admin" onclick="showScreen('backoffice')">Larforyou ®</button></div>
   </div>
 
   <!-- Game Fullscreen Layer -->
@@ -2031,7 +2035,6 @@
 
     function showScreen(id) {
       console.log('showScreen called with:', id);
-      if (id === 'backoffice') { window.location.href = 'admin.html'; return; }
       exitGameMode();
       document.querySelectorAll('.screen').forEach(screen => screen.classList.remove('active'));
       document.getElementById(id).classList.add('active');
@@ -3599,11 +3602,6 @@
             </div>
             <button class="game-menu-btn" onclick="toggleGameMenu()">☰</button>
           </div>
-          <div class="game-wallet-pill" onclick="showGamePanel('wallet')">
-            <span class="gw-icon">🪙</span>
-            <span class="gw-amount">${player.coins} moedas</span>
-            <span class="gw-label">Saldo disponível</span>
-          </div>
           <div id="game-menu" class="game-menu-panel hidden">
             <button onclick="showGamePanel('wallet')">💰 Carteira</button>
             <button onclick="showGamePanel('bingo')">🎲 Bingos</button>
@@ -3653,11 +3651,6 @@
               <span class="game-hud-stat">⚡ ${player.energy}</span>
             </div>
             <button class="game-menu-btn" onclick="toggleGameMenu()">☰</button>
-          </div>
-          <div class="game-wallet-pill" onclick="showGamePanel('wallet')">
-            <span class="gw-icon">🪙</span>
-            <span class="gw-amount">${player.coins} moedas</span>
-            <span class="gw-label">Saldo disponível</span>
           </div>
           <div id="game-menu" class="game-menu-panel hidden">
             <button onclick="showGamePanel('wallet')">💰 Carteira</button>
@@ -4991,7 +4984,6 @@
 
     function renderBackofficePanel(panel) {
       const target = document.getElementById('backoffice-content');
-      if (!target) { return; }
       if (panel === 'overview') {
         var dormantCount = state.flags.filter(function(f) { return f.active && f.dormant; }).length;
         var activeCount = state.flags.filter(function(f) { return f.active && !f.dormant; }).length;
@@ -7567,13 +7559,11 @@
       
       console.log('🎯 Sistema inicializado e protegido!');
 
-      // Dismiss splash screen after initialization
+      // Admin mode: skip splash, show backoffice immediately
       var splash = document.getElementById('splash-screen');
-      if (splash) {
-        splash.classList.add('fade-out');
-        setTimeout(function() { if (splash.parentNode) splash.remove(); }, 800);
-      }
-    }, 1000);
+      if (splash) splash.remove();
+      renderBackofficePanel('overview');
+    }, 200);
 
     // Sistema de Bingos Locais
     let localBingos = [];
@@ -8020,12 +8010,6 @@
     function closeFaqModal() {
       document.getElementById('faq-overlay').classList.add('hidden');
     }
-
-    // Failsafe: remove splash after 4 seconds no matter what
-    setTimeout(function() {
-      var sp = document.getElementById('splash-screen');
-      if (sp) { sp.classList.add('fade-out'); setTimeout(function() { if (sp.parentNode) sp.remove(); }, 800); }
-    }, 3500);
   </script>
 </body>
 </html>
