@@ -987,6 +987,12 @@ app.post('/api/company/packages', verifyJWT, async (req, res) => {
         return res.status(400).json({ error: 'Coordenadas do centro são obrigatórias.' });
     }
 
+    // ── Matemática da divisão do pacote ──
+    // total_flags (definido pelo tier) = prize_flags + reward_flags
+    // prize_flags = prize_count × 20  (cada prémio real exige 20 bandeiras prize)
+    // reward_flags = total_flags - prize_flags  (restantes dão moedas, energia, skills)
+    // TODAS as bandeiras (prize + reward) contribuem para o skill do jogador ao serem capturadas.
+    // Tier 1 (Starter) não permite prémios: todas as bandeiras são reward.
     const numPrizes = Number(prize_count || 0);
     if (!tierDef.has_prizes && numPrizes > 0) {
         return res.status(400).json({ error: 'O tier Starter não permite prémios.' });
@@ -1109,11 +1115,17 @@ app.post('/api/company/packages/:id/activate', verifyJWT, async (req, res) => {
         const prizeFlags = pkg.prize_flags || 0;
         const rewardFlags = pkg.reward_flags || (totalFlags - prizeFlags);
 
+        // ── Distribuição das bandeiras no mapa ──
+        // Ex: 5000 flags, 100 prémios → 2000 prize + 3000 reward
+        // Prize: tipo 'Prize', dão moedas (5-15) + energia (1-5) + skill (via captura)
+        //        Jogador junta 20 prize → funde num código QR do prémio real
+        // Reward: tipos aleatórios (Coin, Energy_10, Energy_20, Skill)
+        //        Dão moedas e/ou energia + skill (via captura)
         const flagTypes = ['Coin', 'Energy_10', 'Energy_20', 'Skill'];
         const batchSize = 500;
         let inserted = 0;
 
-        // Generate prize flags (if any)
+        // Gerar bandeiras prize (prémio real — jogador precisa de 20 para fundir)
         for (let i = 0; i < prizeFlags; i += batchSize) {
             const count = Math.min(batchSize, prizeFlags - i);
             const values = [];
@@ -1136,7 +1148,7 @@ app.post('/api/company/packages/:id/activate', verifyJWT, async (req, res) => {
             inserted += count;
         }
 
-        // Generate reward flags
+        // Gerar bandeiras reward (recompensas de jogo: moedas, energia, skills)
         for (let i = 0; i < rewardFlags; i += batchSize) {
             const count = Math.min(batchSize, rewardFlags - i);
             const values = [];
