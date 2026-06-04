@@ -215,3 +215,107 @@ Estados: `scheduled` → `active` → `captured` ou `expired`.
 ### Funcao auxiliar
 
 `haversineMeters(lat1, lng1, lat2, lng2)` — calculo de distancia em metros entre dois pontos GPS (formula Haversine). Usada para validar proximidade na captura de bingos.
+
+---
+
+## Mercado QR + Seguranca (Fase 3)
+
+### Conceito
+
+Codigos de premio sao gerados de duas formas:
+1. **Fusao**: Jogador junta 20 bandeiras "prize" do mesmo pacote → funde num codigo unico.
+2. **Bingo Flash**: Ao capturar um Bingo, o codigo de premio e gerado automaticamente.
+
+Cada codigo contem dados trancados da loja (GPS, contacto, premio). Pode ser vendido no mercado entre jogadores por moedas.
+
+### Ciclo de vida do codigo
+
+`available` → `proximity_alert` (a 50m da loja, timer 5min) → `qr_active` (ativacao manual, 30s) → `burned` (scan da empresa, vira trofeu)
+
+Alternativo: `available` → `on_market` (listado para venda) → `available` (comprado por outro jogador)
+
+### Nova Tabela: `prize_codes`
+
+```sql
+CREATE TABLE IF NOT EXISTS prize_codes (
+    id SERIAL PRIMARY KEY,
+    player_id INTEGER NOT NULL,
+    package_id INTEGER,
+    company_id INTEGER NOT NULL,
+    token VARCHAR(20) NOT NULL UNIQUE,
+    prize_name TEXT NOT NULL,
+    prize_description TEXT,
+    prize_claim_deadline TEXT,
+    store_latitude NUMERIC(10,7),
+    store_longitude NUMERIC(10,7),
+    company_name TEXT,
+    company_contact TEXT,
+    source VARCHAR(10) NOT NULL DEFAULT 'fuse',
+    fused_flag_ids INTEGER[],
+    bingo_id INTEGER,
+    status VARCHAR(20) NOT NULL DEFAULT 'available',
+    proximity_expires_at TIMESTAMP,
+    qr_activated_at TIMESTAMP,
+    qr_expires_at TIMESTAMP,
+    burned_at TIMESTAMP,
+    validated_by_company_id INTEGER,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+```
+
+Alteracao na tabela `market_listings`:
+```sql
+ALTER TABLE market_listings ADD COLUMN IF NOT EXISTS prize_code_id INTEGER;
+```
+
+### Rotas API
+
+**`POST /api/player/fuse-prize`** — fundir 20 bandeiras prize capturadas do mesmo pacote.
+- Body: `{ package_id }`
+- Valida que jogador tem >=20 prize flags nao usadas desse pacote.
+- Gera token unico (PZ-XXXXXXXXXXXX).
+- Source = 'fuse', fused_flag_ids = array dos 20 IDs.
+
+**`GET /api/player/prize-codes`** — listar codigos do jogador com estado.
+
+**`POST /api/prize-codes/:id/proximity-check`** — verificacao de proximidade.
+- Body: `{ latitude, longitude }`
+- Se jogador a <=50m: inicia timer de 5 minutos (`proximity_alert`).
+- Se timer expira ou jogador sai do raio: volta a `available`.
+
+**`POST /api/prize-codes/:id/activate`** — ativacao manual do QR.
+- Gera QR com vida util de 30 segundos (`qr_active`).
+- Retorna `qr_data` com token, premio, empresa.
+- Apos 30s: QR invalido, volta a `available`.
+
+**`POST /api/company/qr/:id/validate`** — empresa faz scan.
+- Body: `{ token }`
+- Valida que QR esta ativo e dentro dos 30s.
+- Marca como `burned`, cria trofeu em `items` + `player_items`.
+- Codigo inutilizado permanentemente.
+
+**`POST /api/market/prize-code-sale`** — listar codigo no mercado.
+- Body: `{ prize_code_id, price }`
+- Muda status para `on_market`, cria `market_listing` com `item_type = 'PRIZE_CODE'`.
+
+**`POST /api/market/prize-code-buy/:listingId`** — comprar codigo.
+- Transfere moedas, muda ownership do prize_code, status volta a `available`.
+
+### Auto-geracao via Bingo
+
+Ao capturar um Bingo Flash, um `prize_code` e automaticamente gerado com `source = 'bingo'` e `bingo_id` preenchido. O jogador recebe o codigo diretamente na sua pasta.
+
+### Frontend (Jogador)
+
+- Seccao **Codigos de Premio** no painel do jogador:
+  - Fusao: campo com ID do pacote + botao "Fundir 20 bandeiras".
+  - Lista de codigos com estado colorido, token, fonte (Fusao/Bingo), empresa.
+  - Botoes "Ativar QR (30s)" e "Vender" para codigos disponiveis.
+  - Area de QR ativo com countdown de 30 segundos (token em destaque).
+
+### Seguranca Anti-Fraude
+
+- **QR de 30 segundos**: printscreens sao inuteis apos 30s.
+- **Estado QUEIMADO**: impossivel reusar apos scan da empresa.
+- **Verificacao por token + ID + company_id**: tripla validacao no scan.
+- **FOR UPDATE locks**: transacoes atomicas para evitar race conditions na captura e compra.

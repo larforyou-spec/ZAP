@@ -71,6 +71,34 @@
                 <h2>Mapa Leaflet</h2>
                 <div id="map"></div>
             </section>
+
+            <section class="card" style="margin-top:16px;">
+                <h2>C&oacute;digos de Pr&eacute;mio</h2>
+                <p style="color:#94a3b8;">Junta 20 bandeiras prize do mesmo pacote para fundir num c&oacute;digo de pr&eacute;mio. Usa Bingos Flash para ganhar c&oacute;digos instant&acirc;neos.</p>
+
+                <div class="grid">
+                    <div>
+                        <h3>Fundir Bandeiras Prize</h3>
+                        <label class="company-label" for="fuse-package-id">ID do Pacote</label>
+                        <input id="fuse-package-id" type="number" placeholder="ID do pacote (ex: 1)">
+                        <button class="primary" id="btn-fuse-prize" style="margin-top:8px;">Fundir 20 bandeiras &rarr; C&oacute;digo</button>
+                        <pre id="fuse-output" style="margin-top:8px;">Insere o ID do pacote e clica para fundir.</pre>
+                    </div>
+
+                    <div>
+                        <h3>Os Meus C&oacute;digos</h3>
+                        <button class="primary" id="reload-prize-codes">Atualizar</button>
+                        <div id="prize-codes-list" style="margin-top:12px; font-size:0.9em;">A carregar...</div>
+                    </div>
+                </div>
+
+                <div id="qr-activation-area" style="display:none; margin-top:16px; padding:16px; border:2px solid #22c55e; border-radius:8px; text-align:center;">
+                    <h3 style="color:#22c55e;">QR Code Ativo!</h3>
+                    <div id="qr-token" style="font-size:2em; font-weight:bold; letter-spacing:4px; color:#f59e0b;"></div>
+                    <div id="qr-timer" style="font-size:1.5em; color:#ef4444; margin-top:8px;"></div>
+                    <p style="color:#94a3b8;">Mostra este c&oacute;digo &agrave; empresa para fazer scan. V&aacute;lido por 30 segundos.</p>
+                </div>
+            </section>
         </section>
 
         <section id="company-container">
@@ -872,6 +900,138 @@
             }
         }
 
+        // ── Prize Code functions ──
+
+        async function fusePrize() {
+            const output = document.getElementById('fuse-output');
+            const packageId = Number(document.getElementById('fuse-package-id').value);
+
+            if (!packageId) {
+                output.textContent = 'Insere o ID do pacote.';
+                return;
+            }
+
+            try {
+                output.textContent = 'A fundir 20 bandeiras...';
+                const response = await fetch('/api/player/fuse-prize', {
+                    method: 'POST',
+                    headers: headers(),
+                    body: JSON.stringify({ package_id: packageId })
+                });
+                const data = await response.json();
+
+                if (!data.success) {
+                    output.textContent = data.error || 'Erro ao fundir.';
+                    return;
+                }
+
+                output.textContent = data.message;
+                await loadPrizeCodes();
+            } catch (error) {
+                output.textContent = 'Erro ao contactar o servidor.';
+            }
+        }
+
+        async function loadPrizeCodes() {
+            const list = document.getElementById('prize-codes-list');
+            try {
+                const response = await fetch('/api/player/prize-codes', { headers: headers() });
+                const data = await response.json();
+
+                if (!data.success || data.prize_codes.length === 0) {
+                    list.innerHTML = '<p style="color:#64748b;">Sem códigos de prémio. Funde 20 bandeiras prize ou captura um Bingo!</p>';
+                    return;
+                }
+
+                list.innerHTML = data.prize_codes.map(pc => {
+                    const statusColors = {
+                        available: '#22c55e', proximity_alert: '#eab308', qr_active: '#f59e0b',
+                        on_market: '#38bdf8', burned: '#ef4444'
+                    };
+                    const statusLabels = {
+                        available: 'Disponível', proximity_alert: 'Perto da loja', qr_active: 'QR Ativo',
+                        on_market: 'No Mercado', burned: 'QUEIMADO (Troféu)'
+                    };
+                    const color = statusColors[pc.status] || '#94a3b8';
+                    const label = statusLabels[pc.status] || pc.status;
+                    const source = pc.source === 'bingo' ? 'Bingo' : 'Fusão 20 flags';
+
+                    let actions = '';
+                    if (pc.status === 'available' || pc.status === 'proximity_alert') {
+                        actions = `<button class="primary" style="font-size:0.8em; padding:4px 10px;" onclick="activatePrizeCode(${pc.id})">Ativar QR (30s)</button>
+                                   <button style="font-size:0.8em; padding:4px 10px;" onclick="sellPrizeCode(${pc.id})">Vender</button>`;
+                    }
+
+                    return `<div style="border:1px solid #334155; border-radius:8px; padding:10px; margin-bottom:8px;">
+                        <strong>${pc.prize_name}</strong> <span style="color:${color};">[${label}]</span>
+                        <br><small>Token: ${pc.token} | Fonte: ${source} | Empresa: ${pc.company_name || '--'}</small>
+                        <br>${actions}
+                    </div>`;
+                }).join('');
+            } catch (error) {
+                list.innerHTML = '<p style="color:#64748b;">Erro ao carregar códigos.</p>';
+            }
+        }
+
+        let qrCountdownInterval = null;
+
+        async function activatePrizeCode(codeId) {
+            if (!confirm('Ativar QR Code? Tens apenas 30 segundos para a empresa fazer scan!')) return;
+
+            try {
+                const response = await fetch(`/api/prize-codes/${codeId}/activate`, {
+                    method: 'POST',
+                    headers: headers()
+                });
+                const data = await response.json();
+
+                if (!data.success) {
+                    alert(data.error || 'Erro ao ativar.');
+                    return;
+                }
+
+                const area = document.getElementById('qr-activation-area');
+                const tokenEl = document.getElementById('qr-token');
+                const timerEl = document.getElementById('qr-timer');
+
+                area.style.display = 'block';
+                tokenEl.textContent = data.qr_data.token;
+
+                const expiresAt = new Date(data.qr_expires_at);
+
+                if (qrCountdownInterval) clearInterval(qrCountdownInterval);
+                qrCountdownInterval = setInterval(() => {
+                    const remaining = Math.max(0, Math.round((expiresAt - Date.now()) / 1000));
+                    timerEl.textContent = `${remaining}s`;
+                    if (remaining <= 0) {
+                        clearInterval(qrCountdownInterval);
+                        area.style.display = 'none';
+                        loadPrizeCodes();
+                    }
+                }, 1000);
+            } catch (error) {
+                alert('Erro ao contactar o servidor.');
+            }
+        }
+
+        async function sellPrizeCode(codeId) {
+            const price = prompt('Preço em moedas para vender este código:');
+            if (!price || Number(price) <= 0) return;
+
+            try {
+                const response = await fetch('/api/market/prize-code-sale', {
+                    method: 'POST',
+                    headers: headers(),
+                    body: JSON.stringify({ prize_code_id: codeId, price: Number(price) })
+                });
+                const data = await response.json();
+                alert(data.message || data.error);
+                await loadPrizeCodes();
+            } catch (error) {
+                alert('Erro ao contactar o servidor.');
+            }
+        }
+
         // ── Bingo Flash functions ──
 
         async function populateBingoPackageSelector() {
@@ -1011,6 +1171,8 @@
         document.getElementById('load-player').addEventListener('click', initializePlayerExperience);
         document.getElementById('seed-campaign-form').addEventListener('submit', seedCampaign);
         document.getElementById('create-package-form').addEventListener('submit', createPackage);
+        document.getElementById('btn-fuse-prize').addEventListener('click', fusePrize);
+        document.getElementById('reload-prize-codes').addEventListener('click', loadPrizeCodes);
         document.getElementById('create-bingo-form').addEventListener('submit', createBingo);
         document.getElementById('pkg-tier').addEventListener('change', () => { updateTierInfo(); updatePrizeCalc(); });
         document.getElementById('pkg-prize-count').addEventListener('input', updatePrizeCalc);
