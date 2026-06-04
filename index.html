@@ -1183,6 +1183,7 @@
             <button class="btn secondary" onclick="renderPlayerPanel('bingo')">🎲 Bingos</button>
             <button class="btn secondary" onclick="renderPlayerPanel('market')">QR Market</button>
             <button class="btn secondary" onclick="renderPlayerPanel('friends')">Amigos e Trocas</button>
+            <button class="btn secondary" onclick="renderPlayerPanel('collected')">🏴 Bandeiras Colhidas</button>
           </aside>
           <section class="panel content-area" id="player-content"></section>
         </div>
@@ -1316,6 +1317,13 @@
     if (!state.trades) state.trades = [];
     if (!state.selectedBingos) state.selectedBingos = [];
     if (!state.bulkPrizes) state.bulkPrizes = [];
+
+    // Garantir que cada jogador tem flagHistory
+    state.players.forEach(p => { if (!p.flagHistory) p.flagHistory = []; });
+
+    // WASD zoom state
+    let wasdZoomApplied = false;
+    const WASD_ZOOM_LEVEL = 6;
 
     function loadState() {
       try {
@@ -2756,7 +2764,7 @@
           </div>
           <h2>Mapa GPS · ${escapeHtml(player.name)}</h2>
           ${statCards()}
-          <p>Usa as setas para caminhar em passos de 0,5 m. Mantém Espaço pressionado com uma seta para correr até 1,5 m.</p>
+          <p>Usa as setas ou W/A/S/D para caminhar (0,5 m). WASD ativa zoom focado. Espaço + seta = corrida (1,5 m). Carrega em 📡 GPS Real para tracking automático.</p>
           <div class="map-full player-move-mode real-gps-map" onclick="movePlayerOnMap(event)">
             <iframe id="gps-map-frame" title="Mapa real GPS" style="transform: translate(${(50 - position.x) * 3}px, ${(50 - position.y) * 3}px);" src="https://www.openstreetmap.org/export/embed.html?bbox=-9.1780%2C38.7200%2C-9.1620%2C38.7320&amp;layer=mapnik"></iframe>
             <div id="gps-range-circle" class="range-circle" style="left:${position.x}%;top:${position.y}%;"></div>
@@ -2770,6 +2778,8 @@
           <div class="bottom-bar">
             <span id="gps-position-badge" class="badge">GPS simulado · X ${Number(position.x).toFixed(2)}% / Y ${Number(position.y).toFixed(2)}% · Alcance 15</span>
             <div>
+              <button class="btn" onclick="startRealGps()">📡 GPS Real</button>
+              <button class="btn secondary" onclick="stopRealGps()">Parar GPS</button>
               <button class="btn secondary" onclick="notify('Modo Offline GPS ativado')">Offline GPS</button>
               <button class="btn secondary" onclick="movePlayerRandomly()">Mover aleatório</button>
               <button class="btn secondary" onclick="restPlayer()">Descansar</button>
@@ -3263,6 +3273,41 @@
               </div>
             `).join('') || '<p>Não há empresas registadas.</p>'}
           </div>
+        `;
+      }
+
+      if (panel === 'collected') {
+        if (!player.flagHistory) player.flagHistory = [];
+        const iconMap = { 'caf\u00e9': '\u2615', 'coffee': '\u2615', 'talho': '\ud83e\udd69', 'mec\u00e2nico': '\ud83d\udd27', 'gym': '\ud83c\udfcb\ufe0f', 'gin\u00e1sio': '\ud83c\udfcb\ufe0f', 'padaria': '\ud83c\udf5e', 'restaurante': '\ud83c\udf7d\ufe0f', 'bar': '\ud83c\udf7a', 'farmacia': '\ud83d\udc8a', 'farm\u00e1cia': '\ud83d\udc8a', 'loja': '\ud83d\udecd\ufe0f', 'mercado': '\ud83d\uded2', 'hotel': '\ud83c\udfe8', 'bingo': '\ud83c\udfc6', 'pra\u00e7a': '\ud83c\udfd9\ufe0f' };
+        function flagIcon(label) {
+          const lower = label.toLowerCase();
+          for (const [key, icon] of Object.entries(iconMap)) {
+            if (lower.includes(key)) return icon;
+          }
+          return '\ud83c\udff4';
+        }
+        const grouped = {};
+        player.flagHistory.forEach(entry => {
+          const key = entry.label;
+          if (!grouped[key]) grouped[key] = { label: key, type: entry.type, count: 0 };
+          grouped[key].count++;
+        });
+        const rows = Object.values(grouped);
+        target.innerHTML = `
+          <div class="wallet-header">
+            <span class="coins-icon">\ud83c\udff4</span>
+            <div class="coins-amount">${player.flagHistory.length} bandeiras</div>
+            <div class="wallet-label">Total colhidas</div>
+          </div>
+          <h2>Bandeiras Colhidas</h2>
+          <p>Hist\u00f3rico de empresas onde apanhaste bandeiras.</p>
+          ${rows.length === 0 ? '<p style="color:var(--muted);">Ainda n\u00e3o colheste nenhuma bandeira.</p>' : `
+          <table class="data-table">
+            <thead><tr><th>Empresa / Bandeira</th><th>Tipo</th><th>Qty</th><th></th></tr></thead>
+            <tbody>
+              ${rows.map(r => `<tr><td>${escapeHtml(r.label)}</td><td>${escapeHtml(r.type)}</td><td><strong>${r.count}</strong></td><td style="font-size:20px;">${flagIcon(r.label)}</td></tr>`).join('')}
+            </tbody>
+          </table>`}
         `;
       }
     }
@@ -4241,6 +4286,9 @@
       if (distance > 15) return notify('Aproxima-te da bandeira para recolher. Distância: ' + Math.round(distance));
       flag.active = false;
       player.flags += 1;
+      // Registar no histórico de bandeiras colhidas
+      if (!player.flagHistory) player.flagHistory = [];
+      player.flagHistory.push({ label: flag.label, type: flag.type, collectedAt: Date.now() });
       if (flag.type === 'ZAP') {
         player.zap += 1;
         player.energy = Math.min(100, player.energy + Number(flag.reward || 3));
@@ -4328,6 +4376,60 @@
       if (player && energyFill && hungerFill) {
         energyFill.style.width = clampStat(player.energy) + '%';
         hungerFill.style.width = clampStat(player.hunger) + '%';
+      }
+    }
+
+    // WASD zoom: aplica zoom focado quando WASD é usado
+    function applyWasdZoom() {
+      const mapEl = document.querySelector('.map-full.real-gps-map');
+      if (mapEl) {
+        mapEl.style.transform = 'scale(' + WASD_ZOOM_LEVEL + ')';
+        mapEl.style.transformOrigin = 'center center';
+        mapEl.style.transition = 'transform 0.4s ease';
+        mapEl.style.overflow = 'hidden';
+      }
+      const mapFrame = document.getElementById('gps-map-frame');
+      if (mapFrame) {
+        mapFrame.style.transform = 'scale(2.5) translate(' + ((50 - (currentPlayer()?.position?.x || 50)) * 1.5) + 'px, ' + ((50 - (currentPlayer()?.position?.y || 50)) * 1.5) + 'px)';
+        mapFrame.style.transition = 'transform 0.4s ease';
+      }
+      if (playerLeafletMap) {
+        playerLeafletMap.setZoom(Math.min(playerLeafletMap.getZoom() + 4, 19));
+      }
+    }
+
+    // GPS REAL: watchPosition
+    let gpsWatchId = null;
+    function startRealGps() {
+      if (!navigator.geolocation) { notify('Geolocaliza\u00e7\u00e3o n\u00e3o suportada neste browser'); return; }
+      if (gpsWatchId !== null) return;
+      gpsWatchId = navigator.geolocation.watchPosition(
+        function(pos) {
+          const player = currentPlayer();
+          if (!player) return;
+          const lat = pos.coords.latitude;
+          const lng = pos.coords.longitude;
+          const px = 50 + (lng - GPS_BASE_LNG) * 100000;
+          const py = 50 - (lat - GPS_BASE_LAT) * 100000;
+          player.position = { x: Math.max(0, Math.min(100, px)), y: Math.max(0, Math.min(100, py)) };
+          saveState();
+          updateGpsView(player.position);
+          const badge = document.getElementById('gps-position-badge');
+          if (badge) badge.textContent = 'GPS REAL \u00b7 ' + lat.toFixed(5) + ', ' + lng.toFixed(5) + ' \u00b7 Alcance 15';
+        },
+        function(err) {
+          console.warn('GPS erro:', err.message);
+          notify('GPS: ' + err.message);
+        },
+        { enableHighAccuracy: true, maximumAge: 3000, timeout: 10000 }
+      );
+      notify('\ud83d\udce1 GPS real ativado \u2013 a posi\u00e7\u00e3o atualiza automaticamente');
+    }
+    function stopRealGps() {
+      if (gpsWatchId !== null) {
+        navigator.geolocation.clearWatch(gpsWatchId);
+        gpsWatchId = null;
+        notify('GPS real desativado');
       }
     }
 
@@ -5187,10 +5289,19 @@
         ArrowUp: [0, -1],
         ArrowDown: [0, 1],
         ArrowLeft: [-1, 0],
-        ArrowRight: [1, 0]
+        ArrowRight: [1, 0],
+        w: [0, -1], W: [0, -1],
+        s: [0, 1],  S: [0, 1],
+        a: [-1, 0], A: [-1, 0],
+        d: [1, 0],  D: [1, 0]
       };
       if (!directions[event.key]) return;
       event.preventDefault();
+      const isWASD = 'wasdWASD'.includes(event.key);
+      if (isWASD && !wasdZoomApplied) {
+        wasdZoomApplied = true;
+        applyWasdZoom();
+      }
       const [dx, dy] = directions[event.key];
       movePlayerByKeyboard(dx, dy, spacePressed);
     });
