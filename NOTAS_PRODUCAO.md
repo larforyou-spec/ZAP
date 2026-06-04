@@ -143,3 +143,75 @@ ALTER TABLE flags ADD COLUMN IF NOT EXISTS flag_category VARCHAR(20) DEFAULT 're
   - Calculadora em tempo real: X premios x 20 = Y prize + Z reward.
 - Tabela **Pacotes da Empresa** com estado (rascunho/ativo/expirado) e botao Ativar.
 - Confirmacao antes de ativar (acao irreversivel).
+
+---
+
+## Sistema de Bingos Flash (Fase 2)
+
+### Conceito
+
+Pacotes grandes (tiers 2-6) incluem bingos de bonus. Cada Bingo Flash:
+- E agendado pela empresa com dia, hora, duracao (max 24h) e premio flash.
+- Ao ativar, o bingo e colocado a **50m da loja** (posicao aleatoria dentro desse raio).
+- Jogadores a **250m** da loja recebem alerta (simulacao via endpoint `nearby`).
+- Jogadores a **50m** do bingo podem captura-lo.
+- Se ninguem capturar no tempo definido, o bingo **expira** e e devolvido a empresa.
+
+### Nova Tabela: `flash_bingos`
+
+```sql
+CREATE TABLE IF NOT EXISTS flash_bingos (
+    id SERIAL PRIMARY KEY,
+    company_id INTEGER NOT NULL,
+    package_id INTEGER,
+    prize_name TEXT NOT NULL,
+    scheduled_start TIMESTAMP NOT NULL,
+    duration_minutes INTEGER NOT NULL CHECK (duration_minutes BETWEEN 1 AND 1440),
+    store_latitude NUMERIC(10,7) NOT NULL,
+    store_longitude NUMERIC(10,7) NOT NULL,
+    bingo_latitude NUMERIC(10,7),
+    bingo_longitude NUMERIC(10,7),
+    status VARCHAR(20) NOT NULL DEFAULT 'scheduled',
+    activated_at TIMESTAMP,
+    expires_at TIMESTAMP,
+    winner_player_id INTEGER,
+    captured_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+```
+
+Estados: `scheduled` → `active` → `captured` ou `expired`.
+
+### Rotas API
+
+**`POST /api/company/bingos`** — criar/agendar bingo. Requer JWT company.
+- Body: `{ package_id?, prize_name, scheduled_start, duration_minutes, store_latitude, store_longitude }`
+- Valida slots de bingo disponiveis no pacote (se associado).
+- Gera posicao do bingo a 50m da loja automaticamente.
+
+**`GET /api/company/bingos`** — listar bingos da empresa com estado e vencedor.
+
+**`POST /api/company/bingos/:id/activate`** — ativar bingo (muda para `active`, define `expires_at`).
+
+**`GET /api/bingos/nearby?lat=X&lng=Y`** — simulacao de alerta para jogadores.
+- Expira bingos vencidos automaticamente.
+- Devolve bingos ativos a <=250m da loja do jogador.
+- Para cada bingo: `alert: true`, `capturable: true/false` (<=50m do bingo), `time_remaining_s`.
+
+**`POST /api/bingos/:id/capture`** — jogador captura bingo.
+- Verifica distancia <=50m do bingo (haversine).
+- Marca como `captured`, regista vencedor, +500 moedas.
+
+**`POST /api/bingos/expire-check`** — endpoint de expiracao manual/cron.
+- Marca bingos ativos vencidos como `expired` (devolvidos a empresa).
+
+### Frontend
+
+- Seccao **Gestao de Bingos Flash** no painel empresa:
+  - Formulario de agendamento: pacote associado (dropdown), premio, data/hora, duracao, coordenadas da loja.
+  - Tabela de bingos com estado (Agendado/Ativo/Capturado/Expirado), vencedor e botao Ativar.
+  - Selector de pacote e populado dinamicamente com pacotes ativos que tenham bingos.
+
+### Funcao auxiliar
+
+`haversineMeters(lat1, lng1, lat2, lng2)` — calculo de distancia em metros entre dois pontos GPS (formula Haversine). Usada para validar proximidade na captura de bingos.

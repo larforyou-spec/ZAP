@@ -28,6 +28,15 @@ const PACKAGE_TIERS = {
     6: { name: 'Enterprise',  flags: 100000, bingos: 100, radius_km: 100,   duration_days: 250,  price_cents: 5000, has_prizes: true  }
 };
 
+function haversineMeters(lat1, lng1, lat2, lng2) {
+    const R = 6371000;
+    const toRad = (d) => d * Math.PI / 180;
+    const dLat = toRad(lat2 - lat1);
+    const dLng = toRad(lng2 - lng1);
+    const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
 function randomPointInRadius(centerLat, centerLng, radiusKm) {
     const angle = Math.random() * 2 * Math.PI;
     const dist = radiusKm * Math.sqrt(Math.random());
@@ -1211,6 +1220,287 @@ app.post('/api/company/packages/:id/activate', verifyJWT, async (req, res) => {
         res.status(500).json({ error: 'Erro interno ao ativar pacote.' });
     } finally {
         client.release();
+    }
+});
+
+// ── Flash Bingo endpoints ──
+
+app.post('/api/company/bingos', verifyJWT, async (req, res) => {
+    if (req.user.accountType !== 'company') {
+        return res.status(403).json({ error: 'Apenas empresas podem criar bingos.' });
+    }
+
+    const { package_id, prize_name, scheduled_start, duration_minutes,
+            store_latitude, store_longitude } = req.body;
+
+    const durationMin = Number(duration_minutes);
+    if (!durationMin || durationMin < 1 || durationMin > 1440) {
+        return res.status(400).json({ error: 'Duração deve ser entre 1 e 1440 minutos (24h).' });
+    }
+
+    const storeLat = Number(store_latitude);
+    const storeLng = Number(store_longitude);
+    if (!Number.isFinite(storeLat) || !Number.isFinite(storeLng)) {
+        return res.status(400).json({ error: 'Coordenadas da loja são obrigatórias.' });
+    }
+
+    if (!prize_name || !String(prize_name).trim()) {
+        return res.status(400).json({ error: 'Nome do prémio flash é obrigatório.' });
+    }
+
+    if (!scheduled_start) {
+        return res.status(400).json({ error: 'Data/hora de início é obrigatória.' });
+    }
+
+    const startDate = new Date(scheduled_start);
+    if (isNaN(startDate.getTime())) {
+        return res.status(400).json({ error: 'Data/hora de início inválida.' });
+    }
+
+    try {
+        // Validate package belongs to company and has bingo slots available
+        if (package_id) {
+            const pkgCheck = await db.query(`
+                SELECT fp.id, fp.bingo_count, fp.company_id,
+                       COUNT(fb.id)::int AS used_bingos
+                FROM flag_packages fp
+                LEFT JOIN flash_bingos fb ON fb.package_id = fp.id
+                WHERE fp.id = $1 AND fp.company_id = $2
+                GROUP BY fp.id
+            `, [package_id, req.user.userId]);
+
+            if (pkgCheck.rows.length === 0) {
+                return res.status(404).json({ error: 'Pacote não encontrado.' });
+            }
+
+            const pkg = pkgCheck.rows[0];
+            if (pkg.used_bingos >= pkg.bingo_count) {
+                return res.status(400).json({ error: `Pacote já usou todos os ${pkg.bingo_count} bingos disponíveis (${pkg.used_bingos} usados).` });
+            }
+        }
+
+        // Generate bingo position within 50m of the store
+        const bingoPoint = randomPointInRadius(storeLat, storeLng, 0.05);
+
+        const result = await db.query(`
+            INSERT INTO flash_bingos
+                (company_id, package_id, prize_name, scheduled_start, duration_minutes,
+                 store_latitude, store_longitude, bingo_latitude, bingo_longitude, status)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'scheduled')
+            RETURNING *
+        `, [
+            req.user.userId, package_id || null,
+            String(prize_name).trim(), startDate.toISOString(), durationMin,
+            storeLat, storeLng, bingoPoint.latitude, bingoPoint.longitude
+        ]);
+
+        res.status(201).json({ success: true, bingo: result.rows[0] });
+    } catch (error) {
+        console.error('Erro ao criar bingo:', error);
+        res.status(500).json({ error: 'Erro interno ao criar bingo.' });
+    }
+});
+
+app.get('/api/company/bingos', verifyJWT, async (req, res) => {
+    if (req.user.accountType !== 'company') {
+        return res.status(403).json({ error: 'Apenas empresas podem listar bingos.' });
+    }
+
+    try {
+        const result = await db.query(`
+            SELECT fb.*,
+                   p.username AS winner_username
+            FROM flash_bingos fb
+            LEFT JOIN players p ON p.user_id = fb.winner_player_id
+            WHERE fb.company_id = $1
+            ORDER BY fb.created_at DESC
+        `, [req.user.userId]);
+
+        res.json({ success: true, bingos: result.rows });
+    } catch (error) {
+        console.error('Erro ao listar bingos:', error);
+        res.status(500).json({ error: 'Erro interno ao listar bingos.' });
+    }
+});
+
+app.post('/api/company/bingos/:id/activate', verifyJWT, async (req, res) => {
+    if (req.user.accountType !== 'company') {
+        return res.status(403).json({ error: 'Apenas empresas podem ativar bingos.' });
+    }
+
+    try {
+        const result = await db.query(`
+            UPDATE flash_bingos
+            SET status = 'active', activated_at = NOW(),
+                expires_at = NOW() + (duration_minutes || ' minutes')::INTERVAL
+            WHERE id = $1 AND company_id = $2 AND status = 'scheduled'
+            RETURNING *
+        `, [req.params.id, req.user.userId]);
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Bingo não encontrado ou já está ativo/expirado.' });
+        }
+
+        res.json({ success: true, bingo: result.rows[0], message: 'Bingo Flash ativado! Jogadores próximos serão alertados.' });
+    } catch (error) {
+        console.error('Erro ao ativar bingo:', error);
+        res.status(500).json({ error: 'Erro interno ao ativar bingo.' });
+    }
+});
+
+// Simulação de alerta: jogadores a ≤250m recebem notificação, capturável a ≤50m
+app.get('/api/bingos/nearby', verifyJWT, async (req, res) => {
+    const lat = Number(req.query.lat || req.query.latitude);
+    const lng = Number(req.query.lng || req.query.longitude);
+
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+        return res.status(400).json({ error: 'Coordenadas (lat, lng) são obrigatórias.' });
+    }
+
+    try {
+        // Expire overdue bingos first
+        await db.query(`
+            UPDATE flash_bingos
+            SET status = 'expired'
+            WHERE status = 'active' AND expires_at IS NOT NULL AND expires_at < NOW()
+        `);
+
+        const result = await db.query(`
+            SELECT id, company_id, prize_name, duration_minutes,
+                   store_latitude, store_longitude, bingo_latitude, bingo_longitude,
+                   activated_at, expires_at
+            FROM flash_bingos
+            WHERE status = 'active' AND expires_at > NOW()
+        `);
+
+        const ALERT_RADIUS = 250;
+        const CAPTURE_RADIUS = 50;
+
+        const nearby = result.rows
+            .map(b => {
+                const distToStore = haversineMeters(lat, lng, Number(b.store_latitude), Number(b.store_longitude));
+                const distToBingo = haversineMeters(lat, lng, Number(b.bingo_latitude), Number(b.bingo_longitude));
+                return { ...b, distance_to_store_m: Math.round(distToStore), distance_to_bingo_m: Math.round(distToBingo) };
+            })
+            .filter(b => b.distance_to_store_m <= ALERT_RADIUS);
+
+        const bingos = nearby.map(b => ({
+            ...b,
+            alert: true,
+            capturable: b.distance_to_bingo_m <= CAPTURE_RADIUS,
+            time_remaining_s: Math.max(0, Math.round((new Date(b.expires_at) - Date.now()) / 1000))
+        }));
+
+        res.json({
+            success: true,
+            player_lat: lat,
+            player_lng: lng,
+            alert_radius_m: ALERT_RADIUS,
+            capture_radius_m: CAPTURE_RADIUS,
+            bingos
+        });
+    } catch (error) {
+        console.error('Erro ao buscar bingos próximos:', error);
+        res.status(500).json({ error: 'Erro interno ao buscar bingos.' });
+    }
+});
+
+app.post('/api/bingos/:id/capture', verifyJWT, async (req, res) => {
+    if (req.user.accountType !== 'player') {
+        return res.status(403).json({ error: 'Apenas jogadores podem capturar bingos.' });
+    }
+
+    const bingoId = Number(req.params.id);
+    const lat = Number(req.body.latitude);
+    const lng = Number(req.body.longitude);
+
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+        return res.status(400).json({ error: 'Coordenadas do jogador são obrigatórias.' });
+    }
+
+    const client = await db.pool.connect();
+
+    try {
+        await client.query('BEGIN');
+
+        // Expire overdue bingos
+        await client.query(`
+            UPDATE flash_bingos SET status = 'expired'
+            WHERE status = 'active' AND expires_at IS NOT NULL AND expires_at < NOW()
+        `);
+
+        const bingoResult = await client.query(
+            'SELECT * FROM flash_bingos WHERE id = $1 AND status = $2 FOR UPDATE',
+            [bingoId, 'active']
+        );
+
+        if (bingoResult.rows.length === 0) {
+            await client.query('ROLLBACK');
+            return res.status(404).json({ error: 'Bingo não encontrado, já expirou ou já foi capturado.' });
+        }
+
+        const bingo = bingoResult.rows[0];
+
+        if (new Date(bingo.expires_at) < new Date()) {
+            await client.query("UPDATE flash_bingos SET status = 'expired' WHERE id = $1", [bingoId]);
+            await client.query('COMMIT');
+            return res.status(410).json({ error: 'Bingo expirou antes da captura.' });
+        }
+
+        const dist = haversineMeters(lat, lng, Number(bingo.bingo_latitude), Number(bingo.bingo_longitude));
+        if (dist > 50) {
+            await client.query('ROLLBACK');
+            return res.status(400).json({ error: `Estás a ${Math.round(dist)}m do Bingo. Precisas de estar a 50m ou menos.` });
+        }
+
+        await client.query(`
+            UPDATE flash_bingos
+            SET status = 'captured', winner_player_id = $1, captured_at = NOW()
+            WHERE id = $2
+        `, [req.user.userId, bingoId]);
+
+        // Reward the player with coins
+        await client.query(`
+            UPDATE players SET coin_wallet = coin_wallet + 500, flags_caught_total = flags_caught_total + 1, updated_at = NOW()
+            WHERE user_id = $1
+        `, [req.user.userId]);
+
+        await client.query('COMMIT');
+
+        res.json({
+            success: true,
+            message: `Bingo Flash capturado! Prémio: ${bingo.prize_name}. +500 moedas de bónus.`,
+            bingo: { id: bingo.id, prize_name: bingo.prize_name },
+            reward_coins: 500
+        });
+    } catch (error) {
+        await client.query('ROLLBACK');
+        console.error('Erro ao capturar bingo:', error);
+        res.status(500).json({ error: 'Erro interno ao capturar bingo.' });
+    } finally {
+        client.release();
+    }
+});
+
+// Expiration check endpoint (can be called periodically or via cron)
+app.post('/api/bingos/expire-check', async (req, res) => {
+    try {
+        const result = await db.query(`
+            UPDATE flash_bingos
+            SET status = 'expired'
+            WHERE status = 'active' AND expires_at IS NOT NULL AND expires_at < NOW()
+            RETURNING id, company_id, prize_name
+        `);
+
+        res.json({
+            success: true,
+            expired_count: result.rows.length,
+            expired_bingos: result.rows,
+            message: `${result.rows.length} bingo(s) expirado(s) e devolvido(s) à empresa.`
+        });
+    } catch (error) {
+        console.error('Erro ao verificar expiração de bingos:', error);
+        res.status(500).json({ error: 'Erro interno.' });
     }
 });
 

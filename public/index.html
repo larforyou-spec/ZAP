@@ -225,6 +225,54 @@
                     </table>
                 </article>
             </section>
+
+            <section class="card" style="margin-top:16px;">
+                <h2>Gest&atilde;o de Bingos Flash</h2>
+                <p style="color:#94a3b8;">Cria e gere Bingos Flash de curta dura&ccedil;&atilde;o para os jogadores pr&oacute;ximos.</p>
+
+                <div class="grid" style="margin-top:12px;">
+                    <div>
+                        <h3>Agendar Novo Bingo</h3>
+                        <form id="create-bingo-form">
+                            <label class="company-label" for="bingo-package">Pacote associado (opcional)</label>
+                            <select id="bingo-package">
+                                <option value="">Sem pacote (independente)</option>
+                            </select>
+
+                            <label class="company-label" for="bingo-prize">Pr&eacute;mio Flash (ex: 1 picanha, 2 cafes)</label>
+                            <input id="bingo-prize" placeholder="Descri&ccedil;&atilde;o do pr&eacute;mio" required>
+
+                            <label class="company-label" for="bingo-date">Dia e hora de in&iacute;cio</label>
+                            <input id="bingo-date" type="datetime-local" required>
+
+                            <label class="company-label" for="bingo-duration">Dura&ccedil;&atilde;o (minutos, m&aacute;x 1440 = 24h)</label>
+                            <input id="bingo-duration" type="number" min="1" max="1440" value="60">
+
+                            <label class="company-label" for="bingo-store-lat">Latitude da loja</label>
+                            <input id="bingo-store-lat" type="number" step="any" value="38.7225" required>
+
+                            <label class="company-label" for="bingo-store-lng">Longitude da loja</label>
+                            <input id="bingo-store-lng" type="number" step="any" value="-9.1395" required>
+
+                            <button type="submit" class="company-btn" style="margin-top:14px; width:100%;">Agendar Bingo Flash</button>
+                        </form>
+                        <pre id="bingo-output" style="margin-top:10px;">Preenche os campos e agenda o Bingo.</pre>
+                    </div>
+
+                    <div>
+                        <h3>Bingos da Empresa</h3>
+                        <button class="company-btn" id="reload-bingos">Atualizar lista</button>
+                        <table class="captures-table" style="margin-top:12px;">
+                            <thead>
+                                <tr><th>ID</th><th>Pr&eacute;mio</th><th>Dura&ccedil;&atilde;o</th><th>Inicio</th><th>Estado</th><th>Vencedor</th><th>A&ccedil;&atilde;o</th></tr>
+                            </thead>
+                            <tbody id="bingos-rows">
+                                <tr><td colspan="7" style="color:#64748b;">A carregar...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
         </section>
     </main>
 
@@ -553,6 +601,8 @@
             await loadCompanyDashboard();
             await loadCompanyFlags();
             await loadCompanyPackages();
+            await populateBingoPackageSelector();
+            await loadCompanyBingos();
         }
 
         async function loadCompanyDashboard() {
@@ -822,14 +872,150 @@
             }
         }
 
+        // ── Bingo Flash functions ──
+
+        async function populateBingoPackageSelector() {
+            const select = document.getElementById('bingo-package');
+            try {
+                const response = await fetch('/api/company/packages', { headers: headers() });
+                const data = await response.json();
+                if (!data.success || !data.packages) return;
+
+                data.packages
+                    .filter(p => p.status === 'active' && p.bingo_count > 0)
+                    .forEach(pkg => {
+                        const t = TIER_DATA[pkg.tier] || {};
+                        const opt = document.createElement('option');
+                        opt.value = pkg.id;
+                        opt.textContent = `Pacote #${pkg.id} (${t.name || pkg.tier}) — ${pkg.bingo_count} bingos`;
+                        select.appendChild(opt);
+                    });
+            } catch (e) { /* silently fail */ }
+        }
+
+        async function createBingo(event) {
+            event.preventDefault();
+            const output = document.getElementById('bingo-output');
+
+            const payload = {
+                package_id: document.getElementById('bingo-package').value || null,
+                prize_name: document.getElementById('bingo-prize').value.trim(),
+                scheduled_start: document.getElementById('bingo-date').value,
+                duration_minutes: Number(document.getElementById('bingo-duration').value),
+                store_latitude: Number(document.getElementById('bingo-store-lat').value),
+                store_longitude: Number(document.getElementById('bingo-store-lng').value)
+            };
+
+            if (!payload.prize_name) {
+                output.textContent = 'O prémio flash é obrigatório.';
+                return;
+            }
+            if (!payload.scheduled_start) {
+                output.textContent = 'A data/hora de início é obrigatória.';
+                return;
+            }
+
+            try {
+                output.textContent = 'A agendar bingo...';
+                const response = await fetch('/api/company/bingos', {
+                    method: 'POST',
+                    headers: headers(),
+                    body: JSON.stringify(payload)
+                });
+                const data = await response.json();
+
+                if (!data.success) {
+                    output.textContent = data.error || 'Erro ao criar bingo.';
+                    return;
+                }
+
+                output.textContent = `Bingo agendado com sucesso! ID: ${data.bingo.id}. Ativa-o na lista ao lado.`;
+                document.getElementById('create-bingo-form').reset();
+                await loadCompanyBingos();
+            } catch (error) {
+                output.textContent = 'Erro ao contactar o servidor.';
+            }
+        }
+
+        async function loadCompanyBingos() {
+            const rows = document.getElementById('bingos-rows');
+            try {
+                const response = await fetch('/api/company/bingos', { headers: headers() });
+                const data = await response.json();
+
+                if (!data.success) {
+                    rows.innerHTML = `<tr><td colspan="7" style="color:#64748b;">${data.error || 'Erro'}</td></tr>`;
+                    return;
+                }
+
+                if (data.bingos.length === 0) {
+                    rows.innerHTML = '<tr><td colspan="7" style="color:#64748b;">Sem bingos. Agenda o primeiro!</td></tr>';
+                    return;
+                }
+
+                rows.innerHTML = data.bingos.map(b => {
+                    const statusColors = {
+                        scheduled: '#eab308', active: '#22c55e', captured: '#38bdf8', expired: '#ef4444'
+                    };
+                    const statusLabels = {
+                        scheduled: 'Agendado', active: 'Ativo', captured: 'Capturado', expired: 'Expirado'
+                    };
+                    const color = statusColors[b.status] || '#94a3b8';
+                    const label = statusLabels[b.status] || b.status;
+                    const startStr = b.scheduled_start ? new Date(b.scheduled_start).toLocaleString('pt-PT') : '--';
+                    const winner = b.winner_username || '--';
+                    const action = b.status === 'scheduled'
+                        ? `<button class="company-btn" style="font-size:0.8em; padding:4px 10px;" onclick="activateBingo(${b.id})">Ativar</button>`
+                        : b.status === 'active'
+                        ? `<span style="color:#22c55e;">A decorrer</span>`
+                        : '';
+
+                    return `<tr>
+                        <td>${b.id}</td>
+                        <td>${b.prize_name}</td>
+                        <td>${b.duration_minutes}min</td>
+                        <td>${startStr}</td>
+                        <td><span style="color:${color};">${label}</span></td>
+                        <td>${winner}</td>
+                        <td>${action}</td>
+                    </tr>`;
+                }).join('');
+            } catch (error) {
+                rows.innerHTML = '<tr><td colspan="7" style="color:#64748b;">Erro ao carregar bingos.</td></tr>';
+            }
+        }
+
+        async function activateBingo(bingoId) {
+            if (!confirm('Ativar este Bingo Flash? Os jogadores próximos serão alertados.')) return;
+
+            try {
+                const response = await fetch(`/api/company/bingos/${bingoId}/activate`, {
+                    method: 'POST',
+                    headers: headers()
+                });
+                const data = await response.json();
+
+                if (!data.success) {
+                    alert(data.error || 'Erro ao ativar bingo.');
+                } else {
+                    alert(data.message);
+                }
+                await loadCompanyBingos();
+            } catch (error) {
+                alert('Erro ao contactar o servidor.');
+            }
+        }
+
         document.getElementById('login-player').addEventListener('click', (event) => authenticate('login', event));
         document.getElementById('register-player').addEventListener('click', (event) => authenticate('register', event));
         document.getElementById('load-player').addEventListener('click', initializePlayerExperience);
         document.getElementById('seed-campaign-form').addEventListener('submit', seedCampaign);
         document.getElementById('create-package-form').addEventListener('submit', createPackage);
+        document.getElementById('create-bingo-form').addEventListener('submit', createBingo);
         document.getElementById('pkg-tier').addEventListener('change', () => { updateTierInfo(); updatePrizeCalc(); });
         document.getElementById('pkg-prize-count').addEventListener('input', updatePrizeCalc);
         document.getElementById('reload-packages').addEventListener('click', loadCompanyPackages);
+        document.getElementById('reload-bingos').addEventListener('click', loadCompanyBingos);
         document.getElementById('refresh-dashboard').addEventListener('click', async () => {
             await loadCompanyDashboard();
             await loadCompanyFlags();
