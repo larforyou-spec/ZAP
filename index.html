@@ -2,7 +2,7 @@
 <html lang="pt">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Larforyou · ZAP-FLAGS 3.0</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <style>
@@ -27,14 +27,14 @@
 
     body {
       margin: 0;
-      min-height: 100vh;
+      height: 100vh;
       font-family: Arial, Helvetica, sans-serif;
       color: var(--text);
       background:
         radial-gradient(circle at 14% 8%, rgba(66, 215, 125, 0.16), transparent 28%),
         radial-gradient(circle at 90% 16%, rgba(122, 215, 255, 0.10), transparent 30%),
         linear-gradient(135deg, #020403 0%, #0b1110 52%, #020202 100%);
-      overflow-x: hidden;
+      overflow: hidden;
     }
 
     body::before {
@@ -83,6 +83,8 @@
       padding: 28px 0 48px;
       position: relative;
       z-index: 1;
+      height: 100vh;
+      overflow-y: auto;
     }
 
     .top-nav {
@@ -1497,6 +1499,154 @@
     }
     .faq-close:hover { color: var(--red); }
     .faq-modal { position: relative; }
+
+    /* ── Fullscreen Game Mode ── */
+    body.game-active { overflow: hidden !important; }
+    body.game-active .app-shell { display: none !important; }
+    body.game-active .brand-footer { display: none !important; }
+    body.game-active::before, body.game-active::after { display: none; }
+
+    .game-layer {
+      position: fixed; inset: 0; z-index: 40;
+      background: #050807; overflow: hidden;
+    }
+    .game-layer.hidden { display: none; }
+
+    .game-map-vp {
+      position: absolute; inset: 0; overflow: hidden; cursor: pointer;
+      background: linear-gradient(135deg, #0a1d12, #08100e);
+    }
+    .game-map-vp iframe {
+      position: absolute; left: -10%; top: -10%; width: 120%; height: 120%;
+      border: 0; filter: saturate(0.82) contrast(0.98) brightness(0.86);
+      z-index: 1; pointer-events: none;
+      transform: translate(var(--map-shift-x, 0px), var(--map-shift-y, 0px));
+      transition: transform .16s linear;
+    }
+    .game-map-vp .leaflet-gps-map { position: absolute; inset: 0; z-index: 1; }
+    .game-map-vp .range-circle, .game-map-vp .avatar { left: 50% !important; top: 50% !important; }
+    .game-map-vp .range-circle, .game-map-vp .flag-pin, .game-map-vp .avatar { z-index: 5; }
+    .game-map-vp .avatar { z-index: 6; }
+    .game-map-vp .avatar-vitals { z-index: 7; top: 52px; }
+    .game-map-vp::after {
+      content: ""; position: absolute; inset: 0;
+      background: radial-gradient(circle at 50% 50%, transparent 0 42%, rgba(5,8,7,0.08) 78%),
+                  linear-gradient(180deg, rgba(5,8,7,0.04), rgba(5,8,7,0.12));
+      pointer-events: none; z-index: 3;
+    }
+    .game-map-vp .flag-pin { position: absolute; transform: translate(-50%, -50%); z-index: 4; }
+    .game-map-vp .dormant { opacity: 0; pointer-events: none; }
+    .game-map-vp .bingo-glow { box-shadow: 0 0 18px 4px rgba(255, 204, 0, 0.65); }
+
+    /* Offline mock map inside game layer */
+    .game-map-vp .game-offline-bg {
+      position: absolute; inset: -80%; z-index: 2;
+      background:
+        linear-gradient(28deg, transparent 0 43%, rgba(255,255,255,0.82) 43% 45%, transparent 45%),
+        linear-gradient(118deg, transparent 0 48%, rgba(255,255,255,0.72) 48% 50%, transparent 50%),
+        linear-gradient(88deg, transparent 0 52%, rgba(255,255,255,0.58) 52% 53.4%, transparent 53.4%),
+        linear-gradient(0deg, transparent 0 38%, rgba(255,255,255,0.52) 38% 39.4%, transparent 39.4%),
+        radial-gradient(circle at 28% 32%, rgba(66,215,125,0.42), transparent 7%),
+        radial-gradient(circle at 68% 58%, rgba(122,215,255,0.34), transparent 9%),
+        repeating-linear-gradient(45deg, rgba(255,255,255,0.06) 0 2px, transparent 2px 72px),
+        #8ec7a3;
+      transform: translate(var(--map-shift-x, 0px), var(--map-shift-y, 0px));
+      transition: transform .16s linear;
+    }
+
+    .game-hud-top {
+      position: absolute; top: 0; left: 0; right: 0; z-index: 10;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: max(8px, env(safe-area-inset-top)) 12px 8px;
+      background: linear-gradient(180deg, rgba(5,8,7,0.92) 0%, rgba(5,8,7,0.4) 70%, transparent);
+      pointer-events: none;
+    }
+    .game-hud-top > * { pointer-events: auto; }
+    .game-hud-brand { display: flex; align-items: center; gap: 8px; }
+    .game-hud-brand img { height: 28px; border-radius: 6px; }
+    .game-hud-brand span { font-weight: 900; font-size: 13px; color: var(--green); letter-spacing: 0.04em; }
+    .game-hud-stats { display: flex; gap: 6px; align-items: center; }
+    .game-hud-stat {
+      padding: 4px 8px; border-radius: 10px;
+      background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.12);
+      font-size: 12px; font-weight: 700; color: var(--text);
+    }
+    .game-menu-btn {
+      width: 36px; height: 36px; border-radius: 10px;
+      background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.15);
+      color: var(--text); font-size: 18px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .game-menu-btn:hover { background: rgba(66,215,125,0.25); }
+
+    .game-menu-panel {
+      position: absolute; top: 50px; right: 10px; z-index: 15;
+      background: var(--panel-strong); border: 1px solid rgba(66,215,125,0.25);
+      border-radius: 14px; padding: 6px; min-width: 170px;
+      box-shadow: var(--shadow); animation: tutSlideUp 0.15s ease;
+    }
+    .game-menu-panel.hidden { display: none; }
+    .game-menu-panel button {
+      display: flex; align-items: center; gap: 8px;
+      padding: 10px 12px; border-radius: 10px;
+      background: transparent; border: none; color: var(--text);
+      font-size: 13px; font-weight: 600; cursor: pointer;
+      text-align: left; width: 100%;
+    }
+    .game-menu-panel button:hover { background: rgba(66,215,125,0.12); }
+
+    .game-hud-bottom {
+      position: absolute; bottom: 0; left: 0; right: 0; z-index: 10;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 8px 12px max(12px, env(safe-area-inset-bottom));
+      background: linear-gradient(0deg, rgba(5,8,7,0.92) 0%, rgba(5,8,7,0.4) 70%, transparent);
+      pointer-events: none;
+    }
+    .game-hud-bottom > * { pointer-events: auto; }
+    .game-hud-actions { display: flex; gap: 6px; }
+    .game-hud-actions button {
+      width: 42px; height: 42px; border-radius: 12px;
+      background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.12);
+      color: var(--text); font-size: 17px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .game-hud-actions button:hover { background: rgba(66,215,125,0.25); }
+    .game-badge {
+      padding: 5px 10px; border-radius: 10px;
+      background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.12);
+      font-size: 11px; font-weight: 700; color: var(--muted);
+    }
+
+    .game-ticker {
+      position: absolute; bottom: 56px; left: 0; right: 0; z-index: 8;
+      overflow: hidden; height: 24px; background: rgba(0,0,0,0.4);
+    }
+    .game-ticker .game-ticker-inner {
+      display: flex; gap: 60px; white-space: nowrap;
+      animation: tickerScroll 25s linear infinite;
+      padding: 3px 0; font-size: 12px; color: var(--green-soft);
+    }
+    .game-ticker .jackpot-msg {
+      color: #ffcc00; text-shadow: 0 0 8px rgba(255, 204, 0, 0.5);
+    }
+
+    .game-panel-overlay {
+      position: fixed; inset: 0; z-index: 45;
+      background: rgba(5,8,7,0.94);
+      overflow-y: auto; padding: 16px;
+      animation: tutFadeIn 0.15s ease;
+    }
+    .game-panel-overlay.hidden { display: none; }
+    .game-panel-content {
+      max-width: 560px; margin: 0 auto;
+    }
+    .back-to-map-btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      margin-bottom: 14px; padding: 8px 14px; border-radius: 10px;
+      background: rgba(66,215,125,0.12); border: 1px solid rgba(66,215,125,0.3);
+      color: var(--green); font-size: 13px; font-weight: 700; cursor: pointer;
+    }
+    .back-to-map-btn:hover { background: rgba(66,215,125,0.25); }
   </style>
 </head>
 <body>
@@ -1620,6 +1770,11 @@
     </main>
     <div class="brand-footer"><button class="ghost-admin" onclick="showScreen('backoffice')">Larforyou ®</button></div>
   </div>
+
+  <!-- Game Fullscreen Layer -->
+  <div id="game-layer" class="game-layer hidden"></div>
+  <!-- Game Panel Overlay (wallet, bingo, etc. during game mode) -->
+  <div id="game-panel-overlay" class="game-panel-overlay hidden"></div>
 
   <div id="toast" class="toast"></div>
 
@@ -1881,6 +2036,11 @@
 
     function showScreen(id) {
       console.log('showScreen called with:', id);
+      if (id === 'backoffice') {
+        var pwd = prompt('Palavra-passe do Administrador:');
+        if (pwd !== 'admin2024') { notify('Acesso negado'); return; }
+      }
+      exitGameMode();
       document.querySelectorAll('.screen').forEach(screen => screen.classList.remove('active'));
       document.getElementById(id).classList.add('active');
       if (id === 'player') {
@@ -1892,7 +2052,6 @@
         renderCompanyGate();
       }
       if (id === 'backoffice') renderBackofficePanel('overview');
-      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
     function notify(message) {
@@ -1904,10 +2063,43 @@
     }
 
     function logout() {
+      exitGameMode();
       state.session = { type: null, id: null };
       saveState();
       notify('Sessão terminada');
-      showScreen('home');
+      document.querySelectorAll('.screen').forEach(screen => screen.classList.remove('active'));
+      document.getElementById('home').classList.add('active');
+    }
+
+    /* ═══ Game Mode Helpers ═══ */
+    function enterGameMode() {
+      document.body.classList.add('game-active');
+      var gl = document.getElementById('game-layer');
+      if (gl) gl.classList.remove('hidden');
+      closeGamePanelOverlay();
+    }
+    function exitGameMode() {
+      document.body.classList.remove('game-active');
+      var gl = document.getElementById('game-layer');
+      if (gl) { gl.classList.add('hidden'); gl.innerHTML = ''; }
+      closeGamePanelOverlay();
+      closeGameMenu();
+    }
+    function toggleGameMenu() {
+      var m = document.getElementById('game-menu');
+      if (m) m.classList.toggle('hidden');
+    }
+    function closeGameMenu() {
+      var m = document.getElementById('game-menu');
+      if (m) m.classList.add('hidden');
+    }
+    function closeGamePanelOverlay() {
+      var o = document.getElementById('game-panel-overlay');
+      if (o) { o.classList.add('hidden'); o.innerHTML = ''; }
+    }
+    function showGamePanel(panel) {
+      closeGameMenu();
+      renderPlayerPanel(panel);
     }
 
     function tradeCard(trade, isIncoming) {
@@ -3365,29 +3557,35 @@
     }
 
     function renderPlayerPanel(panel) {
-      const target = document.getElementById('player-content');
+      var isGameView = (panel === 'game' || panel === 'game-offline');
+      var target;
+
+      if (isGameView) {
+        enterGameMode();
+        target = document.getElementById('game-layer');
+      } else if (document.body.classList.contains('game-active')) {
+        var overlay = document.getElementById('game-panel-overlay');
+        overlay.classList.remove('hidden');
+        overlay.innerHTML = '<div class="game-panel-content"><button class="back-to-map-btn" onclick="closeGamePanelOverlay()">← Voltar ao Mapa</button><div id="gp-target"></div></div>';
+        target = document.getElementById('gp-target');
+      } else {
+        target = document.getElementById('player-content');
+      }
+
       const player = currentPlayer();
-      if (!player) return renderPlayerAuth();
+      if (!player) { exitGameMode(); return renderPlayerAuth(); }
       
-      // Verificar propostas expiradas
       checkExpiredTrades();
-      
-      // Atualizar porta-moedas no sidebar
       updateSidebarCoins();
       
       const position = ensurePlayerPosition(player);
       if (panel === 'game') {
+        closeGamePanelOverlay();
+        var tickerHtml = state.tickerFeed.length > 0 ? state.tickerFeed.map(function(m) { var cls = m.coins >= 1000 ? 'jackpot-msg' : ''; var icon = m.coins >= 1000 ? '🔥 ' : '🎉 '; return '<span class="' + cls + '">' + icon + escapeHtml(m.text) + '</span>'; }).join('') : '<span>ZAP-FLAGS 3.0 — Apanha bandeiras, ganha moedas, coleciona bingos!</span>';
         target.innerHTML = `
-          <div class="wallet-header">
-            <span class="coins-icon">🪙</span>
-            <div class="coins-amount">${player.coins} moedas</div>
-            <div class="wallet-label">Saldo disponível</div>
-          </div>
-          <h2>Mapa GPS · ${escapeHtml(player.name)}</h2>
-          ${statCards()}
-          <p>Usa as setas para caminhar em passos de 0,5 m. Mantém Espaço pressionado com uma seta para correr até 1,5 m.</p>
-          <div class="map-full player-move-mode real-gps-map" onclick="movePlayerOnMap(event)">
+          <div class="game-map-vp real-gps-map" onclick="movePlayerOnMap(event)">
             <iframe id="gps-map-frame" title="Mapa real GPS" style="transform: translate(${(50 - position.x) * 3}px, ${(50 - position.y) * 3}px);" src="https://www.openstreetmap.org/export/embed.html?bbox=-9.1780%2C38.7200%2C-9.1620%2C38.7320&amp;layer=mapnik"></iframe>
+            <div id="leaflet-gps-map" class="leaflet-gps-map"></div>
             <div id="gps-range-circle" class="range-circle" style="left:${position.x}%;top:${position.y}%;"></div>
             ${state.flags.filter(flag => flag.active).map(flag => {
               var dormantClass = flag.dormant ? ' dormant' : '';
@@ -3401,55 +3599,79 @@
               <div class="vital-wrap"><span>Fome</span><div class="vital-line" title="Fome"><div id="gps-hunger-fill" class="vital-fill hunger" style="width:${player.hunger}%;"></div></div></div>
             </div>
           </div>
-          <div class="map-ticker"><div class="map-ticker-inner" id="map-ticker-inner">${state.tickerFeed.length > 0 ? state.tickerFeed.map(function(m) { var cls = m.coins >= 1000 ? 'jackpot-msg' : ''; var icon = m.coins >= 1000 ? '🔥 ' : '🎉 '; return '<span class="' + cls + '">' + icon + escapeHtml(m.text) + '</span>'; }).join('') : '<span>ZAP-FLAGS 3.0 — Apanha bandeiras, ganha moedas, coleciona bingos!</span>'}</div></div>
-          <div class="bottom-bar">
-            <span id="gps-position-badge" class="badge">GPS simulado · X ${Number(position.x).toFixed(2)}% / Y ${Number(position.y).toFixed(2)}% · Alcance 15</span>
-            <div>
-              <button class="btn secondary" onclick="notify('Modo Offline GPS ativado')">Offline GPS</button>
-              <button class="btn secondary" onclick="movePlayerRandomly()">Mover aleatório</button>
-              <button class="btn secondary" onclick="restPlayer()">Descansar</button>
-              <button class="btn secondary" onclick="feedPlayer()">Comer · 10 moedas</button>
-              <button class="btn secondary" onclick="resetPlayerVitalsTest()">Repor teste</button>
-              <button class="btn secondary" onclick="logout()">Sair</button>
+          <div class="game-hud-top">
+            <div class="game-hud-brand"><img src="larforyou_logo_inovador_cores_1.png" alt="LFY"><span>${escapeHtml(player.name)}</span></div>
+            <div class="game-hud-stats">
+              <span class="game-hud-stat">🪙 ${player.coins}</span>
+              <span class="game-hud-stat">⚡ ${player.energy}</span>
+            </div>
+            <button class="game-menu-btn" onclick="toggleGameMenu()">☰</button>
+          </div>
+          <div id="game-menu" class="game-menu-panel hidden">
+            <button onclick="showGamePanel('wallet')">💰 Carteira</button>
+            <button onclick="showGamePanel('bingo')">🎲 Bingos</button>
+            <button onclick="showGamePanel('market')">🛒 QR Market</button>
+            <button onclick="showGamePanel('friends')">👥 Amigos</button>
+            <button onclick="showGamePanel('players')">👤 Jogadores</button>
+            <button onclick="closeGameMenu();logout()">🚪 Sair</button>
+          </div>
+          <div class="game-ticker"><div class="game-ticker-inner" id="map-ticker-inner">${tickerHtml}</div></div>
+          <div class="game-hud-bottom">
+            <span id="gps-position-badge" class="game-badge">GPS · X ${Number(position.x).toFixed(1)}% / Y ${Number(position.y).toFixed(1)}%</span>
+            <div class="game-hud-actions">
+              <button onclick="movePlayerRandomly()" title="Mover aleatório">🎲</button>
+              <button onclick="restPlayer()" title="Descansar">💤</button>
+              <button onclick="feedPlayer()" title="Comer · 10🪙">🍔</button>
             </div>
           </div>
         `;
       }
 
       if (panel === 'game-offline') {
+        closeGamePanelOverlay();
+        var tickerHtmlOff = state.tickerFeed.length > 0 ? state.tickerFeed.map(function(m) { var cls = m.coins >= 1000 ? 'jackpot-msg' : ''; var icon = m.coins >= 1000 ? '🔥 ' : '🎉 '; return '<span class="' + cls + '">' + icon + escapeHtml(m.text) + '</span>'; }).join('') : '<span>ZAP-FLAGS 3.0 — Apanha bandeiras, ganha moedas, coleciona bingos!</span>';
         target.innerHTML = `
-          <h2>GPS Offline · ${escapeHtml(player.name)}</h2>
-          ${statCards()}
-          <p>Modo offline com mapa simulado. Usa as setas para te moveres no mapa local.</p>
-          <div class="map-full player-move-mode" onclick="movePlayerOnMap(event)">
-            <div class="mock-map" style="position:relative;width:100%;height:400px;background:radial-gradient(circle at 72% 22%, rgba(122,215,255,0.16), transparent 24%),radial-gradient(circle at 24% 70%, rgba(66,215,125,0.14), transparent 30%),linear-gradient(135deg, rgba(255,255,255,0.10) 0 1px, transparent 1px 60px),linear-gradient(45deg, rgba(255,255,255,0.055) 0 1px, transparent 1px 46px),#08100e;background-size: auto, auto, 60px 60px, 46px 46px, auto;border-radius:24px;overflow:hidden;">
-              <div class="map-road" style="position:absolute;background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.08);border-radius:999px;width:680px;height:28px;left:-80px;top:180px;transform:rotate(-24deg);"></div>
-              <div class="map-road" style="position:absolute;background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.08);border-radius:999px;width:640px;height:24px;left:-60px;top:380px;transform:rotate(18deg);"></div>
-              <div class="map-road" style="position:absolute;background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.08);border-radius:999px;width:28px;height:700px;left:250px;top:-40px;transform:rotate(12deg);"></div>
-              <div id="offline-range-circle" class="range-circle" style="left:${position.x}%;top:${position.y}%;"></div>
-              ${state.flags.filter(flag => flag.active).map(flag => {
-                var dormantClass = flag.dormant ? ' dormant' : '';
-                var bingoGlow = (!flag.dormant && flag._isBingoJackpot) ? ' bingo-glow' : '';
-                var icon = flag.type === 'BINGO' ? '🏆' : flag.type === 'PR' ? '🎟️' : '🏁';
-                return '<button class="flag-pin' + dormantClass + bingoGlow + '" title="' + escapeHtml(flag.label) + '" style="left:' + flag.x + '%;top:' + flag.y + '%;" onclick="event.stopPropagation();collectFlag(\'' + flag.id + '\')">' + icon + '</button>';
-              }).join('')}
-              <div id="offline-avatar" class="avatar" style="left:${position.x}%;top:${position.y}%;">🚶</div>
-              <div class="avatar-vitals">
-                <div class="vital-wrap"><span>Energia</span><div class="vital-line" title="Energia"><div id="offline-energy-fill" class="vital-fill energy" style="width:${player.energy}%;"></div></div></div>
-                <div class="vital-wrap"><span>Fome</span><div class="vital-line" title="Fome"><div id="offline-hunger-fill" class="vital-fill hunger" style="width:${player.hunger}%;"></div></div></div>
-              </div>
+          <div class="game-map-vp" onclick="movePlayerOnMap(event)">
+            <div class="game-offline-bg"></div>
+            <div class="map-road" style="position:absolute;background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.08);border-radius:999px;width:680px;height:28px;left:-80px;top:40%;transform:rotate(-24deg);z-index:2;"></div>
+            <div class="map-road" style="position:absolute;background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.08);border-radius:999px;width:640px;height:24px;left:-60px;top:70%;transform:rotate(18deg);z-index:2;"></div>
+            <div class="map-road" style="position:absolute;background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.08);border-radius:999px;width:28px;height:700px;left:35%;top:-40px;transform:rotate(12deg);z-index:2;"></div>
+            <div id="offline-range-circle" class="range-circle" style="left:${position.x}%;top:${position.y}%;"></div>
+            ${state.flags.filter(flag => flag.active).map(flag => {
+              var dormantClass = flag.dormant ? ' dormant' : '';
+              var bingoGlow = (!flag.dormant && flag._isBingoJackpot) ? ' bingo-glow' : '';
+              var icon = flag.type === 'BINGO' ? '🏆' : flag.type === 'PR' ? '🎟️' : '🏁';
+              return '<button class="flag-pin' + dormantClass + bingoGlow + '" title="' + escapeHtml(flag.label) + '" style="left:' + flag.x + '%;top:' + flag.y + '%;" onclick="event.stopPropagation();collectFlag(\'' + flag.id + '\')">' + icon + '</button>';
+            }).join('')}
+            <div id="offline-avatar" class="avatar" style="left:${position.x}%;top:${position.y}%;">🚶</div>
+            <div class="avatar-vitals">
+              <div class="vital-wrap"><span>Energia</span><div class="vital-line" title="Energia"><div id="offline-energy-fill" class="vital-fill energy" style="width:${player.energy}%;"></div></div></div>
+              <div class="vital-wrap"><span>Fome</span><div class="vital-line" title="Fome"><div id="offline-hunger-fill" class="vital-fill hunger" style="width:${player.hunger}%;"></div></div></div>
             </div>
           </div>
-          <div class="map-ticker"><div class="map-ticker-inner" id="map-ticker-inner-offline">${state.tickerFeed.length > 0 ? state.tickerFeed.map(function(m) { var cls = m.coins >= 1000 ? 'jackpot-msg' : ''; var icon = m.coins >= 1000 ? '🔥 ' : '🎉 '; return '<span class="' + cls + '">' + icon + escapeHtml(m.text) + '</span>'; }).join('') : '<span>ZAP-FLAGS 3.0 — Apanha bandeiras, ganha moedas, coleciona bingos!</span>'}</div></div>
-          <div class="bottom-bar">
-            <span id="offline-position-badge" class="badge">GPS Offline · X ${Number(position.x).toFixed(2)}% / Y ${Number(position.y).toFixed(2)}% · Alcance 15</span>
-            <div>
-              <button class="btn" onclick="notify('Modo Online GPS ativado')">GPS Online</button>
-              <button class="btn secondary" onclick="movePlayerRandomly()">Mover aleatório</button>
-              <button class="btn secondary" onclick="restPlayer()">Descansar</button>
-              <button class="btn secondary" onclick="feedPlayer()">Comer · 10 moedas</button>
-              <button class="btn secondary" onclick="resetPlayerVitalsTest()">Repor teste</button>
-              <button class="btn secondary" onclick="logout()">Sair</button>
+          <div class="game-hud-top">
+            <div class="game-hud-brand"><img src="larforyou_logo_inovador_cores_1.png" alt="LFY"><span>${escapeHtml(player.name)}</span></div>
+            <div class="game-hud-stats">
+              <span class="game-hud-stat">🪙 ${player.coins}</span>
+              <span class="game-hud-stat">⚡ ${player.energy}</span>
+            </div>
+            <button class="game-menu-btn" onclick="toggleGameMenu()">☰</button>
+          </div>
+          <div id="game-menu" class="game-menu-panel hidden">
+            <button onclick="showGamePanel('wallet')">💰 Carteira</button>
+            <button onclick="showGamePanel('bingo')">🎲 Bingos</button>
+            <button onclick="showGamePanel('market')">🛒 QR Market</button>
+            <button onclick="showGamePanel('friends')">👥 Amigos</button>
+            <button onclick="showGamePanel('players')">👤 Jogadores</button>
+            <button onclick="closeGameMenu();logout()">🚪 Sair</button>
+          </div>
+          <div class="game-ticker"><div class="game-ticker-inner" id="map-ticker-inner-offline">${tickerHtmlOff}</div></div>
+          <div class="game-hud-bottom">
+            <span id="offline-position-badge" class="game-badge">GPS Offline · X ${Number(position.x).toFixed(1)}% / Y ${Number(position.y).toFixed(1)}%</span>
+            <div class="game-hud-actions">
+              <button onclick="movePlayerRandomly()" title="Mover aleatório">🎲</button>
+              <button onclick="restPlayer()" title="Descansar">💤</button>
+              <button onclick="feedPlayer()" title="Comer · 10🪙">🍔</button>
             </div>
           </div>
         `;
@@ -5435,7 +5657,7 @@
       if (partyModeActive) return;
       const player = currentPlayer();
       if (!player || state.session.type !== 'player') return;
-      if (!document.getElementById('player')?.classList.contains('active')) return;
+      if (!document.body.classList.contains('game-active')) return;
       if (!canMove(player)) return;
       const position = ensurePlayerPosition(player);
       const speed = (running ? RUN_STEP_METERS : WALK_STEP_METERS) * GPS_METERS_TO_PERCENT;
@@ -5468,7 +5690,7 @@
       avatar.style.top = position.y + '%';
       range.style.left = position.x + '%';
       range.style.top = position.y + '%';
-      badge.textContent = 'GPS simulado · X ' + Number(position.x).toFixed(2) + '% / Y ' + Number(position.y).toFixed(2) + '% · Alcance 15';
+      badge.textContent = 'GPS · X ' + Number(position.x).toFixed(1) + '% / Y ' + Number(position.y).toFixed(1) + '%';
       const player = currentPlayer();
       if (player && energyFill && hungerFill) {
         energyFill.style.width = clampStat(player.energy) + '%';
