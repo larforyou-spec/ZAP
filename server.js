@@ -19,6 +19,35 @@ const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-only-change-this-secret';
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
 
+const PACKAGE_TIERS = {
+    1: { name: 'Starter',     flags: 1000,   bingos: 0,   radius_km: 0.25,  duration_days: null, price_cents: 0,    has_prizes: false },
+    2: { name: 'Local',       flags: 5000,   bingos: 5,   radius_km: 1,     duration_days: 30,   price_cents: 1000, has_prizes: true  },
+    3: { name: 'Regional',    flags: 10000,  bingos: 10,  radius_km: 5,     duration_days: 60,   price_cents: 1500, has_prizes: true  },
+    4: { name: 'Nacional',    flags: 25000,  bingos: 25,  radius_km: 20,    duration_days: 90,   price_cents: 2000, has_prizes: true  },
+    5: { name: 'Premium',     flags: 50000,  bingos: 50,  radius_km: 50,    duration_days: 120,  price_cents: 3000, has_prizes: true  },
+    6: { name: 'Enterprise',  flags: 100000, bingos: 100, radius_km: 100,   duration_days: 250,  price_cents: 5000, has_prizes: true  }
+};
+
+function haversineMeters(lat1, lng1, lat2, lng2) {
+    const R = 6371000;
+    const toRad = (d) => d * Math.PI / 180;
+    const dLat = toRad(lat2 - lat1);
+    const dLng = toRad(lng2 - lng1);
+    const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function randomPointInRadius(centerLat, centerLng, radiusKm) {
+    const angle = Math.random() * 2 * Math.PI;
+    const dist = radiusKm * Math.sqrt(Math.random());
+    const dLat = dist / 111.32;
+    const dLng = dist / (111.32 * Math.cos(centerLat * Math.PI / 180));
+    return {
+        latitude: centerLat + dLat * Math.cos(angle),
+        longitude: centerLng + dLng * Math.sin(angle)
+    };
+}
+
 app.use(helmet({ contentSecurityPolicy: false }));
 app.use(compression());
 app.use(morgan('combined'));
@@ -321,6 +350,28 @@ app.get('/api/player/me', verifyJWT, async (req, res) => {
         res.json(player);
     } catch (error) {
         res.status(500).json({ error: error.message });
+    }
+});
+
+// List player's prize codes (MUST be before /api/player/:id to avoid route conflict)
+app.get('/api/player/prize-codes', verifyJWT, async (req, res) => {
+    if (req.user.accountType !== 'player') {
+        return res.status(403).json({ error: 'Apenas jogadores.' });
+    }
+
+    try {
+        const result = await db.query(`
+            SELECT pc.*, u.company_name
+            FROM prize_codes pc
+            LEFT JOIN users u ON u.id = pc.company_id
+            WHERE pc.player_id = $1
+            ORDER BY pc.created_at DESC
+        `, [req.user.userId]);
+
+        res.json({ success: true, prize_codes: result.rows });
+    } catch (error) {
+        console.error('Erro ao listar prize codes:', error);
+        res.status(500).json({ error: 'Erro interno.' });
     }
 });
 
@@ -935,6 +986,1231 @@ app.post('/api/company/flags', verifyJWT, async (req, res) => {
     } catch (error) {
         console.error('Erro ao criar campanha da empresa:', error);
         res.status(500).json({ error: 'Erro interno ao criar campanha.' });
+    }
+});
+
+// ── Package (Pacote) endpoints ──
+
+app.get('/api/company/tiers', (req, res) => {
+    const tiers = Object.entries(PACKAGE_TIERS).map(([tier, t]) => ({
+        tier: Number(tier), ...t
+    }));
+    res.json({ success: true, tiers });
+});
+
+app.post('/api/company/packages', verifyJWT, async (req, res) => {
+    if (req.user.accountType !== 'company') {
+        return res.status(403).json({ error: 'Apenas empresas podem criar pacotes.' });
+    }
+
+    const { tier, center_latitude, center_longitude,
+            prize_count, prize_description, prize_claim_deadline } = req.body;
+    const tierNum = Number(tier);
+    const tierDef = PACKAGE_TIERS[tierNum];
+
+    if (!tierDef) {
+        return res.status(400).json({ error: 'Tier inválido. Escolha entre 1 e 6.' });
+    }
+
+    const lat = Number(center_latitude);
+    const lng = Number(center_longitude);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+        return res.status(400).json({ error: 'Coordenadas do centro são obrigatórias.' });
+    }
+
+    // ── Matemática da divisão do pacote ──
+    // total_flags (definido pelo tier) = prize_flags + reward_flags
+    // prize_flags = prize_count × 20  (cada prémio real exige 20 bandeiras prize)
+    // reward_flags = total_flags - prize_flags  (restantes dão moedas, energia, skills)
+    // TODAS as bandeiras (prize + reward) contribuem para o skill do jogador ao serem capturadas.
+    // Tier 1 (Starter) não permite prémios: todas as bandeiras são reward.
+    const numPrizes = Number(prize_count || 0);
+    if (!tierDef.has_prizes && numPrizes > 0) {
+        return res.status(400).json({ error: 'O tier Starter não permite prémios.' });
+    }
+
+    const prizeFlags = numPrizes * 20;
+    if (prizeFlags > tierDef.flags) {
+        return res.status(400).json({ error: `Prémios a mais: ${numPrizes} prémios x 20 = ${prizeFlags} bandeiras prize, mas o pacote só tem ${tierDef.flags}.` });
+    }
+
+    try {
+        const result = await db.query(`
+            INSERT INTO flag_packages
+                (company_id, tier, total_flags, bingo_count, radius_km, duration_days,
+                 price_cents, prize_count, prize_flags, reward_flags,
+                 prize_description, prize_claim_deadline,
+                 center_latitude, center_longitude, status)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, 'draft')
+            RETURNING *
+        `, [
+            req.user.userId, tierNum, tierDef.flags, tierDef.bingos,
+            tierDef.radius_km, tierDef.duration_days,
+            tierDef.price_cents, numPrizes, prizeFlags, tierDef.flags - prizeFlags,
+            String(prize_description || '').trim() || null,
+            String(prize_claim_deadline || '').trim() || null,
+            lat, lng
+        ]);
+
+        res.status(201).json({ success: true, package: result.rows[0] });
+    } catch (error) {
+        console.error('Erro ao criar pacote:', error);
+        res.status(500).json({ error: 'Erro interno ao criar pacote.' });
+    }
+});
+
+app.get('/api/company/packages', verifyJWT, async (req, res) => {
+    if (req.user.accountType !== 'company') {
+        return res.status(403).json({ error: 'Apenas empresas podem listar pacotes.' });
+    }
+
+    try {
+        const result = await db.query(`
+            SELECT fp.*,
+                   COUNT(f.id)::int AS generated_flags,
+                   COUNT(f.id) FILTER (WHERE f.captured_at IS NOT NULL)::int AS captured_flags
+            FROM flag_packages fp
+            LEFT JOIN flags f ON f.package_id = fp.id
+            WHERE fp.company_id = $1
+            GROUP BY fp.id
+            ORDER BY fp.created_at DESC
+        `, [req.user.userId]);
+
+        res.json({ success: true, packages: result.rows });
+    } catch (error) {
+        console.error('Erro ao listar pacotes:', error);
+        res.status(500).json({ error: 'Erro interno ao listar pacotes.' });
+    }
+});
+
+app.get('/api/company/packages/:id', verifyJWT, async (req, res) => {
+    if (req.user.accountType !== 'company') {
+        return res.status(403).json({ error: 'Apenas empresas podem ver pacotes.' });
+    }
+
+    try {
+        const pkgResult = await db.query(`
+            SELECT fp.*,
+                   COUNT(f.id)::int AS generated_flags,
+                   COUNT(f.id) FILTER (WHERE f.captured_at IS NOT NULL)::int AS captured_flags,
+                   COUNT(f.id) FILTER (WHERE f.flag_category = 'prize' AND f.captured_at IS NOT NULL)::int AS captured_prize_flags
+            FROM flag_packages fp
+            LEFT JOIN flags f ON f.package_id = fp.id
+            WHERE fp.id = $1 AND fp.company_id = $2
+            GROUP BY fp.id
+        `, [req.params.id, req.user.userId]);
+
+        if (pkgResult.rows.length === 0) {
+            return res.status(404).json({ error: 'Pacote não encontrado.' });
+        }
+
+        res.json({ success: true, package: pkgResult.rows[0] });
+    } catch (error) {
+        console.error('Erro ao carregar pacote:', error);
+        res.status(500).json({ error: 'Erro interno ao carregar pacote.' });
+    }
+});
+
+app.post('/api/company/packages/:id/activate', verifyJWT, async (req, res) => {
+    if (req.user.accountType !== 'company') {
+        return res.status(403).json({ error: 'Apenas empresas podem ativar pacotes.' });
+    }
+
+    const packageId = Number(req.params.id);
+    const client = await db.pool.connect();
+
+    try {
+        await client.query('BEGIN');
+
+        const pkgResult = await client.query(
+            'SELECT * FROM flag_packages WHERE id = $1 AND company_id = $2 FOR UPDATE',
+            [packageId, req.user.userId]
+        );
+
+        if (pkgResult.rows.length === 0) {
+            await client.query('ROLLBACK');
+            return res.status(404).json({ error: 'Pacote não encontrado.' });
+        }
+
+        const pkg = pkgResult.rows[0];
+
+        if (pkg.status !== 'draft') {
+            await client.query('ROLLBACK');
+            return res.status(400).json({ error: `Pacote já está '${pkg.status}'. Só pacotes 'draft' podem ser ativados.` });
+        }
+
+        const tierDef = PACKAGE_TIERS[pkg.tier];
+        const centerLat = Number(pkg.center_latitude);
+        const centerLng = Number(pkg.center_longitude);
+        const totalFlags = pkg.total_flags;
+        const prizeFlags = pkg.prize_flags || 0;
+        const rewardFlags = pkg.reward_flags || (totalFlags - prizeFlags);
+
+        // ── Distribuição das bandeiras no mapa ──
+        // Ex: 5000 flags, 100 prémios → 2000 prize + 3000 reward
+        // Prize: tipo 'Prize', dão moedas (5-15) + energia (1-5) + skill (via captura)
+        //        Jogador junta 20 prize → funde num código QR do prémio real
+        // Reward: tipos aleatórios (Coin, Energy_10, Energy_20, Skill)
+        //        Dão moedas e/ou energia + skill (via captura)
+        const flagTypes = ['Coin', 'Energy_10', 'Energy_20', 'Skill'];
+        const batchSize = 500;
+        let inserted = 0;
+
+        // Gerar bandeiras prize (prémio real — jogador precisa de 20 para fundir)
+        for (let i = 0; i < prizeFlags; i += batchSize) {
+            const count = Math.min(batchSize, prizeFlags - i);
+            const values = [];
+            const params = [];
+            let paramIdx = 1;
+
+            for (let j = 0; j < count; j++) {
+                const pt = randomPointInRadius(centerLat, centerLng, tierDef.radius_km);
+                const coinVal = Math.floor(Math.random() * 10) + 5;
+                const energyVal = Math.floor(Math.random() * 5) + 1;
+                values.push(`($${paramIdx}, $${paramIdx+1}, $${paramIdx+2}, $${paramIdx+3}, $${paramIdx+4}, $${paramIdx+5}, $${paramIdx+6}, $${paramIdx+7})`);
+                params.push(req.user.userId, packageId, 'Prize', pt.latitude, pt.longitude, coinVal, energyVal, 'prize');
+                paramIdx += 8;
+            }
+
+            await client.query(`
+                INSERT INTO flags (company_id, package_id, type, latitude, longitude, coin_value, energy_value, flag_category)
+                VALUES ${values.join(', ')}
+            `, params);
+            inserted += count;
+        }
+
+        // Gerar bandeiras reward (recompensas de jogo: moedas, energia, skills)
+        for (let i = 0; i < rewardFlags; i += batchSize) {
+            const count = Math.min(batchSize, rewardFlags - i);
+            const values = [];
+            const params = [];
+            let paramIdx = 1;
+
+            for (let j = 0; j < count; j++) {
+                const pt = randomPointInRadius(centerLat, centerLng, tierDef.radius_km);
+                const flagType = flagTypes[Math.floor(Math.random() * flagTypes.length)];
+                let coinVal = 0;
+                let energyVal = 0;
+
+                if (flagType === 'Coin') {
+                    coinVal = Math.floor(Math.random() * 40) + 10;
+                } else if (flagType === 'Energy_10') {
+                    energyVal = 10;
+                    coinVal = Math.floor(Math.random() * 5);
+                } else if (flagType === 'Energy_20') {
+                    energyVal = 20;
+                    coinVal = Math.floor(Math.random() * 5);
+                } else {
+                    coinVal = Math.floor(Math.random() * 15) + 5;
+                    energyVal = Math.floor(Math.random() * 3) + 1;
+                }
+
+                values.push(`($${paramIdx}, $${paramIdx+1}, $${paramIdx+2}, $${paramIdx+3}, $${paramIdx+4}, $${paramIdx+5}, $${paramIdx+6}, $${paramIdx+7})`);
+                params.push(req.user.userId, packageId, flagType, pt.latitude, pt.longitude, coinVal, energyVal, 'reward');
+                paramIdx += 8;
+            }
+
+            await client.query(`
+                INSERT INTO flags (company_id, package_id, type, latitude, longitude, coin_value, energy_value, flag_category)
+                VALUES ${values.join(', ')}
+            `, params);
+            inserted += count;
+        }
+
+        const expiresAt = tierDef.duration_days
+            ? `NOW() + INTERVAL '${tierDef.duration_days} days'`
+            : 'NULL';
+
+        await client.query(`
+            UPDATE flag_packages
+            SET status = 'active', activated_at = NOW(), expires_at = ${expiresAt}
+            WHERE id = $1
+        `, [packageId]);
+
+        await client.query('COMMIT');
+
+        res.json({
+            success: true,
+            message: `Pacote ativado! ${inserted} bandeiras distribuídas (${prizeFlags} prize + ${rewardFlags} reward) num raio de ${tierDef.radius_km}km.`,
+            flags_generated: inserted,
+            prize_flags: prizeFlags,
+            reward_flags: rewardFlags
+        });
+    } catch (error) {
+        await client.query('ROLLBACK');
+        console.error('Erro ao ativar pacote:', error);
+        res.status(500).json({ error: 'Erro interno ao ativar pacote.' });
+    } finally {
+        client.release();
+    }
+});
+
+// ── Flash Bingo endpoints ──
+
+app.post('/api/company/bingos', verifyJWT, async (req, res) => {
+    if (req.user.accountType !== 'company') {
+        return res.status(403).json({ error: 'Apenas empresas podem criar bingos.' });
+    }
+
+    const { package_id, prize_name, scheduled_start, duration_minutes,
+            store_latitude, store_longitude } = req.body;
+
+    const durationMin = Number(duration_minutes);
+    if (!durationMin || durationMin < 1 || durationMin > 1440) {
+        return res.status(400).json({ error: 'Duração deve ser entre 1 e 1440 minutos (24h).' });
+    }
+
+    const storeLat = Number(store_latitude);
+    const storeLng = Number(store_longitude);
+    if (!Number.isFinite(storeLat) || !Number.isFinite(storeLng)) {
+        return res.status(400).json({ error: 'Coordenadas da loja são obrigatórias.' });
+    }
+
+    if (!prize_name || !String(prize_name).trim()) {
+        return res.status(400).json({ error: 'Nome do prémio flash é obrigatório.' });
+    }
+
+    if (!scheduled_start) {
+        return res.status(400).json({ error: 'Data/hora de início é obrigatória.' });
+    }
+
+    const startDate = new Date(scheduled_start);
+    if (isNaN(startDate.getTime())) {
+        return res.status(400).json({ error: 'Data/hora de início inválida.' });
+    }
+
+    try {
+        // Validate package belongs to company and has bingo slots available
+        if (package_id) {
+            const pkgCheck = await db.query(`
+                SELECT fp.id, fp.bingo_count, fp.company_id,
+                       COUNT(fb.id)::int AS used_bingos
+                FROM flag_packages fp
+                LEFT JOIN flash_bingos fb ON fb.package_id = fp.id
+                WHERE fp.id = $1 AND fp.company_id = $2
+                GROUP BY fp.id
+            `, [package_id, req.user.userId]);
+
+            if (pkgCheck.rows.length === 0) {
+                return res.status(404).json({ error: 'Pacote não encontrado.' });
+            }
+
+            const pkg = pkgCheck.rows[0];
+            if (pkg.used_bingos >= pkg.bingo_count) {
+                return res.status(400).json({ error: `Pacote já usou todos os ${pkg.bingo_count} bingos disponíveis (${pkg.used_bingos} usados).` });
+            }
+        }
+
+        // Generate bingo position within 50m of the store
+        const bingoPoint = randomPointInRadius(storeLat, storeLng, 0.05);
+
+        const result = await db.query(`
+            INSERT INTO flash_bingos
+                (company_id, package_id, prize_name, scheduled_start, duration_minutes,
+                 store_latitude, store_longitude, bingo_latitude, bingo_longitude, status)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'scheduled')
+            RETURNING *
+        `, [
+            req.user.userId, package_id || null,
+            String(prize_name).trim(), startDate.toISOString(), durationMin,
+            storeLat, storeLng, bingoPoint.latitude, bingoPoint.longitude
+        ]);
+
+        res.status(201).json({ success: true, bingo: result.rows[0] });
+    } catch (error) {
+        console.error('Erro ao criar bingo:', error);
+        res.status(500).json({ error: 'Erro interno ao criar bingo.' });
+    }
+});
+
+app.get('/api/company/bingos', verifyJWT, async (req, res) => {
+    if (req.user.accountType !== 'company') {
+        return res.status(403).json({ error: 'Apenas empresas podem listar bingos.' });
+    }
+
+    try {
+        const result = await db.query(`
+            SELECT fb.*,
+                   p.username AS winner_username
+            FROM flash_bingos fb
+            LEFT JOIN players p ON p.user_id = fb.winner_player_id
+            WHERE fb.company_id = $1
+            ORDER BY fb.created_at DESC
+        `, [req.user.userId]);
+
+        res.json({ success: true, bingos: result.rows });
+    } catch (error) {
+        console.error('Erro ao listar bingos:', error);
+        res.status(500).json({ error: 'Erro interno ao listar bingos.' });
+    }
+});
+
+app.post('/api/company/bingos/:id/activate', verifyJWT, async (req, res) => {
+    if (req.user.accountType !== 'company') {
+        return res.status(403).json({ error: 'Apenas empresas podem ativar bingos.' });
+    }
+
+    try {
+        const result = await db.query(`
+            UPDATE flash_bingos
+            SET status = 'active', activated_at = NOW(),
+                expires_at = NOW() + (duration_minutes || ' minutes')::INTERVAL
+            WHERE id = $1 AND company_id = $2 AND status = 'scheduled'
+            RETURNING *
+        `, [req.params.id, req.user.userId]);
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Bingo não encontrado ou já está ativo/expirado.' });
+        }
+
+        res.json({ success: true, bingo: result.rows[0], message: 'Bingo Flash ativado! Jogadores próximos serão alertados.' });
+    } catch (error) {
+        console.error('Erro ao ativar bingo:', error);
+        res.status(500).json({ error: 'Erro interno ao ativar bingo.' });
+    }
+});
+
+// Simulação de alerta: jogadores a ≤250m recebem notificação, capturável a ≤50m
+app.get('/api/bingos/nearby', verifyJWT, async (req, res) => {
+    const lat = Number(req.query.lat || req.query.latitude);
+    const lng = Number(req.query.lng || req.query.longitude);
+
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+        return res.status(400).json({ error: 'Coordenadas (lat, lng) são obrigatórias.' });
+    }
+
+    try {
+        // Expire overdue bingos first
+        await db.query(`
+            UPDATE flash_bingos
+            SET status = 'expired'
+            WHERE status = 'active' AND expires_at IS NOT NULL AND expires_at < NOW()
+        `);
+
+        const result = await db.query(`
+            SELECT id, company_id, prize_name, duration_minutes,
+                   store_latitude, store_longitude, bingo_latitude, bingo_longitude,
+                   activated_at, expires_at
+            FROM flash_bingos
+            WHERE status = 'active' AND expires_at > NOW()
+        `);
+
+        const ALERT_RADIUS = 250;
+        const CAPTURE_RADIUS = 50;
+
+        const nearby = result.rows
+            .map(b => {
+                const distToStore = haversineMeters(lat, lng, Number(b.store_latitude), Number(b.store_longitude));
+                const distToBingo = haversineMeters(lat, lng, Number(b.bingo_latitude), Number(b.bingo_longitude));
+                return { ...b, distance_to_store_m: Math.round(distToStore), distance_to_bingo_m: Math.round(distToBingo) };
+            })
+            .filter(b => b.distance_to_store_m <= ALERT_RADIUS);
+
+        const bingos = nearby.map(b => ({
+            ...b,
+            alert: true,
+            capturable: b.distance_to_bingo_m <= CAPTURE_RADIUS,
+            time_remaining_s: Math.max(0, Math.round((new Date(b.expires_at) - Date.now()) / 1000))
+        }));
+
+        res.json({
+            success: true,
+            player_lat: lat,
+            player_lng: lng,
+            alert_radius_m: ALERT_RADIUS,
+            capture_radius_m: CAPTURE_RADIUS,
+            bingos
+        });
+    } catch (error) {
+        console.error('Erro ao buscar bingos próximos:', error);
+        res.status(500).json({ error: 'Erro interno ao buscar bingos.' });
+    }
+});
+
+app.post('/api/bingos/:id/capture', verifyJWT, async (req, res) => {
+    if (req.user.accountType !== 'player') {
+        return res.status(403).json({ error: 'Apenas jogadores podem capturar bingos.' });
+    }
+
+    const bingoId = Number(req.params.id);
+    const lat = Number(req.body.latitude);
+    const lng = Number(req.body.longitude);
+
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+        return res.status(400).json({ error: 'Coordenadas do jogador são obrigatórias.' });
+    }
+
+    const client = await db.pool.connect();
+
+    try {
+        await client.query('BEGIN');
+
+        // Expire overdue bingos
+        await client.query(`
+            UPDATE flash_bingos SET status = 'expired'
+            WHERE status = 'active' AND expires_at IS NOT NULL AND expires_at < NOW()
+        `);
+
+        const bingoResult = await client.query(
+            'SELECT * FROM flash_bingos WHERE id = $1 AND status = $2 FOR UPDATE',
+            [bingoId, 'active']
+        );
+
+        if (bingoResult.rows.length === 0) {
+            await client.query('ROLLBACK');
+            return res.status(404).json({ error: 'Bingo não encontrado, já expirou ou já foi capturado.' });
+        }
+
+        const bingo = bingoResult.rows[0];
+
+        if (new Date(bingo.expires_at) < new Date()) {
+            await client.query("UPDATE flash_bingos SET status = 'expired' WHERE id = $1", [bingoId]);
+            await client.query('COMMIT');
+            return res.status(410).json({ error: 'Bingo expirou antes da captura.' });
+        }
+
+        const dist = haversineMeters(lat, lng, Number(bingo.bingo_latitude), Number(bingo.bingo_longitude));
+        if (dist > 50) {
+            await client.query('ROLLBACK');
+            return res.status(400).json({ error: `Estás a ${Math.round(dist)}m do Bingo. Precisas de estar a 50m ou menos.` });
+        }
+
+        await client.query(`
+            UPDATE flash_bingos
+            SET status = 'captured', winner_player_id = $1, captured_at = NOW()
+            WHERE id = $2
+        `, [req.user.userId, bingoId]);
+
+        // Reward the player with coins
+        await client.query(`
+            UPDATE players SET coin_wallet = coin_wallet + 500, flags_caught_total = flags_caught_total + 1, updated_at = NOW()
+            WHERE user_id = $1
+        `, [req.user.userId]);
+
+        // Auto-generate prize code from bingo capture
+        const bingoToken = 'PZ-' + Array.from({length: 12}, () => 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[Math.floor(Math.random() * 31)]).join('');
+        const companyInfo = await client.query('SELECT company_name, email FROM users WHERE id = $1', [bingo.company_id]);
+        const company = companyInfo.rows[0] || {};
+
+        const prizeCodeResult = await client.query(`
+            INSERT INTO prize_codes
+                (player_id, package_id, company_id, token, prize_name, prize_description,
+                 store_latitude, store_longitude, company_name, company_contact,
+                 source, bingo_id, status)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'bingo', $11, 'available')
+            RETURNING id, token
+        `, [
+            req.user.userId, bingo.package_id, bingo.company_id, bingoToken,
+            bingo.prize_name, bingo.prize_name,
+            bingo.store_latitude, bingo.store_longitude,
+            company.company_name || '', company.email || '',
+            bingoId
+        ]);
+
+        await client.query('COMMIT');
+
+        res.json({
+            success: true,
+            message: `Bingo Flash capturado! Prémio: ${bingo.prize_name}. +500 moedas de bónus. Código de prémio gerado!`,
+            bingo: { id: bingo.id, prize_name: bingo.prize_name },
+            prize_code: prizeCodeResult.rows[0],
+            reward_coins: 500
+        });
+    } catch (error) {
+        await client.query('ROLLBACK');
+        console.error('Erro ao capturar bingo:', error);
+        res.status(500).json({ error: 'Erro interno ao capturar bingo.' });
+    } finally {
+        client.release();
+    }
+});
+
+// Expiration check endpoint (can be called periodically or via cron)
+app.post('/api/bingos/expire-check', async (req, res) => {
+    try {
+        const result = await db.query(`
+            UPDATE flash_bingos
+            SET status = 'expired'
+            WHERE status = 'active' AND expires_at IS NOT NULL AND expires_at < NOW()
+            RETURNING id, company_id, prize_name
+        `);
+
+        res.json({
+            success: true,
+            expired_count: result.rows.length,
+            expired_bingos: result.rows,
+            message: `${result.rows.length} bingo(s) expirado(s) e devolvido(s) à empresa.`
+        });
+    } catch (error) {
+        console.error('Erro ao verificar expiração de bingos:', error);
+        res.status(500).json({ error: 'Erro interno.' });
+    }
+});
+
+// ── Phase 3: Prize Codes, Market & QR Security ──
+
+function generatePrizeToken() {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let token = 'PZ-';
+    for (let i = 0; i < 12; i++) token += chars[Math.floor(Math.random() * chars.length)];
+    return token;
+}
+
+// Fuse 20 prize flags → prize code
+app.post('/api/player/fuse-prize', verifyJWT, async (req, res) => {
+    if (req.user.accountType !== 'player') {
+        return res.status(403).json({ error: 'Apenas jogadores podem fundir bandeiras.' });
+    }
+
+    const { package_id } = req.body;
+    if (!package_id) {
+        return res.status(400).json({ error: 'package_id é obrigatório.' });
+    }
+
+    const client = await db.pool.connect();
+
+    try {
+        await client.query('BEGIN');
+
+        // Find 20 uncaptured-by-this-player prize flags from this package that the player has captured
+        const flagsResult = await client.query(`
+            SELECT f.id FROM flags f
+            WHERE f.package_id = $1 AND f.flag_category = 'prize'
+              AND f.captured_by = $2 AND f.captured_at IS NOT NULL
+              AND f.id NOT IN (SELECT unnest(fused_flag_ids) FROM prize_codes WHERE fused_flag_ids IS NOT NULL)
+            ORDER BY f.captured_at ASC
+            LIMIT 20
+            FOR UPDATE
+        `, [package_id, req.user.userId]);
+
+        if (flagsResult.rows.length < 20) {
+            await client.query('ROLLBACK');
+            return res.status(400).json({
+                error: `Precisas de 20 bandeiras prize capturadas deste pacote. Tens ${flagsResult.rows.length}.`,
+                current_count: flagsResult.rows.length,
+                required: 20
+            });
+        }
+
+        const flagIds = flagsResult.rows.map(r => r.id);
+
+        // Get package + company info for the prize code
+        const pkgResult = await client.query(`
+            SELECT fp.*, u.company_name, u.email AS company_email
+            FROM flag_packages fp
+            JOIN users u ON u.id = fp.company_id
+            WHERE fp.id = $1
+        `, [package_id]);
+
+        const pkg = pkgResult.rows[0];
+        if (!pkg) {
+            await client.query('ROLLBACK');
+            return res.status(404).json({ error: 'Pacote não encontrado.' });
+        }
+
+        const token = generatePrizeToken();
+
+        const codeResult = await client.query(`
+            INSERT INTO prize_codes
+                (player_id, package_id, company_id, token, prize_name, prize_description,
+                 prize_claim_deadline, store_latitude, store_longitude, company_name, company_contact,
+                 source, fused_flag_ids, status)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'fuse', $12, 'available')
+            RETURNING *
+        `, [
+            req.user.userId, package_id, pkg.company_id, token,
+            pkg.prize_description || 'Prémio do pacote',
+            pkg.prize_description || '',
+            pkg.prize_claim_deadline || '',
+            pkg.center_latitude, pkg.center_longitude,
+            pkg.company_name || '', pkg.company_email || '',
+            flagIds
+        ]);
+
+        await client.query('COMMIT');
+
+        res.status(201).json({
+            success: true,
+            message: `Fusão completa! 20 bandeiras → código de prémio ${token}`,
+            prize_code: codeResult.rows[0]
+        });
+    } catch (error) {
+        await client.query('ROLLBACK');
+        console.error('Erro ao fundir prize flags:', error);
+        res.status(500).json({ error: 'Erro interno ao fundir bandeiras.' });
+    } finally {
+        client.release();
+    }
+});
+
+// Proximity check: player within 50m of store → 5min timer
+app.post('/api/prize-codes/:id/proximity-check', verifyJWT, async (req, res) => {
+    if (req.user.accountType !== 'player') {
+        return res.status(403).json({ error: 'Apenas jogadores.' });
+    }
+
+    const codeId = Number(req.params.id);
+    const lat = Number(req.body.latitude);
+    const lng = Number(req.body.longitude);
+
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+        return res.status(400).json({ error: 'Coordenadas são obrigatórias.' });
+    }
+
+    try {
+        const result = await db.query(
+            "SELECT * FROM prize_codes WHERE id = $1 AND player_id = $2 AND status IN ('available', 'proximity_alert')",
+            [codeId, req.user.userId]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Código não encontrado ou não disponível.' });
+        }
+
+        const code = result.rows[0];
+        const dist = haversineMeters(lat, lng, Number(code.store_latitude), Number(code.store_longitude));
+
+        if (dist > 50) {
+            // If was in proximity_alert, reset to available
+            if (code.status === 'proximity_alert') {
+                await db.query("UPDATE prize_codes SET status = 'available', proximity_expires_at = NULL WHERE id = $1", [codeId]);
+            }
+            return res.json({
+                success: true,
+                nearby: false,
+                distance_m: Math.round(dist),
+                message: `Estás a ${Math.round(dist)}m da loja. Aproxima-te a 50m ou menos.`
+            });
+        }
+
+        // Within 50m — start or continue 5min timer
+        let expiresAt = code.proximity_expires_at;
+        if (code.status !== 'proximity_alert') {
+            expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString();
+            await db.query(
+                "UPDATE prize_codes SET status = 'proximity_alert', proximity_expires_at = $1 WHERE id = $2",
+                [expiresAt, codeId]
+            );
+        }
+
+        // Check if timer expired
+        if (expiresAt && new Date(expiresAt) < new Date()) {
+            await db.query("UPDATE prize_codes SET status = 'available', proximity_expires_at = NULL WHERE id = $1", [codeId]);
+            return res.json({
+                success: true,
+                nearby: true,
+                timer_expired: true,
+                message: 'Tempo de 5 minutos expirou. O código voltou à tua pasta em segurança.'
+            });
+        }
+
+        const remainingMs = new Date(expiresAt) - Date.now();
+
+        res.json({
+            success: true,
+            nearby: true,
+            distance_m: Math.round(dist),
+            timer_started: true,
+            time_remaining_s: Math.max(0, Math.round(remainingMs / 1000)),
+            proximity_expires_at: expiresAt,
+            message: `Estás a ${Math.round(dist)}m! Tens ${Math.round(remainingMs / 1000)}s para ativar o código.`
+        });
+    } catch (error) {
+        console.error('Erro na verificação de proximidade:', error);
+        res.status(500).json({ error: 'Erro interno.' });
+    }
+});
+
+// Manual activation: generates QR with 30s lifespan
+app.post('/api/prize-codes/:id/activate', verifyJWT, async (req, res) => {
+    if (req.user.accountType !== 'player') {
+        return res.status(403).json({ error: 'Apenas jogadores.' });
+    }
+
+    const codeId = Number(req.params.id);
+
+    try {
+        const result = await db.query(
+            "SELECT * FROM prize_codes WHERE id = $1 AND player_id = $2 AND status IN ('available', 'proximity_alert')",
+            [codeId, req.user.userId]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Código não encontrado ou já ativado/queimado.' });
+        }
+
+        const qrExpiresAt = new Date(Date.now() + 30 * 1000).toISOString();
+
+        await db.query(
+            "UPDATE prize_codes SET status = 'qr_active', qr_activated_at = NOW(), qr_expires_at = $1 WHERE id = $2",
+            [qrExpiresAt, codeId]
+        );
+
+        const code = result.rows[0];
+
+        res.json({
+            success: true,
+            message: 'QR Code ativado! Tens 30 segundos para a empresa fazer o scan.',
+            qr_data: {
+                token: code.token,
+                prize_name: code.prize_name,
+                company_name: code.company_name,
+                code_id: code.id
+            },
+            qr_expires_at: qrExpiresAt,
+            lifespan_seconds: 30
+        });
+    } catch (error) {
+        console.error('Erro ao ativar QR:', error);
+        res.status(500).json({ error: 'Erro interno.' });
+    }
+});
+
+// Company scan validation: burn QR → trophy
+app.post('/api/company/qr/:id/validate', verifyJWT, async (req, res) => {
+    if (req.user.accountType !== 'company') {
+        return res.status(403).json({ error: 'Apenas empresas podem validar códigos.' });
+    }
+
+    const codeId = Number(req.params.id);
+    const { token } = req.body;
+
+    if (!token) {
+        return res.status(400).json({ error: 'Token do QR code é obrigatório.' });
+    }
+
+    const client = await db.pool.connect();
+
+    try {
+        await client.query('BEGIN');
+
+        const codeResult = await client.query(
+            "SELECT * FROM prize_codes WHERE id = $1 AND token = $2 AND company_id = $3 FOR UPDATE",
+            [codeId, token, req.user.userId]
+        );
+
+        if (codeResult.rows.length === 0) {
+            await client.query('ROLLBACK');
+            return res.status(404).json({ error: 'Código não encontrado ou não pertence a esta empresa.' });
+        }
+
+        const code = codeResult.rows[0];
+
+        if (code.status === 'burned') {
+            await client.query('ROLLBACK');
+            return res.status(400).json({ error: 'Este código já foi QUEIMADO. Não pode ser usado novamente.' });
+        }
+
+        if (code.status !== 'qr_active') {
+            await client.query('ROLLBACK');
+            return res.status(400).json({ error: `Código não está ativo para scan. Estado atual: ${code.status}` });
+        }
+
+        // Check 30s expiration
+        if (code.qr_expires_at && new Date(code.qr_expires_at) < new Date()) {
+            await client.query("UPDATE prize_codes SET status = 'available', qr_activated_at = NULL, qr_expires_at = NULL WHERE id = $1", [codeId]);
+            await client.query('COMMIT');
+            return res.status(410).json({ error: 'QR Code expirou (30 segundos). O jogador precisa de ativar novamente.' });
+        }
+
+        // BURN the code
+        await client.query(`
+            UPDATE prize_codes
+            SET status = 'burned', burned_at = NOW(), validated_by_company_id = $1
+            WHERE id = $2
+        `, [req.user.userId, codeId]);
+
+        // Create trophy in player's inventory
+        const trophyResult = await client.query(`
+            INSERT INTO items (type, company_id, company_name, name, qr_code, qr_status, estimated_value)
+            VALUES ('trophy', $1, $2, $3, $4, 'burned', 0)
+            RETURNING *
+        `, [code.company_id, code.company_name || '', `Troféu: ${code.prize_name}`, code.token]);
+
+        // Get player_id from user_id
+        const playerResult = await client.query('SELECT id FROM players WHERE user_id = $1', [code.player_id]);
+        if (playerResult.rows.length > 0) {
+            await client.query(
+                'INSERT INTO player_items (player_id, item_id, quantity) VALUES ($1, $2, 1)',
+                [playerResult.rows[0].id, trophyResult.rows[0].id]
+            );
+        }
+
+        await client.query('COMMIT');
+
+        res.json({
+            success: true,
+            message: `Código QUEIMADO com sucesso! O prémio "${code.prize_name}" foi entregue. Troféu adicionado ao inventário do jogador.`,
+            burned_code: { id: code.id, token: code.token, prize_name: code.prize_name },
+            trophy: trophyResult.rows[0]
+        });
+    } catch (error) {
+        await client.query('ROLLBACK');
+        console.error('Erro ao validar QR:', error);
+        res.status(500).json({ error: 'Erro interno ao validar código.' });
+    } finally {
+        client.release();
+    }
+});
+
+// ── Auction/Market System (Leilão Competitivo) ──
+
+const MARKET_FEE_RATE = 0.025; // 2.5% taxa sobre venda
+
+// Create auction listing for prize code
+app.post('/api/market/prize-code-sale', verifyJWT, async (req, res) => {
+    if (req.user.accountType !== 'player') {
+        return res.status(403).json({ error: 'Apenas jogadores podem vender códigos.' });
+    }
+
+    const { prize_code_id, min_bid, auction_days } = req.body;
+    const numericMinBid = Number(min_bid);
+    const numericDays = Number(auction_days);
+
+    if (!prize_code_id || !Number.isFinite(numericMinBid) || numericMinBid <= 0) {
+        return res.status(400).json({ error: 'ID do código e valor mínimo de licitação positivo são obrigatórios.' });
+    }
+    if (!Number.isFinite(numericDays) || numericDays < 1 || numericDays > 5) {
+        return res.status(400).json({ error: 'Prazo do leilão deve ser entre 1 e 5 dias.' });
+    }
+
+    const client = await db.pool.connect();
+
+    try {
+        await client.query('BEGIN');
+
+        const codeResult = await client.query(
+            "SELECT * FROM prize_codes WHERE id = $1 AND player_id = $2 AND status = 'available' FOR UPDATE",
+            [prize_code_id, req.user.userId]
+        );
+
+        if (codeResult.rows.length === 0) {
+            await client.query('ROLLBACK');
+            return res.status(404).json({ error: 'Código não encontrado ou não disponível para venda.' });
+        }
+
+        const code = codeResult.rows[0];
+
+        await client.query("UPDATE prize_codes SET status = 'on_market' WHERE id = $1", [prize_code_id]);
+
+        const listingResult = await client.query(`
+            INSERT INTO market_listings
+                (seller_id, item_type, item_name, qr_code, price, prize_code_id,
+                 min_bid, auction_days, auction_ends_at, bid_count)
+            VALUES ($1, 'PRIZE_CODE', $2, $3, $4, $5, $6, $7, NOW() + ($7 || ' days')::INTERVAL, 0)
+            RETURNING *
+        `, [
+            req.user.playerId || 1, code.prize_name, code.token,
+            numericMinBid, prize_code_id, numericMinBid, numericDays
+        ]);
+
+        await client.query('COMMIT');
+
+        res.json({
+            success: true,
+            message: `Leilão criado! "${code.prize_name}" — mínimo ${numericMinBid} moedas, ${numericDays} dia(s).`,
+            listing: listingResult.rows[0]
+        });
+    } catch (error) {
+        await client.query('ROLLBACK');
+        console.error('Erro ao criar leilão:', error);
+        res.status(500).json({ error: 'Erro interno.' });
+    } finally {
+        client.release();
+    }
+});
+
+// Place bid on auction
+app.post('/api/market/:listingId/bid', verifyJWT, async (req, res) => {
+    if (req.user.accountType !== 'player') {
+        return res.status(403).json({ error: 'Apenas jogadores podem licitar.' });
+    }
+
+    const listingId = Number(req.params.listingId);
+    const bidAmount = Number(req.body.amount);
+
+    if (!Number.isFinite(bidAmount) || bidAmount <= 0) {
+        return res.status(400).json({ error: 'Valor da licitação deve ser positivo.' });
+    }
+
+    const client = await db.pool.connect();
+
+    try {
+        await client.query('BEGIN');
+
+        const listingResult = await client.query(`
+            SELECT ml.*, pc.player_id AS seller_user_id
+            FROM market_listings ml
+            JOIN prize_codes pc ON pc.id = ml.prize_code_id
+            WHERE ml.id = $1 AND ml.status = 'active' AND ml.item_type = 'PRIZE_CODE'
+            FOR UPDATE
+        `, [listingId]);
+
+        if (listingResult.rows.length === 0) {
+            await client.query('ROLLBACK');
+            return res.status(404).json({ error: 'Leilão não encontrado ou já fechado.' });
+        }
+
+        const listing = listingResult.rows[0];
+
+        // Check auction hasn't expired
+        if (listing.auction_ends_at && new Date(listing.auction_ends_at) < new Date()) {
+            await client.query('ROLLBACK');
+            return res.status(400).json({ error: 'Este leilão já expirou.' });
+        }
+
+        // Cannot bid on own listing
+        if (Number(listing.seller_user_id) === Number(req.user.userId)) {
+            await client.query('ROLLBACK');
+            return res.status(400).json({ error: 'Não podes licitar no teu próprio leilão.' });
+        }
+
+        // Bid must be >= min_bid
+        const minBid = Number(listing.min_bid || listing.price);
+        if (bidAmount < minBid) {
+            await client.query('ROLLBACK');
+            return res.status(400).json({ error: `Licitação mínima: ${minBid} moedas. A tua oferta (${bidAmount}) é inferior.` });
+        }
+
+        // Bid must be higher than current highest
+        const highestBid = await client.query(
+            'SELECT MAX(amount) AS max_bid FROM market_bids WHERE listing_id = $1',
+            [listingId]
+        );
+        const currentMax = Number(highestBid.rows[0]?.max_bid || 0);
+        if (bidAmount <= currentMax) {
+            await client.query('ROLLBACK');
+            return res.status(400).json({ error: `Já existe uma oferta de ${currentMax} moedas. A tua deve ser superior.` });
+        }
+
+        // Check bidder has enough coins
+        const buyerResult = await client.query(
+            'SELECT coin_wallet FROM players WHERE user_id = $1 FOR UPDATE',
+            [req.user.userId]
+        );
+        if (buyerResult.rows.length === 0 || Number(buyerResult.rows[0].coin_wallet) < bidAmount) {
+            await client.query('ROLLBACK');
+            return res.status(400).json({ error: 'Moedas insuficientes para esta licitação.' });
+        }
+
+        // Insert bid
+        const bidResult = await client.query(`
+            INSERT INTO market_bids (listing_id, bidder_user_id, bidder_player_id, amount)
+            VALUES ($1, $2, $3, $4)
+            RETURNING *
+        `, [listingId, req.user.userId, req.user.playerId || 1, bidAmount]);
+
+        // Update listing bid count and current highest
+        await client.query(`
+            UPDATE market_listings
+            SET bid_count = COALESCE(bid_count, 0) + 1,
+                highest_bid = $1, highest_bidder_id = $2
+            WHERE id = $3
+        `, [bidAmount, req.user.userId, listingId]);
+
+        await client.query('COMMIT');
+
+        res.json({
+            success: true,
+            message: `Licitação de ${bidAmount} moedas registada com sucesso!`,
+            bid: bidResult.rows[0]
+        });
+    } catch (error) {
+        await client.query('ROLLBACK');
+        console.error('Erro ao licitar:', error);
+        res.status(500).json({ error: 'Erro interno.' });
+    } finally {
+        client.release();
+    }
+});
+
+// Get bids for a listing
+app.get('/api/market/:listingId/bids', verifyJWT, async (req, res) => {
+    try {
+        const result = await db.query(`
+            SELECT mb.*, p.username AS bidder_name
+            FROM market_bids mb
+            JOIN players p ON p.user_id = mb.bidder_user_id
+            WHERE mb.listing_id = $1
+            ORDER BY mb.amount DESC
+        `, [Number(req.params.listingId)]);
+
+        res.json({ success: true, bids: result.rows });
+    } catch (error) {
+        console.error('Erro ao listar licitações:', error);
+        res.status(500).json({ error: 'Erro interno.' });
+    }
+});
+
+// Cancel auction (only if no valid bids)
+app.post('/api/market/:listingId/cancel', verifyJWT, async (req, res) => {
+    if (req.user.accountType !== 'player') {
+        return res.status(403).json({ error: 'Apenas jogadores.' });
+    }
+
+    const listingId = Number(req.params.listingId);
+    const client = await db.pool.connect();
+
+    try {
+        await client.query('BEGIN');
+
+        const listingResult = await client.query(`
+            SELECT ml.*, pc.player_id AS seller_user_id
+            FROM market_listings ml
+            JOIN prize_codes pc ON pc.id = ml.prize_code_id
+            WHERE ml.id = $1 AND ml.status = 'active' AND ml.item_type = 'PRIZE_CODE'
+            FOR UPDATE
+        `, [listingId]);
+
+        if (listingResult.rows.length === 0) {
+            await client.query('ROLLBACK');
+            return res.status(404).json({ error: 'Leilão não encontrado.' });
+        }
+
+        const listing = listingResult.rows[0];
+
+        if (Number(listing.seller_user_id) !== Number(req.user.userId)) {
+            await client.query('ROLLBACK');
+            return res.status(403).json({ error: 'Só o vendedor pode cancelar o leilão.' });
+        }
+
+        // Check if there are valid bids (>= min_bid)
+        const bidCount = await client.query(
+            'SELECT COUNT(*)::int AS cnt FROM market_bids WHERE listing_id = $1 AND amount >= $2',
+            [listingId, Number(listing.min_bid || 0)]
+        );
+
+        if (Number(bidCount.rows[0].cnt) > 0) {
+            await client.query('ROLLBACK');
+            return res.status(400).json({
+                error: 'Cancelamento BLOQUEADO! O leilão já tem licitações válidas. Tens de esperar até ao fim do prazo.',
+                bid_count: Number(bidCount.rows[0].cnt)
+            });
+        }
+
+        // No valid bids — allow cancel
+        await client.query("UPDATE market_listings SET status = 'cancelled' WHERE id = $1", [listingId]);
+        await client.query("UPDATE prize_codes SET status = 'available' WHERE id = $1", [listing.prize_code_id]);
+
+        await client.query('COMMIT');
+
+        res.json({
+            success: true,
+            message: 'Leilão cancelado. O código voltou à tua pasta.'
+        });
+    } catch (error) {
+        await client.query('ROLLBACK');
+        console.error('Erro ao cancelar leilão:', error);
+        res.status(500).json({ error: 'Erro interno.' });
+    } finally {
+        client.release();
+    }
+});
+
+// Auto-close expired auctions (highest bid wins, 2.5% fee)
+app.post('/api/market/auction-close', async (req, res) => {
+    const client = await db.pool.connect();
+
+    try {
+        await client.query('BEGIN');
+
+        // Find expired active auctions
+        const expired = await client.query(`
+            SELECT ml.*, pc.player_id AS seller_user_id
+            FROM market_listings ml
+            JOIN prize_codes pc ON pc.id = ml.prize_code_id
+            WHERE ml.status = 'active' AND ml.item_type = 'PRIZE_CODE'
+              AND ml.auction_ends_at IS NOT NULL AND ml.auction_ends_at < NOW()
+            FOR UPDATE
+        `);
+
+        const results = [];
+
+        for (const listing of expired.rows) {
+            const listingId = listing.id;
+            const minBid = Number(listing.min_bid || 0);
+
+            // Get highest valid bid
+            const topBid = await client.query(`
+                SELECT mb.*, p.user_id AS winner_user_id
+                FROM market_bids mb
+                JOIN players p ON p.user_id = mb.bidder_user_id
+                WHERE mb.listing_id = $1 AND mb.amount >= $2
+                ORDER BY mb.amount DESC
+                LIMIT 1
+            `, [listingId, minBid]);
+
+            if (topBid.rows.length === 0) {
+                // No valid bids — return code to seller
+                await client.query("UPDATE market_listings SET status = 'expired' WHERE id = $1", [listingId]);
+                await client.query("UPDATE prize_codes SET status = 'available' WHERE id = $1", [listing.prize_code_id]);
+                results.push({ listing_id: listingId, result: 'expired_no_bids', item: listing.item_name });
+                continue;
+            }
+
+            const winner = topBid.rows[0];
+            const winAmount = Number(winner.amount);
+            const fee = Math.round(winAmount * MARKET_FEE_RATE);
+            const sellerReceives = winAmount - fee;
+
+            // Verify winner has coins
+            const winnerWallet = await client.query(
+                'SELECT coin_wallet FROM players WHERE user_id = $1 FOR UPDATE',
+                [winner.winner_user_id]
+            );
+
+            if (winnerWallet.rows.length === 0 || Number(winnerWallet.rows[0].coin_wallet) < winAmount) {
+                // Winner can't pay — mark bid as failed, try next bid
+                await client.query("UPDATE market_bids SET status = 'failed' WHERE id = $1", [winner.id]);
+                // For simplicity, expire the listing (could recurse to next bid)
+                await client.query("UPDATE market_listings SET status = 'expired' WHERE id = $1", [listingId]);
+                await client.query("UPDATE prize_codes SET status = 'available' WHERE id = $1", [listing.prize_code_id]);
+                results.push({ listing_id: listingId, result: 'winner_insufficient_coins', item: listing.item_name });
+                continue;
+            }
+
+            // Transfer coins (winner pays, seller receives minus fee)
+            await client.query('UPDATE players SET coin_wallet = coin_wallet - $1 WHERE user_id = $2', [winAmount, winner.winner_user_id]);
+            await client.query('UPDATE players SET coin_wallet = coin_wallet + $1 WHERE user_id = $2', [sellerReceives, listing.seller_user_id]);
+
+            // Transfer prize code
+            await client.query("UPDATE prize_codes SET player_id = $1, status = 'available' WHERE id = $2", [winner.winner_user_id, listing.prize_code_id]);
+
+            // Update listing
+            await client.query(`
+                UPDATE market_listings
+                SET status = 'sold', buyer_id = $1, sold_at = NOW(), final_price = $2, fee_amount = $3
+                WHERE id = $4
+            `, [winner.bidder_player_id, winAmount, fee, listingId]);
+
+            // Mark winning bid
+            await client.query("UPDATE market_bids SET status = 'won' WHERE id = $1", [winner.id]);
+
+            results.push({
+                listing_id: listingId,
+                result: 'sold',
+                item: listing.item_name,
+                winner: winner.winner_user_id,
+                amount: winAmount,
+                fee,
+                seller_receives: sellerReceives
+            });
+        }
+
+        await client.query('COMMIT');
+
+        res.json({
+            success: true,
+            closed_count: results.length,
+            results,
+            fee_rate: `${MARKET_FEE_RATE * 100}%`
+        });
+    } catch (error) {
+        await client.query('ROLLBACK');
+        console.error('Erro ao fechar leilões:', error);
+        res.status(500).json({ error: 'Erro interno.' });
+    } finally {
+        client.release();
     }
 });
 

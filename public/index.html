@@ -71,6 +71,42 @@
                 <h2>Mapa Leaflet</h2>
                 <div id="map"></div>
             </section>
+
+            <section class="card" style="margin-top:16px;">
+                <h2>C&oacute;digos de Pr&eacute;mio</h2>
+                <p style="color:#94a3b8;">Junta 20 bandeiras prize do mesmo pacote para fundir num c&oacute;digo de pr&eacute;mio. Usa Bingos Flash para ganhar c&oacute;digos instant&acirc;neos.</p>
+
+                <div class="grid">
+                    <div>
+                        <h3>Fundir Bandeiras Prize</h3>
+                        <label class="company-label" for="fuse-package-id">ID do Pacote</label>
+                        <input id="fuse-package-id" type="number" placeholder="ID do pacote (ex: 1)">
+                        <button class="primary" id="btn-fuse-prize" style="margin-top:8px;">Fundir 20 bandeiras &rarr; C&oacute;digo</button>
+                        <pre id="fuse-output" style="margin-top:8px;">Insere o ID do pacote e clica para fundir.</pre>
+                    </div>
+
+                    <div>
+                        <h3>Os Meus C&oacute;digos</h3>
+                        <button class="primary" id="reload-prize-codes">Atualizar</button>
+                        <div id="prize-codes-list" style="margin-top:12px; font-size:0.9em;">A carregar...</div>
+                    </div>
+                </div>
+
+                <div id="qr-activation-area" style="display:none; margin-top:16px; padding:16px; border:2px solid #22c55e; border-radius:8px; text-align:center;">
+                    <h3 style="color:#22c55e;">QR Code Ativo!</h3>
+                    <div id="qr-token" style="font-size:2em; font-weight:bold; letter-spacing:4px; color:#f59e0b;"></div>
+                    <div id="qr-timer" style="font-size:1.5em; color:#ef4444; margin-top:8px;"></div>
+                    <p style="color:#94a3b8;">Mostra este c&oacute;digo &agrave; empresa para fazer scan. V&aacute;lido por 30 segundos.</p>
+                </div>
+            </section>
+
+            <section class="card" style="margin-top:16px;">
+                <h2>Mercado de Leil&otilde;es</h2>
+                <p style="color:#94a3b8;">Leil&otilde;es ativos de c&oacute;digos de pr&eacute;mio. Licita para ganhar! Taxa de 2,5% sobre venda. Prazo: 1-5 dias.</p>
+                <p style="color:#eab308; font-size:0.85em;"><strong>Regras:</strong> O vendedor define um valor m&iacute;nimo. Ofertas abaixo s&atilde;o rejeitadas. Ap&oacute;s a 1&ordf; oferta v&aacute;lida, o vendedor n&atilde;o pode cancelar. No fim do prazo, a oferta mais alta ganha automaticamente.</p>
+                <button class="primary" id="reload-auctions" style="margin-top:8px;">Atualizar Mercado</button>
+                <div id="market-auctions-list" style="margin-top:12px;">A carregar...</div>
+            </section>
         </section>
 
         <section id="company-container">
@@ -165,6 +201,113 @@
                         </tbody>
                     </table>
                 </article>
+            </section>
+
+            <section class="grid" style="margin-top:16px;">
+                <article class="card">
+                    <h2>Criar Pacote de Bandeiras</h2>
+                    <p style="color:#94a3b8;">Escolhe o tier, define o centro e os pr&eacute;mios.</p>
+                    <form id="create-package-form">
+                        <label class="company-label" for="pkg-tier">Tier do pacote</label>
+                        <select id="pkg-tier">
+                            <option value="1">1 - Starter: 1.000 bandeiras, 0,25km, Gr&aacute;tis, Sem prazo</option>
+                            <option value="2">2 - Local: 5.000 + 5 bingos, 1km, 30 dias, 10&euro;+IVA</option>
+                            <option value="3">3 - Regional: 10.000 + 10 bingos, 5km, 60 dias, 15&euro;+IVA</option>
+                            <option value="4">4 - Nacional: 25.000 + 25 bingos, 20km, 90 dias, 20&euro;+IVA</option>
+                            <option value="5">5 - Premium: 50.000 + 50 bingos, 50km, 120 dias, 30&euro;+IVA</option>
+                            <option value="6">6 - Enterprise: 100.000 + 100 bingos, 100km, 250 dias, 50&euro;+IVA</option>
+                        </select>
+
+                        <div id="tier-info" style="background:#0f172a; border:1px solid #334155; border-radius:10px; padding:10px; margin:8px 0; font-size:0.9em; color:#94a3b8;">
+                            Seleciona um tier para ver os detalhes.
+                        </div>
+
+                        <label class="company-label" for="pkg-lat">Latitude (centro do pacote)</label>
+                        <input id="pkg-lat" type="number" step="any" value="38.7225" required>
+
+                        <label class="company-label" for="pkg-lng">Longitude (centro do pacote)</label>
+                        <input id="pkg-lng" type="number" step="any" value="-9.1395" required>
+
+                        <div id="prize-fields" style="display:none;">
+                            <hr style="border-color:#334155; margin:14px 0;">
+                            <h3 style="margin:0 0 8px;">Pr&eacute;mios Reais</h3>
+
+                            <label class="company-label" for="pkg-prize-count">Quantidade de pr&eacute;mios reais</label>
+                            <input id="pkg-prize-count" type="number" min="0" value="0" placeholder="Ex: 100 (= 2000 bandeiras prize)">
+                            <p style="color:#64748b; font-size:0.8em; margin:0;" id="prize-calc">Cada pr&eacute;mio = 20 bandeiras prize. Restantes = recompensas (moedas/energia/skills).</p>
+
+                            <label class="company-label" for="pkg-prize-desc">Descri&ccedil;&atilde;o do pr&eacute;mio (escrita livre)</label>
+                            <textarea id="pkg-prize-desc" placeholder="Ex: Caf&eacute; gr&aacute;tis na Loja X, desconto 20% na Arena Tech..."></textarea>
+
+                            <label class="company-label" for="pkg-prize-deadline">Prazo para levantar o pr&eacute;mio ap&oacute;s expira&ccedil;&atilde;o (escrita livre)</label>
+                            <textarea id="pkg-prize-deadline" placeholder="Ex: 30 dias ap&oacute;s expira&ccedil;&atilde;o do pacote, at&eacute; 31 de Dezembro 2026..."></textarea>
+                        </div>
+
+                        <button type="submit" class="company-btn" style="margin-top:14px; width:100%;">Criar Pacote (Rascunho)</button>
+                    </form>
+                    <pre id="package-output" style="margin-top:10px;">Preenche os campos e cria o pacote.</pre>
+                </article>
+
+                <article class="card">
+                    <h2>Pacotes da Empresa</h2>
+                    <button class="company-btn" id="reload-packages">Atualizar pacotes</button>
+                    <table class="captures-table" style="margin-top:12px;">
+                        <thead>
+                            <tr><th>ID</th><th>Tier</th><th>Bandeiras</th><th>Pr&eacute;mios</th><th>Raio</th><th>Estado</th><th>A&ccedil;&atilde;o</th></tr>
+                        </thead>
+                        <tbody id="packages-rows">
+                            <tr><td colspan="7" style="color:#64748b;">A carregar...</td></tr>
+                        </tbody>
+                    </table>
+                </article>
+            </section>
+
+            <section class="card" style="margin-top:16px;">
+                <h2>Gest&atilde;o de Bingos Flash</h2>
+                <p style="color:#94a3b8;">Cria e gere Bingos Flash de curta dura&ccedil;&atilde;o para os jogadores pr&oacute;ximos.</p>
+
+                <div class="grid" style="margin-top:12px;">
+                    <div>
+                        <h3>Agendar Novo Bingo</h3>
+                        <form id="create-bingo-form">
+                            <label class="company-label" for="bingo-package">Pacote associado (opcional)</label>
+                            <select id="bingo-package">
+                                <option value="">Sem pacote (independente)</option>
+                            </select>
+
+                            <label class="company-label" for="bingo-prize">Pr&eacute;mio Flash (ex: 1 picanha, 2 cafes)</label>
+                            <input id="bingo-prize" placeholder="Descri&ccedil;&atilde;o do pr&eacute;mio" required>
+
+                            <label class="company-label" for="bingo-date">Dia e hora de in&iacute;cio</label>
+                            <input id="bingo-date" type="datetime-local" required>
+
+                            <label class="company-label" for="bingo-duration">Dura&ccedil;&atilde;o (minutos, m&aacute;x 1440 = 24h)</label>
+                            <input id="bingo-duration" type="number" min="1" max="1440" value="60">
+
+                            <label class="company-label" for="bingo-store-lat">Latitude da loja</label>
+                            <input id="bingo-store-lat" type="number" step="any" value="38.7225" required>
+
+                            <label class="company-label" for="bingo-store-lng">Longitude da loja</label>
+                            <input id="bingo-store-lng" type="number" step="any" value="-9.1395" required>
+
+                            <button type="submit" class="company-btn" style="margin-top:14px; width:100%;">Agendar Bingo Flash</button>
+                        </form>
+                        <pre id="bingo-output" style="margin-top:10px;">Preenche os campos e agenda o Bingo.</pre>
+                    </div>
+
+                    <div>
+                        <h3>Bingos da Empresa</h3>
+                        <button class="company-btn" id="reload-bingos">Atualizar lista</button>
+                        <table class="captures-table" style="margin-top:12px;">
+                            <thead>
+                                <tr><th>ID</th><th>Pr&eacute;mio</th><th>Dura&ccedil;&atilde;o</th><th>Inicio</th><th>Estado</th><th>Vencedor</th><th>A&ccedil;&atilde;o</th></tr>
+                            </thead>
+                            <tbody id="bingos-rows">
+                                <tr><td colspan="7" style="color:#64748b;">A carregar...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </section>
         </section>
     </main>
@@ -490,8 +633,12 @@
             authContainer.style.display = 'none';
             gameContainer.style.display = 'none';
             document.getElementById('company-container').style.display = 'block';
+            updateTierInfo();
             await loadCompanyDashboard();
             await loadCompanyFlags();
+            await loadCompanyPackages();
+            await populateBingoPackageSelector();
+            await loadCompanyBingos();
         }
 
         async function loadCompanyDashboard() {
@@ -608,10 +755,536 @@
             }
         }
 
+        // ── Package functions ──
+
+        const TIER_DATA = {
+            1: { name: 'Starter',    flags: 1000,   bingos: 0,   radius: '0,25km', days: 'Sem prazo', price: 'Grátis',     hasPrizes: false },
+            2: { name: 'Local',      flags: 5000,   bingos: 5,   radius: '1km',    days: '30 dias',   price: '10€+IVA',    hasPrizes: true  },
+            3: { name: 'Regional',   flags: 10000,  bingos: 10,  radius: '5km',    days: '60 dias',   price: '15€+IVA',    hasPrizes: true  },
+            4: { name: 'Nacional',   flags: 25000,  bingos: 25,  radius: '20km',   days: '90 dias',   price: '20€+IVA',    hasPrizes: true  },
+            5: { name: 'Premium',    flags: 50000,  bingos: 50,  radius: '50km',   days: '120 dias',  price: '30€+IVA',    hasPrizes: true  },
+            6: { name: 'Enterprise', flags: 100000, bingos: 100, radius: '100km',  days: '250 dias',  price: '50€+IVA',    hasPrizes: true  }
+        };
+
+        function updateTierInfo() {
+            const tier = Number(document.getElementById('pkg-tier').value);
+            const t = TIER_DATA[tier];
+            const info = document.getElementById('tier-info');
+            const prizeFields = document.getElementById('prize-fields');
+
+            info.innerHTML = `<strong>${t.name}</strong> — ${t.flags.toLocaleString('pt-PT')} bandeiras, ${t.bingos} bingos, raio ${t.radius}, ${t.days}, ${t.price}`;
+
+            if (t.hasPrizes) {
+                prizeFields.style.display = 'block';
+            } else {
+                prizeFields.style.display = 'none';
+                document.getElementById('pkg-prize-count').value = 0;
+            }
+        }
+
+        function updatePrizeCalc() {
+            const tier = Number(document.getElementById('pkg-tier').value);
+            const t = TIER_DATA[tier];
+            const count = Number(document.getElementById('pkg-prize-count').value || 0);
+            const prizeFlags = count * 20;
+            const rewardFlags = t.flags - prizeFlags;
+            const calc = document.getElementById('prize-calc');
+
+            if (prizeFlags > t.flags) {
+                calc.style.color = '#ef4444';
+                calc.textContent = `Demasiados prémios! ${count} x 20 = ${prizeFlags.toLocaleString('pt-PT')} > ${t.flags.toLocaleString('pt-PT')} bandeiras.`;
+            } else {
+                calc.style.color = '#64748b';
+                calc.textContent = `${count} prémios x 20 = ${prizeFlags.toLocaleString('pt-PT')} prize + ${rewardFlags.toLocaleString('pt-PT')} reward = ${t.flags.toLocaleString('pt-PT')} total.`;
+            }
+        }
+
+        async function createPackage(event) {
+            event.preventDefault();
+            const output = document.getElementById('package-output');
+            const tier = Number(document.getElementById('pkg-tier').value);
+            const t = TIER_DATA[tier];
+
+            const payload = {
+                tier: tier,
+                center_latitude: Number(document.getElementById('pkg-lat').value),
+                center_longitude: Number(document.getElementById('pkg-lng').value),
+                prize_count: t.hasPrizes ? Number(document.getElementById('pkg-prize-count').value || 0) : 0,
+                prize_description: t.hasPrizes ? document.getElementById('pkg-prize-desc').value.trim() : '',
+                prize_claim_deadline: t.hasPrizes ? document.getElementById('pkg-prize-deadline').value.trim() : ''
+            };
+
+            try {
+                output.textContent = 'A criar pacote...';
+                const response = await fetch('/api/company/packages', {
+                    method: 'POST',
+                    headers: headers(),
+                    body: JSON.stringify(payload)
+                });
+                const data = await response.json();
+
+                if (!data.success) {
+                    output.textContent = data.error || 'Erro ao criar pacote.';
+                    return;
+                }
+
+                output.textContent = `Pacote criado com sucesso! ID: ${data.package.id} (estado: rascunho). Ativa-o na lista abaixo.`;
+                document.getElementById('create-package-form').reset();
+                updateTierInfo();
+                await loadCompanyPackages();
+            } catch (error) {
+                output.textContent = 'Erro ao contactar o servidor.';
+            }
+        }
+
+        async function loadCompanyPackages() {
+            const rows = document.getElementById('packages-rows');
+            try {
+                const response = await fetch('/api/company/packages', { headers: headers() });
+                const data = await response.json();
+
+                if (!data.success) {
+                    rows.innerHTML = `<tr><td colspan="7" style="color:#64748b;">${data.error || 'Erro'}</td></tr>`;
+                    return;
+                }
+
+                if (data.packages.length === 0) {
+                    rows.innerHTML = '<tr><td colspan="7" style="color:#64748b;">Sem pacotes. Cria o primeiro!</td></tr>';
+                    return;
+                }
+
+                rows.innerHTML = data.packages.map(pkg => {
+                    const t = TIER_DATA[pkg.tier] || {};
+                    const statusBadge = pkg.status === 'active'
+                        ? '<span style="color:#22c55e;">Ativo</span>'
+                        : pkg.status === 'expired'
+                        ? '<span style="color:#ef4444;">Expirado</span>'
+                        : '<span style="color:#eab308;">Rascunho</span>';
+                    const action = pkg.status === 'draft'
+                        ? `<button class="company-btn" style="font-size:0.8em; padding:4px 10px;" onclick="activatePackage(${pkg.id})">Ativar</button>`
+                        : `${pkg.captured_flags || 0}/${pkg.generated_flags || 0} capturadas`;
+
+                    return `<tr>
+                        <td>${pkg.id}</td>
+                        <td>${t.name || pkg.tier}</td>
+                        <td>${Number(pkg.total_flags).toLocaleString('pt-PT')}</td>
+                        <td>${pkg.prize_count || 0}</td>
+                        <td>${pkg.radius_km}km</td>
+                        <td>${statusBadge}</td>
+                        <td>${action}</td>
+                    </tr>`;
+                }).join('');
+            } catch (error) {
+                rows.innerHTML = '<tr><td colspan="7" style="color:#64748b;">Erro ao carregar pacotes.</td></tr>';
+            }
+        }
+
+        async function activatePackage(packageId) {
+            if (!confirm('Ativar este pacote? Todas as bandeiras serão geradas no mapa. Esta ação não pode ser desfeita.')) {
+                return;
+            }
+
+            const rows = document.getElementById('packages-rows');
+            try {
+                rows.innerHTML = '<tr><td colspan="7" style="color:#eab308;">A ativar pacote e a gerar bandeiras... (pode demorar)</td></tr>';
+                const response = await fetch(`/api/company/packages/${packageId}/activate`, {
+                    method: 'POST',
+                    headers: headers()
+                });
+                const data = await response.json();
+
+                if (!data.success) {
+                    alert(data.error || 'Erro ao ativar pacote.');
+                    await loadCompanyPackages();
+                    return;
+                }
+
+                alert(data.message);
+                await loadCompanyPackages();
+                await loadCompanyDashboard();
+            } catch (error) {
+                alert('Erro ao contactar o servidor.');
+                await loadCompanyPackages();
+            }
+        }
+
+        // ── Prize Code functions ──
+
+        async function fusePrize() {
+            const output = document.getElementById('fuse-output');
+            const packageId = Number(document.getElementById('fuse-package-id').value);
+
+            if (!packageId) {
+                output.textContent = 'Insere o ID do pacote.';
+                return;
+            }
+
+            try {
+                output.textContent = 'A fundir 20 bandeiras...';
+                const response = await fetch('/api/player/fuse-prize', {
+                    method: 'POST',
+                    headers: headers(),
+                    body: JSON.stringify({ package_id: packageId })
+                });
+                const data = await response.json();
+
+                if (!data.success) {
+                    output.textContent = data.error || 'Erro ao fundir.';
+                    return;
+                }
+
+                output.textContent = data.message;
+                await loadPrizeCodes();
+            } catch (error) {
+                output.textContent = 'Erro ao contactar o servidor.';
+            }
+        }
+
+        async function loadPrizeCodes() {
+            const list = document.getElementById('prize-codes-list');
+            try {
+                const response = await fetch('/api/player/prize-codes', { headers: headers() });
+                const data = await response.json();
+
+                if (!data.success || data.prize_codes.length === 0) {
+                    list.innerHTML = '<p style="color:#64748b;">Sem códigos de prémio. Funde 20 bandeiras prize ou captura um Bingo!</p>';
+                    return;
+                }
+
+                list.innerHTML = data.prize_codes.map(pc => {
+                    const statusColors = {
+                        available: '#22c55e', proximity_alert: '#eab308', qr_active: '#f59e0b',
+                        on_market: '#38bdf8', burned: '#ef4444'
+                    };
+                    const statusLabels = {
+                        available: 'Disponível', proximity_alert: 'Perto da loja', qr_active: 'QR Ativo',
+                        on_market: 'No Mercado', burned: 'QUEIMADO (Troféu)'
+                    };
+                    const color = statusColors[pc.status] || '#94a3b8';
+                    const label = statusLabels[pc.status] || pc.status;
+                    const source = pc.source === 'bingo' ? 'Bingo' : 'Fusão 20 flags';
+
+                    let actions = '';
+                    if (pc.status === 'available' || pc.status === 'proximity_alert') {
+                        actions = `<button class="primary" style="font-size:0.8em; padding:4px 10px;" onclick="activatePrizeCode(${pc.id})">Ativar QR (30s)</button>
+                                   <button style="font-size:0.8em; padding:4px 10px;" onclick="sellPrizeCode(${pc.id})">Vender</button>`;
+                    }
+
+                    return `<div style="border:1px solid #334155; border-radius:8px; padding:10px; margin-bottom:8px;">
+                        <strong>${pc.prize_name}</strong> <span style="color:${color};">[${label}]</span>
+                        <br><small>Token: ${pc.token} | Fonte: ${source} | Empresa: ${pc.company_name || '--'}</small>
+                        <br>${actions}
+                    </div>`;
+                }).join('');
+            } catch (error) {
+                list.innerHTML = '<p style="color:#64748b;">Erro ao carregar códigos.</p>';
+            }
+        }
+
+        let qrCountdownInterval = null;
+
+        async function activatePrizeCode(codeId) {
+            if (!confirm('Ativar QR Code? Tens apenas 30 segundos para a empresa fazer scan!')) return;
+
+            try {
+                const response = await fetch(`/api/prize-codes/${codeId}/activate`, {
+                    method: 'POST',
+                    headers: headers()
+                });
+                const data = await response.json();
+
+                if (!data.success) {
+                    alert(data.error || 'Erro ao ativar.');
+                    return;
+                }
+
+                const area = document.getElementById('qr-activation-area');
+                const tokenEl = document.getElementById('qr-token');
+                const timerEl = document.getElementById('qr-timer');
+
+                area.style.display = 'block';
+                tokenEl.textContent = data.qr_data.token;
+
+                const expiresAt = new Date(data.qr_expires_at);
+
+                if (qrCountdownInterval) clearInterval(qrCountdownInterval);
+                qrCountdownInterval = setInterval(() => {
+                    const remaining = Math.max(0, Math.round((expiresAt - Date.now()) / 1000));
+                    timerEl.textContent = `${remaining}s`;
+                    if (remaining <= 0) {
+                        clearInterval(qrCountdownInterval);
+                        area.style.display = 'none';
+                        loadPrizeCodes();
+                    }
+                }, 1000);
+            } catch (error) {
+                alert('Erro ao contactar o servidor.');
+            }
+        }
+
+        async function sellPrizeCode(codeId) {
+            const minBid = prompt('Valor MÍNIMO de licitação (moedas):');
+            if (!minBid || Number(minBid) <= 0) return;
+
+            const auctionDays = prompt('Prazo do leilão em dias (1 a 5):');
+            if (!auctionDays || Number(auctionDays) < 1 || Number(auctionDays) > 5) {
+                alert('Prazo deve ser entre 1 e 5 dias.');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/market/prize-code-sale', {
+                    method: 'POST',
+                    headers: headers(),
+                    body: JSON.stringify({ prize_code_id: codeId, min_bid: Number(minBid), auction_days: Number(auctionDays) })
+                });
+                const data = await response.json();
+                alert(data.message || data.error);
+                await loadPrizeCodes();
+                await loadMarketAuctions();
+            } catch (error) {
+                alert('Erro ao contactar o servidor.');
+            }
+        }
+
+        async function loadMarketAuctions() {
+            const list = document.getElementById('market-auctions-list');
+            if (!list) return;
+
+            try {
+                const response = await fetch('/api/market/listings', { headers: headers() });
+                const data = await response.json();
+                const auctions = (Array.isArray(data) ? data : []).filter(l => l.item_type === 'PRIZE_CODE');
+
+                if (auctions.length === 0) {
+                    list.innerHTML = '<p style="color:#64748b;">Sem leilões ativos no momento.</p>';
+                    return;
+                }
+
+                list.innerHTML = auctions.map(a => {
+                    const endsAt = a.auction_ends_at ? new Date(a.auction_ends_at).toLocaleString('pt-PT') : '--';
+                    const highest = a.highest_bid || a.min_bid || a.price;
+                    const bids = a.bid_count || 0;
+
+                    return `<div style="border:1px solid #334155; border-radius:8px; padding:12px; margin-bottom:10px;">
+                        <strong>${a.item_name}</strong>
+                        <br><small>Token: ${a.qr_code} | Vendedor: #${a.seller_id} | Mín: ${a.min_bid || a.price} moedas</small>
+                        <br><span style="color:#f59e0b;">Maior oferta: ${highest} moedas</span> | <span style="color:#94a3b8;">${bids} licitação(ões)</span>
+                        <br><small>Expira: ${endsAt}</small>
+                        <br style="margin-top:6px;">
+                        <input type="number" id="bid-input-${a.id}" placeholder="Tua oferta" style="width:120px; margin-right:6px;">
+                        <button class="primary" style="font-size:0.8em; padding:4px 10px;" onclick="placeBid(${a.id})">Licitar</button>
+                        <button style="font-size:0.8em; padding:4px 8px;" onclick="viewBids(${a.id})">Ver ofertas</button>
+                        <button style="font-size:0.8em; padding:4px 8px; color:#ef4444;" onclick="cancelAuction(${a.id})">Cancelar</button>
+                    </div>`;
+                }).join('');
+            } catch (error) {
+                list.innerHTML = '<p style="color:#64748b;">Erro ao carregar leilões.</p>';
+            }
+        }
+
+        async function placeBid(listingId) {
+            const input = document.getElementById(`bid-input-${listingId}`);
+            const amount = Number(input?.value);
+            if (!amount || amount <= 0) { alert('Insere um valor válido.'); return; }
+
+            try {
+                const response = await fetch(`/api/market/${listingId}/bid`, {
+                    method: 'POST',
+                    headers: headers(),
+                    body: JSON.stringify({ amount })
+                });
+                const data = await response.json();
+                alert(data.message || data.error);
+                await loadMarketAuctions();
+            } catch (error) {
+                alert('Erro ao contactar o servidor.');
+            }
+        }
+
+        async function viewBids(listingId) {
+            try {
+                const response = await fetch(`/api/market/${listingId}/bids`, { headers: headers() });
+                const data = await response.json();
+
+                if (!data.success || data.bids.length === 0) {
+                    alert('Sem licitações neste leilão.');
+                    return;
+                }
+
+                const text = data.bids.map((b, i) =>
+                    `${i + 1}. ${b.bidder_name}: ${b.amount} moedas (${new Date(b.created_at).toLocaleString('pt-PT')})`
+                ).join('\n');
+                alert('Licitações (maior → menor):\n\n' + text);
+            } catch (error) {
+                alert('Erro ao carregar licitações.');
+            }
+        }
+
+        async function cancelAuction(listingId) {
+            if (!confirm('Tens a certeza que queres cancelar este leilão?')) return;
+
+            try {
+                const response = await fetch(`/api/market/${listingId}/cancel`, {
+                    method: 'POST',
+                    headers: headers()
+                });
+                const data = await response.json();
+                alert(data.message || data.error);
+                await loadMarketAuctions();
+                await loadPrizeCodes();
+            } catch (error) {
+                alert('Erro ao contactar o servidor.');
+            }
+        }
+
+        // ── Bingo Flash functions ──
+
+        async function populateBingoPackageSelector() {
+            const select = document.getElementById('bingo-package');
+            try {
+                const response = await fetch('/api/company/packages', { headers: headers() });
+                const data = await response.json();
+                if (!data.success || !data.packages) return;
+
+                data.packages
+                    .filter(p => p.status === 'active' && p.bingo_count > 0)
+                    .forEach(pkg => {
+                        const t = TIER_DATA[pkg.tier] || {};
+                        const opt = document.createElement('option');
+                        opt.value = pkg.id;
+                        opt.textContent = `Pacote #${pkg.id} (${t.name || pkg.tier}) — ${pkg.bingo_count} bingos`;
+                        select.appendChild(opt);
+                    });
+            } catch (e) { /* silently fail */ }
+        }
+
+        async function createBingo(event) {
+            event.preventDefault();
+            const output = document.getElementById('bingo-output');
+
+            const payload = {
+                package_id: document.getElementById('bingo-package').value || null,
+                prize_name: document.getElementById('bingo-prize').value.trim(),
+                scheduled_start: document.getElementById('bingo-date').value,
+                duration_minutes: Number(document.getElementById('bingo-duration').value),
+                store_latitude: Number(document.getElementById('bingo-store-lat').value),
+                store_longitude: Number(document.getElementById('bingo-store-lng').value)
+            };
+
+            if (!payload.prize_name) {
+                output.textContent = 'O prémio flash é obrigatório.';
+                return;
+            }
+            if (!payload.scheduled_start) {
+                output.textContent = 'A data/hora de início é obrigatória.';
+                return;
+            }
+
+            try {
+                output.textContent = 'A agendar bingo...';
+                const response = await fetch('/api/company/bingos', {
+                    method: 'POST',
+                    headers: headers(),
+                    body: JSON.stringify(payload)
+                });
+                const data = await response.json();
+
+                if (!data.success) {
+                    output.textContent = data.error || 'Erro ao criar bingo.';
+                    return;
+                }
+
+                output.textContent = `Bingo agendado com sucesso! ID: ${data.bingo.id}. Ativa-o na lista ao lado.`;
+                document.getElementById('create-bingo-form').reset();
+                await loadCompanyBingos();
+            } catch (error) {
+                output.textContent = 'Erro ao contactar o servidor.';
+            }
+        }
+
+        async function loadCompanyBingos() {
+            const rows = document.getElementById('bingos-rows');
+            try {
+                const response = await fetch('/api/company/bingos', { headers: headers() });
+                const data = await response.json();
+
+                if (!data.success) {
+                    rows.innerHTML = `<tr><td colspan="7" style="color:#64748b;">${data.error || 'Erro'}</td></tr>`;
+                    return;
+                }
+
+                if (data.bingos.length === 0) {
+                    rows.innerHTML = '<tr><td colspan="7" style="color:#64748b;">Sem bingos. Agenda o primeiro!</td></tr>';
+                    return;
+                }
+
+                rows.innerHTML = data.bingos.map(b => {
+                    const statusColors = {
+                        scheduled: '#eab308', active: '#22c55e', captured: '#38bdf8', expired: '#ef4444'
+                    };
+                    const statusLabels = {
+                        scheduled: 'Agendado', active: 'Ativo', captured: 'Capturado', expired: 'Expirado'
+                    };
+                    const color = statusColors[b.status] || '#94a3b8';
+                    const label = statusLabels[b.status] || b.status;
+                    const startStr = b.scheduled_start ? new Date(b.scheduled_start).toLocaleString('pt-PT') : '--';
+                    const winner = b.winner_username || '--';
+                    const action = b.status === 'scheduled'
+                        ? `<button class="company-btn" style="font-size:0.8em; padding:4px 10px;" onclick="activateBingo(${b.id})">Ativar</button>`
+                        : b.status === 'active'
+                        ? `<span style="color:#22c55e;">A decorrer</span>`
+                        : '';
+
+                    return `<tr>
+                        <td>${b.id}</td>
+                        <td>${b.prize_name}</td>
+                        <td>${b.duration_minutes}min</td>
+                        <td>${startStr}</td>
+                        <td><span style="color:${color};">${label}</span></td>
+                        <td>${winner}</td>
+                        <td>${action}</td>
+                    </tr>`;
+                }).join('');
+            } catch (error) {
+                rows.innerHTML = '<tr><td colspan="7" style="color:#64748b;">Erro ao carregar bingos.</td></tr>';
+            }
+        }
+
+        async function activateBingo(bingoId) {
+            if (!confirm('Ativar este Bingo Flash? Os jogadores próximos serão alertados.')) return;
+
+            try {
+                const response = await fetch(`/api/company/bingos/${bingoId}/activate`, {
+                    method: 'POST',
+                    headers: headers()
+                });
+                const data = await response.json();
+
+                if (!data.success) {
+                    alert(data.error || 'Erro ao ativar bingo.');
+                } else {
+                    alert(data.message);
+                }
+                await loadCompanyBingos();
+            } catch (error) {
+                alert('Erro ao contactar o servidor.');
+            }
+        }
+
         document.getElementById('login-player').addEventListener('click', (event) => authenticate('login', event));
         document.getElementById('register-player').addEventListener('click', (event) => authenticate('register', event));
         document.getElementById('load-player').addEventListener('click', initializePlayerExperience);
         document.getElementById('seed-campaign-form').addEventListener('submit', seedCampaign);
+        document.getElementById('create-package-form').addEventListener('submit', createPackage);
+        document.getElementById('btn-fuse-prize').addEventListener('click', fusePrize);
+        document.getElementById('reload-prize-codes').addEventListener('click', loadPrizeCodes);
+        document.getElementById('reload-auctions').addEventListener('click', loadMarketAuctions);
+        document.getElementById('create-bingo-form').addEventListener('submit', createBingo);
+        document.getElementById('pkg-tier').addEventListener('change', () => { updateTierInfo(); updatePrizeCalc(); });
+        document.getElementById('pkg-prize-count').addEventListener('input', updatePrizeCalc);
+        document.getElementById('reload-packages').addEventListener('click', loadCompanyPackages);
+        document.getElementById('reload-bingos').addEventListener('click', loadCompanyBingos);
         document.getElementById('refresh-dashboard').addEventListener('click', async () => {
             await loadCompanyDashboard();
             await loadCompanyFlags();
