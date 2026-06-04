@@ -1853,17 +1853,25 @@ app.post('/api/company/qr/:id/validate', verifyJWT, async (req, res) => {
     }
 });
 
-// List prize codes on market
+// ── Auction/Market System (Leilão Competitivo) ──
+
+const MARKET_FEE_RATE = 0.025; // 2.5% taxa sobre venda
+
+// Create auction listing for prize code
 app.post('/api/market/prize-code-sale', verifyJWT, async (req, res) => {
     if (req.user.accountType !== 'player') {
         return res.status(403).json({ error: 'Apenas jogadores podem vender códigos.' });
     }
 
-    const { prize_code_id, price } = req.body;
-    const numericPrice = Number(price);
+    const { prize_code_id, min_bid, auction_days } = req.body;
+    const numericMinBid = Number(min_bid);
+    const numericDays = Number(auction_days);
 
-    if (!prize_code_id || !Number.isFinite(numericPrice) || numericPrice <= 0) {
-        return res.status(400).json({ error: 'ID do código e preço positivo são obrigatórios.' });
+    if (!prize_code_id || !Number.isFinite(numericMinBid) || numericMinBid <= 0) {
+        return res.status(400).json({ error: 'ID do código e valor mínimo de licitação positivo são obrigatórios.' });
+    }
+    if (!Number.isFinite(numericDays) || numericDays < 1 || numericDays > 5) {
+        return res.status(400).json({ error: 'Prazo do leilão deve ser entre 1 e 5 dias.' });
     }
 
     const client = await db.pool.connect();
@@ -1886,31 +1894,158 @@ app.post('/api/market/prize-code-sale', verifyJWT, async (req, res) => {
         await client.query("UPDATE prize_codes SET status = 'on_market' WHERE id = $1", [prize_code_id]);
 
         const listingResult = await client.query(`
-            INSERT INTO market_listings (seller_id, item_type, item_name, qr_code, price, prize_code_id)
-            VALUES ($1, 'PRIZE_CODE', $2, $3, $4, $5)
+            INSERT INTO market_listings
+                (seller_id, item_type, item_name, qr_code, price, prize_code_id,
+                 min_bid, auction_days, auction_ends_at, bid_count)
+            VALUES ($1, 'PRIZE_CODE', $2, $3, $4, $5, $6, $7, NOW() + ($7 || ' days')::INTERVAL, 0)
             RETURNING *
-        `, [req.user.playerId || 1, code.prize_name, code.token, numericPrice, prize_code_id]);
+        `, [
+            req.user.playerId || 1, code.prize_name, code.token,
+            numericMinBid, prize_code_id, numericMinBid, numericDays
+        ]);
 
         await client.query('COMMIT');
 
         res.json({
             success: true,
-            message: `Código "${code.prize_name}" colocado no mercado por ${numericPrice} moedas.`,
+            message: `Leilão criado! "${code.prize_name}" — mínimo ${numericMinBid} moedas, ${numericDays} dia(s).`,
             listing: listingResult.rows[0]
         });
     } catch (error) {
         await client.query('ROLLBACK');
-        console.error('Erro ao listar código no mercado:', error);
+        console.error('Erro ao criar leilão:', error);
         res.status(500).json({ error: 'Erro interno.' });
     } finally {
         client.release();
     }
 });
 
-// Buy prize code from market
-app.post('/api/market/prize-code-buy/:listingId', verifyJWT, async (req, res) => {
+// Place bid on auction
+app.post('/api/market/:listingId/bid', verifyJWT, async (req, res) => {
     if (req.user.accountType !== 'player') {
-        return res.status(403).json({ error: 'Apenas jogadores podem comprar.' });
+        return res.status(403).json({ error: 'Apenas jogadores podem licitar.' });
+    }
+
+    const listingId = Number(req.params.listingId);
+    const bidAmount = Number(req.body.amount);
+
+    if (!Number.isFinite(bidAmount) || bidAmount <= 0) {
+        return res.status(400).json({ error: 'Valor da licitação deve ser positivo.' });
+    }
+
+    const client = await db.pool.connect();
+
+    try {
+        await client.query('BEGIN');
+
+        const listingResult = await client.query(`
+            SELECT ml.*, pc.player_id AS seller_user_id
+            FROM market_listings ml
+            JOIN prize_codes pc ON pc.id = ml.prize_code_id
+            WHERE ml.id = $1 AND ml.status = 'active' AND ml.item_type = 'PRIZE_CODE'
+            FOR UPDATE
+        `, [listingId]);
+
+        if (listingResult.rows.length === 0) {
+            await client.query('ROLLBACK');
+            return res.status(404).json({ error: 'Leilão não encontrado ou já fechado.' });
+        }
+
+        const listing = listingResult.rows[0];
+
+        // Check auction hasn't expired
+        if (listing.auction_ends_at && new Date(listing.auction_ends_at) < new Date()) {
+            await client.query('ROLLBACK');
+            return res.status(400).json({ error: 'Este leilão já expirou.' });
+        }
+
+        // Cannot bid on own listing
+        if (Number(listing.seller_user_id) === Number(req.user.userId)) {
+            await client.query('ROLLBACK');
+            return res.status(400).json({ error: 'Não podes licitar no teu próprio leilão.' });
+        }
+
+        // Bid must be >= min_bid
+        const minBid = Number(listing.min_bid || listing.price);
+        if (bidAmount < minBid) {
+            await client.query('ROLLBACK');
+            return res.status(400).json({ error: `Licitação mínima: ${minBid} moedas. A tua oferta (${bidAmount}) é inferior.` });
+        }
+
+        // Bid must be higher than current highest
+        const highestBid = await client.query(
+            'SELECT MAX(amount) AS max_bid FROM market_bids WHERE listing_id = $1',
+            [listingId]
+        );
+        const currentMax = Number(highestBid.rows[0]?.max_bid || 0);
+        if (bidAmount <= currentMax) {
+            await client.query('ROLLBACK');
+            return res.status(400).json({ error: `Já existe uma oferta de ${currentMax} moedas. A tua deve ser superior.` });
+        }
+
+        // Check bidder has enough coins
+        const buyerResult = await client.query(
+            'SELECT coin_wallet FROM players WHERE user_id = $1 FOR UPDATE',
+            [req.user.userId]
+        );
+        if (buyerResult.rows.length === 0 || Number(buyerResult.rows[0].coin_wallet) < bidAmount) {
+            await client.query('ROLLBACK');
+            return res.status(400).json({ error: 'Moedas insuficientes para esta licitação.' });
+        }
+
+        // Insert bid
+        const bidResult = await client.query(`
+            INSERT INTO market_bids (listing_id, bidder_user_id, bidder_player_id, amount)
+            VALUES ($1, $2, $3, $4)
+            RETURNING *
+        `, [listingId, req.user.userId, req.user.playerId || 1, bidAmount]);
+
+        // Update listing bid count and current highest
+        await client.query(`
+            UPDATE market_listings
+            SET bid_count = COALESCE(bid_count, 0) + 1,
+                highest_bid = $1, highest_bidder_id = $2
+            WHERE id = $3
+        `, [bidAmount, req.user.userId, listingId]);
+
+        await client.query('COMMIT');
+
+        res.json({
+            success: true,
+            message: `Licitação de ${bidAmount} moedas registada com sucesso!`,
+            bid: bidResult.rows[0]
+        });
+    } catch (error) {
+        await client.query('ROLLBACK');
+        console.error('Erro ao licitar:', error);
+        res.status(500).json({ error: 'Erro interno.' });
+    } finally {
+        client.release();
+    }
+});
+
+// Get bids for a listing
+app.get('/api/market/:listingId/bids', verifyJWT, async (req, res) => {
+    try {
+        const result = await db.query(`
+            SELECT mb.*, p.username AS bidder_name
+            FROM market_bids mb
+            JOIN players p ON p.user_id = mb.bidder_user_id
+            WHERE mb.listing_id = $1
+            ORDER BY mb.amount DESC
+        `, [Number(req.params.listingId)]);
+
+        res.json({ success: true, bids: result.rows });
+    } catch (error) {
+        console.error('Erro ao listar licitações:', error);
+        res.status(500).json({ error: 'Erro interno.' });
+    }
+});
+
+// Cancel auction (only if no valid bids)
+app.post('/api/market/:listingId/cancel', verifyJWT, async (req, res) => {
+    if (req.user.accountType !== 'player') {
+        return res.status(403).json({ error: 'Apenas jogadores.' });
     }
 
     const listingId = Number(req.params.listingId);
@@ -1920,7 +2055,7 @@ app.post('/api/market/prize-code-buy/:listingId', verifyJWT, async (req, res) =>
         await client.query('BEGIN');
 
         const listingResult = await client.query(`
-            SELECT ml.*, pc.id AS pc_id, pc.player_id AS seller_user_id
+            SELECT ml.*, pc.player_id AS seller_user_id
             FROM market_listings ml
             JOIN prize_codes pc ON pc.id = ml.prize_code_id
             WHERE ml.id = $1 AND ml.status = 'active' AND ml.item_type = 'PRIZE_CODE'
@@ -1929,47 +2064,150 @@ app.post('/api/market/prize-code-buy/:listingId', verifyJWT, async (req, res) =>
 
         if (listingResult.rows.length === 0) {
             await client.query('ROLLBACK');
-            return res.status(404).json({ error: 'Listing não encontrado ou já vendido.' });
+            return res.status(404).json({ error: 'Leilão não encontrado.' });
         }
 
         const listing = listingResult.rows[0];
-        const price = Number(listing.price);
 
-        if (Number(listing.seller_user_id) === Number(req.user.userId)) {
+        if (Number(listing.seller_user_id) !== Number(req.user.userId)) {
             await client.query('ROLLBACK');
-            return res.status(400).json({ error: 'Não podes comprar o teu próprio código.' });
+            return res.status(403).json({ error: 'Só o vendedor pode cancelar o leilão.' });
         }
 
-        // Check buyer has enough coins
-        const buyerResult = await client.query(
-            'SELECT coin_wallet FROM players WHERE user_id = $1 FOR UPDATE',
-            [req.user.userId]
+        // Check if there are valid bids (>= min_bid)
+        const bidCount = await client.query(
+            'SELECT COUNT(*)::int AS cnt FROM market_bids WHERE listing_id = $1 AND amount >= $2',
+            [listingId, Number(listing.min_bid || 0)]
         );
 
-        if (buyerResult.rows.length === 0 || Number(buyerResult.rows[0].coin_wallet) < price) {
+        if (Number(bidCount.rows[0].cnt) > 0) {
             await client.query('ROLLBACK');
-            return res.status(400).json({ error: 'Moedas insuficientes.' });
+            return res.status(400).json({
+                error: 'Cancelamento BLOQUEADO! O leilão já tem licitações válidas. Tens de esperar até ao fim do prazo.',
+                bid_count: Number(bidCount.rows[0].cnt)
+            });
         }
 
-        // Transfer coins
-        await client.query('UPDATE players SET coin_wallet = coin_wallet - $1 WHERE user_id = $2', [price, req.user.userId]);
-        await client.query('UPDATE players SET coin_wallet = coin_wallet + $1 WHERE user_id = $2', [price, listing.seller_user_id]);
-
-        // Transfer prize code ownership
-        await client.query("UPDATE prize_codes SET player_id = $1, status = 'available' WHERE id = $2", [req.user.userId, listing.pc_id]);
-
-        // Update listing
-        await client.query("UPDATE market_listings SET status = 'sold', buyer_id = $1, sold_at = NOW() WHERE id = $2", [req.user.playerId || 1, listingId]);
+        // No valid bids — allow cancel
+        await client.query("UPDATE market_listings SET status = 'cancelled' WHERE id = $1", [listingId]);
+        await client.query("UPDATE prize_codes SET status = 'available' WHERE id = $1", [listing.prize_code_id]);
 
         await client.query('COMMIT');
 
         res.json({
             success: true,
-            message: `Código comprado por ${price} moedas! Já está na tua pasta.`
+            message: 'Leilão cancelado. O código voltou à tua pasta.'
         });
     } catch (error) {
         await client.query('ROLLBACK');
-        console.error('Erro ao comprar código:', error);
+        console.error('Erro ao cancelar leilão:', error);
+        res.status(500).json({ error: 'Erro interno.' });
+    } finally {
+        client.release();
+    }
+});
+
+// Auto-close expired auctions (highest bid wins, 2.5% fee)
+app.post('/api/market/auction-close', async (req, res) => {
+    const client = await db.pool.connect();
+
+    try {
+        await client.query('BEGIN');
+
+        // Find expired active auctions
+        const expired = await client.query(`
+            SELECT ml.*, pc.player_id AS seller_user_id
+            FROM market_listings ml
+            JOIN prize_codes pc ON pc.id = ml.prize_code_id
+            WHERE ml.status = 'active' AND ml.item_type = 'PRIZE_CODE'
+              AND ml.auction_ends_at IS NOT NULL AND ml.auction_ends_at < NOW()
+            FOR UPDATE
+        `);
+
+        const results = [];
+
+        for (const listing of expired.rows) {
+            const listingId = listing.id;
+            const minBid = Number(listing.min_bid || 0);
+
+            // Get highest valid bid
+            const topBid = await client.query(`
+                SELECT mb.*, p.user_id AS winner_user_id
+                FROM market_bids mb
+                JOIN players p ON p.user_id = mb.bidder_user_id
+                WHERE mb.listing_id = $1 AND mb.amount >= $2
+                ORDER BY mb.amount DESC
+                LIMIT 1
+            `, [listingId, minBid]);
+
+            if (topBid.rows.length === 0) {
+                // No valid bids — return code to seller
+                await client.query("UPDATE market_listings SET status = 'expired' WHERE id = $1", [listingId]);
+                await client.query("UPDATE prize_codes SET status = 'available' WHERE id = $1", [listing.prize_code_id]);
+                results.push({ listing_id: listingId, result: 'expired_no_bids', item: listing.item_name });
+                continue;
+            }
+
+            const winner = topBid.rows[0];
+            const winAmount = Number(winner.amount);
+            const fee = Math.round(winAmount * MARKET_FEE_RATE);
+            const sellerReceives = winAmount - fee;
+
+            // Verify winner has coins
+            const winnerWallet = await client.query(
+                'SELECT coin_wallet FROM players WHERE user_id = $1 FOR UPDATE',
+                [winner.winner_user_id]
+            );
+
+            if (winnerWallet.rows.length === 0 || Number(winnerWallet.rows[0].coin_wallet) < winAmount) {
+                // Winner can't pay — mark bid as failed, try next bid
+                await client.query("UPDATE market_bids SET status = 'failed' WHERE id = $1", [winner.id]);
+                // For simplicity, expire the listing (could recurse to next bid)
+                await client.query("UPDATE market_listings SET status = 'expired' WHERE id = $1", [listingId]);
+                await client.query("UPDATE prize_codes SET status = 'available' WHERE id = $1", [listing.prize_code_id]);
+                results.push({ listing_id: listingId, result: 'winner_insufficient_coins', item: listing.item_name });
+                continue;
+            }
+
+            // Transfer coins (winner pays, seller receives minus fee)
+            await client.query('UPDATE players SET coin_wallet = coin_wallet - $1 WHERE user_id = $2', [winAmount, winner.winner_user_id]);
+            await client.query('UPDATE players SET coin_wallet = coin_wallet + $1 WHERE user_id = $2', [sellerReceives, listing.seller_user_id]);
+
+            // Transfer prize code
+            await client.query("UPDATE prize_codes SET player_id = $1, status = 'available' WHERE id = $2", [winner.winner_user_id, listing.prize_code_id]);
+
+            // Update listing
+            await client.query(`
+                UPDATE market_listings
+                SET status = 'sold', buyer_id = $1, sold_at = NOW(), final_price = $2, fee_amount = $3
+                WHERE id = $4
+            `, [winner.bidder_player_id, winAmount, fee, listingId]);
+
+            // Mark winning bid
+            await client.query("UPDATE market_bids SET status = 'won' WHERE id = $1", [winner.id]);
+
+            results.push({
+                listing_id: listingId,
+                result: 'sold',
+                item: listing.item_name,
+                winner: winner.winner_user_id,
+                amount: winAmount,
+                fee,
+                seller_receives: sellerReceives
+            });
+        }
+
+        await client.query('COMMIT');
+
+        res.json({
+            success: true,
+            closed_count: results.length,
+            results,
+            fee_rate: `${MARKET_FEE_RATE * 100}%`
+        });
+    } catch (error) {
+        await client.query('ROLLBACK');
+        console.error('Erro ao fechar leilões:', error);
         res.status(500).json({ error: 'Erro interno.' });
     } finally {
         client.release();

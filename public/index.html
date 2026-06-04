@@ -99,6 +99,14 @@
                     <p style="color:#94a3b8;">Mostra este c&oacute;digo &agrave; empresa para fazer scan. V&aacute;lido por 30 segundos.</p>
                 </div>
             </section>
+
+            <section class="card" style="margin-top:16px;">
+                <h2>Mercado de Leil&otilde;es</h2>
+                <p style="color:#94a3b8;">Leil&otilde;es ativos de c&oacute;digos de pr&eacute;mio. Licita para ganhar! Taxa de 2,5% sobre venda. Prazo: 1-5 dias.</p>
+                <p style="color:#eab308; font-size:0.85em;"><strong>Regras:</strong> O vendedor define um valor m&iacute;nimo. Ofertas abaixo s&atilde;o rejeitadas. Ap&oacute;s a 1&ordf; oferta v&aacute;lida, o vendedor n&atilde;o pode cancelar. No fim do prazo, a oferta mais alta ganha automaticamente.</p>
+                <button class="primary" id="reload-auctions" style="margin-top:8px;">Atualizar Mercado</button>
+                <div id="market-auctions-list" style="margin-top:12px;">A carregar...</div>
+            </section>
         </section>
 
         <section id="company-container">
@@ -1015,17 +1023,115 @@
         }
 
         async function sellPrizeCode(codeId) {
-            const price = prompt('Preço em moedas para vender este código:');
-            if (!price || Number(price) <= 0) return;
+            const minBid = prompt('Valor MÍNIMO de licitação (moedas):');
+            if (!minBid || Number(minBid) <= 0) return;
+
+            const auctionDays = prompt('Prazo do leilão em dias (1 a 5):');
+            if (!auctionDays || Number(auctionDays) < 1 || Number(auctionDays) > 5) {
+                alert('Prazo deve ser entre 1 e 5 dias.');
+                return;
+            }
 
             try {
                 const response = await fetch('/api/market/prize-code-sale', {
                     method: 'POST',
                     headers: headers(),
-                    body: JSON.stringify({ prize_code_id: codeId, price: Number(price) })
+                    body: JSON.stringify({ prize_code_id: codeId, min_bid: Number(minBid), auction_days: Number(auctionDays) })
                 });
                 const data = await response.json();
                 alert(data.message || data.error);
+                await loadPrizeCodes();
+                await loadMarketAuctions();
+            } catch (error) {
+                alert('Erro ao contactar o servidor.');
+            }
+        }
+
+        async function loadMarketAuctions() {
+            const list = document.getElementById('market-auctions-list');
+            if (!list) return;
+
+            try {
+                const response = await fetch('/api/market/listings', { headers: headers() });
+                const data = await response.json();
+                const auctions = (Array.isArray(data) ? data : []).filter(l => l.item_type === 'PRIZE_CODE');
+
+                if (auctions.length === 0) {
+                    list.innerHTML = '<p style="color:#64748b;">Sem leilões ativos no momento.</p>';
+                    return;
+                }
+
+                list.innerHTML = auctions.map(a => {
+                    const endsAt = a.auction_ends_at ? new Date(a.auction_ends_at).toLocaleString('pt-PT') : '--';
+                    const highest = a.highest_bid || a.min_bid || a.price;
+                    const bids = a.bid_count || 0;
+
+                    return `<div style="border:1px solid #334155; border-radius:8px; padding:12px; margin-bottom:10px;">
+                        <strong>${a.item_name}</strong>
+                        <br><small>Token: ${a.qr_code} | Vendedor: #${a.seller_id} | Mín: ${a.min_bid || a.price} moedas</small>
+                        <br><span style="color:#f59e0b;">Maior oferta: ${highest} moedas</span> | <span style="color:#94a3b8;">${bids} licitação(ões)</span>
+                        <br><small>Expira: ${endsAt}</small>
+                        <br style="margin-top:6px;">
+                        <input type="number" id="bid-input-${a.id}" placeholder="Tua oferta" style="width:120px; margin-right:6px;">
+                        <button class="primary" style="font-size:0.8em; padding:4px 10px;" onclick="placeBid(${a.id})">Licitar</button>
+                        <button style="font-size:0.8em; padding:4px 8px;" onclick="viewBids(${a.id})">Ver ofertas</button>
+                        <button style="font-size:0.8em; padding:4px 8px; color:#ef4444;" onclick="cancelAuction(${a.id})">Cancelar</button>
+                    </div>`;
+                }).join('');
+            } catch (error) {
+                list.innerHTML = '<p style="color:#64748b;">Erro ao carregar leilões.</p>';
+            }
+        }
+
+        async function placeBid(listingId) {
+            const input = document.getElementById(`bid-input-${listingId}`);
+            const amount = Number(input?.value);
+            if (!amount || amount <= 0) { alert('Insere um valor válido.'); return; }
+
+            try {
+                const response = await fetch(`/api/market/${listingId}/bid`, {
+                    method: 'POST',
+                    headers: headers(),
+                    body: JSON.stringify({ amount })
+                });
+                const data = await response.json();
+                alert(data.message || data.error);
+                await loadMarketAuctions();
+            } catch (error) {
+                alert('Erro ao contactar o servidor.');
+            }
+        }
+
+        async function viewBids(listingId) {
+            try {
+                const response = await fetch(`/api/market/${listingId}/bids`, { headers: headers() });
+                const data = await response.json();
+
+                if (!data.success || data.bids.length === 0) {
+                    alert('Sem licitações neste leilão.');
+                    return;
+                }
+
+                const text = data.bids.map((b, i) =>
+                    `${i + 1}. ${b.bidder_name}: ${b.amount} moedas (${new Date(b.created_at).toLocaleString('pt-PT')})`
+                ).join('\n');
+                alert('Licitações (maior → menor):\n\n' + text);
+            } catch (error) {
+                alert('Erro ao carregar licitações.');
+            }
+        }
+
+        async function cancelAuction(listingId) {
+            if (!confirm('Tens a certeza que queres cancelar este leilão?')) return;
+
+            try {
+                const response = await fetch(`/api/market/${listingId}/cancel`, {
+                    method: 'POST',
+                    headers: headers()
+                });
+                const data = await response.json();
+                alert(data.message || data.error);
+                await loadMarketAuctions();
                 await loadPrizeCodes();
             } catch (error) {
                 alert('Erro ao contactar o servidor.');
@@ -1173,6 +1279,7 @@
         document.getElementById('create-package-form').addEventListener('submit', createPackage);
         document.getElementById('btn-fuse-prize').addEventListener('click', fusePrize);
         document.getElementById('reload-prize-codes').addEventListener('click', loadPrizeCodes);
+        document.getElementById('reload-auctions').addEventListener('click', loadMarketAuctions);
         document.getElementById('create-bingo-form').addEventListener('submit', createBingo);
         document.getElementById('pkg-tier').addEventListener('change', () => { updateTierInfo(); updatePrizeCalc(); });
         document.getElementById('pkg-prize-count').addEventListener('input', updatePrizeCalc);

@@ -319,3 +319,80 @@ Ao capturar um Bingo Flash, um `prize_code` e automaticamente gerado com `source
 - **Estado QUEIMADO**: impossivel reusar apos scan da empresa.
 - **Verificacao por token + ID + company_id**: tripla validacao no scan.
 - **FOR UPDATE locks**: transacoes atomicas para evitar race conditions na captura e compra.
+
+---
+
+## Sistema de Leilao Competitivo (Mercado)
+
+### Regras do Leilao
+
+1. **Valor Minimo Obrigatorio**: O vendedor define `min_bid` ao criar o anuncio. O sistema rejeita licitacoes abaixo desse valor.
+
+2. **Prazo do Leilao (1-5 dias)**: O vendedor escolhe `auction_days` (1 a 5). Ao expirar:
+   - Se houver licitacoes >= `min_bid`: fecho automatico com a oferta MAIS ALTA. O codigo transfere-se para o vencedor, e as moedas (menos 2.5% de taxa) sao enviadas ao vendedor.
+   - Se NAO houver licitacoes validas: o codigo volta a mochila do vendedor (status `available`).
+
+3. **Bloqueio de Cancelamento**: O vendedor pode cancelar o anuncio APENAS se nao houver propostas validas. Assim que o anuncio receber a PRIMEIRA oferta >= `min_bid`, o botao "Cancelar" fica BLOQUEADO. O vendedor e obrigado a deixar o leilao ir ate ao fim.
+
+### Taxa de Mercado
+
+`MARKET_FEE_RATE = 0.025` (2.5%). Aplicada sobre o valor da oferta vencedora.
+- Vendedor recebe: `oferta_vencedora - (oferta_vencedora * 0.025)`
+- Exemplo: oferta de 1000 moedas → vendedor recebe 975, taxa de 25 moedas.
+
+### Nova Tabela: `market_bids`
+
+```sql
+CREATE TABLE IF NOT EXISTS market_bids (
+    id SERIAL PRIMARY KEY,
+    listing_id INTEGER NOT NULL REFERENCES market_listings(id),
+    bidder_user_id INTEGER NOT NULL,
+    bidder_player_id INTEGER NOT NULL,
+    amount INTEGER NOT NULL,
+    status VARCHAR(20) DEFAULT 'active',
+    created_at TIMESTAMP DEFAULT NOW()
+);
+```
+
+Alteracoes na tabela `market_listings`:
+```sql
+ALTER TABLE market_listings
+    ADD COLUMN IF NOT EXISTS min_bid INTEGER,
+    ADD COLUMN IF NOT EXISTS auction_days INTEGER,
+    ADD COLUMN IF NOT EXISTS auction_ends_at TIMESTAMP,
+    ADD COLUMN IF NOT EXISTS bid_count INTEGER DEFAULT 0,
+    ADD COLUMN IF NOT EXISTS highest_bid INTEGER,
+    ADD COLUMN IF NOT EXISTS highest_bidder_id INTEGER,
+    ADD COLUMN IF NOT EXISTS final_price INTEGER,
+    ADD COLUMN IF NOT EXISTS fee_amount INTEGER;
+```
+
+### Rotas API do Leilao
+
+**`POST /api/market/prize-code-sale`** (atualizada) — criar leilao.
+- Body: `{ prize_code_id, min_bid, auction_days }` (auction_days: 1-5)
+- Calcula `auction_ends_at = NOW() + X days`.
+
+**`POST /api/market/:listingId/bid`** — licitar.
+- Body: `{ amount }`
+- Validacoes: `amount >= min_bid`, `amount > highest_bid`, comprador tem moedas, leilao ativo e nao expirado.
+
+**`GET /api/market/:listingId/bids`** — listar licitacoes (maior → menor).
+
+**`POST /api/market/:listingId/cancel`** — cancelar leilao.
+- So permitido se `bid_count == 0` (sem ofertas validas).
+- Se houver ofertas: HTTP 400 "Cancelamento BLOQUEADO".
+
+**`POST /api/market/auction-close`** — fecho automatico de leiloes expirados (cron-ready).
+- Para cada leilao expirado: encontra a oferta mais alta >= min_bid.
+- Se existir: transfere codigo + moedas (menos 2.5%), marca como `sold`.
+- Se nao existir: marca como `expired`, codigo volta ao vendedor.
+
+### Frontend (Jogador)
+
+- Seccao "Mercado de Leiloes" no painel do jogador:
+  - Lista de leiloes ativos com: nome do premio, token, vendedor, minimo, maior oferta, contagem de licitacoes, data de expiracao.
+  - Input + botao "Licitar" em cada leilao.
+  - Botao "Ver ofertas" para ver historico de licitacoes.
+  - Botao "Cancelar" visivel (bloqueado pelo backend apos 1a oferta valida).
+  - Banner de regras: valor minimo, bloqueio de cancelamento, fecho automatico.
