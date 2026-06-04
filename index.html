@@ -518,6 +518,17 @@
       cursor: pointer;
     }
 
+    /* Fullscreen game: esconder sidebar, nav e app-shell para o mapa ocupar 100% */
+    body.game-fullscreen .top-nav,
+    body.game-fullscreen .sidebar,
+    body.game-fullscreen .app-shell > main > section > .dashboard > aside {
+      display: none !important;
+    }
+    body.game-fullscreen .app-shell {
+      padding: 0;
+      width: 100%;
+    }
+
     .real-gps-map {
       background:
         linear-gradient(28deg, transparent 0 43%, rgba(255,255,255,0.82) 43% 45%, transparent 45%),
@@ -1423,6 +1434,8 @@
     }
 
     function logout() {
+      document.body.classList.remove('game-fullscreen');
+      wasdZoomApplied = false;
       state.session = { type: null, id: null };
       saveState();
       notify('Sessão terminada');
@@ -2748,6 +2761,12 @@
       const player = currentPlayer();
       if (!player) return renderPlayerAuth();
       
+      // Limpar fullscreen se mudar de painel
+      if (panel !== 'game') {
+        document.body.classList.remove('game-fullscreen');
+        wasdZoomApplied = false;
+      }
+      
       // Verificar propostas expiradas
       checkExpiredTrades();
       
@@ -2772,20 +2791,19 @@
               <div class="vital-wrap"><span>Fome</span><div class="vital-line" title="Fome"><div id="gps-hunger-fill" class="vital-fill hunger" style="width:${player.hunger}%;"></div></div></div>
             </div>
           </div>
-          <div class="bottom-bar" style="position:fixed;bottom:0;left:0;right:0;z-index:10000;border-radius:0;">
-            <span id="gps-position-badge" class="badge">GPS simulado · X ${Number(position.x).toFixed(2)}% / Y ${Number(position.y).toFixed(2)}% · Alcance 15</span>
-            <div>
-              <button class="btn" onclick="startRealGps()">📡 GPS Real</button>
-              <button class="btn secondary" onclick="stopRealGps()">Parar GPS</button>
-              <button class="btn secondary" onclick="movePlayerRandomly()">Mover aleatório</button>
-              <button class="btn secondary" onclick="restPlayer()">Descansar</button>
-              <button class="btn secondary" onclick="feedPlayer()">Comer · 10 moedas</button>
-              <button class="btn secondary" onclick="logout()">Sair</button>
-            </div>
+          <div class="bottom-bar" style="position:fixed;bottom:0;left:0;right:0;z-index:10000;border-radius:0;flex-wrap:nowrap;justify-content:center;gap:6px;padding:8px 10px;">
+            <span id="gps-position-badge" class="badge" style="white-space:nowrap;font-size:10px;padding:4px 8px;">GPS · ${Number(position.x).toFixed(0)}% / ${Number(position.y).toFixed(0)}%</span>
+            <button class="btn" onclick="startRealGps()" style="font-size:11px;padding:5px 8px;">📡 GPS</button>
+            <button class="btn secondary" onclick="stopRealGps()" style="font-size:11px;padding:5px 8px;">Parar</button>
+            <button class="btn secondary" onclick="movePlayerRandomly()" style="font-size:11px;padding:5px 8px;">Mover</button>
+            <button class="btn secondary" onclick="restPlayer()" style="font-size:11px;padding:5px 8px;">Descansar</button>
+            <button class="btn secondary" onclick="feedPlayer()" style="font-size:11px;padding:5px 8px;">Comer</button>
+            <button class="btn secondary" onclick="logout()" style="font-size:11px;padding:5px 8px;">Sair</button>
           </div>
         `;
         // Mapa já está em fullscreen via inline styles — sincronizar estado
         wasdZoomApplied = true;
+        document.body.classList.add('game-fullscreen');
       }
 
       if (panel === 'game-offline') {
@@ -4398,6 +4416,7 @@
     }
     function exitWasdZoom() {
       wasdZoomApplied = false;
+      document.body.classList.remove('game-fullscreen');
       const mapEl = document.querySelector('.map-full.real-gps-map');
       if (mapEl) {
         mapEl.style.position = '';
