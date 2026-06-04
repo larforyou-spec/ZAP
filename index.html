@@ -1409,6 +1409,129 @@
       return String(value ?? '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
     }
 
+    // ─── Shared Utilities ───────────────────────────────────────────────
+
+    function removeDialogById(containerId) {
+      const container = document.getElementById(containerId);
+      if (container) container.remove();
+    }
+
+    function listQrForSale(player, qrCode, opts) {
+      const existingQr = state.qrs.find(qr => qr.code === qrCode);
+      if (existingQr && existingQr.forSale) {
+        return notify('Este QR já está à venda');
+      }
+      if (!player.qrs.includes(qrCode)) {
+        return notify('Não tens este QR');
+      }
+      if (existingQr && existingQr.type === 'PR') {
+        const companyFlags = state.flags.filter(f =>
+          f.type === 'PR' &&
+          f.active &&
+          f.label.toLowerCase().includes(existingQr.company?.toLowerCase() || '')
+        );
+        if (companyFlags.length < 20) {
+          return notify(`Para vender este QR precisas de 20 bandeiras da empresa ${existingQr.company}. Atualmente tens ${companyFlags.length}.`);
+        }
+      }
+      if (existingQr) {
+        existingQr.forSale = true;
+        existingQr.price = opts.price;
+        existingQr.negotiable = opts.negotiable;
+        existingQr.location = opts.location;
+        existingQr.prizeType = opts.prizeType;
+        existingQr.description = opts.description;
+        existingQr.sellerName = player.name;
+        existingQr.listedAt = Date.now();
+      } else {
+        state.qrs.push({
+          id: uid('qr'),
+          code: qrCode,
+          type: 'CUSTOM',
+          company: player.name,
+          value: opts.description || 'QR Personalizado',
+          price: opts.price,
+          negotiable: opts.negotiable,
+          location: opts.location,
+          prizeType: opts.prizeType,
+          description: opts.description,
+          sellerName: player.name,
+          ownerId: player.id,
+          forSale: true,
+          listedAt: Date.now()
+        });
+      }
+      saveState();
+      addAudit(`${player.name} colocou QR ${qrCode} à venda por ${opts.price} moedas`);
+      notify(`QR ${qrCode} colocado à venda por ${opts.price} moedas!`);
+      return true;
+    }
+
+    function listBingoForSale(player, bingoId, price, location, description) {
+      const bingo = state.bingos.find(b => b.id === bingoId);
+      if (!bingo) return notify('Bingo não encontrado');
+      if (bingo.ownerId !== player.id) return notify('Não és dono deste Bingo');
+      const bingoQr = {
+        id: uid('qr'),
+        code: `BINGO-${bingo.name.slice(0, 3).toUpperCase()}-${Date.now().toString().slice(-4)}`,
+        type: 'BINGO',
+        company: bingo.name,
+        value: `Bingo com prémio de ${bingo.reward} moedas`,
+        price: price,
+        negotiable: true,
+        location: location || 'Online',
+        prizeType: 'experience',
+        description: description || `Bingo completo com direito a prémio de ${bingo.reward} moedas. Área: ${bingo.area}`,
+        sellerName: player.name,
+        ownerId: player.id,
+        forSale: true,
+        listedAt: Date.now(),
+        bingoId: bingoId
+      };
+      state.qrs.push(bingoQr);
+      state.bingos = state.bingos.filter(b => b.id !== bingoId);
+      saveState();
+      addAudit(`${player.name} vendeu Bingo ${bingo.name} por ${price} moedas`);
+      notify(`Bingo ${bingo.name} colocado à venda por ${price} moedas!`);
+      return true;
+    }
+
+    function sendFriendRequestGeneric(fromEntity, fromType, toEntity, toId, toType) {
+      if (!state.friendRequests) state.friendRequests = [];
+      if (!toEntity.friendRequests) toEntity.friendRequests = [];
+      const existingRequest = state.friendRequests.find(req =>
+        req.fromId === fromEntity.id && req.toId === toId && req.status === 'pending'
+      );
+      if (existingRequest) {
+        return notify(`Já enviaste um pedido de amizade para ${toType === 'company' ? 'esta empresa' : 'este jogador'}!`);
+      }
+      const request = {
+        id: uid('friend'),
+        fromId: fromEntity.id,
+        toId: toId,
+        fromType: fromType,
+        toType: toType,
+        status: 'pending',
+        createdAt: Date.now()
+      };
+      state.friendRequests.push(request);
+      toEntity.friendRequests.push(fromEntity.id);
+      saveState();
+      addAudit(`${fromEntity.name} enviou pedido de amizade para ${toType === 'company' ? 'empresa' : 'jogador'} ${toEntity.name}`);
+      notify(`Pedido de amizade enviado para ${toEntity.name}!`);
+      removeDialogById('player-dialog-container');
+      return true;
+    }
+
+    function updateConfigField(collection, id, field, value, numericFields) {
+      const item = collection.find(i => i.id === id);
+      if (item) {
+        item[field] = numericFields.includes(field) ? parseInt(value) : value;
+      }
+    }
+
+    // ─── End Shared Utilities ───────────────────────────────────────────
+
     function showScreen(id) {
       console.log('showScreen called with:', id);
       document.querySelectorAll('.screen').forEach(screen => screen.classList.remove('active'));
@@ -1591,10 +1714,7 @@
     }
 
     function closePlayerDialog() {
-      const dialogContainer = document.getElementById('player-dialog-container');
-      if (dialogContainer) {
-        dialogContainer.remove();
-      }
+      removeDialogById('player-dialog-container');
     }
 
     function sendDialogMessage(playerId) {
@@ -1712,10 +1832,7 @@
     }
 
     function closeQuickTradeDialog() {
-      const dialogContainer = document.getElementById('quick-trade-dialog-container');
-      if (dialogContainer) {
-        dialogContainer.remove();
-      }
+      removeDialogById('quick-trade-dialog-container');
     }
 
     function submitQuickTrade(playerId) {
@@ -1772,78 +1889,19 @@
       if (!qrSelect.value) return notify('Seleciona um QR para vender');
       if (!priceInput.value || parseInt(priceInput.value) < 1) return notify('Define um preço válido');
       
-      const qrCode = qrSelect.value;
-      const price = parseInt(priceInput.value);
-      const negotiable = negotiableSelect.value === 'true';
-      const location = locationInput.value.trim();
-      const prizeType = prizeTypeSelect.value;
-      const description = descriptionInput.value.trim();
+      const result = listQrForSale(player, qrSelect.value, {
+        price: parseInt(priceInput.value),
+        negotiable: negotiableSelect.value === 'true',
+        location: locationInput.value.trim(),
+        prizeType: prizeTypeSelect.value,
+        description: descriptionInput.value.trim()
+      });
+      if (!result) return;
       
-      // Verificar se o QR já está à venda
-      const existingQr = state.qrs.find(qr => qr.code === qrCode);
-      if (existingQr && existingQr.forSale) {
-        return notify('Este QR já está à venda');
-      }
-      
-      // Verificar se o jogador tem o QR
-      if (!player.qrs.includes(qrCode)) {
-        return notify('Não tens este QR');
-      }
-      
-      // Verificar prémios de bandeiras (necessita de 20 bandeiras da mesma empresa)
-      if (existingQr && existingQr.type === 'PR') {
-        const companyFlags = state.flags.filter(f => 
-          f.type === 'PR' && 
-          f.active && 
-          f.label.toLowerCase().includes(existingQr.company?.toLowerCase() || '')
-        );
-        
-        if (companyFlags.length < 20) {
-          return notify(`Para vender este QR precisas de 20 bandeiras da empresa ${existingQr.company}. Atualmente tens ${companyFlags.length}.`);
-        }
-      }
-      
-      // Criar ou atualizar QR para venda
-      if (existingQr) {
-        existingQr.forSale = true;
-        existingQr.price = price;
-        existingQr.negotiable = negotiable;
-        existingQr.location = location;
-        existingQr.prizeType = prizeType;
-        existingQr.description = description;
-        existingQr.sellerName = player.name;
-        existingQr.listedAt = Date.now();
-      } else {
-        // Criar novo QR se não existir
-        state.qrs.push({
-          id: uid('qr'),
-          code: qrCode,
-          type: 'CUSTOM',
-          company: player.name,
-          value: description || 'QR Personalizado',
-          price: price,
-          negotiable: negotiable,
-          location: location,
-          prizeType: prizeType,
-          description: description,
-          sellerName: player.name,
-          ownerId: player.id,
-          forSale: true,
-          listedAt: Date.now()
-        });
-      }
-      
-      saveState();
-      addAudit(`${player.name} colocou QR ${qrCode} à venda por ${price} moedas`);
-      notify(`QR ${qrCode} colocado à venda por ${price} moedas!`);
-      
-      // Limpar formulário
       qrSelect.value = '';
       priceInput.value = '';
       locationInput.value = '';
       descriptionInput.value = '';
-      
-      // Atualizar painel
       renderPlayerPanel('market');
     }
 
@@ -1857,95 +1915,15 @@
       if (!bingoSelect.value) return notify('Seleciona um Bingo para vender');
       if (!priceInput.value || parseInt(priceInput.value) < 1) return notify('Define um preço válido');
       
-      const bingoId = bingoSelect.value;
-      const price = parseInt(priceInput.value);
-      const bingo = state.bingos.find(b => b.id === bingoId);
+      const result = listBingoForSale(player, bingoSelect.value, parseInt(priceInput.value), 'Online', '');
+      if (!result) return;
       
-      if (!bingo) return notify('Bingo não encontrado');
-      if (bingo.ownerId !== player.id) return notify('Não és dono deste Bingo');
-      
-      // Criar QR representando o Bingo para venda
-      const bingoQr = {
-        id: uid('qr'),
-        code: `BINGO-${bingo.name.slice(0, 3).toUpperCase()}-${Date.now().toString().slice(-4)}`,
-        type: 'BINGO',
-        company: bingo.name,
-        value: `Bingo com prémio de ${bingo.reward} moedas`,
-        price: price,
-        negotiable: true,
-        location: 'Online',
-        prizeType: 'experience',
-        description: `Bingo completo com direito a prémio de ${bingo.reward} moedas. Área: ${bingo.area}`,
-        sellerName: player.name,
-        ownerId: player.id,
-        forSale: true,
-        listedAt: Date.now(),
-        bingoId: bingoId
-      };
-      
-      state.qrs.push(bingoQr);
-      
-      // Remover Bingo do jogador
-      state.bingos = state.bingos.filter(b => b.id !== bingoId);
-      
-      saveState();
-      addAudit(`${player.name} vendeu Bingo ${bingo.name} por ${price} moedas`);
-      notify(`Bingo ${bingo.name} colocado à venda por ${price} moedas!`);
-      
-      // Limpar formulário
       bingoSelect.value = '';
       priceInput.value = '';
-      
-      // Atualizar painel
       renderPlayerPanel('market');
     }
 
-    function buyQr(qrId) {
-      const player = currentPlayer();
-      if (!player) return renderPlayerAuth();
-      
-      const qr = state.qrs.find(q => q.id === qrId);
-      if (!qr) return notify('QR não encontrado');
-      if (!qr.forSale) return notify('QR não está à venda');
-      if (qr.ownerId === player.id) return notify('Não podes comprar o teu próprio QR');
-      
-      const price = qr.price;
-      const fee = Math.floor(price * 0.05); // 5% de taxa
-      const totalPrice = price;
-      const netPrice = price - fee;
-      
-      if (player.coins < totalPrice) {
-        return notify(`Moedas insuficientes. Precisas de ${totalPrice} moedas (incluindo ${fee} de taxa)`);
-      }
-      
-      const seller = state.players.find(p => p.id === qr.ownerId);
-      if (!seller) return notify('Vendedor não encontrado');
-      
-      // Processar pagamento
-      player.coins -= totalPrice;
-      seller.coins += netPrice;
-      
-      // Transferir QR
-      qr.ownerId = player.id;
-      qr.forSale = false;
-      qr.soldAt = Date.now();
-      qr.buyerName = player.name;
-      
-      // Adicionar QR ao inventário do jogador
-      if (!player.qrs.includes(qr.code)) {
-        player.qrs.push(qr.code);
-      }
-      
-      saveState();
-      addAudit(`${player.name} comprou QR ${qr.code} de ${seller.name} por ${totalPrice} moedas (taxa: ${fee})`);
-      notify(`QR ${qr.code} comprado com sucesso!`);
-      
-      // Atualizar porta-moedas
-      updateCoinsAfterTransaction();
-      
-      // Atualizar painel
-      renderPlayerPanel('market-buy');
-    }
+    // buyQr is defined once below (after movement functions) with fee logic
 
     // Funções para seleção múltipla de bingos
     function toggleBingoSelection(bingoId) {
@@ -2094,10 +2072,7 @@
     }
 
     function closeBulkPrizeDialog() {
-      const dialogContainer = document.getElementById('bulk-prize-dialog-container');
-      if (dialogContainer) {
-        dialogContainer.remove();
-      }
+      removeDialogById('bulk-prize-dialog-container');
     }
 
     function submitBulkPrize() {
@@ -2231,10 +2206,7 @@
     }
 
     function closeBulkScheduleDialog() {
-      const dialogContainer = document.getElementById('bulk-schedule-dialog-container');
-      if (dialogContainer) {
-        dialogContainer.remove();
-      }
+      removeDialogById('bulk-schedule-dialog-container');
     }
 
     function submitBulkSchedule() {
@@ -2387,10 +2359,7 @@
     }
 
     function closeSellQrDialog() {
-      const dialogContainer = document.getElementById('sell-qr-dialog-container');
-      if (dialogContainer) {
-        dialogContainer.remove();
-      }
+      removeDialogById('sell-qr-dialog-container');
     }
 
     function submitSellQr(qrCode) {
@@ -2405,69 +2374,14 @@
       
       if (!priceInput.value || parseInt(priceInput.value) < 1) return notify('Define um preço válido');
       
-      const price = parseInt(priceInput.value);
-      const negotiable = negotiableSelect.value === 'true';
-      const location = locationInput.value.trim();
-      const prizeType = prizeTypeSelect.value;
-      const description = descriptionInput.value.trim();
-      
-      // Verificar se o QR já está à venda
-      const existingQr = state.qrs.find(qr => qr.code === qrCode);
-      if (existingQr && existingQr.forSale) {
-        return notify('Este QR já está à venda');
-      }
-      
-      // Verificar se o jogador tem o QR
-      if (!player.qrs.includes(qrCode)) {
-        return notify('Não tens este QR');
-      }
-      
-      // Verificar prémios de bandeiras (necessita de 20 bandeiras da mesma empresa)
-      if (existingQr && existingQr.type === 'PR') {
-        const companyFlags = state.flags.filter(f => 
-          f.type === 'PR' && 
-          f.active && 
-          f.label.toLowerCase().includes(existingQr.company?.toLowerCase() || '')
-        );
-        
-        if (companyFlags.length < 20) {
-          return notify(`Para vender este QR precisas de 20 bandeiras da empresa ${existingQr.company}. Atualmente tens ${companyFlags.length}.`);
-        }
-      }
-      
-      // Criar ou atualizar QR para venda
-      if (existingQr) {
-        existingQr.forSale = true;
-        existingQr.price = price;
-        existingQr.negotiable = negotiable;
-        existingQr.location = location;
-        existingQr.prizeType = prizeType;
-        existingQr.description = description;
-        existingQr.sellerName = player.name;
-        existingQr.listedAt = Date.now();
-      } else {
-        // Criar novo QR se não existir
-        state.qrs.push({
-          id: uid('qr'),
-          code: qrCode,
-          type: 'CUSTOM',
-          company: player.name,
-          value: description || 'QR Personalizado',
-          price: price,
-          negotiable: negotiable,
-          location: location,
-          prizeType: prizeType,
-          description: description,
-          sellerName: player.name,
-          ownerId: player.id,
-          forSale: true,
-          listedAt: Date.now()
-        });
-      }
-      
-      saveState();
-      addAudit(`${player.name} colocou QR ${qrCode} à venda por ${price} moedas`);
-      notify(`QR ${qrCode} colocado à venda por ${price} moedas!`);
+      const result = listQrForSale(player, qrCode, {
+        price: parseInt(priceInput.value),
+        negotiable: negotiableSelect.value === 'true',
+        location: locationInput.value.trim(),
+        prizeType: prizeTypeSelect.value,
+        description: descriptionInput.value.trim()
+      });
+      if (!result) return;
       
       closeSellQrDialog();
       renderPlayerPanel('market-sell');
@@ -2552,10 +2466,7 @@
     }
 
     function closeSellBingoDialog() {
-      const dialogContainer = document.getElementById('sell-bingo-dialog-container');
-      if (dialogContainer) {
-        dialogContainer.remove();
-      }
+      removeDialogById('sell-bingo-dialog-container');
     }
 
     function submitSellBingo() {
@@ -2570,42 +2481,14 @@
       if (!bingoSelect.value) return notify('Seleciona um Bingo');
       if (!priceInput.value || parseInt(priceInput.value) < 1) return notify('Define um preço válido');
       
-      const bingoId = bingoSelect.value;
-      const price = parseInt(priceInput.value);
-      const location = locationInput.value.trim() || 'Online';
-      const description = descriptionInput.value.trim();
-      
-      const bingo = state.bingos.find(b => b.id === bingoId);
-      if (!bingo) return notify('Bingo não encontrado');
-      if (bingo.ownerId !== player.id) return notify('Não és dono deste Bingo');
-      
-      // Criar QR representando o Bingo para venda
-      const bingoQr = {
-        id: uid('qr'),
-        code: `BINGO-${bingo.name.slice(0, 3).toUpperCase()}-${Date.now().toString().slice(-4)}`,
-        type: 'BINGO',
-        company: bingo.name,
-        value: `Bingo com prémio de ${bingo.reward} moedas`,
-        price: price,
-        negotiable: true,
-        location: location,
-        prizeType: 'experience',
-        description: description || `Bingo completo com direito a prémio de ${bingo.reward} moedas. Área: ${bingo.area}`,
-        sellerName: player.name,
-        ownerId: player.id,
-        forSale: true,
-        listedAt: Date.now(),
-        bingoId: bingoId
-      };
-      
-      state.qrs.push(bingoQr);
-      
-      // Remover Bingo do jogador
-      state.bingos = state.bingos.filter(b => b.id !== bingoId);
-      
-      saveState();
-      addAudit(`${player.name} vendeu Bingo ${bingo.name} por ${price} moedas`);
-      notify(`Bingo ${bingo.name} colocado à venda por ${price} moedas!`);
+      const result = listBingoForSale(
+        player,
+        bingoSelect.value,
+        parseInt(priceInput.value),
+        locationInput.value.trim() || 'Online',
+        descriptionInput.value.trim()
+      );
+      if (!result) return;
       
       closeSellBingoDialog();
       renderPlayerPanel('market-sell');
@@ -4499,18 +4382,24 @@
 
     function buyQr(qrId) {
       const player = currentPlayer();
+      if (!player) return renderPlayerAuth();
       const qr = state.qrs.find(item => item.id === qrId && item.forSale);
-      if (!player || !qr) return notify('QR indisponível');
-      if (player.coins < qr.price) {
-        notify('Moedas insuficientes para comprar este QR');
-        return;
-      }
+      if (!qr) return notify('QR indisponível');
+      if (qr.ownerId === player.id) return notify('Não podes comprar o teu próprio QR');
+      const fee = Math.floor(qr.price * 0.05);
+      const netPrice = qr.price - fee;
+      if (player.coins < qr.price) return notify(`Moedas insuficientes. Precisas de ${qr.price} moedas`);
+      const seller = state.players.find(p => p.id === qr.ownerId);
       player.coins -= qr.price;
+      if (seller) seller.coins += netPrice;
       qr.ownerId = player.id;
       qr.forSale = false;
-      player.qrs.push(qr.code);
+      qr.soldAt = Date.now();
+      qr.buyerName = player.name;
+      if (!player.qrs.includes(qr.code)) player.qrs.push(qr.code);
       saveState();
-      addAudit(player.name + ' comprou QR ' + qr.code + ' por ' + qr.price + ' moedas');
+      addAudit(`${player.name} comprou QR ${qr.code} por ${qr.price} moedas (taxa: ${fee})`);
+      updateCoinsAfterTransaction();
       renderPlayerPanel('market');
       notify(`QR comprado: ${qr.code}`);
     }
@@ -4939,39 +4828,7 @@
       if (!player) return renderPlayerAuth();
       const company = state.companies.find(c => c.id === companyId);
       if (!company) return notify('Empresa não encontrada');
-      
-      // Inicializar arrays de amizade se não existirem
-      if (!state.friendRequests) state.friendRequests = [];
-      if (!company.friendRequests) company.friendRequests = [];
-      
-      // Verificar se já existe pedido
-      const existingRequest = state.friendRequests.find(req => 
-        req.fromId === player.id && req.toId === companyId && req.status === 'pending'
-      );
-      
-      if (existingRequest) {
-        return notify('Já enviaste um pedido de amizade para esta empresa!');
-      }
-      
-      // Criar pedido de amizade
-      const request = {
-        id: uid('friend'),
-        fromId: player.id,
-        toId: companyId,
-        fromType: 'player',
-        toType: 'company',
-        status: 'pending',
-        createdAt: Date.now()
-      };
-      
-      state.friendRequests.push(request);
-      company.friendRequests.push(player.id);
-      
-      saveState();
-      addAudit(`${player.name} enviou pedido de amizade para empresa ${company.name}`);
-      notify(`Pedido de amizade enviado para ${company.name}!`);
-      
-      closeDialog();
+      sendFriendRequestGeneric(player, 'player', company, companyId, 'company');
     }
 
     function sendPlayerFriendRequest(playerId) {
@@ -4979,39 +4836,7 @@
       if (!company) return renderCompanyAuth();
       const targetPlayer = state.players.find(p => p.id === playerId);
       if (!targetPlayer) return notify('Jogador não encontrado');
-      
-      // Inicializar arrays de amizade se não existirem
-      if (!state.friendRequests) state.friendRequests = [];
-      if (!targetPlayer.friendRequests) targetPlayer.friendRequests = [];
-      
-      // Verificar se já existe pedido
-      const existingRequest = state.friendRequests.find(req => 
-        req.fromId === company.id && req.toId === playerId && req.status === 'pending'
-      );
-      
-      if (existingRequest) {
-        return notify('Já enviaste um pedido de amizade para este jogador!');
-      }
-      
-      // Criar pedido de amizade
-      const request = {
-        id: uid('friend'),
-        fromId: company.id,
-        toId: playerId,
-        fromType: 'company',
-        toType: 'player',
-        status: 'pending',
-        createdAt: Date.now()
-      };
-      
-      state.friendRequests.push(request);
-      targetPlayer.friendRequests.push(company.id);
-      
-      saveState();
-      addAudit(`${company.name} enviou pedido de amizade para jogador ${targetPlayer.name}`);
-      notify(`Pedido de amizade enviado para ${targetPlayer.name}!`);
-      
-      closeDialog();
+      sendFriendRequestGeneric(company, 'company', targetPlayer, playerId, 'player');
     }
 
     function acceptFriendRequest(requestId) {
@@ -5693,12 +5518,7 @@
     }
 
     function updateScheduleField(scheduleId, field, value) {
-      const schedule = bingoSchedules.find(s => s.id === scheduleId);
-      if (schedule) {
-        schedule[field] = field === 'bingosUsed' || field === 'discount' || field === 'durationHours' || field === 'prizeValidityDays' 
-          ? parseInt(value) 
-          : value;
-      }
+      updateConfigField(bingoSchedules, scheduleId, field, value, ['bingosUsed', 'discount', 'durationHours', 'prizeValidityDays']);
     }
 
     function toggleScheduleActivation(scheduleId) {
@@ -5795,12 +5615,7 @@
     }
 
     function updatePECField(pecId, field, value) {
-      const pec = pecConfigs.find(p => p.id === pecId);
-      if (pec) {
-        pec[field] = field === 'bingosRequired' || field === 'quantity' || field === 'validityDays' 
-          ? parseInt(value) 
-          : value;
-      }
+      updateConfigField(pecConfigs, pecId, field, value, ['bingosRequired', 'quantity', 'validityDays']);
     }
 
     function togglePECActivation(pecId) {
