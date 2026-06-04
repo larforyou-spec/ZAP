@@ -1332,6 +1332,61 @@
       min-height: 36px;
       font-size: 13px;
     }
+
+    /* ── Security Alerts ── */
+    .alert-card {
+      padding: 14px;
+      border-radius: 14px;
+      background: rgba(255, 40, 40, 0.08);
+      border: 1px solid rgba(255, 40, 40, 0.3);
+      margin-bottom: 10px;
+    }
+    .alert-card.high { border-color: #ff2828; background: rgba(255, 40, 40, 0.14); }
+    .alert-card .alert-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+    .alert-card .alert-header .alert-severity {
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      padding: 2px 8px;
+      border-radius: 6px;
+      background: #ff2828;
+      color: #fff;
+    }
+    .alert-card .alert-text {
+      font-size: 12px;
+      color: rgba(255, 80, 80, 0.9);
+      word-break: break-all;
+      background: rgba(0,0,0,0.2);
+      padding: 8px;
+      border-radius: 8px;
+      margin: 6px 0;
+    }
+    .alert-card .alert-meta {
+      font-size: 11px;
+      color: rgba(255,255,255,0.5);
+    }
+    .banned-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+      border-radius: 6px;
+      background: #ff2828;
+      color: #fff;
+      margin-left: 6px;
+    }
+    .btn.report {
+      background: rgba(255, 100, 40, 0.15);
+      border: 1px solid rgba(255, 100, 40, 0.4);
+      color: #ff8844;
+    }
+    .btn.report:hover { background: rgba(255, 100, 40, 0.3); }
   </style>
 </head>
 <body>
@@ -1446,6 +1501,8 @@
             <button class="btn secondary" onclick="renderBackofficePanel('trades')">Trocas</button>
             <button class="btn secondary" onclick="renderBackofficePanel('audit')">Auditoria</button>
             <button class="btn secondary" onclick="renderBackofficePanel('engine')">Motor Geo & Bingo</button>
+            <button class="btn report" onclick="renderBackofficePanel('security')">Segurança & Alertas</button>
+            <button class="btn secondary" onclick="renderBackofficePanel('bans')">Bans & Moderação</button>
           </aside>
           <section class="panel content-area" id="backoffice-content"></section>
         </div>
@@ -1572,7 +1629,11 @@
         audit: [
           { id: 'audit_1', at: now, text: 'Sistema ZAP-FLAGS 3.0 iniciado.' },
           { id: 'audit_2', at: now, text: 'Mapa GPS real com avatar centralizado, movimento offline por setas e corrida 3x registado no backoffice.' }
-        ]
+        ],
+        /* ── Security & Moderation ── */
+        securityAlerts: [],
+        bannedUsers: [],
+        reports: []
       };
     }
 
@@ -1588,6 +1649,9 @@
     if (!state.stockCentralPool) state.stockCentralPool = [];
     if (!state.tickerFeed) state.tickerFeed = [];
     state.flags.forEach(function(f) { if (f.dormant === undefined) f.dormant = true; });
+    if (!state.securityAlerts) state.securityAlerts = [];
+    if (!state.bannedUsers) state.bannedUsers = [];
+    if (!state.reports) state.reports = [];
     let partyModeActive = false;
 
     function loadState() {
@@ -1825,6 +1889,7 @@
             <button class="btn" onclick="sendDialogMessage('${playerId}')">Enviar Mensagem</button>
             <button class="btn secondary" onclick="sendFriendRequest('${playerId}')">Pedir Amizade</button>
             <button class="btn secondary" onclick="quickTradeProposal('${playerId}')">Propor Troca</button>
+            <button class="btn report" onclick="reportPlayer('${playerId}')">⚠ Denunciar</button>
             <button class="btn secondary" onclick="closePlayerDialog()">Fechar</button>
           </div>
         </div>
@@ -1849,6 +1914,120 @@
       }
     }
 
+    /* ═══════════════════════════════════════════════════════════════
+       SECURITY — Pre-emptive Chat Filter & Moderation
+       ═══════════════════════════════════════════════════════════════ */
+
+    var BLOCKED_WORDS = [
+      'matar', 'mata', 'morte', 'morrer', 'assassinar', 'assassino',
+      'arma', 'armas', 'pistola', 'espingarda', 'faca', 'navalha', 'explosivo', 'bomba',
+      'roubar', 'roubo', 'assalto', 'assaltar', 'sequestro', 'sequestrar',
+      'droga', 'drogas', 'cocaina', 'heroina', 'crack', 'tráfico',
+      'pedofilia', 'pedófilo', 'abuso', 'violar', 'violação',
+      'terrorismo', 'terrorista', 'ameaça', 'ameaçar',
+      'suicidio', 'suicídio', 'suicidar',
+      'nudes', 'nude', 'pornografia', 'porno',
+      'hack', 'hacker', 'hackear', 'exploit',
+      'kill', 'murder', 'weapon', 'gun', 'knife', 'bomb', 'terrorist',
+      'rape', 'abuse', 'drugs', 'cocaine', 'heroin'
+    ];
+
+    var BLOCKED_PATTERNS = [
+      /\b\d{9,}\b/,
+      /\b(?:\+351|00351)?\s*\d{3}[\s.-]?\d{3}[\s.-]?\d{3}\b/,
+      /https?:\/\/[^\s]+/i,
+      /www\.[^\s]+/i,
+      /[a-zA-Z0-9.-]+\.(com|net|org|pt|eu|io|me|info|co|uk|es|fr|de|it)\b/i
+    ];
+
+    function chatFilter(text) {
+      var lower = text.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      var textNorm = text.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      for (var i = 0; i < BLOCKED_WORDS.length; i++) {
+        var word = BLOCKED_WORDS[i].normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        var re = new RegExp('\\b' + word + '\\b', 'i');
+        if (re.test(lower)) return { blocked: true, reason: 'Palavra proibida: ' + BLOCKED_WORDS[i] };
+      }
+      for (var j = 0; j < BLOCKED_PATTERNS.length; j++) {
+        if (BLOCKED_PATTERNS[j].test(text)) {
+          if (j <= 1) return { blocked: true, reason: 'Número de telemóvel detetado' };
+          return { blocked: true, reason: 'Link externo detetado' };
+        }
+      }
+      return { blocked: false };
+    }
+
+    function createSecurityAlert(playerId, playerName, blockedText, reason, gpsPosition) {
+      var alert = {
+        id: uid('alert'),
+        playerId: playerId,
+        playerName: playerName,
+        blockedText: blockedText,
+        reason: reason,
+        gps: gpsPosition || { x: 0, y: 0 },
+        timestamp: Date.now(),
+        reviewed: false
+      };
+      state.securityAlerts.unshift(alert);
+      if (state.securityAlerts.length > 200) state.securityAlerts.length = 200;
+      saveState();
+      addAudit('ALERTA SEGURANÇA: ' + playerName + ' — ' + reason);
+    }
+
+    function reportPlayer(targetPlayerId) {
+      var player = currentPlayer();
+      var target = state.players.find(function(p) { return p.id === targetPlayerId; });
+      if (!player || !target) return notify('Jogador não encontrado');
+      var reason = prompt('Descreve o motivo da denúncia contra ' + target.name + ':');
+      if (!reason || !reason.trim()) return;
+      var report = {
+        id: uid('report'),
+        reporterId: player.id,
+        reporterName: player.name,
+        targetId: target.id,
+        targetName: target.name,
+        reason: reason.trim(),
+        gps: player.position || { x: 0, y: 0 },
+        timestamp: Date.now(),
+        status: 'pending'
+      };
+      state.reports.push(report);
+      createSecurityAlert(target.id, target.name, 'Denúncia: ' + reason.trim(), 'Denúncia por ' + player.name, player.position);
+      saveState();
+      notify('Denúncia enviada contra ' + target.name + '. A equipa de moderação irá analisar.');
+    }
+
+    function isPlayerBanned(playerId) {
+      return state.bannedUsers.some(function(b) { return b.playerId === playerId && b.active; });
+    }
+
+    function banPlayer(playerId, reason) {
+      var player = state.players.find(function(p) { return p.id === playerId; });
+      if (!player) return notify('Jogador não encontrado');
+      if (isPlayerBanned(playerId)) return notify(player.name + ' já está banido');
+      state.bannedUsers.push({
+        id: uid('ban'),
+        playerId: playerId,
+        playerName: player.name,
+        ip: player.ip || 'desconhecido',
+        reason: reason || 'Violação das regras da comunidade',
+        bannedAt: Date.now(),
+        active: true
+      });
+      saveState();
+      addAudit('BAN aplicado: ' + player.name + ' — ' + (reason || 'Violação das regras'));
+      notify('Jogador ' + player.name + ' foi banido permanentemente');
+    }
+
+    function unbanPlayer(banId) {
+      var ban = state.bannedUsers.find(function(b) { return b.id === banId; });
+      if (!ban) return;
+      ban.active = false;
+      saveState();
+      addAudit('BAN removido: ' + ban.playerName);
+      notify('Ban de ' + ban.playerName + ' foi removido');
+    }
+
     function sendDialogMessage(playerId) {
       const input = document.getElementById('dialog-message-input');
       const messageArea = document.getElementById('dialog-messages');
@@ -1856,9 +2035,23 @@
       const targetPlayer = state.players.find(p => p.id === playerId);
       
       if (!input || !messageArea || !player || !targetPlayer) return;
+
+      /* Check if sender is banned */
+      if (isPlayerBanned(player.id)) {
+        input.value = '';
+        return notify('A tua conta está suspensa. Não podes enviar mensagens.');
+      }
       
       const message = input.value.trim();
       if (!message) return;
+
+      /* Pre-emptive filter */
+      var filterResult = chatFilter(message);
+      if (filterResult.blocked) {
+        createSecurityAlert(player.id, player.name, message, filterResult.reason, player.position);
+        input.value = '';
+        return notify('Mensagem bloqueada: ' + filterResult.reason + '. Esta ação foi registada.');
+      }
       
       // Adicionar mensagem à área
       const messageHtml = `<p><strong>${player.name}:</strong> ${escapeHtml(message)}</p>`;
@@ -4542,6 +4735,9 @@
         `;
       }
 
+      if (panel === 'security') { return renderSecurityPanel(target); }
+      if (panel === 'bans') { return renderBansPanel(target); }
+
       if (panel === 'engine') {
         var ec = state.engineConfig;
         var dormantCount = state.flags.filter(function(f) { return f.active && f.dormant; }).length;
@@ -4629,6 +4825,113 @@
       addAudit('Admin atualizou configurações do Motor de Geolocalização');
       notify('Configurações do motor guardadas');
       renderBackofficePanel('engine');
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       BackOffice: Security Alerts & Bans Panels
+       ═══════════════════════════════════════════════════════════════ */
+
+    function renderSecurityPanel(target) {
+      var alerts = state.securityAlerts || [];
+      var reports = state.reports || [];
+      var pendingReports = reports.filter(function(r) { return r.status === 'pending'; });
+      target.innerHTML = '<h2>Segurança & Alertas de Emergência</h2>' +
+        '<div class="cards-row" style="margin-bottom:14px">' +
+          '<div class="mini-card" style="border-color:rgba(255,40,40,0.4)"><b>' + alerts.length + '</b><span>Alertas Totais</span></div>' +
+          '<div class="mini-card" style="border-color:rgba(255,150,40,0.4)"><b>' + pendingReports.length + '</b><span>Denúncias Pendentes</span></div>' +
+          '<div class="mini-card" style="border-color:rgba(255,40,40,0.4)"><b>' + state.bannedUsers.filter(function(b){return b.active;}).length + '</b><span>Jogadores Banidos</span></div>' +
+        '</div>' +
+        '<h3>Alertas de Emergência</h3>' +
+        (alerts.length === 0 ? '<p style="color:rgba(255,255,255,0.4);font-size:13px">Nenhum alerta registado. Sistema seguro.</p>' :
+          alerts.slice(0, 50).map(function(a) {
+            var dateStr = new Date(a.timestamp).toLocaleString('pt-PT');
+            var gpsStr = a.gps ? ('GPS: ' + (a.gps.lat ? a.gps.lat.toFixed(4) + ', ' + a.gps.lng.toFixed(4) : a.gps.x + '%, ' + a.gps.y + '%')) : 'GPS: N/D';
+            return '<div class="alert-card high">' +
+              '<div class="alert-header"><strong>' + escapeHtml(a.playerName) + ' (' + escapeHtml(a.playerId) + ')</strong><span class="alert-severity">Alta Prioridade</span></div>' +
+              '<div class="alert-text">' + escapeHtml(a.blockedText) + '</div>' +
+              '<div class="alert-meta"><b>Motivo:</b> ' + escapeHtml(a.reason) + ' · <b>' + gpsStr + '</b> · ' + dateStr +
+              (!a.reviewed ? ' · <button class="btn secondary" style="font-size:10px;padding:2px 8px" onclick="markAlertReviewed(\'' + a.id + '\')">Marcar Revisado</button>' : ' · <em>Revisado</em>') +
+              ' · <button class="btn report" style="font-size:10px;padding:2px 8px" onclick="banFromAlert(\'' + a.playerId + '\')">BAN</button></div>' +
+            '</div>';
+          }).join('')
+        ) +
+        '<h3 style="margin-top:20px">Denúncias de Jogadores</h3>' +
+        (reports.length === 0 ? '<p style="color:rgba(255,255,255,0.4);font-size:13px">Nenhuma denúncia.</p>' :
+          '<table class="data-table"><thead><tr><th>De</th><th>Contra</th><th>Motivo</th><th>Estado</th><th>Data</th><th>Ações</th></tr></thead><tbody>' +
+          reports.map(function(r) {
+            var dateStr = new Date(r.timestamp).toLocaleString('pt-PT');
+            return '<tr><td>' + escapeHtml(r.reporterName) + '</td><td>' + escapeHtml(r.targetName) + '</td><td>' + escapeHtml(r.reason) + '</td><td>' + escapeHtml(r.status) + '</td><td>' + dateStr + '</td><td>' +
+              (r.status === 'pending' ? '<button class="btn secondary" style="font-size:10px;padding:2px 8px" onclick="resolveReport(\'' + r.id + '\',\'reviewed\')">Revisar</button> <button class="btn report" style="font-size:10px;padding:2px 8px" onclick="resolveReport(\'' + r.id + '\',\'ban\')">BAN</button>' : '<em>' + r.status + '</em>') +
+            '</td></tr>';
+          }).join('') +
+          '</tbody></table>'
+        ) +
+        '<div class="actions" style="margin-top:14px"><button class="btn secondary" onclick="renderBackofficePanel(\'overview\')">← Voltar ao Resumo</button></div>';
+    }
+
+    function renderBansPanel(target) {
+      var bans = state.bannedUsers || [];
+      var activeBans = bans.filter(function(b) { return b.active; });
+      target.innerHTML = '<h2>Bans & Moderação</h2>' +
+        '<div class="cards-row" style="margin-bottom:14px">' +
+          '<div class="mini-card" style="border-color:rgba(255,40,40,0.4)"><b>' + activeBans.length + '</b><span>Bans Ativos</span></div>' +
+          '<div class="mini-card"><b>' + (bans.length - activeBans.length) + '</b><span>Bans Removidos</span></div>' +
+        '</div>' +
+        '<div class="offer-card" style="border-color:rgba(255,40,40,0.3);margin-bottom:14px">' +
+          '<h3>Banir Jogador Manualmente</h3>' +
+          '<div class="input-group"><label>ID do Jogador</label><select id="ban-player-select">' +
+            '<option value="">— Seleciona —</option>' +
+            state.players.filter(function(p) { return !isPlayerBanned(p.id); }).map(function(p) {
+              return '<option value="' + p.id + '">' + escapeHtml(p.name) + ' (' + p.id + ')</option>';
+            }).join('') +
+          '</select></div>' +
+          '<div class="input-group"><label>Motivo</label><input id="ban-reason-input" type="text" placeholder="Motivo do ban..."></div>' +
+          '<button class="btn report" onclick="manualBan()">Aplicar BAN Permanente</button>' +
+        '</div>' +
+        '<h3>Lista de Bans</h3>' +
+        (bans.length === 0 ? '<p style="color:rgba(255,255,255,0.4);font-size:13px">Nenhum ban registado.</p>' :
+          '<table class="data-table"><thead><tr><th>Jogador</th><th>ID</th><th>IP</th><th>Motivo</th><th>Data</th><th>Estado</th><th>Ações</th></tr></thead><tbody>' +
+          bans.map(function(b) {
+            var dateStr = new Date(b.bannedAt).toLocaleString('pt-PT');
+            return '<tr><td>' + escapeHtml(b.playerName) + '</td><td>' + escapeHtml(b.playerId) + '</td><td>' + escapeHtml(b.ip) + '</td><td>' + escapeHtml(b.reason) + '</td><td>' + dateStr + '</td><td>' + (b.active ? '<span class="banned-badge">BANIDO</span>' : 'Removido') + '</td><td>' +
+              (b.active ? '<button class="btn secondary" style="font-size:10px;padding:2px 8px" onclick="unbanPlayer(\'' + b.id + '\');renderBackofficePanel(\'bans\')">Remover Ban</button>' : '—') +
+            '</td></tr>';
+          }).join('') +
+          '</tbody></table>'
+        ) +
+        '<div class="actions" style="margin-top:14px"><button class="btn secondary" onclick="renderBackofficePanel(\'overview\')">← Voltar ao Resumo</button></div>';
+    }
+
+    function markAlertReviewed(alertId) {
+      var a = state.securityAlerts.find(function(x) { return x.id === alertId; });
+      if (a) { a.reviewed = true; saveState(); }
+      renderBackofficePanel('security');
+    }
+
+    function banFromAlert(playerId) {
+      banPlayer(playerId, 'Ban aplicado via alerta de segurança');
+      renderBackofficePanel('security');
+    }
+
+    function resolveReport(reportId, action) {
+      var r = state.reports.find(function(x) { return x.id === reportId; });
+      if (!r) return;
+      if (action === 'ban') {
+        banPlayer(r.targetId, 'Ban por denúncia: ' + r.reason);
+        r.status = 'resolved_ban';
+      } else {
+        r.status = 'reviewed';
+      }
+      saveState();
+      renderBackofficePanel('security');
+    }
+
+    function manualBan() {
+      var playerId = document.getElementById('ban-player-select').value;
+      var reason = document.getElementById('ban-reason-input').value.trim();
+      if (!playerId) return notify('Seleciona um jogador');
+      banPlayer(playerId, reason || 'Ban manual pelo administrador');
+      renderBackofficePanel('bans');
     }
 
     /* ═══════════════════════════════════════════════════════════════
