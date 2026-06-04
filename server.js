@@ -19,6 +19,26 @@ const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-only-change-this-secret';
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
 
+const PACKAGE_TIERS = {
+    1: { name: 'Starter',     flags: 1000,   bingos: 0,   radius_km: 0.25,  duration_days: null, price_cents: 0,    has_prizes: false },
+    2: { name: 'Local',       flags: 5000,   bingos: 5,   radius_km: 1,     duration_days: 30,   price_cents: 1000, has_prizes: true  },
+    3: { name: 'Regional',    flags: 10000,  bingos: 10,  radius_km: 5,     duration_days: 60,   price_cents: 1500, has_prizes: true  },
+    4: { name: 'Nacional',    flags: 25000,  bingos: 25,  radius_km: 20,    duration_days: 90,   price_cents: 2000, has_prizes: true  },
+    5: { name: 'Premium',     flags: 50000,  bingos: 50,  radius_km: 50,    duration_days: 120,  price_cents: 3000, has_prizes: true  },
+    6: { name: 'Enterprise',  flags: 100000, bingos: 100, radius_km: 100,   duration_days: 250,  price_cents: 5000, has_prizes: true  }
+};
+
+function randomPointInRadius(centerLat, centerLng, radiusKm) {
+    const angle = Math.random() * 2 * Math.PI;
+    const dist = radiusKm * Math.sqrt(Math.random());
+    const dLat = dist / 111.32;
+    const dLng = dist / (111.32 * Math.cos(centerLat * Math.PI / 180));
+    return {
+        latitude: centerLat + dLat * Math.cos(angle),
+        longitude: centerLng + dLng * Math.sin(angle)
+    };
+}
+
 app.use(helmet({ contentSecurityPolicy: false }));
 app.use(compression());
 app.use(morgan('combined'));
@@ -935,6 +955,250 @@ app.post('/api/company/flags', verifyJWT, async (req, res) => {
     } catch (error) {
         console.error('Erro ao criar campanha da empresa:', error);
         res.status(500).json({ error: 'Erro interno ao criar campanha.' });
+    }
+});
+
+// ── Package (Pacote) endpoints ──
+
+app.get('/api/company/tiers', (req, res) => {
+    const tiers = Object.entries(PACKAGE_TIERS).map(([tier, t]) => ({
+        tier: Number(tier), ...t
+    }));
+    res.json({ success: true, tiers });
+});
+
+app.post('/api/company/packages', verifyJWT, async (req, res) => {
+    if (req.user.accountType !== 'company') {
+        return res.status(403).json({ error: 'Apenas empresas podem criar pacotes.' });
+    }
+
+    const { tier, center_latitude, center_longitude,
+            prize_count, prize_description, prize_claim_deadline } = req.body;
+    const tierNum = Number(tier);
+    const tierDef = PACKAGE_TIERS[tierNum];
+
+    if (!tierDef) {
+        return res.status(400).json({ error: 'Tier inválido. Escolha entre 1 e 6.' });
+    }
+
+    const lat = Number(center_latitude);
+    const lng = Number(center_longitude);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+        return res.status(400).json({ error: 'Coordenadas do centro são obrigatórias.' });
+    }
+
+    const numPrizes = Number(prize_count || 0);
+    if (!tierDef.has_prizes && numPrizes > 0) {
+        return res.status(400).json({ error: 'O tier Starter não permite prémios.' });
+    }
+
+    const prizeFlags = numPrizes * 20;
+    if (prizeFlags > tierDef.flags) {
+        return res.status(400).json({ error: `Prémios a mais: ${numPrizes} prémios x 20 = ${prizeFlags} bandeiras prize, mas o pacote só tem ${tierDef.flags}.` });
+    }
+
+    try {
+        const result = await db.query(`
+            INSERT INTO flag_packages
+                (company_id, tier, total_flags, bingo_count, radius_km, duration_days,
+                 price_cents, prize_count, prize_flags, reward_flags,
+                 prize_description, prize_claim_deadline,
+                 center_latitude, center_longitude, status)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, 'draft')
+            RETURNING *
+        `, [
+            req.user.userId, tierNum, tierDef.flags, tierDef.bingos,
+            tierDef.radius_km, tierDef.duration_days,
+            tierDef.price_cents, numPrizes, prizeFlags, tierDef.flags - prizeFlags,
+            String(prize_description || '').trim() || null,
+            String(prize_claim_deadline || '').trim() || null,
+            lat, lng
+        ]);
+
+        res.status(201).json({ success: true, package: result.rows[0] });
+    } catch (error) {
+        console.error('Erro ao criar pacote:', error);
+        res.status(500).json({ error: 'Erro interno ao criar pacote.' });
+    }
+});
+
+app.get('/api/company/packages', verifyJWT, async (req, res) => {
+    if (req.user.accountType !== 'company') {
+        return res.status(403).json({ error: 'Apenas empresas podem listar pacotes.' });
+    }
+
+    try {
+        const result = await db.query(`
+            SELECT fp.*,
+                   COUNT(f.id)::int AS generated_flags,
+                   COUNT(f.id) FILTER (WHERE f.captured_at IS NOT NULL)::int AS captured_flags
+            FROM flag_packages fp
+            LEFT JOIN flags f ON f.package_id = fp.id
+            WHERE fp.company_id = $1
+            GROUP BY fp.id
+            ORDER BY fp.created_at DESC
+        `, [req.user.userId]);
+
+        res.json({ success: true, packages: result.rows });
+    } catch (error) {
+        console.error('Erro ao listar pacotes:', error);
+        res.status(500).json({ error: 'Erro interno ao listar pacotes.' });
+    }
+});
+
+app.get('/api/company/packages/:id', verifyJWT, async (req, res) => {
+    if (req.user.accountType !== 'company') {
+        return res.status(403).json({ error: 'Apenas empresas podem ver pacotes.' });
+    }
+
+    try {
+        const pkgResult = await db.query(`
+            SELECT fp.*,
+                   COUNT(f.id)::int AS generated_flags,
+                   COUNT(f.id) FILTER (WHERE f.captured_at IS NOT NULL)::int AS captured_flags,
+                   COUNT(f.id) FILTER (WHERE f.flag_category = 'prize' AND f.captured_at IS NOT NULL)::int AS captured_prize_flags
+            FROM flag_packages fp
+            LEFT JOIN flags f ON f.package_id = fp.id
+            WHERE fp.id = $1 AND fp.company_id = $2
+            GROUP BY fp.id
+        `, [req.params.id, req.user.userId]);
+
+        if (pkgResult.rows.length === 0) {
+            return res.status(404).json({ error: 'Pacote não encontrado.' });
+        }
+
+        res.json({ success: true, package: pkgResult.rows[0] });
+    } catch (error) {
+        console.error('Erro ao carregar pacote:', error);
+        res.status(500).json({ error: 'Erro interno ao carregar pacote.' });
+    }
+});
+
+app.post('/api/company/packages/:id/activate', verifyJWT, async (req, res) => {
+    if (req.user.accountType !== 'company') {
+        return res.status(403).json({ error: 'Apenas empresas podem ativar pacotes.' });
+    }
+
+    const packageId = Number(req.params.id);
+    const client = await db.pool.connect();
+
+    try {
+        await client.query('BEGIN');
+
+        const pkgResult = await client.query(
+            'SELECT * FROM flag_packages WHERE id = $1 AND company_id = $2 FOR UPDATE',
+            [packageId, req.user.userId]
+        );
+
+        if (pkgResult.rows.length === 0) {
+            await client.query('ROLLBACK');
+            return res.status(404).json({ error: 'Pacote não encontrado.' });
+        }
+
+        const pkg = pkgResult.rows[0];
+
+        if (pkg.status !== 'draft') {
+            await client.query('ROLLBACK');
+            return res.status(400).json({ error: `Pacote já está '${pkg.status}'. Só pacotes 'draft' podem ser ativados.` });
+        }
+
+        const tierDef = PACKAGE_TIERS[pkg.tier];
+        const centerLat = Number(pkg.center_latitude);
+        const centerLng = Number(pkg.center_longitude);
+        const totalFlags = pkg.total_flags;
+        const prizeFlags = pkg.prize_flags || 0;
+        const rewardFlags = pkg.reward_flags || (totalFlags - prizeFlags);
+
+        const flagTypes = ['Coin', 'Energy_10', 'Energy_20', 'Skill'];
+        const batchSize = 500;
+        let inserted = 0;
+
+        // Generate prize flags (if any)
+        for (let i = 0; i < prizeFlags; i += batchSize) {
+            const count = Math.min(batchSize, prizeFlags - i);
+            const values = [];
+            const params = [];
+            let paramIdx = 1;
+
+            for (let j = 0; j < count; j++) {
+                const pt = randomPointInRadius(centerLat, centerLng, tierDef.radius_km);
+                const coinVal = Math.floor(Math.random() * 10) + 5;
+                const energyVal = Math.floor(Math.random() * 5) + 1;
+                values.push(`($${paramIdx}, $${paramIdx+1}, $${paramIdx+2}, $${paramIdx+3}, $${paramIdx+4}, $${paramIdx+5}, $${paramIdx+6}, $${paramIdx+7})`);
+                params.push(req.user.userId, packageId, 'Prize', pt.latitude, pt.longitude, coinVal, energyVal, 'prize');
+                paramIdx += 8;
+            }
+
+            await client.query(`
+                INSERT INTO flags (company_id, package_id, type, latitude, longitude, coin_value, energy_value, flag_category)
+                VALUES ${values.join(', ')}
+            `, params);
+            inserted += count;
+        }
+
+        // Generate reward flags
+        for (let i = 0; i < rewardFlags; i += batchSize) {
+            const count = Math.min(batchSize, rewardFlags - i);
+            const values = [];
+            const params = [];
+            let paramIdx = 1;
+
+            for (let j = 0; j < count; j++) {
+                const pt = randomPointInRadius(centerLat, centerLng, tierDef.radius_km);
+                const flagType = flagTypes[Math.floor(Math.random() * flagTypes.length)];
+                let coinVal = 0;
+                let energyVal = 0;
+
+                if (flagType === 'Coin') {
+                    coinVal = Math.floor(Math.random() * 40) + 10;
+                } else if (flagType === 'Energy_10') {
+                    energyVal = 10;
+                    coinVal = Math.floor(Math.random() * 5);
+                } else if (flagType === 'Energy_20') {
+                    energyVal = 20;
+                    coinVal = Math.floor(Math.random() * 5);
+                } else {
+                    coinVal = Math.floor(Math.random() * 15) + 5;
+                    energyVal = Math.floor(Math.random() * 3) + 1;
+                }
+
+                values.push(`($${paramIdx}, $${paramIdx+1}, $${paramIdx+2}, $${paramIdx+3}, $${paramIdx+4}, $${paramIdx+5}, $${paramIdx+6}, $${paramIdx+7})`);
+                params.push(req.user.userId, packageId, flagType, pt.latitude, pt.longitude, coinVal, energyVal, 'reward');
+                paramIdx += 8;
+            }
+
+            await client.query(`
+                INSERT INTO flags (company_id, package_id, type, latitude, longitude, coin_value, energy_value, flag_category)
+                VALUES ${values.join(', ')}
+            `, params);
+            inserted += count;
+        }
+
+        const expiresAt = tierDef.duration_days
+            ? `NOW() + INTERVAL '${tierDef.duration_days} days'`
+            : 'NULL';
+
+        await client.query(`
+            UPDATE flag_packages
+            SET status = 'active', activated_at = NOW(), expires_at = ${expiresAt}
+            WHERE id = $1
+        `, [packageId]);
+
+        await client.query('COMMIT');
+
+        res.json({
+            success: true,
+            message: `Pacote ativado! ${inserted} bandeiras distribuídas (${prizeFlags} prize + ${rewardFlags} reward) num raio de ${tierDef.radius_km}km.`,
+            flags_generated: inserted,
+            prize_flags: prizeFlags,
+            reward_flags: rewardFlags
+        });
+    } catch (error) {
+        await client.query('ROLLBACK');
+        console.error('Erro ao ativar pacote:', error);
+        res.status(500).json({ error: 'Erro interno ao ativar pacote.' });
+    } finally {
+        client.release();
     }
 });
 

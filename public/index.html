@@ -166,6 +166,65 @@
                     </table>
                 </article>
             </section>
+
+            <section class="grid" style="margin-top:16px;">
+                <article class="card">
+                    <h2>Criar Pacote de Bandeiras</h2>
+                    <p style="color:#94a3b8;">Escolhe o tier, define o centro e os pr&eacute;mios.</p>
+                    <form id="create-package-form">
+                        <label class="company-label" for="pkg-tier">Tier do pacote</label>
+                        <select id="pkg-tier">
+                            <option value="1">1 - Starter: 1.000 bandeiras, 0,25km, Gr&aacute;tis, Sem prazo</option>
+                            <option value="2">2 - Local: 5.000 + 5 bingos, 1km, 30 dias, 10&euro;+IVA</option>
+                            <option value="3">3 - Regional: 10.000 + 10 bingos, 5km, 60 dias, 15&euro;+IVA</option>
+                            <option value="4">4 - Nacional: 25.000 + 25 bingos, 20km, 90 dias, 20&euro;+IVA</option>
+                            <option value="5">5 - Premium: 50.000 + 50 bingos, 50km, 120 dias, 30&euro;+IVA</option>
+                            <option value="6">6 - Enterprise: 100.000 + 100 bingos, 100km, 250 dias, 50&euro;+IVA</option>
+                        </select>
+
+                        <div id="tier-info" style="background:#0f172a; border:1px solid #334155; border-radius:10px; padding:10px; margin:8px 0; font-size:0.9em; color:#94a3b8;">
+                            Seleciona um tier para ver os detalhes.
+                        </div>
+
+                        <label class="company-label" for="pkg-lat">Latitude (centro do pacote)</label>
+                        <input id="pkg-lat" type="number" step="any" value="38.7225" required>
+
+                        <label class="company-label" for="pkg-lng">Longitude (centro do pacote)</label>
+                        <input id="pkg-lng" type="number" step="any" value="-9.1395" required>
+
+                        <div id="prize-fields" style="display:none;">
+                            <hr style="border-color:#334155; margin:14px 0;">
+                            <h3 style="margin:0 0 8px;">Pr&eacute;mios Reais</h3>
+
+                            <label class="company-label" for="pkg-prize-count">Quantidade de pr&eacute;mios reais</label>
+                            <input id="pkg-prize-count" type="number" min="0" value="0" placeholder="Ex: 100 (= 2000 bandeiras prize)">
+                            <p style="color:#64748b; font-size:0.8em; margin:0;" id="prize-calc">Cada pr&eacute;mio = 20 bandeiras prize. Restantes = recompensas (moedas/energia/skills).</p>
+
+                            <label class="company-label" for="pkg-prize-desc">Descri&ccedil;&atilde;o do pr&eacute;mio (escrita livre)</label>
+                            <textarea id="pkg-prize-desc" placeholder="Ex: Caf&eacute; gr&aacute;tis na Loja X, desconto 20% na Arena Tech..."></textarea>
+
+                            <label class="company-label" for="pkg-prize-deadline">Prazo para levantar o pr&eacute;mio ap&oacute;s expira&ccedil;&atilde;o (escrita livre)</label>
+                            <textarea id="pkg-prize-deadline" placeholder="Ex: 30 dias ap&oacute;s expira&ccedil;&atilde;o do pacote, at&eacute; 31 de Dezembro 2026..."></textarea>
+                        </div>
+
+                        <button type="submit" class="company-btn" style="margin-top:14px; width:100%;">Criar Pacote (Rascunho)</button>
+                    </form>
+                    <pre id="package-output" style="margin-top:10px;">Preenche os campos e cria o pacote.</pre>
+                </article>
+
+                <article class="card">
+                    <h2>Pacotes da Empresa</h2>
+                    <button class="company-btn" id="reload-packages">Atualizar pacotes</button>
+                    <table class="captures-table" style="margin-top:12px;">
+                        <thead>
+                            <tr><th>ID</th><th>Tier</th><th>Bandeiras</th><th>Pr&eacute;mios</th><th>Raio</th><th>Estado</th><th>A&ccedil;&atilde;o</th></tr>
+                        </thead>
+                        <tbody id="packages-rows">
+                            <tr><td colspan="7" style="color:#64748b;">A carregar...</td></tr>
+                        </tbody>
+                    </table>
+                </article>
+            </section>
         </section>
     </main>
 
@@ -490,8 +549,10 @@
             authContainer.style.display = 'none';
             gameContainer.style.display = 'none';
             document.getElementById('company-container').style.display = 'block';
+            updateTierInfo();
             await loadCompanyDashboard();
             await loadCompanyFlags();
+            await loadCompanyPackages();
         }
 
         async function loadCompanyDashboard() {
@@ -608,10 +669,167 @@
             }
         }
 
+        // ── Package functions ──
+
+        const TIER_DATA = {
+            1: { name: 'Starter',    flags: 1000,   bingos: 0,   radius: '0,25km', days: 'Sem prazo', price: 'Grátis',     hasPrizes: false },
+            2: { name: 'Local',      flags: 5000,   bingos: 5,   radius: '1km',    days: '30 dias',   price: '10€+IVA',    hasPrizes: true  },
+            3: { name: 'Regional',   flags: 10000,  bingos: 10,  radius: '5km',    days: '60 dias',   price: '15€+IVA',    hasPrizes: true  },
+            4: { name: 'Nacional',   flags: 25000,  bingos: 25,  radius: '20km',   days: '90 dias',   price: '20€+IVA',    hasPrizes: true  },
+            5: { name: 'Premium',    flags: 50000,  bingos: 50,  radius: '50km',   days: '120 dias',  price: '30€+IVA',    hasPrizes: true  },
+            6: { name: 'Enterprise', flags: 100000, bingos: 100, radius: '100km',  days: '250 dias',  price: '50€+IVA',    hasPrizes: true  }
+        };
+
+        function updateTierInfo() {
+            const tier = Number(document.getElementById('pkg-tier').value);
+            const t = TIER_DATA[tier];
+            const info = document.getElementById('tier-info');
+            const prizeFields = document.getElementById('prize-fields');
+
+            info.innerHTML = `<strong>${t.name}</strong> — ${t.flags.toLocaleString('pt-PT')} bandeiras, ${t.bingos} bingos, raio ${t.radius}, ${t.days}, ${t.price}`;
+
+            if (t.hasPrizes) {
+                prizeFields.style.display = 'block';
+            } else {
+                prizeFields.style.display = 'none';
+                document.getElementById('pkg-prize-count').value = 0;
+            }
+        }
+
+        function updatePrizeCalc() {
+            const tier = Number(document.getElementById('pkg-tier').value);
+            const t = TIER_DATA[tier];
+            const count = Number(document.getElementById('pkg-prize-count').value || 0);
+            const prizeFlags = count * 20;
+            const rewardFlags = t.flags - prizeFlags;
+            const calc = document.getElementById('prize-calc');
+
+            if (prizeFlags > t.flags) {
+                calc.style.color = '#ef4444';
+                calc.textContent = `Demasiados prémios! ${count} x 20 = ${prizeFlags.toLocaleString('pt-PT')} > ${t.flags.toLocaleString('pt-PT')} bandeiras.`;
+            } else {
+                calc.style.color = '#64748b';
+                calc.textContent = `${count} prémios x 20 = ${prizeFlags.toLocaleString('pt-PT')} prize + ${rewardFlags.toLocaleString('pt-PT')} reward = ${t.flags.toLocaleString('pt-PT')} total.`;
+            }
+        }
+
+        async function createPackage(event) {
+            event.preventDefault();
+            const output = document.getElementById('package-output');
+            const tier = Number(document.getElementById('pkg-tier').value);
+            const t = TIER_DATA[tier];
+
+            const payload = {
+                tier: tier,
+                center_latitude: Number(document.getElementById('pkg-lat').value),
+                center_longitude: Number(document.getElementById('pkg-lng').value),
+                prize_count: t.hasPrizes ? Number(document.getElementById('pkg-prize-count').value || 0) : 0,
+                prize_description: t.hasPrizes ? document.getElementById('pkg-prize-desc').value.trim() : '',
+                prize_claim_deadline: t.hasPrizes ? document.getElementById('pkg-prize-deadline').value.trim() : ''
+            };
+
+            try {
+                output.textContent = 'A criar pacote...';
+                const response = await fetch('/api/company/packages', {
+                    method: 'POST',
+                    headers: headers(),
+                    body: JSON.stringify(payload)
+                });
+                const data = await response.json();
+
+                if (!data.success) {
+                    output.textContent = data.error || 'Erro ao criar pacote.';
+                    return;
+                }
+
+                output.textContent = `Pacote criado com sucesso! ID: ${data.package.id} (estado: rascunho). Ativa-o na lista abaixo.`;
+                document.getElementById('create-package-form').reset();
+                updateTierInfo();
+                await loadCompanyPackages();
+            } catch (error) {
+                output.textContent = 'Erro ao contactar o servidor.';
+            }
+        }
+
+        async function loadCompanyPackages() {
+            const rows = document.getElementById('packages-rows');
+            try {
+                const response = await fetch('/api/company/packages', { headers: headers() });
+                const data = await response.json();
+
+                if (!data.success) {
+                    rows.innerHTML = `<tr><td colspan="7" style="color:#64748b;">${data.error || 'Erro'}</td></tr>`;
+                    return;
+                }
+
+                if (data.packages.length === 0) {
+                    rows.innerHTML = '<tr><td colspan="7" style="color:#64748b;">Sem pacotes. Cria o primeiro!</td></tr>';
+                    return;
+                }
+
+                rows.innerHTML = data.packages.map(pkg => {
+                    const t = TIER_DATA[pkg.tier] || {};
+                    const statusBadge = pkg.status === 'active'
+                        ? '<span style="color:#22c55e;">Ativo</span>'
+                        : pkg.status === 'expired'
+                        ? '<span style="color:#ef4444;">Expirado</span>'
+                        : '<span style="color:#eab308;">Rascunho</span>';
+                    const action = pkg.status === 'draft'
+                        ? `<button class="company-btn" style="font-size:0.8em; padding:4px 10px;" onclick="activatePackage(${pkg.id})">Ativar</button>`
+                        : `${pkg.captured_flags || 0}/${pkg.generated_flags || 0} capturadas`;
+
+                    return `<tr>
+                        <td>${pkg.id}</td>
+                        <td>${t.name || pkg.tier}</td>
+                        <td>${Number(pkg.total_flags).toLocaleString('pt-PT')}</td>
+                        <td>${pkg.prize_count || 0}</td>
+                        <td>${pkg.radius_km}km</td>
+                        <td>${statusBadge}</td>
+                        <td>${action}</td>
+                    </tr>`;
+                }).join('');
+            } catch (error) {
+                rows.innerHTML = '<tr><td colspan="7" style="color:#64748b;">Erro ao carregar pacotes.</td></tr>';
+            }
+        }
+
+        async function activatePackage(packageId) {
+            if (!confirm('Ativar este pacote? Todas as bandeiras serão geradas no mapa. Esta ação não pode ser desfeita.')) {
+                return;
+            }
+
+            const rows = document.getElementById('packages-rows');
+            try {
+                rows.innerHTML = '<tr><td colspan="7" style="color:#eab308;">A ativar pacote e a gerar bandeiras... (pode demorar)</td></tr>';
+                const response = await fetch(`/api/company/packages/${packageId}/activate`, {
+                    method: 'POST',
+                    headers: headers()
+                });
+                const data = await response.json();
+
+                if (!data.success) {
+                    alert(data.error || 'Erro ao ativar pacote.');
+                    await loadCompanyPackages();
+                    return;
+                }
+
+                alert(data.message);
+                await loadCompanyPackages();
+                await loadCompanyDashboard();
+            } catch (error) {
+                alert('Erro ao contactar o servidor.');
+                await loadCompanyPackages();
+            }
+        }
+
         document.getElementById('login-player').addEventListener('click', (event) => authenticate('login', event));
         document.getElementById('register-player').addEventListener('click', (event) => authenticate('register', event));
         document.getElementById('load-player').addEventListener('click', initializePlayerExperience);
         document.getElementById('seed-campaign-form').addEventListener('submit', seedCampaign);
+        document.getElementById('create-package-form').addEventListener('submit', createPackage);
+        document.getElementById('pkg-tier').addEventListener('change', () => { updateTierInfo(); updatePrizeCalc(); });
+        document.getElementById('pkg-prize-count').addEventListener('input', updatePrizeCalc);
+        document.getElementById('reload-packages').addEventListener('click', loadCompanyPackages);
         document.getElementById('refresh-dashboard').addEventListener('click', async () => {
             await loadCompanyDashboard();
             await loadCompanyFlags();
