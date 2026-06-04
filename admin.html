@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Larforyou · ZAP-FLAGS 3.0</title>
+  <title>Larforyou · ZAP-FLAGS 3.0 · BackOffice Admin</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <style>
     :root {
@@ -518,17 +518,6 @@
 
     .map-full.player-move-mode {
       cursor: pointer;
-    }
-
-    /* Fullscreen game: esconder sidebar, nav e app-shell para o mapa ocupar 100% */
-    body.game-fullscreen .top-nav,
-    body.game-fullscreen .sidebar,
-    body.game-fullscreen .app-shell > main > section > .dashboard > aside {
-      display: none !important;
-    }
-    body.game-fullscreen .app-shell {
-      padding: 0;
-      width: 100%;
     }
 
     .real-gps-map {
@@ -1546,7 +1535,7 @@
       pointer-events: none; z-index: 3;
     }
     .game-map-vp .flag-pin { position: absolute; transform: translate(-50%, -50%); z-index: 4; }
-    .game-map-vp .dormant { opacity: 0.35; pointer-events: none; }
+    .game-map-vp .dormant { opacity: 0; pointer-events: none; }
     .game-map-vp .bingo-glow { box-shadow: 0 0 18px 4px rgba(255, 204, 0, 0.65); }
 
     /* Offline mock map inside game layer */
@@ -1564,18 +1553,6 @@
       transform: translate(var(--map-shift-x, 0px), var(--map-shift-y, 0px));
       transition: transform .16s linear;
     }
-
-    .game-wallet-pill {
-      position: absolute; top: 52px; left: 50%; transform: translateX(-50%); z-index: 10;
-      background: linear-gradient(135deg, rgba(24,52,38,0.92), rgba(8,18,14,0.9));
-      border: 1px solid var(--accent); border-radius: 16px;
-      padding: 6px 18px; display: flex; align-items: center; gap: 8px;
-      box-shadow: 0 4px 20px rgba(66,215,125,0.18);
-      pointer-events: auto; cursor: pointer;
-    }
-    .game-wallet-pill .gw-icon { font-size: 18px; }
-    .game-wallet-pill .gw-amount { font-size: 16px; font-weight: 900; color: var(--gold, #d7b35a); }
-    .game-wallet-pill .gw-label { font-size: 10px; color: var(--muted); }
 
     .game-hud-top {
       position: absolute; top: 0; left: 0; right: 0; z-index: 10;
@@ -1687,14 +1664,13 @@
         <div>ZAP-FLAGS 3.0</div>
       </div>
       <div class="nav-actions">
-        <button class="btn secondary" onclick="showScreen('home')">Início</button>
-        <button class="btn secondary" onclick="showScreen('player')">Jogador</button>
-        <button class="btn secondary" onclick="showScreen('company')">Empresa</button>
+        <span style="color:var(--accent);font-weight:700;">BackOffice Admin</span>
+        <a href="index.html" class="btn secondary" style="text-decoration:none;">Voltar ao Jogo</a>
       </div>
     </nav>
 
     <main>
-      <section id="home" class="screen active">
+      <section id="home" class="screen" style="display:none">
         <div class="hero">
           <div class="hero-card hero-copy">
             <span class="eyebrow">Larforyou apresenta · ZAP-FLAGS 3.0</span>
@@ -1756,7 +1732,6 @@
             <button class="btn secondary" onclick="renderPlayerPanel('bingo')">🎲 Bingos</button>
             <button class="btn secondary" onclick="renderPlayerPanel('market')">QR Market</button>
             <button class="btn secondary" onclick="renderPlayerPanel('friends')">Amigos e Trocas</button>
-            <button class="btn secondary" onclick="renderPlayerPanel('collected')">🏴 Bandeiras Colhidas</button>
           </aside>
           <section class="panel content-area" id="player-content"></section>
         </div>
@@ -1774,8 +1749,25 @@
         </div>
       </section>
 
+      <section id="backoffice" class="screen active">
+        <div class="dashboard">
+          <aside class="panel sidebar">
+            <h2>Backoffice</h2>
+            <button class="btn" onclick="renderBackofficePanel('overview')">Resumo</button>
+            <button class="btn secondary" onclick="renderBackofficePanel('users')">Utilizadores</button>
+            <button class="btn secondary" onclick="renderBackofficePanel('map')">Mapa e Áreas</button>
+            <button class="btn secondary" onclick="renderBackofficePanel('qrs')">QRs</button>
+            <button class="btn secondary" onclick="renderBackofficePanel('trades')">Trocas</button>
+            <button class="btn secondary" onclick="renderBackofficePanel('audit')">Auditoria</button>
+            <button class="btn secondary" onclick="renderBackofficePanel('engine')">Motor Geo & Bingo</button>
+            <button class="btn report" onclick="renderBackofficePanel('security')">Segurança & Alertas</button>
+            <button class="btn secondary" onclick="renderBackofficePanel('bans')">Bans & Moderação</button>
+          </aside>
+          <section class="panel content-area" id="backoffice-content"></section>
+        </div>
+      </section>
     </main>
-    <div class="brand-footer"><span class="ghost-admin" style="cursor:default;">Larforyou ®</span></div>
+    <div class="brand-footer"><button class="ghost-admin" onclick="showScreen('backoffice')">Larforyou ®</button></div>
   </div>
 
   <!-- Game Fullscreen Layer -->
@@ -1968,13 +1960,6 @@
     if (!state.reports) state.reports = [];
     let partyModeActive = false;
 
-    // Garantir que cada jogador tem flagHistory
-    state.players.forEach(p => { if (!p.flagHistory) p.flagHistory = []; });
-
-    // WASD zoom state
-    let wasdZoomApplied = false;
-    const WASD_ZOOM_LEVEL = 6;
-
     function loadState() {
       try {
         const saved = localStorage.getItem(STORAGE_KEY);
@@ -2050,7 +2035,6 @@
 
     function showScreen(id) {
       console.log('showScreen called with:', id);
-      if (id === 'backoffice') { window.location.href = 'admin.html'; return; }
       exitGameMode();
       document.querySelectorAll('.screen').forEach(screen => screen.classList.remove('active'));
       document.getElementById(id).classList.add('active');
@@ -2075,8 +2059,6 @@
 
     function logout() {
       exitGameMode();
-      document.body.classList.remove('game-fullscreen');
-      wasdZoomApplied = false;
       state.session = { type: null, id: null };
       saveState();
       notify('Sessão terminada');
@@ -3588,11 +3570,6 @@
       const player = currentPlayer();
       if (!player) { exitGameMode(); return renderPlayerAuth(); }
       
-      // Limpar fullscreen se mudar de painel
-      if (panel !== 'game') {
-        document.body.classList.remove('game-fullscreen');
-        wasdZoomApplied = false;
-      }
       checkExpiredTrades();
       updateSidebarCoins();
       
@@ -3625,11 +3602,6 @@
             </div>
             <button class="game-menu-btn" onclick="toggleGameMenu()">☰</button>
           </div>
-          <div class="game-wallet-pill" onclick="showGamePanel('wallet')">
-            <span class="gw-icon">🪙</span>
-            <span class="gw-amount">${player.coins} moedas</span>
-            <span class="gw-label">Saldo disponível</span>
-          </div>
           <div id="game-menu" class="game-menu-panel hidden">
             <button onclick="showGamePanel('wallet')">💰 Carteira</button>
             <button onclick="showGamePanel('bingo')">🎲 Bingos</button>
@@ -3642,16 +3614,12 @@
           <div class="game-hud-bottom">
             <span id="gps-position-badge" class="game-badge">GPS · X ${Number(position.x).toFixed(1)}% / Y ${Number(position.y).toFixed(1)}%</span>
             <div class="game-hud-actions">
-              <button onclick="startRealGps()" title="GPS real">📡</button>
               <button onclick="movePlayerRandomly()" title="Mover aleatório">🎲</button>
               <button onclick="restPlayer()" title="Descansar">💤</button>
               <button onclick="feedPlayer()" title="Comer · 10🪙">🍔</button>
             </div>
           </div>
         `;
-        // Sincronizar estado de fullscreen
-        wasdZoomApplied = true;
-        document.body.classList.add('game-fullscreen');
       }
 
       if (panel === 'game-offline') {
@@ -3683,11 +3651,6 @@
               <span class="game-hud-stat">⚡ ${player.energy}</span>
             </div>
             <button class="game-menu-btn" onclick="toggleGameMenu()">☰</button>
-          </div>
-          <div class="game-wallet-pill" onclick="showGamePanel('wallet')">
-            <span class="gw-icon">🪙</span>
-            <span class="gw-amount">${player.coins} moedas</span>
-            <span class="gw-label">Saldo disponível</span>
           </div>
           <div id="game-menu" class="game-menu-panel hidden">
             <button onclick="showGamePanel('wallet')">💰 Carteira</button>
@@ -4158,41 +4121,6 @@
               </div>
             `).join('') || '<p>Não há empresas registadas.</p>'}
           </div>
-        `;
-      }
-
-      if (panel === 'collected') {
-        if (!player.flagHistory) player.flagHistory = [];
-        const iconMap = { 'caf\u00e9': '\u2615', 'coffee': '\u2615', 'talho': '\ud83e\udd69', 'mec\u00e2nico': '\ud83d\udd27', 'gym': '\ud83c\udfcb\ufe0f', 'gin\u00e1sio': '\ud83c\udfcb\ufe0f', 'padaria': '\ud83c\udf5e', 'restaurante': '\ud83c\udf7d\ufe0f', 'bar': '\ud83c\udf7a', 'farmacia': '\ud83d\udc8a', 'farm\u00e1cia': '\ud83d\udc8a', 'loja': '\ud83d\udecd\ufe0f', 'mercado': '\ud83d\uded2', 'hotel': '\ud83c\udfe8', 'bingo': '\ud83c\udfc6', 'pra\u00e7a': '\ud83c\udfd9\ufe0f' };
-        function flagIcon(label) {
-          const lower = label.toLowerCase();
-          for (const [key, icon] of Object.entries(iconMap)) {
-            if (lower.includes(key)) return icon;
-          }
-          return '\ud83c\udff4';
-        }
-        const grouped = {};
-        player.flagHistory.forEach(entry => {
-          const key = entry.label;
-          if (!grouped[key]) grouped[key] = { label: key, type: entry.type, count: 0 };
-          grouped[key].count++;
-        });
-        const rows = Object.values(grouped);
-        target.innerHTML = `
-          <div class="wallet-header">
-            <span class="coins-icon">\ud83c\udff4</span>
-            <div class="coins-amount">${player.flagHistory.length} bandeiras</div>
-            <div class="wallet-label">Total colhidas</div>
-          </div>
-          <h2>Bandeiras Colhidas</h2>
-          <p>Hist\u00f3rico de empresas onde apanhaste bandeiras.</p>
-          ${rows.length === 0 ? '<p style="color:var(--muted);">Ainda n\u00e3o colheste nenhuma bandeira.</p>' : `
-          <table class="data-table">
-            <thead><tr><th>Empresa / Bandeira</th><th>Tipo</th><th>Qty</th><th></th></tr></thead>
-            <tbody>
-              ${rows.map(r => `<tr><td>${escapeHtml(r.label)}</td><td>${escapeHtml(r.type)}</td><td><strong>${r.count}</strong></td><td style="font-size:20px;">${flagIcon(r.label)}</td></tr>`).join('')}
-            </tbody>
-          </table>`}
         `;
       }
     }
@@ -5056,7 +4984,6 @@
 
     function renderBackofficePanel(panel) {
       const target = document.getElementById('backoffice-content');
-      if (!target) { return; }
       if (panel === 'overview') {
         var dormantCount = state.flags.filter(function(f) { return f.active && f.dormant; }).length;
         var activeCount = state.flags.filter(function(f) { return f.active && !f.dormant; }).length;
@@ -5654,9 +5581,6 @@
       flag.active = false;
       flag.dormant = false;
       player.flags += 1;
-      // Registar no histórico de bandeiras colhidas
-      if (!player.flagHistory) player.flagHistory = [];
-      player.flagHistory.push({ label: flag.label, type: flag.type, collectedAt: Date.now() });
       if (flag.type === 'ZAP') {
         player.zap += 1;
         player.energy = Math.min(100, player.energy + Number(flag.reward || 3));
@@ -5766,76 +5690,6 @@
       if (player && energyFill && hungerFill) {
         energyFill.style.width = clampStat(player.energy) + '%';
         hungerFill.style.width = clampStat(player.hunger) + '%';
-      }
-    }
-
-    // WASD zoom: expande mapa em fullscreen e faz zoom focado
-    function applyWasdZoom() {
-      const mapEl = document.querySelector('.map-full.real-gps-map');
-      if (mapEl) {
-        mapEl.style.position = 'fixed';
-        mapEl.style.inset = '0';
-        mapEl.style.zIndex = '9999';
-        mapEl.style.width = '100vw';
-        mapEl.style.height = '100vh';
-        mapEl.style.borderRadius = '0';
-        mapEl.style.margin = '0';
-        mapEl.style.transition = 'all 0.3s ease';
-      }
-      if (playerLeafletMap) {
-        setTimeout(function() {
-          playerLeafletMap.invalidateSize();
-          playerLeafletMap.setZoom(Math.min(playerLeafletMap.getZoom() + 3, 19));
-        }, 350);
-      }
-    }
-    function exitWasdZoom() {
-      wasdZoomApplied = false;
-      document.body.classList.remove('game-fullscreen');
-      const mapEl = document.querySelector('.map-full.real-gps-map');
-      if (mapEl) {
-        mapEl.style.position = '';
-        mapEl.style.inset = '';
-        mapEl.style.zIndex = '';
-        mapEl.style.width = '';
-        mapEl.style.height = '';
-        mapEl.style.borderRadius = '';
-        mapEl.style.margin = '';
-      }
-    }
-
-    // GPS REAL: watchPosition
-    let gpsWatchId = null;
-    function startRealGps() {
-      if (!navigator.geolocation) { notify('Geolocaliza\u00e7\u00e3o n\u00e3o suportada neste browser'); return; }
-      if (gpsWatchId !== null) return;
-      gpsWatchId = navigator.geolocation.watchPosition(
-        function(pos) {
-          const player = currentPlayer();
-          if (!player) return;
-          const lat = pos.coords.latitude;
-          const lng = pos.coords.longitude;
-          const px = 50 + (lng - GPS_BASE_LNG) * 100000;
-          const py = 50 - (lat - GPS_BASE_LAT) * 100000;
-          player.position = { x: Math.max(0, Math.min(100, px)), y: Math.max(0, Math.min(100, py)) };
-          saveState();
-          updateGpsView(player.position);
-          const badge = document.getElementById('gps-position-badge');
-          if (badge) badge.textContent = 'GPS REAL \u00b7 ' + lat.toFixed(5) + ', ' + lng.toFixed(5) + ' \u00b7 Alcance 15';
-        },
-        function(err) {
-          console.warn('GPS erro:', err.message);
-          notify('GPS: ' + err.message);
-        },
-        { enableHighAccuracy: true, maximumAge: 3000, timeout: 10000 }
-      );
-      notify('\ud83d\udce1 GPS real ativado \u2013 a posi\u00e7\u00e3o atualiza automaticamente');
-    }
-    function stopRealGps() {
-      if (gpsWatchId !== null) {
-        navigator.geolocation.clearWatch(gpsWatchId);
-        gpsWatchId = null;
-        notify('GPS real desativado');
       }
     }
 
@@ -6689,10 +6543,6 @@
       // Se estiver dentro de uma caixa de diálogo, não processar teclas de jogo
       if (document.activeElement?.closest('.player-dialog')) return;
       
-      if (event.key === 'Escape' && wasdZoomApplied) {
-        exitWasdZoom();
-        return;
-      }
       if (event.code === 'Space') {
         spacePressed = true;
         if (document.getElementById('player')?.classList.contains('active')) event.preventDefault();
@@ -6701,19 +6551,10 @@
         ArrowUp: [0, -1],
         ArrowDown: [0, 1],
         ArrowLeft: [-1, 0],
-        ArrowRight: [1, 0],
-        w: [0, -1], W: [0, -1],
-        s: [0, 1],  S: [0, 1],
-        a: [-1, 0], A: [-1, 0],
-        d: [1, 0],  D: [1, 0]
+        ArrowRight: [1, 0]
       };
       if (!directions[event.key]) return;
       event.preventDefault();
-      const isWASD = 'wasdWASD'.includes(event.key);
-      if (isWASD && !wasdZoomApplied) {
-        wasdZoomApplied = true;
-        applyWasdZoom();
-      }
       const [dx, dy] = directions[event.key];
       movePlayerByKeyboard(dx, dy, spacePressed);
     });
@@ -7718,13 +7559,11 @@
       
       console.log('🎯 Sistema inicializado e protegido!');
 
-      // Dismiss splash screen after initialization
+      // Admin mode: skip splash, show backoffice immediately
       var splash = document.getElementById('splash-screen');
-      if (splash) {
-        splash.classList.add('fade-out');
-        setTimeout(function() { if (splash.parentNode) splash.remove(); }, 800);
-      }
-    }, 1000);
+      if (splash) splash.remove();
+      renderBackofficePanel('overview');
+    }, 200);
 
     // Sistema de Bingos Locais
     let localBingos = [];
@@ -8171,12 +8010,6 @@
     function closeFaqModal() {
       document.getElementById('faq-overlay').classList.add('hidden');
     }
-
-    // Failsafe: remove splash after 4 seconds no matter what
-    setTimeout(function() {
-      var sp = document.getElementById('splash-screen');
-      if (sp) { sp.classList.add('fade-out'); setTimeout(function() { if (sp.parentNode) sp.remove(); }, 800); }
-    }, 3500);
   </script>
 </body>
 </html>
