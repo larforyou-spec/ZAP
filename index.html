@@ -2757,15 +2757,12 @@
       const position = ensurePlayerPosition(player);
       if (panel === 'game') {
         target.innerHTML = `
-          <div class="wallet-header">
-            <span class="coins-icon">🪙</span>
-            <div class="coins-amount">${player.coins} moedas</div>
-            <div class="wallet-label">Saldo disponível</div>
-          </div>
-          <h2>Mapa GPS · ${escapeHtml(player.name)}</h2>
-          ${statCards()}
-          <p>Usa as setas ou W/A/S/D para caminhar (0,5 m). WASD ativa zoom focado. Espaço + seta = corrida (1,5 m). Carrega em 📡 GPS Real para tracking automático.</p>
-          <div class="map-full player-move-mode real-gps-map" onclick="movePlayerOnMap(event)">
+          <div class="map-full player-move-mode real-gps-map" style="position:fixed;inset:0;z-index:9999;width:100vw;height:100vh;border-radius:0;margin:0;" onclick="movePlayerOnMap(event)">
+            <div style="position:absolute;top:10px;left:10px;z-index:10;display:flex;gap:8px;pointer-events:none;">
+              <span class="badge" style="pointer-events:auto;">🪙 ${player.coins}</span>
+              <span class="badge" style="pointer-events:auto;">🏁 ${player.flags}</span>
+              <span class="badge" style="pointer-events:auto;">⚡ ${Math.round(player.energy)}%</span>
+            </div>
             <iframe id="gps-map-frame" title="Mapa real GPS" style="transform: translate(${(50 - position.x) * 3}px, ${(50 - position.y) * 3}px);" src="https://www.openstreetmap.org/export/embed.html?bbox=-9.1780%2C38.7200%2C-9.1620%2C38.7320&amp;layer=mapnik"></iframe>
             <div id="gps-range-circle" class="range-circle" style="left:${position.x}%;top:${position.y}%;"></div>
             ${state.flags.filter(flag => flag.active).map(flag => `<button class="flag-pin" title="${escapeHtml(flag.label)}" style="left:${flag.x}%;top:${flag.y}%;" onclick="event.stopPropagation();collectFlag('${flag.id}')">${flag.type === 'BINGO' ? '🏆' : flag.type === 'PR' ? '🎟️' : '🏁'}</button>`).join('')}
@@ -2775,16 +2772,14 @@
               <div class="vital-wrap"><span>Fome</span><div class="vital-line" title="Fome"><div id="gps-hunger-fill" class="vital-fill hunger" style="width:${player.hunger}%;"></div></div></div>
             </div>
           </div>
-          <div class="bottom-bar">
+          <div class="bottom-bar" style="position:fixed;bottom:0;left:0;right:0;z-index:10000;border-radius:0;">
             <span id="gps-position-badge" class="badge">GPS simulado · X ${Number(position.x).toFixed(2)}% / Y ${Number(position.y).toFixed(2)}% · Alcance 15</span>
             <div>
               <button class="btn" onclick="startRealGps()">📡 GPS Real</button>
               <button class="btn secondary" onclick="stopRealGps()">Parar GPS</button>
-              <button class="btn secondary" onclick="notify('Modo Offline GPS ativado')">Offline GPS</button>
               <button class="btn secondary" onclick="movePlayerRandomly()">Mover aleatório</button>
               <button class="btn secondary" onclick="restPlayer()">Descansar</button>
               <button class="btn secondary" onclick="feedPlayer()">Comer · 10 moedas</button>
-              <button class="btn secondary" onclick="resetPlayerVitalsTest()">Repor teste</button>
               <button class="btn secondary" onclick="logout()">Sair</button>
             </div>
           </div>
