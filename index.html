@@ -1387,6 +1387,116 @@
       color: #ff8844;
     }
     .btn.report:hover { background: rgba(255, 100, 40, 0.3); }
+
+    /* ── Onboarding Tutorial ── */
+    .tutorial-overlay {
+      position: fixed; inset: 0; z-index: 100000;
+      background: rgba(0,0,0,0.72);
+      display: flex; align-items: center; justify-content: center;
+      animation: tutFadeIn 0.4s ease;
+    }
+    @keyframes tutFadeIn { from { opacity: 0; } to { opacity: 1; } }
+    .tutorial-card {
+      background: var(--panel-strong);
+      border: 1px solid rgba(66,215,125,0.25);
+      border-radius: var(--radius);
+      padding: 32px 28px 24px;
+      max-width: 420px; width: 92%;
+      box-shadow: var(--shadow);
+      text-align: center;
+      animation: tutSlideUp 0.45s ease;
+    }
+    @keyframes tutSlideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+    .tutorial-card .tut-icon {
+      font-size: 48px; margin-bottom: 10px;
+    }
+    .tutorial-card h2 {
+      color: var(--green); font-size: 20px; margin: 0 0 8px;
+    }
+    .tutorial-card p {
+      color: var(--text); font-size: 14px; line-height: 1.6; margin: 0 0 18px;
+    }
+    .tutorial-card .tut-step-indicator {
+      display: flex; gap: 6px; justify-content: center; margin-bottom: 16px;
+    }
+    .tutorial-card .tut-dot {
+      width: 10px; height: 10px; border-radius: 50%;
+      background: rgba(255,255,255,0.15); transition: background 0.3s;
+    }
+    .tutorial-card .tut-dot.active {
+      background: var(--green);
+    }
+    .tutorial-card .tut-actions {
+      display: flex; gap: 10px; justify-content: center;
+    }
+    .tutorial-card .tut-actions .btn { min-width: 110px; }
+
+    /* ── Fixed Help Button ── */
+    .help-fab {
+      position: fixed; bottom: 24px; right: 24px; z-index: 99990;
+      width: 52px; height: 52px; border-radius: 50%;
+      background: var(--green); color: var(--bg);
+      font-size: 26px; font-weight: 800;
+      border: none; cursor: pointer;
+      box-shadow: 0 4px 20px rgba(66,215,125,0.4);
+      display: flex; align-items: center; justify-content: center;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .help-fab:hover {
+      transform: scale(1.1);
+      box-shadow: 0 6px 30px rgba(66,215,125,0.55);
+    }
+
+    /* ── FAQ Modal ── */
+    .faq-overlay {
+      position: fixed; inset: 0; z-index: 99995;
+      background: rgba(0,0,0,0.7);
+      display: flex; align-items: center; justify-content: center;
+      animation: tutFadeIn 0.3s ease;
+    }
+    .faq-overlay.hidden { display: none; }
+    .faq-modal {
+      background: var(--panel-strong);
+      border: 1px solid rgba(66,215,125,0.2);
+      border-radius: var(--radius);
+      padding: 28px 24px 20px;
+      max-width: 520px; width: 94%; max-height: 80vh;
+      overflow-y: auto; box-shadow: var(--shadow);
+      animation: tutSlideUp 0.35s ease;
+    }
+    .faq-modal h2 {
+      color: var(--green); font-size: 22px; margin: 0 0 18px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .faq-item {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 14px; padding: 14px 16px;
+      margin-bottom: 10px; cursor: pointer;
+      transition: background 0.2s;
+    }
+    .faq-item:hover { background: rgba(66,215,125,0.08); }
+    .faq-item .faq-q {
+      color: var(--cyan); font-weight: 700; font-size: 14px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .faq-item .faq-q::before { content: '▸'; color: var(--green); }
+    .faq-item .faq-a {
+      color: var(--muted); font-size: 13px; line-height: 1.55;
+      max-height: 0; overflow: hidden; transition: max-height 0.3s ease, margin 0.3s;
+      margin-top: 0;
+    }
+    .faq-item.open .faq-a {
+      max-height: 300px; margin-top: 10px;
+    }
+    .faq-item.open .faq-q::before { content: '▾'; }
+    .faq-close {
+      position: absolute; top: 16px; right: 18px;
+      background: none; border: none; color: var(--muted);
+      font-size: 22px; cursor: pointer; padding: 4px;
+    }
+    .faq-close:hover { color: var(--red); }
+    .faq-modal { position: relative; }
   </style>
 </head>
 <body>
@@ -1512,6 +1622,48 @@
   </div>
 
   <div id="toast" class="toast"></div>
+
+  <!-- Fixed Help Button -->
+  <button class="help-fab" onclick="openFaqModal()" title="Ajuda / FAQ">?</button>
+
+  <!-- FAQ Modal -->
+  <div id="faq-overlay" class="faq-overlay hidden" onclick="if(event.target===this)closeFaqModal()">
+    <div class="faq-modal">
+      <button class="faq-close" onclick="closeFaqModal()">&times;</button>
+      <h2><span>?</span> Perguntas Frequentes</h2>
+      <div class="faq-item" onclick="this.classList.toggle('open')">
+        <div class="faq-q">Como funciona o jogo?</div>
+        <div class="faq-a">O ZAP-FLAGS 3.0 é uma plataforma de recompensas geolocalizadas. Caminha pela tua cidade, encontra bandeiras virtuais no mapa e captura-as para ganhar moedas digitais. As bandeiras pertencem a empresas locais — cada captura dá-te moedas que podes trocar por prémios reais!</div>
+      </div>
+      <div class="faq-item" onclick="this.classList.toggle('open')">
+        <div class="faq-q">Como ativo o GPS?</div>
+        <div class="faq-a">No painel do Jogador, usa o botão "GPS Online" para ativar a localização real. O teu browser vai pedir permissão para aceder à localização — aceita para veres a tua posição no mapa em tempo real. Se preferires, podes jogar no modo "Offline" usando as setas do teclado.</div>
+      </div>
+      <div class="faq-item" onclick="this.classList.toggle('open')">
+        <div class="faq-q">O que são as bandeiras dormentes?</div>
+        <div class="faq-a">As bandeiras começam invisíveis ("dormentes") no mapa. Quando te aproximas a menos de 20 metros, elas aparecem e ficam capturáveis. Se te afastares sem as capturar, elas "teletransportam-se" para uma nova posição aleatória nas proximidades. Isto cria uma experiência dinâmica!</div>
+      </div>
+      <div class="faq-item" onclick="this.classList.toggle('open')">
+        <div class="faq-q">O que é o Jackpot Bingo?</div>
+        <div class="faq-a">Com uma probabilidade muito rara (0.1%), uma bandeira pode transformar-se numa "Bandeira Bingo" dourada. Ao capturá-la, ganhas um prémio aleatório entre 50 e 1500 moedas — com direito a uma celebração de foguetes no ecrã! Os valores são descontados do cofre global do jogo.</div>
+      </div>
+      <div class="faq-item" onclick="this.classList.toggle('open')">
+        <div class="faq-q">Como funciona o ecossistema para empresas?</div>
+        <div class="faq-a">Cada empresa registada recebe 1.000 a 5.000 bandeiras geolocalizadas na sua área. Quando jogadores capturam essas bandeiras, interagem com a marca. As empresas podem criar campanhas, definir prémios QR e gerar faturas profissionais. Cada registo injeta 25 moedas no mercado, mantendo o equilíbrio económico.</div>
+      </div>
+      <div class="faq-item" onclick="this.classList.toggle('open')">
+        <div class="faq-q">O chat é seguro?</div>
+        <div class="faq-a">Sim! O ZAP-FLAGS tem um sistema de segurança proativa. Todas as mensagens passam por um filtro automático que bloqueia conteúdo impróprio, números de telemóvel e links externos antes do envio. Podes denunciar qualquer comportamento suspeito com o botão "Denunciar" no chat.</div>
+      </div>
+      <div class="faq-item" onclick="this.classList.toggle('open')">
+        <div class="faq-q">Posso trocar moedas com outros jogadores?</div>
+        <div class="faq-a">Sim! Na secção "Amigos e Trocas" do painel do Jogador, podes enviar propostas de troca de moedas e QRs a outros jogadores. As trocas usam um sistema de escrow (depósito cautelar) para garantir segurança nas transações.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tutorial Overlay (injected dynamically by JS) -->
+  <div id="tutorial-overlay"></div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
@@ -3142,6 +3294,7 @@
       addAudit('Jogador entrou: ' + player.name);
       renderPlayerPanel('game');
       notify('Bem-vindo, ' + player.name);
+      startTutorial('player');
     }
 
     function registerPlayer() {
@@ -3160,6 +3313,7 @@
       addAudit('Jogador registado: ' + player.name);
       renderPlayerPanel('game');
       notify('Conta de jogador criada');
+      startTutorial('player');
     }
 
     function loginCompany() {
@@ -3172,6 +3326,7 @@
       addAudit('Empresa entrou: ' + company.name);
       renderCompanyPanel('dashboard');
       notify('Bem-vindo, ' + company.name);
+      startTutorial('company');
     }
 
     function registerCompany() {
@@ -3193,6 +3348,7 @@
       addAudit('Empresa registada: ' + company.name + ' com pack Starter · +' + COINS_PER_REGISTRATION + ' moedas no vault');
       renderCompanyPanel('dashboard');
       notify('🎉 Conta de empresa criada com pack Starter! 1.000 flags disponíveis');
+      startTutorial('company');
     }
 
     function statCards() {
@@ -7543,6 +7699,103 @@
         addAudit('Fatura ' + invoiceNum + ' gerada para ' + company.name);
         notify('Fatura ' + invoiceNum + ' gerada — pode imprimir ou guardar como PDF');
       });
+    }
+
+    /* ═══════════════════════════════════════════════
+       ONBOARDING TUTORIAL & HELP SYSTEM
+       ═══════════════════════════════════════════════ */
+
+    var TUTORIAL_STEPS_PLAYER = [
+      { icon: '🗺️', title: 'Bem-vindo ao ZAP-FLAGS!', text: 'Esta é a tua plataforma de recompensas geolocalizadas. Vamos mostrar-te como funciona em poucos passos!' },
+      { icon: '📍', title: 'O Mapa GPS', text: 'O mapa mostra a tua posição em tempo real. Ativa o GPS para ver onde estás, ou usa as setas do teclado no modo offline. As bandeiras das empresas estão espalhadas pela tua zona!' },
+      { icon: '🚩', title: 'Bandeiras & Captura', text: 'As bandeiras estão "dormentes" até te aproximares. Quando ficam visíveis, clica para as capturar e ganhar moedas! Se te afastares, elas mudam de posição — mantém-te atento!' },
+      { icon: '🪙', title: 'Moedas & Saldo', text: 'Cada captura dá-te moedas digitais. Com sorte, podes encontrar uma Bandeira Bingo e ganhar até 1.500 moedas de uma só vez! Consulta o teu saldo no Porta-moedas.' },
+      { icon: '📊', title: 'O Teu Painel', text: 'Aqui geres tudo: energia, humor, fome, carteira de QRs, amigos e trocas. Explora cada secção para tirares o máximo partido do jogo. Boa sorte!' }
+    ];
+
+    var TUTORIAL_STEPS_COMPANY = [
+      { icon: '🏢', title: 'Bem-vinda ao ZAP-FLAGS!', text: 'A tua empresa agora faz parte do ecossistema de recompensas geolocalizadas. Vamos explicar como tudo funciona!' },
+      { icon: '🚩', title: 'As Tuas Bandeiras', text: 'A tua empresa recebe bandeiras geolocalizadas na tua região. Quando jogadores as capturam, interagem com a tua marca — é publicidade hiperlocal e interativa!' },
+      { icon: '📦', title: 'Packs & Campanhas', text: 'Escolhe um Pack para definir quantas bandeiras queres no mapa. Cria campanhas com prémios QR personalizados para atrair mais jogadores à tua zona!' },
+      { icon: '📄', title: 'Dashboard & Faturas', text: 'No teu painel, vês estatísticas de interação, geres campanhas e geras faturas profissionais com o logótipo da Larforyou. Tudo centralizado!' }
+    ];
+
+    var currentTutorialStep = 0;
+    var currentTutorialType = null;
+
+    function shouldShowTutorial(type) {
+      var key = 'zap_tutorial_done_' + type;
+      return !localStorage.getItem(key);
+    }
+
+    function markTutorialDone(type) {
+      var key = 'zap_tutorial_done_' + type;
+      localStorage.setItem(key, '1');
+    }
+
+    function startTutorial(type) {
+      if (!shouldShowTutorial(type)) return;
+      currentTutorialStep = 0;
+      currentTutorialType = type;
+      renderTutorialStep();
+    }
+
+    function renderTutorialStep() {
+      var steps = currentTutorialType === 'player' ? TUTORIAL_STEPS_PLAYER : TUTORIAL_STEPS_COMPANY;
+      var step = steps[currentTutorialStep];
+      var overlay = document.getElementById('tutorial-overlay');
+      var dots = '';
+      for (var i = 0; i < steps.length; i++) {
+        dots += '<div class="tut-dot' + (i === currentTutorialStep ? ' active' : '') + '"></div>';
+      }
+      var isLast = currentTutorialStep === steps.length - 1;
+      overlay.innerHTML =
+        '<div class="tutorial-overlay">' +
+          '<div class="tutorial-card">' +
+            '<div class="tut-icon">' + step.icon + '</div>' +
+            '<h2>' + step.title + '</h2>' +
+            '<p>' + step.text + '</p>' +
+            '<div class="tut-step-indicator">' + dots + '</div>' +
+            '<div class="tut-actions">' +
+              '<button class="btn secondary" onclick="skipTutorial()">Saltar</button>' +
+              (isLast
+                ? '<button class="btn" onclick="finishTutorial()">Começar!</button>'
+                : '<button class="btn" onclick="nextTutorialStep()">Seguinte</button>') +
+            '</div>' +
+          '</div>' +
+        '</div>';
+    }
+
+    function nextTutorialStep() {
+      var steps = currentTutorialType === 'player' ? TUTORIAL_STEPS_PLAYER : TUTORIAL_STEPS_COMPANY;
+      currentTutorialStep++;
+      if (currentTutorialStep >= steps.length) {
+        finishTutorial();
+      } else {
+        renderTutorialStep();
+      }
+    }
+
+    function skipTutorial() {
+      markTutorialDone(currentTutorialType);
+      document.getElementById('tutorial-overlay').innerHTML = '';
+      currentTutorialType = null;
+    }
+
+    function finishTutorial() {
+      markTutorialDone(currentTutorialType);
+      document.getElementById('tutorial-overlay').innerHTML = '';
+      currentTutorialType = null;
+      notify('Tutorial concluído! Usa o botão "?" para ajuda a qualquer momento.');
+    }
+
+    /* FAQ Modal */
+    function openFaqModal() {
+      document.getElementById('faq-overlay').classList.remove('hidden');
+    }
+
+    function closeFaqModal() {
+      document.getElementById('faq-overlay').classList.add('hidden');
     }
   </script>
 </body>
