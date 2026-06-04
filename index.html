@@ -720,6 +720,21 @@
       color: rgba(168, 255, 197, 0.58);
     }
 
+    /* ── Stock Central & Dormant Flags ── */
+    .stock-gauge { display: flex; align-items: center; gap: 12px; margin: 12px 0; }
+    .stock-gauge-bar { flex: 1; height: 14px; border-radius: 999px; background: rgba(255,255,255,0.08); overflow: hidden; }
+    .stock-gauge-fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--green), var(--cyan)); transition: width .4s ease; }
+    .stock-gauge-label { min-width: 90px; font-size: 13px; font-weight: 800; color: var(--green-soft); text-align: right; }
+    .geo-config-row { display: flex; align-items: center; gap: 14px; margin: 10px 0; flex-wrap: wrap; }
+    .geo-config-row label { min-width: 160px; }
+    .geo-config-row input[type="number"], .geo-config-row input[type="range"] { width: 120px; }
+    .dormant-badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; }
+    .dormant-badge.dormant { background: rgba(215,179,90,0.18); color: var(--yellow); border: 1px solid rgba(215,179,90,0.35); }
+    .dormant-badge.active { background: rgba(66,215,125,0.14); color: var(--green); border: 1px solid rgba(66,215,125,0.35); }
+    .dormant-badge.standby { background: rgba(122,215,255,0.12); color: var(--cyan); border: 1px solid rgba(122,215,255,0.30); }
+    .stock-section { border: 1px solid rgba(255,255,255,0.08); border-radius: 18px; padding: 20px; margin: 16px 0; background: rgba(255,255,255,0.02); }
+    .stock-section h3 { margin-bottom: 12px; }
+
     .ghost-admin {
       padding: 0;
       min-height: auto;
@@ -1210,6 +1225,8 @@
             <button class="btn secondary" onclick="renderBackofficePanel('qrs')">QRs</button>
             <button class="btn secondary" onclick="renderBackofficePanel('trades')">Trocas</button>
             <button class="btn secondary" onclick="renderBackofficePanel('audit')">Auditoria</button>
+            <button class="btn secondary" onclick="renderBackofficePanel('stockCentral')" style="border-color: var(--cyan); color: var(--cyan);">Stock Central</button>
+            <button class="btn secondary" onclick="renderBackofficePanel('dormantFlags')" style="border-color: var(--yellow); color: var(--yellow);">Bandeiras Dormentes</button>
           </aside>
           <section class="panel content-area" id="backoffice-content"></section>
         </div>
@@ -1308,7 +1325,17 @@
         audit: [
           { id: 'audit_1', at: now, text: 'Sistema ZAP-FLAGS 3.0 iniciado.' },
           { id: 'audit_2', at: now, text: 'Mapa GPS real com avatar centralizado, movimento offline por setas e corrida 3x registado no backoffice.' }
-        ]
+        ],
+        stockCentral: {
+          maxStock: 500,
+          minCompaniesRadius: 10,
+          radiusKm: 5,
+          flagsPerCompany: 5000,
+          activationRadiusMeters: 20,
+          teleportMinMeters: 50,
+          teleportMaxMeters: 100,
+          companies: []
+        }
       };
     }
 
@@ -1316,6 +1343,11 @@
     if (!state.trades) state.trades = [];
     if (!state.selectedBingos) state.selectedBingos = [];
     if (!state.bulkPrizes) state.bulkPrizes = [];
+    if (!state.stockCentral) state.stockCentral = { maxStock: 500, minCompaniesRadius: 10, radiusKm: 5, flagsPerCompany: 5000, activationRadiusMeters: 20, teleportMinMeters: 50, teleportMaxMeters: 100, companies: [] };
+    if (!state.stockCentral.flagsPerCompany) state.stockCentral.flagsPerCompany = 5000;
+    if (!state.stockCentral.activationRadiusMeters) state.stockCentral.activationRadiusMeters = 20;
+    if (!state.stockCentral.teleportMinMeters) state.stockCentral.teleportMinMeters = 50;
+    if (!state.stockCentral.teleportMaxMeters) state.stockCentral.teleportMaxMeters = 100;
 
     function loadState() {
       try {
@@ -2656,6 +2688,8 @@
             <div class="input-group"><label>NIF</label><input id="company-register-nif" placeholder="NIF"></div>
             <div class="input-group"><label>Email</label><input id="company-register-email" placeholder="empresa@exemplo.pt"></div>
             <div class="input-group"><label>Senha</label><input id="company-register-password" type="password" placeholder="Senha"></div>
+            <div class="input-group"><label>Latitude (GPS)</label><input id="company-register-lat" type="number" step="0.00001" placeholder="Ex: 41.4427"></div>
+            <div class="input-group"><label>Longitude (GPS)</label><input id="company-register-lng" type="number" step="0.00001" placeholder="Ex: -8.2962"></div>
             <button class="btn" onclick="registerCompany()">Criar empresa</button>
           </div>
         </div>
@@ -2690,6 +2724,7 @@
       state.session = { type: 'player', id: player.id };
       saveState();
       addAudit('Jogador registado: ' + player.name);
+      onPlayerRegisterGeo(player);
       renderPlayerPanel('game');
       notify('Conta de jogador criada');
     }
@@ -2713,11 +2748,14 @@
       const password = value('company-register-password');
       if (!name || !nif || !password) return notify('Preenche nome, NIF e senha');
       if (state.companies.some(item => item.nif === nif)) return notify('Este NIF já existe');
-      const company = { id: uid('company'), name, nif, email, password, pack: 'Starter', flags: 1000, status: 'Ativo', createdAt: Date.now(), packActivatedAt: Date.now() };
+      const lat = parseFloat(value('company-register-lat')) || null;
+      const lng = parseFloat(value('company-register-lng')) || null;
+      const company = { id: uid('company'), name, nif, email, password, pack: 'Starter', flags: 1000, status: 'Ativo', createdAt: Date.now(), packActivatedAt: Date.now(), lat, lng, isDemo: false };
       state.companies.push(company);
       state.session = { type: 'company', id: company.id };
       saveState();
       addAudit('Empresa registada: ' + company.name + ' com pack Starter');
+      onRealCompanyRegisterGeo(company);
       renderCompanyPanel('dashboard');
       notify('🎉 Conta de empresa criada com pack Starter! 1.000 flags disponíveis');
     }
@@ -4126,14 +4164,22 @@
 
     function renderBackofficePanel(panel) {
       const target = document.getElementById('backoffice-content');
+      if (panel === 'stockCentral') return renderStockCentralPanel();
+      if (panel === 'dormantFlags') return renderDormantFlagsPanel();
+
       if (panel === 'overview') {
+        const flagStats = getDormantFlagStats();
         target.innerHTML = `
           <h2>Resumo Administrativo</h2>
           <div class="cards-row">
             <div class="mini-card"><b>${state.players.length}</b><span>Jogadores</span></div>
-            <div class="mini-card"><b>${state.companies.length}</b><span>Empresas</span></div>
+            <div class="mini-card"><b>${state.companies.length}</b><span>Empresas Reais</span></div>
+            <div class="mini-card"><b>${getStockCentralCount()}</b><span>Stock Central</span></div>
+            <div class="mini-card"><b>${getActiveDemo().length}</b><span>Demo Ativas</span></div>
             <div class="mini-card"><b>${state.qrs.length}</b><span>QRs mercado</span></div>
             <div class="mini-card"><b>${state.flags.length}</b><span>Flags/Bingos mapa</span></div>
+            <div class="mini-card"><b>${flagStats.dormant}</b><span><span class="dormant-badge dormant">Dormant</span></span></div>
+            <div class="mini-card"><b>${flagStats.active}</b><span><span class="dormant-badge active">Active</span></span></div>
           </div>
           <div class="actions">
             <button class="btn" onclick="createArtificialPlayer()">Criar jogador artificial</button>
@@ -4240,6 +4286,7 @@
       const distance = distanceBetween(ensurePlayerPosition(player), flag);
       if (distance > 15) return notify('Aproxima-te da bandeira para recolher. Distância: ' + Math.round(distance));
       flag.active = false;
+      flag.dormant = false;
       player.flags += 1;
       if (flag.type === 'ZAP') {
         player.zap += 1;
@@ -4273,6 +4320,7 @@
       player.position = { x, y };
       spendMovementStats(player);
       saveState();
+      runProximityEngine();
       updateGpsView(player.position);
       notify('Avatar movido para X ' + x + '% / Y ' + y + '%');
     }
@@ -4284,6 +4332,7 @@
       player.position = { x: randomPercent(), y: randomPercent() };
       spendMovementStats(player);
       saveState();
+      runProximityEngine();
       renderPlayerPanel('game');
       notify('GPS offline simulou nova posição');
     }
@@ -4306,6 +4355,7 @@
         spendMovementStats(player);
       }
       saveState();
+      runProximityEngine();
       updateGpsView(player.position);
       notify(running ? 'Corrida offline 3x' : 'Movimento offline');
     }
@@ -5199,10 +5249,380 @@
       if (event.code === 'Space') spacePressed = false;
     });
 
+    // ══════════════════════════════════════════════════════════════
+    //  MOTOR DE GEOLOCALIZAÇÃO · Stock Central + Bandeiras Dormentes
+    // ══════════════════════════════════════════════════════════════
+
+    const EARTH_RADIUS_KM = 6371;
+    const DEMO_COMPANY_NAMES = [
+      'Padaria Local', 'Café Express', 'Mercearia Sol', 'Farmácia Vida',
+      'Livraria Saber', 'Pet Shop Amigo', 'Florista Rosa', 'Oficina Rápida',
+      'Sapataria Passo', 'Restaurante Sabor', 'Papelaria Arte', 'Lavandaria Clean',
+      'Barbearia Corte', 'Pastelaria Doce', 'Mini Mercado Fresco',
+      'Eletrónica Fix', 'Ótica Visão', 'Ginásio Força', 'Loja Verde', 'Bike Shop'
+    ];
+
+    function haversineDistanceKm(lat1, lng1, lat2, lng2) {
+      const toRad = v => v * Math.PI / 180;
+      const dLat = toRad(lat2 - lat1);
+      const dLng = toRad(lng2 - lng1);
+      const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+      return EARTH_RADIUS_KM * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    }
+
+    function haversineDistanceMeters(lat1, lng1, lat2, lng2) {
+      return haversineDistanceKm(lat1, lng1, lat2, lng2) * 1000;
+    }
+
+    function positionToGeo(position) {
+      return {
+        lat: GPS_BASE_LAT + ((50 - position.y) * 0.00001),
+        lng: GPS_BASE_LNG + ((position.x - 50) * 0.00001)
+      };
+    }
+
+    function geoToPosition(lat, lng) {
+      return {
+        x: 50 + ((lng - GPS_BASE_LNG) / 0.00001),
+        y: 50 - ((lat - GPS_BASE_LAT) / 0.00001)
+      };
+    }
+
+    function randomOffsetMeters(minM, maxM) {
+      const dist = minM + Math.random() * (maxM - minM);
+      const angle = Math.random() * 2 * Math.PI;
+      const dLat = (dist * Math.cos(angle)) / 111320;
+      const dLng = (dist * Math.sin(angle)) / (111320 * Math.cos(GPS_BASE_LAT * Math.PI / 180));
+      return { dLat, dLng };
+    }
+
+    // ── STOCK CENTRAL ──
+
+    function initStockCentral() {
+      const sc = state.stockCentral;
+      if (sc.companies.length >= sc.maxStock) return;
+      const toCreate = sc.maxStock - sc.companies.length;
+      for (let i = 0; i < toCreate; i++) {
+        const nameIdx = i % DEMO_COMPANY_NAMES.length;
+        const suffix = Math.floor(i / DEMO_COMPANY_NAMES.length) + 1;
+        const name = DEMO_COMPANY_NAMES[nameIdx] + (suffix > 1 ? ' #' + suffix : '');
+        sc.companies.push({
+          id: uid('demo_company'),
+          name: name,
+          nif: String(900000000 + i),
+          email: 'demo' + i + '@stock.zap',
+          password: '000000',
+          pack: 'Demo',
+          flags: 0,
+          status: 'standby',
+          isDemo: true,
+          lat: null,
+          lng: null,
+          createdAt: Date.now(),
+          activatedAt: null,
+          activatedForPlayer: null
+        });
+      }
+      saveState();
+      addAudit('Stock Central preenchido: ' + sc.companies.length + '/' + sc.maxStock + ' empresas demo em standby');
+    }
+
+    function getStockCentralCount() {
+      return state.stockCentral.companies.filter(c => c.status === 'standby').length;
+    }
+
+    function getActiveDemo() {
+      return state.stockCentral.companies.filter(c => c.status === 'active');
+    }
+
+    function companiesInRadius(lat, lng, radiusKm) {
+      const realInRadius = state.companies.filter(c => {
+        if (!c.lat || !c.lng) return false;
+        return haversineDistanceKm(lat, lng, c.lat, c.lng) <= radiusKm;
+      });
+      const demoInRadius = state.stockCentral.companies.filter(c => {
+        if (c.status !== 'active' || !c.lat || !c.lng) return false;
+        return haversineDistanceKm(lat, lng, c.lat, c.lng) <= radiusKm;
+      });
+      return { real: realInRadius, demo: demoInRadius, total: realInRadius.length + demoInRadius.length };
+    }
+
+    function populateRegion(lat, lng, triggeredBy) {
+      const sc = state.stockCentral;
+      const nearby = companiesInRadius(lat, lng, sc.radiusKm);
+      if (nearby.total >= sc.minCompaniesRadius) return;
+      const needed = sc.minCompaniesRadius - nearby.total;
+      const available = sc.companies.filter(c => c.status === 'standby');
+      const toActivate = Math.min(needed, available.length);
+      if (toActivate === 0) {
+        addAudit('Stock Central vazio: não é possível povoar a região de ' + triggeredBy);
+        return;
+      }
+      for (let i = 0; i < toActivate; i++) {
+        const company = available[i];
+        const offset = randomOffsetMeters(200, sc.radiusKm * 800);
+        company.lat = lat + offset.dLat;
+        company.lng = lng + offset.dLng;
+        company.status = 'active';
+        company.activatedAt = Date.now();
+        company.activatedForPlayer = triggeredBy;
+        spawnDormantFlags(company.id, sc.flagsPerCompany, company.lat, company.lng);
+      }
+      saveState();
+      addAudit('Povoamento reativo: ' + toActivate + ' empresas demo ativadas na região de ' + triggeredBy + '. Stock restante: ' + getStockCentralCount());
+    }
+
+    function returnDemoToStock(demoCompanyId) {
+      const company = state.stockCentral.companies.find(c => c.id === demoCompanyId);
+      if (!company || company.status === 'standby') return;
+      state.flags = state.flags.filter(f => f.companyId !== demoCompanyId);
+      company.status = 'standby';
+      company.lat = null;
+      company.lng = null;
+      company.activatedAt = null;
+      company.activatedForPlayer = null;
+      saveState();
+      addAudit('Empresa demo devolvida ao Stock Central: ' + company.name);
+    }
+
+    function onPlayerRegisterGeo(player) {
+      const geo = positionToGeo(ensurePlayerPosition(player));
+      populateRegion(geo.lat, geo.lng, player.name);
+    }
+
+    function onRealCompanyRegisterGeo(company) {
+      if (!company.lat || !company.lng) return;
+      const sc = state.stockCentral;
+      const nearby = companiesInRadius(company.lat, company.lng, sc.radiusKm);
+      if (nearby.demo.length > 0) {
+        const toReturn = nearby.demo[nearby.demo.length - 1];
+        returnDemoToStock(toReturn.id);
+        addAudit('Empresa real "' + company.name + '" registada: empresa demo "' + toReturn.name + '" devolvida ao Stock Central');
+      }
+    }
+
+    function adminSetMaxStock(newMax) {
+      state.stockCentral.maxStock = Math.max(0, Math.min(10000, Number(newMax)));
+      saveState();
+      addAudit('Admin alterou Stock Máximo para ' + state.stockCentral.maxStock);
+    }
+
+    function adminRefillStock() {
+      initStockCentral();
+      notify('Stock Central reabastecido');
+    }
+
+    // ── BANDEIRAS DORMENTES + TELETRANSPORTE FURTIVO ──
+
+    function spawnDormantFlags(companyId, count, baseLat, baseLng) {
+      const sc = state.stockCentral;
+      for (let i = 0; i < count; i++) {
+        const offset = randomOffsetMeters(50, 2000);
+        const flagLat = baseLat + offset.dLat;
+        const flagLng = baseLng + offset.dLng;
+        const pos = geoToPosition(flagLat, flagLng);
+        state.flags.push({
+          id: uid('dflag'),
+          type: 'ZAP',
+          label: 'Flag Demo #' + (i + 1),
+          x: pos.x,
+          y: pos.y,
+          lat: flagLat,
+          lng: flagLng,
+          reward: 3,
+          active: false,
+          dormant: true,
+          companyId: companyId,
+          lastActivatedAt: null,
+          lastDormantAt: Date.now()
+        });
+      }
+    }
+
+    function checkFlagProximity(playerLat, playerLng) {
+      const sc = state.stockCentral;
+      const activationRadius = sc.activationRadiusMeters || 20;
+      let activated = 0;
+      let deactivated = 0;
+      let teleported = 0;
+      state.flags.forEach(flag => {
+        if (!flag.lat || !flag.lng) return;
+        if (flag.companyId === undefined) return;
+        const dist = haversineDistanceMeters(playerLat, playerLng, flag.lat, flag.lng);
+        if (flag.dormant && !flag.active && dist <= activationRadius) {
+          flag.dormant = false;
+          flag.active = true;
+          flag.lastActivatedAt = Date.now();
+          const pos = geoToPosition(flag.lat, flag.lng);
+          flag.x = pos.x;
+          flag.y = pos.y;
+          activated++;
+        }
+        else if (flag.active && !flag.dormant && dist > activationRadius) {
+          flag.active = false;
+          flag.dormant = true;
+          flag.lastDormantAt = Date.now();
+          const teleportOffset = randomOffsetMeters(
+            sc.teleportMinMeters || 50,
+            sc.teleportMaxMeters || 100
+          );
+          flag.lat = flag.lat + teleportOffset.dLat;
+          flag.lng = flag.lng + teleportOffset.dLng;
+          const pos = geoToPosition(flag.lat, flag.lng);
+          flag.x = pos.x;
+          flag.y = pos.y;
+          deactivated++;
+          teleported++;
+        }
+      });
+      if (activated > 0 || deactivated > 0) {
+        saveState();
+      }
+      return { activated, deactivated, teleported };
+    }
+
+    function runProximityEngine() {
+      const player = currentPlayer();
+      if (!player || state.session.type !== 'player') return;
+      const geo = positionToGeo(ensurePlayerPosition(player));
+      checkFlagProximity(geo.lat, geo.lng);
+    }
+
+    setInterval(runProximityEngine, 500);
+
+    function getDormantFlagStats() {
+      const dormant = state.flags.filter(f => f.dormant === true).length;
+      const activeDormant = state.flags.filter(f => f.companyId && f.active).length;
+      const total = state.flags.filter(f => f.companyId !== undefined).length;
+      return { dormant, active: activeDormant, total };
+    }
+
+    // ── BACKOFFICE: STOCK CENTRAL PANEL ──
+
+    function renderStockCentralPanel() {
+      const target = document.getElementById('backoffice-content');
+      const sc = state.stockCentral;
+      const standby = getStockCentralCount();
+      const active = getActiveDemo();
+      const pct = sc.maxStock > 0 ? Math.round((standby / sc.maxStock) * 100) : 0;
+      target.innerHTML = `
+        <h2>Stock Central de Empresas Demo</h2>
+        <div class="stock-section">
+          <h3>Nivel de Stock</h3>
+          <div class="stock-gauge">
+            <div class="stock-gauge-bar"><div class="stock-gauge-fill" style="width:${pct}%;"></div></div>
+            <div class="stock-gauge-label">${standby} / ${sc.maxStock}</div>
+          </div>
+          <div class="cards-row">
+            <div class="mini-card"><b>${standby}</b><span>Em Standby</span></div>
+            <div class="mini-card"><b>${active.length}</b><span>Ativas no Mapa</span></div>
+            <div class="mini-card"><b>${sc.maxStock}</b><span>Stock Máximo</span></div>
+            <div class="mini-card"><b>${sc.flagsPerCompany}</b><span>Flags/Empresa</span></div>
+          </div>
+        </div>
+        <div class="stock-section">
+          <h3>Configuração</h3>
+          <div class="geo-config-row">
+            <label>Stock Máximo:</label>
+            <input type="number" id="cfg-max-stock" value="${sc.maxStock}" min="0" max="10000" step="50">
+            <button class="btn secondary" onclick="adminSetMaxStock(document.getElementById('cfg-max-stock').value); renderBackofficePanel('stockCentral');">Guardar</button>
+          </div>
+          <div class="geo-config-row">
+            <label>Min. Empresas no Raio:</label>
+            <input type="number" id="cfg-min-companies" value="${sc.minCompaniesRadius}" min="1" max="50">
+            <button class="btn secondary" onclick="state.stockCentral.minCompaniesRadius=Number(document.getElementById('cfg-min-companies').value);saveState();renderBackofficePanel('stockCentral');notify('Configuração guardada');">Guardar</button>
+          </div>
+          <div class="geo-config-row">
+            <label>Raio de Deteção (km):</label>
+            <input type="number" id="cfg-radius-km" value="${sc.radiusKm}" min="1" max="50" step="1">
+            <button class="btn secondary" onclick="state.stockCentral.radiusKm=Number(document.getElementById('cfg-radius-km').value);saveState();renderBackofficePanel('stockCentral');notify('Configuração guardada');">Guardar</button>
+          </div>
+          <div class="geo-config-row">
+            <label>Flags por Empresa Demo:</label>
+            <input type="number" id="cfg-flags-per-company" value="${sc.flagsPerCompany}" min="100" max="10000" step="100">
+            <button class="btn secondary" onclick="state.stockCentral.flagsPerCompany=Number(document.getElementById('cfg-flags-per-company').value);saveState();renderBackofficePanel('stockCentral');notify('Configuração guardada');">Guardar</button>
+          </div>
+          <div class="actions">
+            <button class="btn" onclick="adminRefillStock(); renderBackofficePanel('stockCentral');">Reabastecer Stock</button>
+            <button class="btn danger" onclick="if(confirm('Devolver TODAS as empresas demo ao stock?')){getActiveDemo().forEach(c=>returnDemoToStock(c.id));renderBackofficePanel('stockCentral');notify('Todas as demo devolvidas');}">Devolver Todas ao Stock</button>
+          </div>
+        </div>
+        <div class="stock-section">
+          <h3>Empresas Demo Ativas no Mapa (${active.length})</h3>
+          ${active.length === 0 ? '<p>Nenhuma empresa demo ativa no mapa.</p>' : `
+          <table class="data-table">
+            <thead><tr><th>Nome</th><th>Coordenadas</th><th>Ativada para</th><th>Desde</th><th>Ação</th></tr></thead>
+            <tbody>${active.map(c => `<tr>
+              <td>${escapeHtml(c.name)}</td>
+              <td>${c.lat ? c.lat.toFixed(5) : '-'}, ${c.lng ? c.lng.toFixed(5) : '-'}</td>
+              <td>${escapeHtml(c.activatedForPlayer || '-')}</td>
+              <td>${c.activatedAt ? new Date(c.activatedAt).toLocaleString('pt-PT') : '-'}</td>
+              <td><button class="btn danger" onclick="returnDemoToStock('${c.id}');renderBackofficePanel('stockCentral');">Devolver</button></td>
+            </tr>`).join('')}</tbody>
+          </table>`}
+        </div>
+      `;
+    }
+
+    // ── BACKOFFICE: DORMANT FLAGS PANEL ──
+
+    function renderDormantFlagsPanel() {
+      const target = document.getElementById('backoffice-content');
+      const sc = state.stockCentral;
+      const stats = getDormantFlagStats();
+      const dormantPct = stats.total > 0 ? Math.round((stats.dormant / stats.total) * 100) : 0;
+      target.innerHTML = `
+        <h2>Bandeiras Dormentes + Teletransporte</h2>
+        <div class="stock-section">
+          <h3>Estado Global das Bandeiras de Empresas Demo</h3>
+          <div class="stock-gauge">
+            <div class="stock-gauge-bar"><div class="stock-gauge-fill" style="width:${100 - dormantPct}%; background: linear-gradient(90deg, var(--yellow), var(--green));"></div></div>
+            <div class="stock-gauge-label">${stats.active} ativas / ${stats.total}</div>
+          </div>
+          <div class="cards-row">
+            <div class="mini-card"><b>${stats.dormant}</b><span><span class="dormant-badge dormant">Dormant</span></span></div>
+            <div class="mini-card"><b>${stats.active}</b><span><span class="dormant-badge active">Active</span></span></div>
+            <div class="mini-card"><b>${stats.total}</b><span>Total Geo-Flags</span></div>
+          </div>
+        </div>
+        <div class="stock-section">
+          <h3>Configuração do Motor de Proximidade</h3>
+          <div class="geo-config-row">
+            <label>Raio de Ativação (metros):</label>
+            <input type="number" id="cfg-activation-radius" value="${sc.activationRadiusMeters}" min="5" max="200" step="5">
+            <button class="btn secondary" onclick="state.stockCentral.activationRadiusMeters=Number(document.getElementById('cfg-activation-radius').value);saveState();renderBackofficePanel('dormantFlags');notify('Configuração guardada');">Guardar</button>
+          </div>
+          <div class="geo-config-row">
+            <label>Teleporte Mín. (metros):</label>
+            <input type="number" id="cfg-teleport-min" value="${sc.teleportMinMeters}" min="10" max="500" step="10">
+            <button class="btn secondary" onclick="state.stockCentral.teleportMinMeters=Number(document.getElementById('cfg-teleport-min').value);saveState();renderBackofficePanel('dormantFlags');notify('Configuração guardada');">Guardar</button>
+          </div>
+          <div class="geo-config-row">
+            <label>Teleporte Máx. (metros):</label>
+            <input type="number" id="cfg-teleport-max" value="${sc.teleportMaxMeters}" min="50" max="1000" step="10">
+            <button class="btn secondary" onclick="state.stockCentral.teleportMaxMeters=Number(document.getElementById('cfg-teleport-max').value);saveState();renderBackofficePanel('dormantFlags');notify('Configuração guardada');">Guardar</button>
+          </div>
+        </div>
+        <div class="stock-section">
+          <h3>Regras do Motor</h3>
+          <div class="offer-card" style="margin:0;">
+            <p><strong>Ativação:</strong> Quando QUALQUER jogador (real ou bot) passa num raio de <b>${sc.activationRadiusMeters}m</b> de uma bandeira dormant, ela muda para <span class="dormant-badge active">active</span> e aparece no ecrã.</p>
+            <p><strong>Desativação + Teleporte:</strong> Se o jogador se afastar mais de <b>${sc.activationRadiusMeters}m</b> SEM a capturar, a bandeira volta a <span class="dormant-badge dormant">dormant</span> e recebe IMEDIATAMENTE novas coordenadas aleatórias (offset de <b>${sc.teleportMinMeters}m</b> a <b>${sc.teleportMaxMeters}m</b>).</p>
+            <p><strong>Verificação:</strong> O motor de proximidade executa a cada <b>500ms</b> enquanto um jogador está ativo.</p>
+          </div>
+        </div>
+      `;
+    }
+
     // Inicialização
     function init() {
       // Carregar estado
       loadState();
+      
+      // Inicializar Stock Central se vazio
+      if (state.stockCentral.companies.length === 0) {
+        initStockCentral();
+      }
       
       // Se não houver sessão ativa, mostrar páginas de login
       if (state.session.type !== 'player' || !currentPlayer()) {
