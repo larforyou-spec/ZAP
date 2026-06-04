@@ -1388,6 +1388,7 @@
     const GPS_BASE_LAT = 38.7223;
     const GPS_BASE_LNG = -9.1393;
     let placementType = 'ZAP';
+    const COINS_PER_REGISTRATION = 25;
     let spacePressed = false;
     let gpsMode = 'offline';
     let playerLeafletMap = null;
@@ -1417,8 +1418,8 @@
             enabled: true
           }
         },
-        /* ── Global Vault ── */
-        globalVault: 50000,
+        /* ── Global Vault (lastro: 2 empresas iniciais x 25) ── */
+        globalVault: 50,
         /* ── Stock Central pool of demo companies ── */
         stockCentralPool: [],
         /* ── Ticker feed messages ── */
@@ -1506,7 +1507,7 @@
     if (!state.engineConfig) {
       state.engineConfig = createInitialState().engineConfig;
     }
-    if (state.globalVault === undefined) state.globalVault = 50000;
+    if (state.globalVault === undefined) state.globalVault = state.companies.length * COINS_PER_REGISTRATION;
     if (!state.stockCentralPool) state.stockCentralPool = [];
     if (!state.tickerFeed) state.tickerFeed = [];
     state.flags.forEach(function(f) { if (f.dormant === undefined) f.dormant = true; });
@@ -2913,11 +2914,13 @@
       const company = { id: uid('company'), name, nif, email, password, pack: 'Starter', flags: 1000, status: 'Ativo', createdAt: Date.now(), packActivatedAt: Date.now() };
       state.companies.push(company);
       state.session = { type: 'company', id: company.id };
+      /* Lastro por Registo: inject coins into global vault */
+      state.globalVault += COINS_PER_REGISTRATION;
       /* Stock Central: return a demo company when a real one registers nearby */
       var currentPlayerObj = state.players.find(function(p) { return p.position; });
       if (currentPlayerObj) returnDemoCompany(currentPlayerObj.position);
       saveState();
-      addAudit('Empresa registada: ' + company.name + ' com pack Starter');
+      addAudit('Empresa registada: ' + company.name + ' com pack Starter · +' + COINS_PER_REGISTRATION + ' moedas no vault');
       renderCompanyPanel('dashboard');
       notify('🎉 Conta de empresa criada com pack Starter! 1.000 flags disponíveis');
     }
@@ -4342,6 +4345,7 @@
         var dormantCount = state.flags.filter(function(f) { return f.active && f.dormant; }).length;
         var activeCount = state.flags.filter(function(f) { return f.active && !f.dormant; }).length;
         var demoCompanies = state.companies.filter(function(c) { return c.isDemo; }).length;
+        var stockGerado = state.companies.length * COINS_PER_REGISTRATION;
         target.innerHTML = `
           <h2>Resumo Administrativo</h2>
           <div class="cards-row">
@@ -4356,6 +4360,11 @@
             <div class="mini-card"><b>${dormantCount}</b><span>Flags Dormentes</span></div>
             <div class="mini-card"><b>${activeCount}</b><span>Flags Ativas</span></div>
             <div class="mini-card"><b>${state.globalVault}</b><span>Global Vault 🪙</span></div>
+          </div>
+          <div class="offer-card" style="margin-top:10px;border-color:rgba(215,179,90,0.35)">
+            <h3>🏦 Banco Central — Lastro por Registo</h3>
+            <p><b>Fórmula:</b> [Total Empresas: ${state.companies.length}] × ${COINS_PER_REGISTRATION} = <b>${stockGerado} moedas</b> (Stock Total Gerado por Registos)</p>
+            <p><b>Vault Atual:</b> ${state.globalVault} moedas · <b>Circulação:</b> ${stockGerado - state.globalVault} moedas em jogo</p>
           </div>
           <div class="actions">
             <button class="btn" onclick="renderBackofficePanel('engine')">Motor de Geolocalização</button>
@@ -4472,6 +4481,11 @@
             <div class="mini-card"><b>${activeCount}</b><span>Ativas</span></div>
             <div class="mini-card"><b>${state.globalVault}</b><span>Global Vault 🪙</span></div>
             <div class="mini-card"><b>${state.tickerFeed.length}</b><span>Ticker msgs</span></div>
+          </div>
+          <div class="offer-card" style="margin-bottom:14px;border-color:rgba(215,179,90,0.35)">
+            <h3>🏦 Banco Central — Lastro por Registo</h3>
+            <p><b>Stock Total Gerado por Registos:</b> [${state.companies.length} empresas] × ${COINS_PER_REGISTRATION} = <b>${state.companies.length * COINS_PER_REGISTRATION} moedas</b></p>
+            <p><b>Vault Atual:</b> ${state.globalVault} 🪙 · <b>Em circulação:</b> ${(state.companies.length * COINS_PER_REGISTRATION) - state.globalVault} moedas</p>
           </div>
 
           <div class="engine-config-grid">
@@ -4590,6 +4604,8 @@
         demo.email = demo.id + '@demo.zap';
         demo.password = '000000';
         state.companies.push(demo);
+        /* Lastro por Registo: demo company also injects coins */
+        state.globalVault += COINS_PER_REGISTRATION;
         for (var i = 0; i < 10; i++) {
           state.flags.push({
             id: uid('flag'),
@@ -5573,10 +5589,12 @@
     function createArtificialCompany() {
       const n = state.companies.length + 1;
       state.companies.push({ id: uid('company'), name: 'Empresa Artificial ' + n, nif: String(200000000 + n), email: 'empresa' + n + '@artificial.pt', password: '123456', pack: 'Gratuito', flags: 1000, status: 'Ativo', createdAt: Date.now() });
+      /* Lastro por Registo */
+      state.globalVault += COINS_PER_REGISTRATION;
       saveState();
-      addAudit('Backoffice criou empresa artificial ' + n);
+      addAudit('Backoffice criou empresa artificial ' + n + ' · +' + COINS_PER_REGISTRATION + ' moedas no vault');
       renderBackofficePanel('overview');
-      notify('Empresa artificial criada');
+      notify('Empresa artificial criada · +' + COINS_PER_REGISTRATION + ' moedas no vault');
     }
 
     function createArtificialFlag(type) {
