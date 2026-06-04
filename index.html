@@ -4379,22 +4379,37 @@
       }
     }
 
-    // WASD zoom: aplica zoom focado quando WASD é usado
+    // WASD zoom: expande mapa em fullscreen e faz zoom focado
     function applyWasdZoom() {
       const mapEl = document.querySelector('.map-full.real-gps-map');
       if (mapEl) {
-        mapEl.style.transform = 'scale(' + WASD_ZOOM_LEVEL + ')';
-        mapEl.style.transformOrigin = 'center center';
-        mapEl.style.transition = 'transform 0.4s ease';
-        mapEl.style.overflow = 'hidden';
-      }
-      const mapFrame = document.getElementById('gps-map-frame');
-      if (mapFrame) {
-        mapFrame.style.transform = 'scale(2.5) translate(' + ((50 - (currentPlayer()?.position?.x || 50)) * 1.5) + 'px, ' + ((50 - (currentPlayer()?.position?.y || 50)) * 1.5) + 'px)';
-        mapFrame.style.transition = 'transform 0.4s ease';
+        mapEl.style.position = 'fixed';
+        mapEl.style.inset = '0';
+        mapEl.style.zIndex = '9999';
+        mapEl.style.width = '100vw';
+        mapEl.style.height = '100vh';
+        mapEl.style.borderRadius = '0';
+        mapEl.style.margin = '0';
+        mapEl.style.transition = 'all 0.3s ease';
       }
       if (playerLeafletMap) {
-        playerLeafletMap.setZoom(Math.min(playerLeafletMap.getZoom() + 4, 19));
+        setTimeout(function() {
+          playerLeafletMap.invalidateSize();
+          playerLeafletMap.setZoom(Math.min(playerLeafletMap.getZoom() + 3, 19));
+        }, 350);
+      }
+    }
+    function exitWasdZoom() {
+      wasdZoomApplied = false;
+      const mapEl = document.querySelector('.map-full.real-gps-map');
+      if (mapEl) {
+        mapEl.style.position = '';
+        mapEl.style.inset = '';
+        mapEl.style.zIndex = '';
+        mapEl.style.width = '';
+        mapEl.style.height = '';
+        mapEl.style.borderRadius = '';
+        mapEl.style.margin = '';
       }
     }
 
@@ -5281,6 +5296,10 @@
       // Se estiver dentro de uma caixa de diálogo, não processar teclas de jogo
       if (document.activeElement?.closest('.player-dialog')) return;
       
+      if (event.key === 'Escape' && wasdZoomApplied) {
+        exitWasdZoom();
+        return;
+      }
       if (event.code === 'Space') {
         spacePressed = true;
         if (document.getElementById('player')?.classList.contains('active')) event.preventDefault();
