@@ -1783,6 +1783,7 @@ const COINS_PER_REGISTRATION = 25;
 let spacePressed = false;
 let gpsMode = 'offline';
 let playerLeafletMap = null;
+let gpsWatchId = null;
 function createInitialState() {
   const now = Date.now();
   return {
@@ -2108,6 +2109,7 @@ function enterGameMode() {
   closeGamePanelOverlay();
 }
 function exitGameMode() {
+  stopRealGps();
   document.body.classList.remove('game-active');
   var gl = document.getElementById('game-layer');
   if (gl) {
@@ -3436,6 +3438,7 @@ function renderPlayerPanel(panel) {
             </div>
           </div>
         `;
+    setTimeout(startRealGps, 150);
   }
   if (panel === 'game-offline') {
     closeGamePanelOverlay();
@@ -3967,6 +3970,49 @@ function initPlayerLeafletMap(position) {
     crossOrigin: true
   }).addTo(playerLeafletMap);
   setTimeout(() => playerLeafletMap.invalidateSize(), 80);
+}
+function startRealGps() {
+  const player = currentPlayer();
+  if (!player) return;
+  const mapEl = document.getElementById('leaflet-gps-map');
+  if (!mapEl || !window.L) return;
+  initPlayerLeafletMap(ensurePlayerPosition(player));
+  const frame = document.getElementById('gps-map-frame');
+  if (frame) frame.style.display = 'none';
+  if (!navigator.geolocation) {
+    const badgeNo = document.getElementById('gps-position-badge');
+    if (badgeNo) badgeNo.textContent = 'GPS · indisponível neste dispositivo';
+    return;
+  }
+  if (gpsWatchId !== null) navigator.geolocation.clearWatch(gpsWatchId);
+  gpsWatchId = navigator.geolocation.watchPosition(onRealGpsFix, onRealGpsError, {
+    enableHighAccuracy: true,
+    maximumAge: 1000,
+    timeout: 20000
+  });
+}
+function onRealGpsFix(pos) {
+  const lat = pos.coords.latitude;
+  const lng = pos.coords.longitude;
+  if (playerLeafletMap) playerLeafletMap.setView([lat, lng], 16, { animate: true });
+  const badge = document.getElementById('gps-position-badge');
+  if (badge) badge.textContent = 'GPS · ' + lat.toFixed(5) + ', ' + lng.toFixed(5);
+  const player = currentPlayer();
+  if (player) {
+    player.realLat = lat;
+    player.realLng = lng;
+    saveState();
+  }
+}
+function onRealGpsError(err) {
+  const badge = document.getElementById('gps-position-badge');
+  if (badge) badge.textContent = 'GPS · sem sinal (' + ((err && err.message) ? err.message : 'erro') + ')';
+}
+function stopRealGps() {
+  if (gpsWatchId !== null && navigator.geolocation) {
+    navigator.geolocation.clearWatch(gpsWatchId);
+    gpsWatchId = null;
+  }
 }
 function activateOfflineLocalMap() {
   gpsMode = 'offline';
