@@ -4257,67 +4257,39 @@
     }
 
     function renderCompanyPanel(panel) {
-    const target = document.getElementById('company-content');
-    if (!target) return;
-
-    if (panel === 'campaign') {
-        const packages = {
-            'Starter': { name: '🆓 Starter', flags: 1000, bingos: 1, pecs: 50, radius: 250, color: 'var(--green)', features: ['1 Bingo (250m raio)', '50 prémios disponíveis', 'Campanhas básicas', 'Flags PR locais'] },
-            'Basic': { name: '🚀 Basic', flags: 5000, bingos: 5, pecs: 250, radius: 5000, color: 'var(--orange)', features: ['5 Bingos (5km raio)', '250 prémios disponíveis', 'Campanhas avançadas', 'Flags PR regionais', 'Suporte email'] },
-            'Professional': { name: '💼 Professional', flags: 15000, bingos: 15, pecs: 750, radius: 15000, color: 'var(--cyan)', features: ['15 Bingos (15km raio)', '750 prémios disponíveis', 'Campanhas ilimitadas', 'Flags PR nacionais', 'Analytics básicos', 'Suporte prioritário'] },
-            'Enterprise': { name: '🏢 Enterprise', flags: 50000, bingos: 50, pecs: 2500, radius: 50000, color: 'var(--blue)', features: ['50 Bingos (50km raio)', '2.500 prémios disponíveis', 'Campanhas premium', 'Flags PR ilimitadas', 'Analytics avançados', 'Suporte dedicado', 'API access'] },
-            'Corporate': { name: '🌟 Corporate', flags: 150000, bingos: 150, pecs: 7500, radius: 150000, color: 'var(--purple)', features: ['150 Bingos (150km raio)', '7.500 prémios disponíveis', 'Campanhas corporativas', 'Flags PR premium', 'Analytics completos', 'Consultoria mensal', 'API completa', 'White label'] },
-            'Unlimited': { name: '♾️ Unlimited', flags: 500000, bingos: 500, pecs: 25000, radius: -1, color: 'var(--red)', features: ['500 Bingos (raio ilimitado)', '25.000 prémios disponíveis', 'Campanhas ilimitadas', 'Flags PR ilimitadas', 'Analytics enterprise', 'Consultoria dedicada', 'API personalizada', 'White label completo', 'Servidor dedicado'] }
-        };
-
-        const currentPack = packages[company.pack] || packages['Starter'];
-        const usedFlags = company.flagsUsed || 0;
-        const availableFlags = company.flags - usedFlags;
-
-        // O teu innerHTML entra aqui
-        target.innerHTML = `<div>Painel da Campanha: ${currentPack.name}</div>`;
+      console.log('🔍 renderCompanyPanel chamado com panel:', panel);
+      const target = document.getElementById('company-content');
+      const company = currentCompany();
+      console.log('🏢 Empresa atual:', company ? company.name : 'Nenhuma');
+      console.log('🎯 Target element:', target);
+      
+      if (!company) {
+        console.log('❌ Empresa não encontrada, redirecionando para auth');
+        return renderCompanyAuth();
+      }
+      
+      console.log('✅ Empresa encontrada, processando panel:', panel);
+      if (panel === 'dashboard') {
+        target.innerHTML = `
+          <h2>Dashboard · ${escapeHtml(company.name)}</h2>
+          <div class="cards-row">
+            <div class="mini-card"><b>${state.bingos.length}</b><span>Campanhas/Bingos</span></div>
+            <div class="mini-card"><b>${company.flags}</b><span>Flags disponíveis</span></div>
+            <div class="mini-card"><b>${state.qrs.filter(qr => qr.company === company.name).length}</b><span>QRs criados</span></div>
+            <div class="mini-card"><b>${escapeHtml(company.status)}</b><span>Estado</span></div>
+          </div>
+          
+          <div class="actions" style="margin: 20px 0;">
+            <button class="btn secondary" onclick="renderCompanyPanel('campaign')">📢 Criar Campanha</button>
+          </div>
+          
+          <div class="grid two">
+            <div class="package-card"><h3>Campanha ativa</h3><p>10% desconto para jogadores que recolham flags PR próximas da loja.</p><span class="badge">Ativa</span></div>
+            <div class="package-card"><h3>Sessão</h3><p>NIF: ${escapeHtml(company.nif)}</p><button class="btn secondary" onclick="logout()">Sair</button></div>
+          </div>
+        `;
+      }
     }
-}
-     console.log('✅ Empresa encontrada, processando panel:', panel);
-   
-    if (panel === 'dashboard') {
-          target.innerHTML = `
-            <h2>Dashboard · ${escapeHtml(company.name)}</h2>
-            <div class="cards-row">
-              <div class="mini-card"><b>${state.bingos.length}</b><span>Campanhas/Bingos</span></div>
-              <div class="mini-card"><b>${company.flags}</b><span>Flags disponíveis</span></div>
-              <div class="mini-card"><b>${state.qrs.filter(qr => qr.company === company.name).length}</b><span>QRs criados</span></div>
-              <div class="mini-card"><b>${escapeHtml(company.status)}</b><span>Estado</span></div>
-            </div>
-            
-            <div class="actions" style="margin: 20px 0;">
-              <button class="btn secondary" onclick="renderCompanyPanel('campaign')">📢 Criar Campanha</button>
-            </div>
-            
-            <div class="grid two">
-              <div class="package-card"><h3>Campanha ativa</h3><p>10% desconto para jogadores que recolham flags PR próximas da loja.</p><span class="badge">Ativa</span></div>
-              <div class="package-card"><h3>Sessão</h3><p>NIF: ${escapeHtml(company.nif)}</p><button class="btn secondary" onclick="logout()">Sair</button></div>
-            </div>
-          `;
-      } else if (panel === 'campaign') {
-          const packages = {
-              'Starter': { name: '🆓 Starter', flags: 1000 },
-              'Basic': { name: '🚀 Basic', flags: 5000 }
-              // (podes adicionar os outros aqui)
-          };
-
-          const currentPack = packages[company.pack] || packages['Starter'];
-          const availableFlags = (company.flags || 0) - (company.flagsUsed || 0);
-
-          target.innerHTML = `
-            <div class="campaign-panel">
-                <h3>Gestão de Campanha</h3>
-                <p>Pacote: ${currentPack.name}</p>
-                <p>Flags Disponíveis: ${availableFlags}</p>
-            </div>
-          `;
-      } 
-      // NÃO COLOQUES NENHUMA CHAVETA EXTRA AQUI
       if (panel === 'packs') {
         const company = currentCompany();
         const currentFlags = company?.flags || 0;
@@ -4638,53 +4610,32 @@
         console.log('🏢 Empresa na campanha:', company ? company.name : 'Nenhuma');
         if (!company) {
           console.log('❌ Empresa não encontrada na campanha');
-           renderCompanyAuth();
-        }
-         if (panel === 'campaign') {
-        console.log('🎯 Entrando na condição campaign!');
-        const company = currentCompany();
-        
-        if (!company) {
-            console.log('❌ Empresa não encontrada na campanha');
-            renderCompanyAuth();
-        } else {
-            // Se a empresa existe, desenha o painel
-            target.innerHTML = `
-                <h2>📢 Criar Nova Campanha · ${escapeHtml(company.name)}</h2>
-                <div class="package-card" style="margin-top: 20px;">
-                    <p>Configura os detalhes da tua campanha de Flags para atraires mais jogadores.</p>
-                    <button class="btn secondary" onclick="renderCompanyPanel('dashboard')">⬅ Voltar ao Dashboard</button>
-                </div>
-            `;
+          return renderCompanyAuth();
         }
 
-        // Definição dos pacotes (agora fora do if, logo abaixo)
-        const packages = {
+        // Desenha o ecrã da campanha para não ficar em branco
+        target.innerHTML = `
+          <h2>📢 Criar Nova Campanha · ${escapeHtml(company.name)}</h2>
+          <div class="package-card" style="margin-top: 20px;">
+            <p>Configura os detalhes da tua campanha de Flags para atraires mais jogadores.</p>
+            <button class="btn secondary" onclick="renderCompanyPanel('dashboard')">⬅ Voltar ao Dashboard</button>
+          </div>
+        `;
+      }
+    } // <-- Esta chaveta fecha a função renderCompanyPanel inteira!
 
-       // ... (resto do teu código acima)
+        // Reconstrução do ecrã de criação de campanha
+        target.innerHTML = `
+          <h2>📢 Criar Nova Campanha · ${escapeHtml(company.name)}</h2>
+          <div class="package-card" style="margin-top: 20px;">
+            <p>Configura os detalhes da tua campanha de Flags para atraires mais jogadores.</p>
+            <!-- Aqui podes colocar os teus inputs de campanha se os tiveres, ou manter o botão de voltar -->
+            <button class="btn secondary" onclick="renderCompanyPanel('dashboard')">⬅ Voltar ao Dashboard</button>
+          </div>
+        `;
+      }
+    } // <-- Esta última chaveta fecha a função renderCompanyPanel inteira!
         
-        // Garante que o if anterior terminou corretamente
-        } 
-    } 
-
-   // Definição dos pacotes (Uma única vez)
-    const packages = {
-        'Starter': { name: '🆓 Starter', flags: 1000, bingos: 1, pecs: 50, radius: 250, color: 'var(--green)', features: ['1 Bingo (250m raio)', '50 prémios disponíveis', 'Campanhas básicas', 'Flags PR locais'] },
-        'Basic': { name: '🚀 Basic', flags: 5000, bingos: 5, pecs: 250, radius: 5000, color: 'var(--orange)', features: ['5 Bingos (5km raio)', '250 prémios disponíveis', 'Campanhas avançadas', 'Flags PR regionais', 'Suporte email'] },
-        'Professional': { name: '💼 Professional', flags: 15000, bingos: 15, pecs: 750, radius: 15000, color: 'var(--cyan)', features: ['15 Bingos (15km raio)', '750 prémios disponíveis', 'Campanhas ilimitadas', 'Flags PR nacionais', 'Analytics básicos', 'Suporte prioritário'] },
-        'Enterprise': { name: '🏢 Enterprise', flags: 50000, bingos: 50, pecs: 2500, radius: 50000, color: 'var(--blue)', features: ['50 Bingos (50km raio)', '2.500 prémios disponíveis', 'Campanhas premium', 'Flags PR ilimitadas', 'Analytics avançados', 'Suporte dedicado', 'API access'] },
-        'Corporate': { name: '🌟 Corporate', flags: 150000, bingos: 150, pecs: 7500, radius: 150000, color: 'var(--purple)', features: ['150 Bingos (150km raio)', '7.500 prémios disponíveis', 'Campanhas corporativas', 'Flags PR premium', 'Analytics completos', 'Consultoria mensal', 'API completa', 'White label'] },
-        'Unlimited': { name: '♾️ Unlimited', flags: 500000, bingos: 500, pecs: 25000, radius: -1, color: 'var(--red)', features: ['500 Bingos (raio ilimitado)', '25.000 prémios disponíveis', 'Campanhas ilimitadas', 'Flags PR ilimitadas', 'Analytics enterprise', 'Consultoria dedicada', 'API personalizada', 'White label completo', 'Servidor dedicado'] }
-    };
-        
-    const currentPack = packages[company.pack] || packages['Starter'];
-    const usedFlags = company.flagsUsed || 0;
-    const availableFlags = company.flags - usedFlags;
-        
-    // ... (o restante do teu código HTML innerHTML segue aqui normalmente)
-    
-    // Certifica-te de que no final do ficheiro só tens estas duas chavetas:
-    } // Fecha o IF (panel === 'campaign')
         // Definição dos pacotes para mostrar informações
         const packages = {
           'Starter': { 
@@ -5120,45 +5071,59 @@
         console.log('🎯 Target após atribuir HTML:', target.innerHTML.length, 'caracteres');
         
         // Restaurar estado de colapso após renderização
-      setTimeout(() => {
+        setTimeout(() => {
           restoreCampaignCollapseState();
         }, 100);
+      }
+    }
 
- function renderBackofficePanel(panel) {
-    const target = document.getElementById('backoffice-content');
-    if (!target) { return; }
-
-    if (panel === 'overview') {
+    function renderBackofficePanel(panel) {
+      const target = document.getElementById('backoffice-content');
+      if (!target) { return; }
+      if (panel === 'overview') {
         var dormantCount = state.flags.filter(function(f) { return f.active && f.dormant; }).length;
         var activeCount = state.flags.filter(function(f) { return f.active && !f.dormant; }).length;
         var demoCompanies = state.companies.filter(function(c) { return c.isDemo; }).length;
         var stockGerado = state.companies.length * COINS_PER_REGISTRATION;
-
         target.innerHTML = `
-            <h2>Resumo Administrativo</h2>
-            <div class="cards-row">
-                <div class="mini-card"><b>${state.players.length}</b><span>Jogadores</span></div>
-                <div class="mini-card"><b>${state.companies.length}</b><span>Empresas</span></div>
-                <div class="mini-card"><b>${state.qrs.length}</b><span>QRs mercado</span></div>
-                <div class="mini-card"><b>${state.flags.length}</b><span>Flags/Bingos mapa</span></div>
-            </div>
-            <div class="cards-row" style="margin-top:10px">
-                <div class="mini-card"><b>${state.stockCentralPool.length}</b><span>Stock Central</span></div>
-                <div class="mini-card"><b>${demoCompanies}</b><span>Empresas Demo</span></div>
-                <div class="mini-card"><b>${dormantCount}</b><span>Flags Dormentes</span></div>
-                <div class="mini-card"><b>${activeCount}</b><span>Flags Ativas</span></div>
-                <div class="mini-card"><b>${state.globalVault}</b><span>Global Vault 🪙</span></div>
-            </div>
-            <div class="offer-card" style="margin-top:10px;border-color:rgba(215,179,90,0.35)">
-                <h3>🏦 Banco Central — Lastro por Registo</h3>
-                <p><b>Fórmula:</b> [Total Empresas: ${state.companies.length}] × ${COINS_PER_REGISTRATION} = <b>${stockGerado} moedas</b></p>
-            </div>
-            <div class="actions">
-                <button class="btn" onclick="renderBackofficePanel('engine')">Motor de Geolocalização</button>
-                <button class="btn danger" onclick="resetSystem()">Resetar sistema completo</button>
-            </div>
+          <h2>Resumo Administrativo</h2>
+          <div class="cards-row">
+            <div class="mini-card"><b>${state.players.length}</b><span>Jogadores</span></div>
+            <div class="mini-card"><b>${state.companies.length}</b><span>Empresas</span></div>
+            <div class="mini-card"><b>${state.qrs.length}</b><span>QRs mercado</span></div>
+            <div class="mini-card"><b>${state.flags.length}</b><span>Flags/Bingos mapa</span></div>
+          </div>
+          <div class="cards-row" style="margin-top:10px">
+            <div class="mini-card"><b>${state.stockCentralPool.length}</b><span>Stock Central</span></div>
+            <div class="mini-card"><b>${demoCompanies}</b><span>Empresas Demo</span></div>
+            <div class="mini-card"><b>${dormantCount}</b><span>Flags Dormentes</span></div>
+            <div class="mini-card"><b>${activeCount}</b><span>Flags Ativas</span></div>
+            <div class="mini-card"><b>${state.globalVault}</b><span>Global Vault 🪙</span></div>
+          </div>
+          <div class="offer-card" style="margin-top:10px;border-color:rgba(215,179,90,0.35)">
+            <h3>🏦 Banco Central — Lastro por Registo</h3>
+            <p><b>Fórmula:</b> [Total Empresas: ${state.companies.length}] × ${COINS_PER_REGISTRATION} = <b>${stockGerado} moedas</b> (Stock Total Gerado por Registos)</p>
+            <p><b>Vault Atual:</b> ${state.globalVault} moedas · <b>Circulação:</b> ${stockGerado - state.globalVault} moedas em jogo</p>
+          </div>
+          <div class="actions">
+            <button class="btn" onclick="renderBackofficePanel('engine')">Motor de Geolocalização</button>
+            <button class="btn" onclick="createArtificialPlayer()">Criar jogador artificial</button>
+            <button class="btn" onclick="createArtificialCompany()">Criar empresa artificial</button>
+            <button class="btn" onclick="createArtificialFlag('ZAP')">Criar bandeira ZAP</button>
+            <button class="btn" onclick="createArtificialFlag('PR')">Criar bandeira PR</button>
+            <button class="btn" onclick="createArtificialFlag('BINGO')">Criar bingo no mapa</button>
+          </div>
+          <div class="actions">
+            <button class="btn secondary" onclick="initStockCentral()">Preencher Stock Central</button>
+            <button class="btn danger" onclick="resetPlayers()">Resetar jogadores</button>
+            <button class="btn danger" onclick="resetCompanies()">Resetar empresas</button>
+            <button class="btn danger" onclick="resetFlags()">Resetar bandeiras e bingos</button>
+            <button class="btn danger" onclick="resetSystem()">Resetar sistema completo</button>
+          </div>
+          <div class="offer-card"><h3>Marcação de áreas</h3><p>Os botões de criar bandeira/PR/Bingo colocam pontos artificiais em áreas percentuais do mapa. Na próxima fase estes botões passam a abrir modo de marcação clicável diretamente no mapa.</p></div>
         `;
-    }
+      }
+
       if (panel === 'users') {
         target.innerHTML = `
           <h2>Utilizadores e Empresas</h2>
