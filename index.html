@@ -4257,17 +4257,27 @@
     }
 
     function renderCompanyPanel(panel) {
-      console.log('🔍 renderCompanyPanel chamado com panel:', panel);
-      const target = document.getElementById('company-content');
-      const company = currentCompany();
-      console.log('🏢 Empresa atual:', company ? company.name : 'Nenhuma');
-      console.log('🎯 Target element:', target);
-      
-      if (!company) {
-        console.log('❌ Empresa não encontrada, redirecionando para auth');
-        return renderCompanyAuth();
-      }
-      
+    const target = document.getElementById('company-content');
+    if (!target) return;
+
+    if (panel === 'campaign') {
+        const packages = {
+            'Starter': { name: '🆓 Starter', flags: 1000, bingos: 1, pecs: 50, radius: 250, color: 'var(--green)', features: ['1 Bingo (250m raio)', '50 prémios disponíveis', 'Campanhas básicas', 'Flags PR locais'] },
+            'Basic': { name: '🚀 Basic', flags: 5000, bingos: 5, pecs: 250, radius: 5000, color: 'var(--orange)', features: ['5 Bingos (5km raio)', '250 prémios disponíveis', 'Campanhas avançadas', 'Flags PR regionais', 'Suporte email'] },
+            'Professional': { name: '💼 Professional', flags: 15000, bingos: 15, pecs: 750, radius: 15000, color: 'var(--cyan)', features: ['15 Bingos (15km raio)', '750 prémios disponíveis', 'Campanhas ilimitadas', 'Flags PR nacionais', 'Analytics básicos', 'Suporte prioritário'] },
+            'Enterprise': { name: '🏢 Enterprise', flags: 50000, bingos: 50, pecs: 2500, radius: 50000, color: 'var(--blue)', features: ['50 Bingos (50km raio)', '2.500 prémios disponíveis', 'Campanhas premium', 'Flags PR ilimitadas', 'Analytics avançados', 'Suporte dedicado', 'API access'] },
+            'Corporate': { name: '🌟 Corporate', flags: 150000, bingos: 150, pecs: 7500, radius: 150000, color: 'var(--purple)', features: ['150 Bingos (150km raio)', '7.500 prémios disponíveis', 'Campanhas corporativas', 'Flags PR premium', 'Analytics completos', 'Consultoria mensal', 'API completa', 'White label'] },
+            'Unlimited': { name: '♾️ Unlimited', flags: 500000, bingos: 500, pecs: 25000, radius: -1, color: 'var(--red)', features: ['500 Bingos (raio ilimitado)', '25.000 prémios disponíveis', 'Campanhas ilimitadas', 'Flags PR ilimitadas', 'Analytics enterprise', 'Consultoria dedicada', 'API personalizada', 'White label completo', 'Servidor dedicado'] }
+        };
+
+        const currentPack = packages[company.pack] || packages['Starter'];
+        const usedFlags = company.flagsUsed || 0;
+        const availableFlags = company.flags - usedFlags;
+
+        // O teu innerHTML entra aqui
+        target.innerHTML = `<div>Painel da Campanha: ${currentPack.name}</div>`;
+    }
+}
       console.log('✅ Empresa encontrada, processando panel:', panel);
       if (panel === 'dashboard') {
         target.innerHTML = `
