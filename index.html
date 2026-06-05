@@ -4612,30 +4612,34 @@
           console.log('❌ Empresa não encontrada na campanha');
            renderCompanyAuth();
         }
-
-        // Desenha o ecrã da campanha para não ficar em branco
-        target.innerHTML = `
-          <h2>📢 Criar Nova Campanha · ${escapeHtml(company.name)}</h2>
-          <div class="package-card" style="margin-top: 20px;">
-            <p>Configura os detalhes da tua campanha de Flags para atraires mais jogadores.</p>
-            <button class="btn secondary" onclick="renderCompanyPanel('dashboard')">⬅ Voltar ao Dashboard</button>
-          </div>
-        `;
-      }
-    } // <-- Esta chaveta fecha a função renderCompanyPanel inteira!
-
-        // Reconstrução do ecrã de criação de campanha
-        target.innerHTML = `
-          <h2>📢 Criar Nova Campanha · ${escapeHtml(company.name)}</h2>
-          <div class="package-card" style="margin-top: 20px;">
-            <p>Configura os detalhes da tua campanha de Flags para atraires mais jogadores.</p>
-            <!-- Aqui podes colocar os teus inputs de campanha se os tiveres, ou manter o botão de voltar -->
-            <button class="btn secondary" onclick="renderCompanyPanel('dashboard')">⬅ Voltar ao Dashboard</button>
-          </div>
-        `;
-      }
-    } // <-- Esta última chaveta fecha a função renderCompanyPanel inteira!
+if (panel === 'campaign') {
+        console.log('🎯 Entrando na condição campaign!');
+        const company = currentCompany();
         
+        if (!company) {
+            console.log('❌ Empresa não encontrada na campanha');
+            renderCompanyAuth();
+            return;
+        }
+
+        target.innerHTML = `
+            <h2>📢 Criar Nova Campanha · ${escapeHtml(company.name)}</h2>
+            <div class="package-card" style="margin-top: 20px;">
+                <p>Configura os detalhes da tua campanha de Flags para atraires mais jogadores.</p>
+                <button class="btn secondary" onclick="renderCompanyPanel('dashboard')">⬅ Voltar ao Dashboard</button>
+            </div>
+        `;
+
+        // Definição dos pacotes
+        const packages = {
+            'Starter': { name: '🆓 Starter', flags: 1000, bingos: 1, pecs: 50, radius: 250, color: 'var(--green)', features: ['1 Bingo (250m raio)', '50 prémios disponíveis'] },
+            'Basic': { name: '🚀 Basic', flags: 5000, bingos: 5, pecs: 250, radius: 5000, color: 'var(--orange)', features: ['5 Bingos (5km raio)', '250 prémios disponíveis'] },
+            'Professional': { name: '💼 Professional', flags: 15000, bingos: 15, pecs: 750, radius: 15000, color: 'var(--cyan)', features: ['15 Bingos (15km raio)', '750 prémios disponíveis'] },
+            'Enterprise': { name: '🏢 Enterprise', flags: 50000, bingos: 50, pecs: 2500, radius: 50000, color: 'var(--blue)', features: ['50 Bingos (50km raio)', '2.500 prémios disponíveis'] },
+            'Corporate': { name: '🌟 Corporate', flags: 150000, bingos: 150, pecs: 7500, radius: 150000, color: 'var(--purple)', features: ['150 Bingos (150km raio)', '7.500 prémios disponíveis'] },
+            'Unlimited': { name: '♾️ Unlimited', flags: 500000, bingos: 500, pecs: 25000, radius: -1, color: 'var(--red)', features: ['500 Bingos (raio ilimitado)', '25.000 prémios disponíveis'] }
+        };
+    }
         // Definição dos pacotes para mostrar informações
         const packages = {
           'Starter': { 
