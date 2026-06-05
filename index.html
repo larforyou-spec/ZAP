@@ -4278,28 +4278,46 @@
         target.innerHTML = `<div>Painel da Campanha: ${currentPack.name}</div>`;
     }
 }
-      console.log('✅ Empresa encontrada, processando panel:', panel);
+     console.log('✅ Empresa encontrada, processando panel:', panel);
+
       if (panel === 'dashboard') {
-        target.innerHTML = `
-          <h2>Dashboard · ${escapeHtml(company.name)}</h2>
-          <div class="cards-row">
-            <div class="mini-card"><b>${state.bingos.length}</b><span>Campanhas/Bingos</span></div>
-            <div class="mini-card"><b>${company.flags}</b><span>Flags disponíveis</span></div>
-            <div class="mini-card"><b>${state.qrs.filter(qr => qr.company === company.name).length}</b><span>QRs criados</span></div>
-            <div class="mini-card"><b>${escapeHtml(company.status)}</b><span>Estado</span></div>
-          </div>
-          
-          <div class="actions" style="margin: 20px 0;">
-            <button class="btn secondary" onclick="renderCompanyPanel('campaign')">📢 Criar Campanha</button>
-          </div>
-          
-          <div class="grid two">
-            <div class="package-card"><h3>Campanha ativa</h3><p>10% desconto para jogadores que recolham flags PR próximas da loja.</p><span class="badge">Ativa</span></div>
-            <div class="package-card"><h3>Sessão</h3><p>NIF: ${escapeHtml(company.nif)}</p><button class="btn secondary" onclick="logout()">Sair</button></div>
-          </div>
-        `;
-      }
-    }
+          target.innerHTML = `
+            <h2>Dashboard · ${escapeHtml(company.name)}</h2>
+            <div class="cards-row">
+              <div class="mini-card"><b>${state.bingos.length}</b><span>Campanhas/Bingos</span></div>
+              <div class="mini-card"><b>${company.flags}</b><span>Flags disponíveis</span></div>
+              <div class="mini-card"><b>${state.qrs.filter(qr => qr.company === company.name).length}</b><span>QRs criados</span></div>
+              <div class="mini-card"><b>${escapeHtml(company.status)}</b><span>Estado</span></div>
+            </div>
+            
+            <div class="actions" style="margin: 20px 0;">
+              <button class="btn secondary" onclick="renderCompanyPanel('campaign')">📢 Criar Campanha</button>
+            </div>
+            
+            <div class="grid two">
+              <div class="package-card"><h3>Campanha ativa</h3><p>10% desconto para jogadores que recolham flags PR próximas da loja.</p><span class="badge">Ativa</span></div>
+              <div class="package-card"><h3>Sessão</h3><p>NIF: ${escapeHtml(company.nif)}</p><button class="btn secondary" onclick="logout()">Sair</button></div>
+            </div>
+          `;
+      } else if (panel === 'campaign') {
+          const packages = {
+              'Starter': { name: '🆓 Starter', flags: 1000 },
+              'Basic': { name: '🚀 Basic', flags: 5000 }
+              // (podes adicionar os outros aqui)
+          };
+
+          const currentPack = packages[company.pack] || packages['Starter'];
+          const availableFlags = (company.flags || 0) - (company.flagsUsed || 0);
+
+          target.innerHTML = `
+            <div class="campaign-panel">
+                <h3>Gestão de Campanha</h3>
+                <p>Pacote: ${currentPack.name}</p>
+                <p>Flags Disponíveis: ${availableFlags}</p>
+            </div>
+          `;
+      } 
+      // NÃO COLOQUES NENHUMA CHAVETA EXTRA AQUI
       if (panel === 'packs') {
         const company = currentCompany();
         const currentFlags = company?.flags || 0;
