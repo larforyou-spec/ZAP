@@ -5090,53 +5090,42 @@
       }
     }
 
-    function renderBackofficePanel(panel) {
-      const target = document.getElementById('backoffice-content');
-      if (!target) { return; }
-      if (panel === 'overview') {
-        var dormantCount = state.flags.filter(function(f) { return f.active && f.dormant; }).length;
-        var activeCount = state.flags.filter(function(f) { return f.active && !f.dormant; }).length;
-        var demoCompanies = state.companies.filter(function(c) { return c.isDemo; }).length;
-        var stockGerado = state.companies.length * COINS_PER_REGISTRATION;
-        target.innerHTML = `
-          <h2>Resumo Administrativo</h2>
-          <div class="cards-row">
-            <div class="mini-card"><b>${state.players.length}</b><span>Jogadores</span></div>
-            <div class="mini-card"><b>${state.companies.length}</b><span>Empresas</span></div>
-            <div class="mini-card"><b>${state.qrs.length}</b><span>QRs mercado</span></div>
-            <div class="mini-card"><b>${state.flags.length}</b><span>Flags/Bingos mapa</span></div>
-          </div>
-          <div class="cards-row" style="margin-top:10px">
-            <div class="mini-card"><b>${state.stockCentralPool.length}</b><span>Stock Central</span></div>
-            <div class="mini-card"><b>${demoCompanies}</b><span>Empresas Demo</span></div>
-            <div class="mini-card"><b>${dormantCount}</b><span>Flags Dormentes</span></div>
-            <div class="mini-card"><b>${activeCount}</b><span>Flags Ativas</span></div>
-            <div class="mini-card"><b>${state.globalVault}</b><span>Global Vault 🪙</span></div>
-          </div>
-          <div class="offer-card" style="margin-top:10px;border-color:rgba(215,179,90,0.35)">
-            <h3>🏦 Banco Central — Lastro por Registo</h3>
-            <p><b>Fórmula:</b> [Total Empresas: ${state.companies.length}] × ${COINS_PER_REGISTRATION} = <b>${stockGerado} moedas</b> (Stock Total Gerado por Registos)</p>
-            <p><b>Vault Atual:</b> ${state.globalVault} moedas · <b>Circulação:</b> ${stockGerado - state.globalVault} moedas em jogo</p>
-          </div>
-          <div class="actions">
-            <button class="btn" onclick="renderBackofficePanel('engine')">Motor de Geolocalização</button>
-            <button class="btn" onclick="createArtificialPlayer()">Criar jogador artificial</button>
-            <button class="btn" onclick="createArtificialCompany()">Criar empresa artificial</button>
-            <button class="btn" onclick="createArtificialFlag('ZAP')">Criar bandeira ZAP</button>
-            <button class="btn" onclick="createArtificialFlag('PR')">Criar bandeira PR</button>
-            <button class="btn" onclick="createArtificialFlag('BINGO')">Criar bingo no mapa</button>
-          </div>
-          <div class="actions">
-            <button class="btn secondary" onclick="initStockCentral()">Preencher Stock Central</button>
-            <button class="btn danger" onclick="resetPlayers()">Resetar jogadores</button>
-            <button class="btn danger" onclick="resetCompanies()">Resetar empresas</button>
-            <button class="btn danger" onclick="resetFlags()">Resetar bandeiras e bingos</button>
-            <button class="btn danger" onclick="resetSystem()">Resetar sistema completo</button>
-          </div>
-          <div class="offer-card"><h3>Marcação de áreas</h3><p>Os botões de criar bandeira/PR/Bingo colocam pontos artificiais em áreas percentuais do mapa. Na próxima fase estes botões passam a abrir modo de marcação clicável diretamente no mapa.</p></div>
-        `;
-      }
+  function renderBackofficePanel(panel) {
+        const target = document.getElementById('backoffice-content');
+        if (!target) { return; }
 
+        if (panel === 'overview') {
+            var dormantCount = state.flags.filter(function(f) { return f.active && f.dormant; }).length;
+            var activeCount = state.flags.filter(function(f) { return f.active && !f.dormant; }).length;
+            var demoCompanies = state.companies.filter(function(c) { return c.isDemo; }).length;
+            var stockGerado = state.companies.length * COINS_PER_REGISTRATION;
+
+            target.innerHTML = `
+                <h2>Resumo Administrativo</h2>
+                <div class="cards-row">
+                    <div class="mini-card"><b>${state.players.length}</b><span>Jogadores</span></div>
+                    <div class="mini-card"><b>${state.companies.length}</b><span>Empresas</span></div>
+                    <div class="mini-card"><b>${state.qrs.length}</b><span>QRs mercado</span></div>
+                    <div class="mini-card"><b>${state.flags.length}</b><span>Flags/Bingos mapa</span></div>
+                </div>
+                <div class="cards-row" style="margin-top:10px">
+                    <div class="mini-card"><b>${state.stockCentralPool.length}</b><span>Stock Central</span></div>
+                    <div class="mini-card"><b>${demoCompanies}</b><span>Empresas Demo</span></div>
+                    <div class="mini-card"><b>${dormantCount}</b><span>Flags Dormentes</span></div>
+                    <div class="mini-card"><b>${activeCount}</b><span>Flags Ativas</span></div>
+                    <div class="mini-card"><b>${state.globalVault}</b><span>Global Vault 🪙</span></div>
+                </div>
+                <div class="offer-card" style="margin-top:10px;border-color:rgba(215,179,90,0.35)">
+                    <h3>🏦 Banco Central — Lastro por Registo</h3>
+                    <p><b>Fórmula:</b> [Total Empresas: ${state.companies.length}] × ${COINS_PER_REGISTRATION} = <b>${stockGerado} moedas</b></p>
+                </div>
+                <div class="actions">
+                    <button class="btn" onclick="renderBackofficePanel('engine')">Motor de Geolocalização</button>
+                    <button class="btn danger" onclick="resetSystem()">Resetar sistema completo</button>
+                </div>
+            `;
+        } 
+    }
       if (panel === 'users') {
         target.innerHTML = `
           <h2>Utilizadores e Empresas</h2>
