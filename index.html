@@ -1827,7 +1827,7 @@
   <!-- Tutorial Overlay (injected dynamically by JS) -->
   <div id="tutorial-overlay"></div>
 
-  <img src="larforyou_logo_inovador_cores_1.png" alt="Logo">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
     const STORAGE_KEY = 'ZAP_FLAGS_3_STATE';
     const WALK_STEP_METERS = 0.5;
@@ -4230,22 +4230,38 @@
         playerLeafletMap.remove();
         playerLeafletMap = null;
       }
+      
       playerLeafletMap = L.map(mapEl, {
-        zoomControl: false,
+        zoomControl: true,
         attributionControl: false,
-        dragging: false,
-        scrollWheelZoom: false,
-        doubleClickZoom: false,
+        dragging: true,
+        scrollWheelZoom: true,
+        doubleClickZoom: true,
         boxZoom: false,
         keyboard: false,
-        tap: false,
-        touchZoom: false
-      }).setView(playerPositionToLatLng(position), 18);
+        tap: true,
+        touchZoom: true
+      }).setView(playerPositionToLatLng(position), 19);
+
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
         crossOrigin: true
       }).addTo(playerLeafletMap);
+
+      // Código que interseta as bandeiras e aumenta o tamanho delas
+      playerLeafletMap.on('layeradd', function(e) {
+        if (e.layer instanceof L.Marker && e.layer.options.icon) {
+          const icon = e.layer.options.icon;
+          if (icon.options.iconSize) {
+            icon.options.iconSize = [50, 50];
+            icon.options.iconAnchor = [25, 50];
+            e.layer.setIcon(icon);
+          }
+        }
+      });
+
       setTimeout(() => playerLeafletMap.invalidateSize(), 80);
+    }
     }
 
     function activateOfflineLocalMap() {
@@ -4289,7 +4305,7 @@
           </div>
         `;
       }
-    }
+
       if (panel === 'packs') {
         const company = currentCompany();
         const currentFlags = company?.flags || 0;
@@ -4610,30 +4626,8 @@
         console.log('🏢 Empresa na campanha:', company ? company.name : 'Nenhuma');
         if (!company) {
           console.log('❌ Empresa não encontrada na campanha');
-          returnrenderCompanyAuth();
+          return renderCompanyAuth();
         }
-
-        // Desenha o ecrã da campanha para não ficar em branco
-        target.innerHTML = `
-          <h2>📢 Criar Nova Campanha · ${escapeHtml(company.name)}</h2>
-          <div class="package-card" style="margin-top: 20px;">
-            <p>Configura os detalhes da tua campanha de Flags para atraires mais jogadores.</p>
-            <button class="btn secondary" onclick="renderCompanyPanel('dashboard')">⬅ Voltar ao Dashboard</button>
-          </div>
-        `;
-      }
-    } // <-- Esta chaveta fecha a função renderCompanyPanel inteira!
-
-        // Reconstrução do ecrã de criação de campanha
-        target.innerHTML = `
-          <h2>📢 Criar Nova Campanha · ${escapeHtml(company.name)}</h2>
-          <div class="package-card" style="margin-top: 20px;">
-            <p>Configura os detalhes da tua campanha de Flags para atraires mais jogadores.</p>
-            <!-- Aqui podes colocar os teus inputs de campanha se os tiveres, ou manter o botão de voltar -->
-          </div>
-        `;
-      }
-    } // <-- Esta última chaveta fecha a função renderCompanyPanel inteira!
         
         // Definição dos pacotes para mostrar informações
         const packages = {
@@ -6814,29 +6808,10 @@
       
       return currentState;
     }
-   / --- INICIALIZAÇÃO ÚNICA E SEGURA ---
-function init() {
-    console.log("Iniciando sistema unificado 3.1...");
-
-    // 1. Limpeza de vestígios do 3.0 (Opcional, se o 3.0 guardava dados que impedem o 3.1)
-    // localStorage.removeItem('old_data_key'); 
-
-    // 2. Carregamento de estado da 3.1
-    try {
-        loadState(); // Certifica-te que esta função existe e é a da versão 3.1
-    } catch (e) {
-        console.warn("Sem estado anterior, iniciando novo perfil.");
-    }
-
-    // 3. Inicialização de UI e Mapa (Versão 3.1)
-    renderPlayerPanel(); // Exemplo da função que precisas
-    initMap();           // A tua função de mapa correta
-
-    console.log("Sistema 3.1 carregado com sucesso.");
-}
-
-// 4. CHAMADA FINAL (A única que deve existir no ficheiro)
-document.addEventListener('DOMContentLoaded', init);
+    
+    // Chamar inicialização
+    init();
+    
     // Funções auxiliares para evitar erros
     function createCampaign() {
       console.log('📢 createCampaign() chamado - função placeholder');
