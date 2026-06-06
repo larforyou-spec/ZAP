@@ -7,142 +7,54 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
-        *{box-sizing:border-box;margin:0;padding:0;}
-        body{font-family:'Courier New',monospace;background:#000;color:#0f0;min-height:100vh;}
-        .page{display:none;min-height:100vh;}
-        .page.ativa{display:block;}
-        .centro{max-width:440px;margin:0 auto;padding:20px;text-align:center;}
-        h1{font-size:2.5rem;text-shadow:0 0 20px #0f0;margin-bottom:5px;}
-        h2{font-size:1.2rem;margin-bottom:15px;border-bottom:1px solid #0f0;padding-bottom:10px;}
-
-        /* INPUTS */
-        .f{width:100%;background:#111;color:#0f0;border:1px solid #0f0;padding:11px;margin:5px 0;font-size:0.95rem;font-family:'Courier New',monospace;border-radius:4px;}
-        .f:focus{outline:none;border-color:#0ff;box-shadow:0 0 8px #0ff;}
-        select.f option{background:#111;}
-
-        /* BOTÕES */
-        .b{width:100%;padding:13px;margin:5px 0;font-size:0.95rem;font-weight:bold;cursor:pointer;font-family:'Courier New',monospace;border:none;border-radius:4px;transition:all 0.2s;}
-        .bv{background:#0f0;color:#000;}.bv:hover{background:#0ff;}
-        .bc{background:#222;color:#0f0;border:1px solid #0f0;}.bc:hover{background:#333;}
-        .bo{background:linear-gradient(45deg,#f80,#ff0);color:#000;}.bo:hover{background:#ff0;}
-        .br{background:#300;color:#f00;border:1px solid #f00;}.br:hover{background:#500;}
-        .bvol{background:#111;color:#0aa;border:1px solid #0aa;}.bvol:hover{background:#0aa;color:#000;}
-        .badm{background:linear-gradient(45deg,#800,#f00);color:#fff;border:2px solid #f88;}.badm:hover{background:#f00;}
-
-        /* MENSAGENS */
-        .m{padding:10px;margin:6px 0;border-radius:4px;display:none;font-size:0.86rem;}
-        .m.e{background:#300;border:1px solid #f00;color:#f00;display:block;}
-        .m.s{background:#030;border:1px solid #0f0;color:#0f0;display:block;}
-        .m.i{background:#003;border:1px solid #0ff;color:#0ff;display:block;}
-        .m.a{background:#330;border:1px solid #ff0;color:#ff0;display:block;}
-
-        /* SECÇÕES */
-        .sec{background:#0a0a0a;border:1px solid #333;border-radius:8px;padding:13px;margin:8px 0;text-align:left;}
-        .sec-t{color:#0ff;font-size:0.88rem;font-weight:bold;margin-bottom:8px;}
-        .row2{display:flex;gap:8px;}
-
-        /* CÓDIGO */
-        .cod{font-size:2.2rem;letter-spacing:12px;color:#0ff;background:#001122;border:2px solid #0ff;padding:15px;margin:12px 0;border-radius:8px;text-align:center;}
-        .cod-f{text-align:center;font-size:1.8rem;letter-spacing:8px;}
-        .tmr{color:#ff0;font-size:0.88rem;margin:5px 0;text-align:center;}
-
-        /* HUD */
-        .hud{position:fixed;top:0;left:0;right:0;z-index:3000;padding:8px 12px;display:flex;justify-content:space-between;align-items:center;}
-        .hud-j{background:rgba(0,20,0,0.97);border-bottom:2px solid #0f0;}
-        .hud-pr{background:rgba(20,15,0,0.97);border-bottom:2px solid #ff0;}
-        .hud-adm{background:rgba(20,0,0,0.97);border-bottom:2px solid #f00;}
-
-        /* MAPA */
-        #map-jogo{position:fixed;top:52px;left:0;right:0;bottom:44px;z-index:1;}
-        .map-box{width:100%;height:320px;border-radius:8px;border:2px solid #0f0;margin:8px 0;}
-        .map-box-pr{border-color:#ff0;}
-
-        /* RODAPÉ */
-        #rodape{position:fixed;bottom:0;left:0;right:0;background:rgba(0,0,0,0.97);border-top:2px solid #ff0;height:44px;z-index:3000;overflow:hidden;display:flex;align-items:center;}
-        #ticker{display:inline-flex;gap:80px;white-space:nowrap;animation:scroll 25s linear infinite;padding-left:100%;}
-        @keyframes scroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
-        .tick{color:#ff0;font-size:0.8rem;font-weight:bold;}
-        .tick span{color:#0ff;}
-
-        /* BINGO */
-        #bingo-pop{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#000;border:4px solid #ff0;border-radius:16px;padding:25px 20px;z-index:9999;text-align:center;display:none;width:88%;max-width:320px;animation:popIn 0.4s ease;}
-        @keyframes popIn{from{transform:translate(-50%,-50%) scale(0.2);opacity:0}to{transform:translate(-50%,-50%) scale(1);opacity:1}}
-
-        /* GPS */
-        #gps-box{position:fixed;bottom:50px;right:8px;z-index:2000;background:rgba(0,0,0,0.92);border:1px solid #0f0;border-radius:20px;padding:4px 10px;font-size:0.7rem;}
-
-        /* MODAL */
-        #ovl{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.85);z-index:8000;display:none;}
-        #modal{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#000;border:3px solid #ff0;border-radius:12px;padding:22px;z-index:8001;text-align:center;width:88%;max-width:350px;display:none;}
-
-        /* TABS PR */
-        .pr-tabs{display:flex;gap:2px;overflow-x:auto;background:#000;border-bottom:1px solid #ff0;padding:6px 6px 0;margin-top:52px;}
-        .pr-tab{padding:6px 10px;background:#111;border:1px solid #333;color:#0aa;cursor:pointer;font-family:'Courier New',monospace;font-size:0.72rem;border-radius:4px 4px 0 0;white-space:nowrap;}
-        .pr-tab.a{background:#1a0f00;border-color:#ff0;color:#ff0;font-weight:bold;}
-        .pr-tc{display:none;padding:10px;max-width:520px;margin:0 auto;}
-        .pr-tc.a{display:block;}
-
-        /* TABS ADM */
-        .adm-tabs{display:flex;gap:2px;overflow-x:auto;background:#000;border-bottom:1px solid #f00;padding:6px 6px 0;margin-top:52px;}
-        .adm-tab{padding:6px 10px;background:#111;border:1px solid #333;color:#f88;cursor:pointer;font-family:'Courier New',monospace;font-size:0.72rem;border-radius:4px 4px 0 0;white-space:nowrap;}
-        .adm-tab.a{background:#200;border-color:#f00;color:#ff0;font-weight:bold;}
-        .adm-tc{display:none;padding:10px;max-width:520px;margin:0 auto;}
-        .adm-tc.a{display:block;}
-
-        /* CARDS */
-        .ic{background:#0a0a0a;border:1px solid #0f0;border-radius:8px;padding:12px;margin:8px 0;}
-        .ic-y{border-color:#ff0;}.ic-r{border-color:#f00;}
-        .il{padding:5px 0;border-bottom:1px solid #111;font-size:0.82rem;}
-        .il:last-child{border-bottom:none;}
-        .il-l{color:#0aa;font-size:0.7rem;}
-        .pb{width:100%;height:10px;background:#222;border-radius:5px;margin:6px 0;}
-        .pf{height:100%;background:linear-gradient(90deg,#0f0,#0ff);border-radius:5px;}
-        .sg{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0;}
-        .sb{background:#0a0a0a;border:1px solid #0f0;border-radius:8px;padding:10px;text-align:center;}
-        .sb-n{font-size:1.5rem;color:#0ff;font-weight:bold;}
-        .sb-t{font-size:0.7rem;color:#0aa;margin-top:3px;}
-        .packs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0;}
-        .pack{border:2px solid #333;border-radius:8px;padding:10px;cursor:pointer;transition:all 0.2s;text-align:center;background:#111;}
-        .pack:hover{border-color:#0ff;}.pack.sel{border-color:#ff0;background:#1a1500;}
-        .uc{background:#111;border:1px solid #333;border-radius:4px;padding:8px;margin:4px 0;font-size:0.8rem;}
-        .scroll{max-height:68vh;overflow-y:auto;padding-right:3px;}
-        .scroll::-webkit-scrollbar{width:3px;}
-        .scroll::-webkit-scrollbar-thumb{background:#0f0;}
-        .lnk{color:#0ff;cursor:pointer;text-decoration:underline;font-size:0.86rem;}
-        .chk{display:flex;align-items:flex-start;gap:8px;font-size:0.8rem;color:#0aa;line-height:1.5;cursor:pointer;}
-        .chk input{margin-top:3px;width:auto;flex-shrink:0;}
-        .badge-adm{background:linear-gradient(45deg,#f00,#f80);color:#fff;padding:2px 7px;border-radius:20px;font-size:0.68rem;font-weight:bold;}
+        /* (Mantenha todo o seu CSS original aqui) */
+        /* Certifique-se de que o #map-jogo tem altura definida */
+        #map-jogo { width: 100%; height: 600px; }
     </style>
 </head>
 <body>
 
-<!-- ======= P0: INÍCIO ======= -->
-<div id="p0" class="page ativa">
-    <div class="centro" style="padding-top:40px;">
-        <h1>🏴 ZAP FLAGS</h1>
-        <p style="color:#0aa;margin-bottom:30px;font-size:0.9rem;">Caça ao Tesouro Digital</p>
-        <button class="b bv" onclick="ir('p-login')">🎮 ENTRAR COMO JOGADOR</button>
-        <button class="b bc" onclick="ir('p-reg')">📝 CRIAR CONTA DE JOGADOR</button>
-        <br>
-        <button class="b bo" onclick="ir('p-pr0')">🏪 ÁREA DO LOJISTA</button>
-        <br>
-        <button class="b badm" onclick="ir('p-adm-login')">⚙️ ADMINISTRADOR</button>
-        <p style="color:#222;font-size:0.65rem;margin-top:20px;">v4.0 © 2025 ZAP FLAGS</p>
+    <div id="p-jogo" class="page">
+        <div id="map-jogo"></div>
     </div>
-</div>
 
-<!-- ======= P-LOGIN JOGADOR ======= -->
-<div id="p-login" class="page">
-    <div class="centro">
-        <button class="b bvol" onclick="ir('p0')" style="margin-bottom:15px;">← VOLTAR</button>
-        <h2>🎮 ENTRAR NO JOGO</h2>
-        <div id="m-login" class="m"></div>
-        <input class="f" type="email"    id="l-email" placeholder="📧 Email" autocomplete="email">
-        <input class="f" type="password" id="l-pass"  placeholder="🔑 Senha">
-        <button class="b bv" onclick="fazerLogin()">▶ ENTRAR</button>
-        <br><span class="lnk" onclick="ir('p-reg')">Não tens conta? Regista-te</span>
-    </div>
-</div>
+    <script>
+        // Variável global para o mapa
+        let map;
+
+        function iniciarMapa() {
+            // Verifica se o mapa já existe para não duplicar
+            if (map) return; 
+
+            // Inicializa o mapa com coordenadas de Guimarães (exemplo)
+            map = L.map('map-jogo').setView([41.4425, -8.2917], 15);
+
+            // Adiciona a camada de mapa (Tiles)
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap'
+            }).addTo(map);
+
+            // Adiciona o Avatar (Marcador)
+            var avatar = L.marker([41.4425, -8.2917]).addTo(map);
+            avatar.bindPopup("Estás aqui!").openPopup();
+            
+            console.log("Mapa inicializado com sucesso!");
+        }
+
+        // Função de navegação (já existente no seu código)
+        function ir(id) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('ativa'));
+            const alvo = document.getElementById(id);
+            alvo.classList.add('ativa');
+            
+            // Se a página for a do jogo, carrega o mapa
+            if(id === 'p-jogo') {
+                setTimeout(iniciarMapa, 500); // Delay para garantir que o div está visível
+            }
+        }
+    </script>
+</body>
+</html>
 
 <!-- ======= P-REG JOGADOR ======= -->
 <div id="p-reg" class="page">
