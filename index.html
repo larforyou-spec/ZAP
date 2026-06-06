@@ -79,3 +79,270 @@ function initTicker(){
     },90000);
 }
 </script>
+// ============================================================
+// ENTRAR NO JOGO (PARTE 2)
+// ============================================================
+function entrarJogo(user){
+    jogAtual=user;
+    document.getElementById('j-nome').innerText='👤 '+user.nome;
+    document.getElementById('j-email').innerText='📧 '+user.email;
+    atualizarHUD();
+    const b=document.getElementById('j-badge');
+    b.innerHTML=user.isAdm?'<span class="badge-adm">⚙️ ADMIN</span>':'';
+    ir('p-jogo');initTicker();
+}
+function logoutJ(){
+    if(confirm('Sair do jogo?')){
+        DB.delSess();jogAtual=null;
+        if(mapaJ){mapaJ.remove();mapaJ=null;marcJ=null;lgFlags=null;}
+        if(spawnTmr) clearTimeout(spawnTmr);
+        ir('p0');
+    }
+}
+
+// ============================================================
+// ADMIN LOGIN E PAINEL
+// ============================================================
+function loginAdmin(){
+    const pass=document.getElementById('adm-pass').value;
+    if(pass!==PASS){msg('m-adm-l','❌ Código incorreto!','e');return;}
+    ir('p-admin');
+}
+function logoutAdm(){if(confirm('Sair do painel de admin?')) ir('p0');}
+
+function carregarAdmin(){
+    const us=DB.u(),ps=DB.p();
+    document.getElementById('a-tu').innerText=us.length;
+    document.getElementById('a-tp').innerText=ps.length;
+    const du=document.getElementById('a-users');
+    if(us.length===0){du.innerHTML='<p style="color:#555;">Nenhum jogador.</p>';}
+    else{du.innerHTML=`<p style="color:#0aa;font-size:0.78rem;margin-bottom:6px;">Total: ${us.length}</p>`+
+        us.map((u,i)=>`<div class="uc"><b>👤 ${u.nome}</b> <span style="color:#0ff;font-size:0.78rem;">${u.email}</span><br>
+        <span style="color:#0aa;font-size:0.72rem;">📱${u.tel||'-'} | 🏴${u.flags||0} | ⚡${u.en||100}% | 🎫${(u.qrs||[]).length}</span><br>
+        <span style="color:#444;font-size:0.68rem;">🔑 ${u.pass}</span>
+        <div style="display:flex;gap:4px;margin-top:5px;flex-wrap:wrap;">
+            <button onclick="admJogar(${i})">🎮 Jogar</button>
+            <button onclick="admEditU(${i})">✏️ Editar</button>
+            <button onclick="admDelU(${i})">🗑️ Apagar</button>
+        </div></div>`).join('');}
+    const dp=document.getElementById('a-prs');
+    if(ps.length===0){dp.innerHTML='<p style="color:#555;">Nenhum lojista.</p>';}
+    else{dp.innerHTML=`<p style="color:#0aa;font-size:0.78rem;margin-bottom:6px;">Total: ${ps.length}</p>`+
+        ps.map((p,i)=>`<div class="uc" style="border-color:#ff0;"><b style="color:#ff0;">🏪 ${p.nomeEmpresa}</b><br>
+        <span style="color:#0ff;font-size:0.78rem;">${p.email}</span><br>
+        <span style="color:#0aa;font-size:0.72rem;">NIF:${p.nif} | ${p.atividade}</span><br>
+        <div style="display:flex;gap:4px;margin-top:5px;flex-wrap:wrap;">
+            <button onclick="admEntrarPR(${i})">🏪 Entrar</button>
+            <button onclick="admDelPR(${i})">🗑️ Apagar</button>
+        </div></div>`).join('');}
+    const db2=document.getElementById('a-bingos');
+    const bs=DB.b();
+    if(bs.length===0){db2.innerHTML='<p style="color:#555;">Nenhum bingo.</p>';}
+    else{db2.innerHTML=`<p style="color:#0aa;font-size:0.78rem;margin-bottom:6px;">Total: ${bs.length}</p>`+
+        bs.map(b=>`<div class="uc" style="border-color:#ff0;">🎉 BINGO! <b style="color:#0ff;">${b.nome}</b><br><span style="color:#555;font-size:0.7rem;">${new Date(b.data).toLocaleString('pt-PT')}</span></div>`).join('');}
+}
+
+function tabAdm(id){
+    document.querySelectorAll('.adm-tc').forEach(t=>t.classList.remove('a'));
+    document.querySelectorAll('.adm-tab').forEach(t=>t.classList.remove('a'));
+    document.getElementById(id).classList.add('a');
+    const tabs=['at0','at1','at2','at3','at4','at5','at6'];
+    document.querySelectorAll('.adm-tab')[tabs.indexOf(id)]?.classList.add('a');
+    if(id==='at5') setTimeout(initMapaAdm,200);
+}
+function admJogar(i){
+    const u=DB.u()[i];if(!confirm(`Jogar como ${u.nome}?`))return;
+    DB.setSess(u);entrarJogo(u);
+}
+function admEntrarPR(i){
+    const pr=DB.p()[i];if(!confirm(`Entrar como ${pr.nomeEmpresa}?`))return;
+    prAtual=pr;DB.setSepr(pr);abrirPR(false);
+}
+function admEditU(i){
+    const us=DB.u();const u=us[i];
+    const nn=prompt('Nome:',u.nome);if(nn===null)return;
+    const np=prompt('Senha:',u.pass);if(np===null)return;
+    us[i].nome=nn;us[i].pass=np;DB.su(us);carregarAdmin();
+}
+function admDelU(i){if(!confirm('Apagar?'))return;const us=DB.u();us.splice(i,1);DB.su(us);carregarAdmin();}
+function admDelPR(i){if(!confirm('Apagar?'))return;const ps=DB.p();ps.splice(i,1);DB.sp(ps);carregarAdmin();}
+
+function exportar(){
+    const d={users:DB.u(),prs:DB.p(),bingos:DB.b(),data:new Date().toISOString()};
+    const b=new Blob([JSON.stringify(d,null,2)],{type:'application/json'});
+    const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='zap_dados.json';a.click();
+}
+function criarJTeste(){
+    const us=DB.u();const n=us.length+1;
+    us.push({nome:`Jogador ${n}`,email:`j${n}@teste.com`,tel:'912345678',pass:'teste123',flags:0,en:100,qrs:[],reg:new Date().toISOString()});
+    DB.su(us);carregarAdmin();alert(`✅ Jogador ${n} criado!`);
+}
+function criarPRTeste(){
+    const ps=DB.p();const n=ps.length+1;
+    ps.push({nomeEmpresa:`Loja ${n}`,nif:`12345678${n}`,tipo:'Outro',atividade:'Outro Comércio',email:`l${n}@teste.com`,tel:'210000000',pass:'loja123',morada:'Rua Teste',cp:'1000-001',localidade:'Lisboa',distrito:'Lisboa',respNome:'Responsável',respTel:'912345678',respEmail:`r${n}@teste.com`,lat:38.7+Math.random()*0.2,lng:-9.1+Math.random()*0.2,campanhas:[],flagsTotal:0,flagsRest:0,qrsGerados:0,qrsUsados:0,reg:new Date().toISOString()});
+    DB.sp(ps);carregarAdmin();alert(`✅ Loja ${n} criada!`);
+}
+function simBingo(){
+    const us=DB.u();
+    if(us.length===0){alert('Cria jogadores primeiro!');return;}
+    dispararBingo(us[Math.floor(Math.random()*us.length)].nome);
+}
+    // ============================================================
+// MAPA DO JOGO E BANDEIRAS (PARTE 3)
+// ============================================================
+let mapaJ=null,marcJ=null,lgFlags=null,spawnTmr=null;
+let posAtual={lat:39.5,lng:-8.0};
+
+function initMapaJogo(){
+    if(mapaJ){mapaJ.invalidateSize();return;}
+    mapaJ=L.map('map-jogo',{zoomControl:true}).setView([39.5,-8.0],7);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap'}).addTo(mapaJ);
+    lgFlags=L.layerGroup().addTo(mapaJ);
+    mostrarLojistasMapa();
+    if(navigator.geolocation){
+        navigator.geolocation.watchPosition(pos=>{
+            posAtual={lat:pos.coords.latitude,lng:pos.coords.longitude};
+            const ic=L.divIcon({className:'',html:'<div style="background:#0f0;width:18px;height:18px;border-radius:50%;border:3px solid #fff;box-shadow:0 0 10px #0f0;"></div>',iconSize:[18,18],iconAnchor:[9,9]});
+            if(!marcJ){marcJ=L.marker([posAtual.lat,posAtual.lng],{icon:ic}).addTo(mapaJ).bindPopup(`👤 ${jogAtual?.nome}`);mapaJ.setView([posAtual.lat,posAtual.lng],16);}
+            else marcJ.setLatLng([posAtual.lat,posAtual.lng]);
+            spawnFlags();
+        },()=>{ spawnFlags(); },{enableHighAccuracy:true,maximumAge:5000,timeout:15000});
+    } else { spawnFlags(); }
+}
+
+function spawnFlags(){
+    if(!lgFlags||!mapaJ) return;
+    lgFlags.clearLayers();
+    const lat=posAtual.lat, lng=posAtual.lng;
+    const prs=DB.p().filter(pr=>pr.lat&&pr.lng&&pr.campanhas&&pr.campanhas.some(c=>c.ativa));
+    prs.forEach(pr=>{
+        const camp=pr.campanhas.find(c=>c.ativa);
+        if(!camp||camp.flagsRest<=0) return;
+        const dx=(lat-pr.lat)*111000;
+        const dy=(lng-pr.lng)*111000*Math.cos(lat*Math.PI/180);
+        const dist=Math.sqrt(dx*dx+dy*dy);
+        if(dist>camp.raio) return;
+        const nFlags=Math.min(3,Math.ceil(camp.flagsRest/10000));
+        for(let i=0;i<nFlags;i++){
+            const ang=Math.random()*2*Math.PI;
+            const d=Math.min(dist*0.8,camp.raio*0.5)+Math.random()*100;
+            const fLat=parseFloat(pr.lat)+(d/111000)*Math.cos(ang);
+            const fLng=parseFloat(pr.lng)+(d/(111000*Math.cos(parseFloat(pr.lat)*Math.PI/180)))*Math.sin(ang);
+            const ic=L.divIcon({className:'',html:`<div style="background:#f00;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.9rem;border:2px solid #ff0;cursor:pointer;">🏴</div>`,iconSize:[28,28],iconAnchor:[14,14]});
+            L.marker([fLat,fLng],{icon:ic}).addTo(lgFlags).on('click',()=>apanharFlag('PR',pr));
+        }
+    });
+    if(spawnTmr) clearTimeout(spawnTmr);
+    spawnTmr=setTimeout(spawnFlags,30000);
+}
+
+function apanharFlag(tipo,pr=null){
+    if(!jogAtual) return;
+    if(tipo==='PR'&&pr){
+        jogAtual.flags=(jogAtual.flags||0)+1;
+        const prs=DB.p();
+        const idx=prs.findIndex(p=>p.email===pr.email);
+        if(idx>=0){
+            const ci=prs[idx].campanhas.findIndex(c=>c.ativa);
+            if(ci>=0) prs[idx].campanhas[ci].flagsRest=Math.max(0,(prs[idx].campanhas[ci].flagsRest||0)-1);
+            DB.sp(prs);
+        }
+        if(jogAtual.flags%10===0) dispararBingo(jogAtual.nome);
+        atualizarHUD();
+    }
+    const us=DB.u();const idx=us.findIndex(u=>u.email===jogAtual.email);
+    if(idx>=0) us[idx]=jogAtual;DB.su(us);DB.setSess(jogAtual);
+    spawnFlags();
+}
+
+// ============================================================
+// SISTEMA LOJISTA (PR)
+// ============================================================
+function fazerLoginPR(){
+    const email=document.getElementById('pl-email').value.trim().toLowerCase();
+    const pass=document.getElementById('pl-pass').value;
+    const ps=DB.p();
+    const pr=ps.find(p=>p.email===email&&p.pass===pass);
+    if(!pr){msg('m-pr-login','❌ Dados incorretos!','e');return;}
+    prAtual=pr;DB.setSepr(pr);abrirPR(false);
+}
+
+function abrirPR(irPacks){
+    if(!prAtual) return;
+    document.getElementById('ph-n').innerText='🏪 '+prAtual.nomeEmpresa;
+    // (Renderiza dados de campanha...)
+    ir('p-pr-painel');
+    if(irPacks) tabPR('pt1');
+}
+
+function abrirScanner(){
+    msg('m-scan','📸 A simular leitura...','i');
+    setTimeout(()=>{
+        const ok=prAtual.campanhas?.some(c=>c.ativa)&&Math.random()>0.3;
+        if(ok){
+            document.getElementById('scan-det').style.display='block';
+            document.getElementById('sc-p').innerText='Prémio Ativo';
+        } else {msg('m-scan','❌ QR inválido!','e');}
+    },1500);
+}
+
+function validarQR(){
+    prAtual.qrsUsados=(prAtual.qrsUsados||0)+1;
+    guardarPRAtual();
+    document.getElementById('scan-det').style.display='none';
+    msg('m-scan','✅ Prémio entregue!','s');
+    abrirPR(false);
+}
+           // ============================================================
+// VALIDAÇÕES E UTILITÁRIOS (PARTE 4 - FINAL)
+// ============================================================
+const vE = e => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(e).toLowerCase());
+const vT = t => /^[0-9]{9,15}$/.test(String(t).replace(/[\s\-\+]/g, ''));
+const vN = n => /^[0-9]{9}$/.test(String(n).replace(/\s/g, ''));
+const vC = c => /^[0-9]{4}-[0-9]{3}$/.test(String(c));
+
+function msg(id, txt, t) {
+    const e = document.getElementById(id);
+    if (!e) return;
+    e.className = 'm ' + t;
+    e.innerText = txt;
+}
+
+function guardarPRAtual() {
+    const ps = DB.p();
+    const idx = ps.findIndex(p => p.email === prAtual.email);
+    if (idx >= 0) ps[idx] = prAtual;
+    else ps.push(prAtual);
+    DB.sp(ps);
+    DB.setSepr(prAtual);
+}
+
+// ============================================================
+// INICIALIZAÇÃO DO SISTEMA
+// ============================================================
+(function init() {
+    // Carrega o estado do utilizador ou lojista
+    const s = DB.sess();
+    const sp = DB.sepr();
+    
+    if (s) {
+        // Se houver sessão de jogador, entra no jogo
+        entrarJogo(s);
+    } else if (sp) {
+        // Se houver sessão de lojista, abre o painel
+        prAtual = sp;
+        abrirPR(false);
+    } else {
+        // Se não houver nada, vai para o login principal
+        ir('p0');
+    }
+})();
+
+// ============================================================
+// FECHO DA ESTRUTURA HTML (PARA COPIAR O FICHEIRO)
+// ============================================================
+// Certifica-te de que no final do ficheiro HTML tens:
+// <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+// </body>
+// </html>
+console.log("Sistema ZAP FLAGS 2026: Todos os módulos carregados com sucesso."); 
