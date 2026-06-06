@@ -1,92 +1,81 @@
 <!DOCTYPE html>
-<html lang="pt">
+<html lang="pt-PT">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ZAP FLAGS - Sistema Completo</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
-        *{box-sizing:border-box;margin:0;padding:0;}
-        body{font-family:'Courier New',monospace;background:#000;color:#0f0;min-height:100vh;}
-        .page{display:none;min-height:100vh;}.page.ativa{display:block;}
-        .centro{max-width:440px;margin:0 auto;padding:20px;text-align:center;}
-        h1{font-size:2.5rem;text-shadow:0 0 20px #0f0;margin-bottom:5px;}
-        .f{width:100%;background:#111;color:#0f0;border:1px solid #0f0;padding:11px;margin:5px 0;font-size:0.95rem;border-radius:4px;}
-        .b{width:100%;padding:13px;margin:5px 0;font-size:0.95rem;font-weight:bold;cursor:pointer;border:none;border-radius:4px;}
-        .bv{background:#0f0;color:#000;}.bc{background:#222;color:#0f0;border:1px solid #0f0;}.br{background:#300;color:#f00;border:1px solid #f00;}
-        .hud{position:fixed;top:0;left:0;right:0;z-index:3000;padding:10px;display:flex;justify-content:space-between;background:rgba(0,0,0,0.95);border-bottom:2px solid #0f0;}
-        #map-jogo, #map-adm, #map-pr-r{width:100%;height:350px;border:2px solid #0f0;margin-top:60px;}
-        .adm-tc{display:none;}.adm-tc.a{display:block;}
-        .adm-tabs{display:flex;gap:2px;overflow-x:auto;margin-top:52px;background:#000;}
-        .adm-tab{padding:8px;background:#111;color:#f88;cursor:pointer;font-size:0.7rem;}.adm-tab.a{background:#200;color:#ff0;}
+        /* Estilos base que completam a tua lógica visual */
+        body { margin: 0; font-family: sans-serif; background: #000; color: #fff; }
+        .page { display: none; padding: 20px; }
+        .page.ativa { display: block; }
+        .m { padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .e { background: #500; border: 1px solid #f00; }
+        .s { background: #050; border: 1px solid #0f0; }
+        .a { background: #550; border: 1px solid #ff0; }
+        #map-jogo, #map-adm, #map-pr-r, #map-pr-p { height: 400px; width: 100%; }
+        .uc { background: #111; border: 1px solid #444; padding: 10px; margin: 5px 0; border-radius: 5px; }
     </style>
 </head>
 <body>
 
-<div id="p0" class="page ativa"><div class="centro"><h1>🏴 ZAP FLAGS</h1><button class="b bv" onclick="ir('p-login')">JOGAR</button><button class="b bc" onclick="ir('p-admin')">ADMIN</button></div></div>
-<div id="p-login" class="page"><div class="centro"><h2>🎮 LOGIN</h2><input class="f" id="l-email"><input class="f" type="password" id="l-pass"><button class="b bv" onclick="fazerLogin()">ENTRAR</button></div></div>
-<div id="p-jogo" class="page"><div class="hud"><div>👤 JOGO</div><button onclick="logoutJ()">SAIR</button></div><div id="map-jogo"></div><div id="gps-box"></div></div>
-<div id="p-admin" class="page"><div class="hud"><div>⚙️ ADMIN</div><button onclick="ir('p0')">SAIR</button></div><div class="adm-tabs"><div class="adm-tab a" onclick="tabAdm('at0')">👥 Jogadores</div><div class="adm-tab" onclick="tabAdm('at5')">🗺️ Mapa</div></div><div id="at5" class="adm-tc"><div id="map-adm"></div></div></div>
-
 <script>
-    // --- DB E CONFIG ---
-    const PASS='321321';
-    const DB={
-        u:()=>JSON.parse(localStorage.getItem('zu')||'[]'),
-        p:()=>JSON.parse(localStorage.getItem('zp')||'[]'),
-        b:()=>JSON.parse(localStorage.getItem('zb')||'[]'),
-        su:(l)=>localStorage.setItem('zu',JSON.stringify(l)),
-        sp:(l)=>localStorage.setItem('zp',JSON.stringify(l)),
-        sb:(l)=>localStorage.setItem('zb',JSON.stringify(l)),
-        setSess:(u)=>localStorage.setItem('zs',JSON.stringify(u)),
-        delSess:()=>localStorage.removeItem('zs')
-    };
+// ============================================================
+// CONFIG E BANCO DE DADOS (PARTE 1)
+// ============================================================
+const PASS = '321321';
+const PACKS = {
+    BRONZE:  {n:'🥉 BRONZE',   p:'5€',   f:50000,   r:'5km',   rm:5000,   v:'30 dias'},
+    PRATA:   {n:'🥈 PRATA',    p:'15€',  f:150000,  r:'20km',  rm:20000,  v:'60 dias'},
+    OURO:    {n:'🥇 OURO',     p:'50€',  f:500000,  r:'50km',  rm:50000,  v:'90 dias'},
+    PLATINA: {n:'💎 PLATINA',  p:'100€', f:2000000, r:'150km', rm:150000, v:'180 dias'},
+};
 
-    // --- NAVEGAÇÃO E MAPAS ---
-    let map=null, mapAdm=null;
-    function ir(id){
-        document.querySelectorAll('.page').forEach(p=>p.classList.remove('ativa'));
-        const p=document.getElementById(id);
-        if(p) {
-            p.classList.add('ativa');
-            if(id==='p-jogo') setTimeout(initMapaJogo, 300);
-            if(id==='p-admin') setTimeout(initMapaAdm, 300);
+const DB = {
+    u: () => { try { return JSON.parse(localStorage.getItem('zu') || '[]') } catch (e) { return [] } },
+    p: () => { try { return JSON.parse(localStorage.getItem('zp') || '[]') } catch (e) { return [] } },
+    b: () => { try { return JSON.parse(localStorage.getItem('zb') || '[]') } catch (e) { return [] } },
+    su: (l) => localStorage.setItem('zu', JSON.stringify(l)),
+    sp: (l) => localStorage.setItem('zp', JSON.stringify(l)),
+    sb: (l) => localStorage.setItem('zb', JSON.stringify(l)),
+    sess: () => { try { return JSON.parse(localStorage.getItem('zs') || 'null') } catch (e) { return null } },
+    sepr: () => { try { return JSON.parse(localStorage.getItem('zspr') || 'null') } catch (e) { return null } },
+    delSess: () => localStorage.removeItem('zs'),
+    delSepr: () => localStorage.removeItem('zspr'),
+    setSess: (u) => localStorage.setItem('zs', JSON.stringify(u)),
+    setSepr: (p) => localStorage.setItem('zspr', JSON.stringify(p)),
+};
+
+// ============================================================
+// BINGO E TICKER
+// ============================================================
+function dispararBingo(nome){
+    const bs=DB.b();bs.unshift({nome,data:new Date().toISOString()});
+    if(bs.length>100) bs.pop();DB.sb(bs);
+    document.getElementById('bingo-nome').innerText=`🎊 ${nome}`;
+    document.getElementById('bingo-pop').style.display='block';
+    adicionarTick(`🎉 BINGO! <span>${nome}</span> ganhou 10 bandeiras e um QR Code! 🏆`);
+    setTimeout(fecharBingo,6000);
+}
+function fecharBingo(){document.getElementById('bingo-pop').style.display='none';}
+function adicionarTick(html){
+    const t=document.getElementById('ticker');
+    const s=document.createElement('span');s.className='tick';s.innerHTML=html;t.appendChild(s);
+    const s2=document.createElement('span');s2.className='tick';s2.innerHTML=html;t.appendChild(s2);
+}
+function initTicker(){
+    const t=document.getElementById('ticker');t.innerHTML='';
+    adicionarTick('🏴 ZAP FLAGS - Caça ao Tesouro! Boa sorte a todos! 🎯');
+    adicionarTick('⚡ Bandeiras ZAP dão energia - 1 por cada 5 jogadores!');
+    adicionarTick('🎫 10 bandeiras de loja = 1 QR Code com prémio!');
+    DB.b().slice(0,3).forEach(b=>adicionarTick(`🎉 BINGO! <span>${b.nome}</span> ganhou! 🏆`));
+    setInterval(()=>{
+        const us=DB.u().filter(u=>u.email!==jogAtual?.email);
+        if(us.length>0&&Math.random()<0.1){
+            const r=us[Math.floor(Math.random()*us.length)];
+            adicionarTick(`🏴 <span>${r.nome}</span> está a jogar ZAP FLAGS!`);
         }
-    }
-
-    function initMapaJogo(){
-        if(map){map.invalidateSize();return;}
-        map=L.map('map-jogo').setView([41.4425, -8.2917], 15);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-    }
-
-    function initMapaAdm(){
-        if(mapAdm){mapAdm.invalidateSize();return;}
-        mapAdm=L.map('map-adm').setView([41.4425, -8.2917], 13);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapAdm);
-    }
-
-    function tabAdm(id){
-        document.querySelectorAll('.adm-tc').forEach(t=>t.classList.remove('a'));
-        document.querySelectorAll('.adm-tab').forEach(t=>t.classList.remove('a'));
-        document.getElementById(id).classList.add('a');
-        if(id==='at5') setTimeout(initMapaAdm, 200);
-    }
-
-    // --- LÓGICA DE LOGIN ---
-    function fazerLogin(){
-        const email=document.getElementById('l-email').value.trim().toLowerCase();
-        const pass=document.getElementById('l-pass').value;
-        const us=DB.u();
-        const user=us.find(u=>u.email===email && u.pass===pass);
-        if(user){ DB.setSess(user); ir('p-jogo'); } 
-        else { alert('Credenciais inválidas'); }
-    }
-
-    function logoutJ(){ DB.delSess(); ir('p0'); }
-
-    console.log("Sistema Carregado");
+    },90000);
+}
 </script>
-</body>
-</html>
