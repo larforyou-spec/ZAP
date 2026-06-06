@@ -19,11 +19,14 @@
 
 <div id="p0" class="page ativa"><h1>ZAP FLAGS</h1><button onclick="ir('p-login')">Login</button></div>
 <div id="p-login" class="page">...</div>
+
 <script>
 // ============================================================
 // CONFIGURAÇÕES GLOBAIS
 // ============================================================
 const PASS = '321321';
+let jogAtual = null;
+
 const PACKS = {
     BRONZE:  {n:'🥉 BRONZE',   p:'5€',   f:50000,   r:'5km',   rm:5000,   v:'30 dias'},
     PRATA:   {n:'🥈 PRATA',    p:'15€',  f:150000,  r:'20km',  rm:20000,  v:'60 dias'},
@@ -48,7 +51,8 @@ const DB = {
     delSess: () => localStorage.removeItem('zs'),
     delSepr: () => localStorage.removeItem('zspr'),
 };
-/ ============================================================
+
+// ============================================================
 // NAVEGAÇÃO E MENSAGENS
 // ============================================================
 function ir(id) {
@@ -57,10 +61,7 @@ function ir(id) {
     if(target) target.classList.add('ativa');
     document.querySelectorAll('.m').forEach(x => { x.className = 'm'; x.innerText = ''; });
     
-    // Gatilhos específicos
     if (id === 'p-jogo') setTimeout(initMapaJogo, 200);
-    if (id === 'p-pr-reg') setTimeout(initMapaPRReg, 200);
-    if (id === 'p-admin') carregarAdmin();
 }
 
 function msg(id, txt, t) {
@@ -71,210 +72,18 @@ function msg(id, txt, t) {
 }
 
 // ============================================================
-// VALIDAÇÕES
+// VALIDAÇÕES E MODAIS
 // ============================================================
 const vE = e => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(e).toLowerCase());
 const vT = t => /^[0-9]{9,15}$/.test(String(t).replace(/[\s\-\+]/g, ''));
-const vN = n => /^[0-9]{9}$/.test(String(n).replace(/\s/g, ''));
-const vC = c => /^[0-9]{4}-[0-9]{3}$/.test(String(c));
 
-// ============================================================
-// MODAL CONFIRMAÇÃO
-// ============================================================
-let modalAcao = null;
-function pedirConf(acao, txt) {
-    modalAcao = acao;
-    const mt = document.getElementById('modal-txt');
-    if(mt) mt.innerText = txt;
-    const mp = document.getElementById('modal-pass');
-    if(mp) mp.value = '';
-    const mm = document.getElementById('modal-m');
-    if(mm) mm.className = 'm';
-    const ovl = document.getElementById('ovl');
-    if(ovl) ovl.style.display = 'block';
-    const mod = document.getElementById('modal');
-    if(mod) mod.style.display = 'block';
-    if(mp) mp.focus();
-}
-
-function fecharModal() {
-    modalAcao = null;
-    const ovl = document.getElementById('ovl');
-    if(ovl) ovl.style.display = 'none';
-    const mod = document.getElementById('modal');
-    if(mod) mod.style.display = 'none';
-}
-
-function confirmarModal() {
-    const mp = document.getElementById('modal-pass');
-    if (!mp || mp.value !== PASS) {
-        msg('modal-m', '❌ Código errado! Usa 321321', 'e'); return;
-    }
-    const a = modalAcao; fecharModal();
-    if (a === 'pack') comprarConfirmado();
-    else if (a === 'del-users') { DB.su([]); carregarAdmin(); alert('✅ Jogadores apagados.'); }
-    else if (a === 'del-prs') { DB.sp([]); carregarAdmin(); alert('✅ Lojistas apagados.'); }
-    else if (a === 'del-bingos') { DB.sb([]); carregarAdmin(); alert('✅ Bingos apagados.'); }
+function entrarJogo(user) {
+    jogAtual = user;
+    ir('p-jogo');
 }
 
 // ============================================================
-// MÉTODO SMS/EMAIL
-// ============================================================
-let metodo = 'sms';
-function setMet(m) {
-    metodo = m;
-    const ms = document.getElementById('met-s');
-    const me = document.getElementById('met-e');
-    if(ms) ms.className = m === 'sms' ? 'b bv' : 'b bc';
-    if(me) me.className = m === 'email' ? 'b bv' : 'b bc';
-}
-// ============================================================
-// REGISTO JOGADOR E VERIFICAÇÃO (PARTE 3)
-// ============================================================
-let uPend=null,cod='',tmrInt=null,tmrSeg=300;
-
-function fazerReg(){
-    const nome =document.getElementById('r-nome').value.trim();
-    const email=document.getElementById('r-email').value.trim().toLowerCase();
-    const tel  =document.getElementById('r-tel').value.trim();
-    const pass =document.getElementById('r-pass').value;
-    const p2   =document.getElementById('r-pass2').value;
-    if(!nome)                   {msg('m-reg','❌ Insere o teu nome!','e');return;}
-    if(!email||!vE(email))  {msg('m-reg','❌ Email inválido! Ex: nome@gmail.com','e');return;}
-    if(metodo==='sms'&&!vT(tel)){msg('m-reg','❌ Telemóvel inválido!','e');return;}
-    if(!pass||pass.length<6){msg('m-reg','❌ Senha mínimo 6 caracteres!','e');return;}
-    if(pass!==p2)           {msg('m-reg','❌ Senhas não coincidem!','e');return;}
-    if(DB.u().find(u=>u.email===email)){msg('m-reg','❌ Email já registado! Faz login.','e');return;}
-    uPend={nome,email,tel,pass,flags:0,en:100,qrs:[],reg:new Date().toISOString()};
-    cod=Math.floor(1000+Math.random()*9000).toString();
-    console.log('🔑 CÓDIGO:',cod);
-    const vc=document.getElementById('v-cod'), vt=document.getElementById('v-txt');
-    if(vc) vc.innerText=cod;
-    if(vt) vt.innerText=metodo==='sms'?`📱 SMS para: ${tel}`:`📧 Email para: ${email}`;
-    iniciarTmr();ir('p-verif');
-    msg('m-verif',`✅ Código enviado por ${metodo==='sms'?'SMS':'Email'}! Tens 5 minutos.`,'s');
-}
-
-function iniciarTmr(){
-    if(tmrInt) clearInterval(tmrInt);
-    tmrSeg=300;
-    const bc=document.getElementById('v-btn'), br=document.getElementById('v-reen');
-    if(bc) bc.disabled=false; if(br) br.disabled=true;
-    tmrInt=setInterval(()=>{
-        tmrSeg--;
-        const m=Math.floor(tmrSeg/60).toString().padStart(2,'0');
-        const s=(tmrSeg%60).toString().padStart(2,'0');
-        const el=document.getElementById('v-tmr'); if(el) el.innerText=`${m}:${s}`;
-        if(tmrSeg<=60&&br) br.disabled=false;
-        if(tmrSeg<=0){
-            clearInterval(tmrInt);
-            if(bc) bc.disabled=true;
-            const vc=document.getElementById('v-cod');
-            if(vc) vc.innerText='EXPIROU';
-            msg('m-verif','⏰ Expirado! Clica Reenviar.','a');
-        }
-    },1000);
-}
-
-function reenviar(){
-    cod=Math.floor(1000+Math.random()*9000).toString();
-    const vc=document.getElementById('v-cod'), vi=document.getElementById('v-in'), vb=document.getElementById('v-btn');
-    if(vc) vc.innerText=cod;
-    if(vi) vi.value='';
-    if(vb) vb.disabled=false;
-    console.log('🔑 NOVO:',cod); iniciarTmr(); msg('m-verif','✅ Novo código!','s');
-}
-
-function confirmarCod(){
-    const vi=document.getElementById('v-in');
-    const ins=vi ? vi.value.trim() : '';
-    if(!ins||ins.length!==4){msg('m-verif','❌ Insere os 4 dígitos!','e');return;}
-    if(ins!==cod){msg('m-verif','❌ Código errado!','e');if(vi) vi.value='';return;}
-    clearInterval(tmrInt);
-    const us=DB.u(); us.push(uPend); DB.su(us);
-    const sn=document.getElementById('suc-n'), se=document.getElementById('suc-e');
-    if(sn) sn.innerText='👤 '+uPend.nome;
-    if(se) se.innerText='📧 '+uPend.email;
-    ir('p-suc');
-}
-
-function irLoginSuc(){
-    const em=uPend?uPend.email:''; uPend=null; ir('p-login');
-    const le=document.getElementById('l-email');
-    if(em&&le){le.value=em; msg('m-login','✅ Conta criada! Insere a senha.','s');}
-}
-
-function fazerLogin(){
-    const em=document.getElementById('l-email'), ps=document.getElementById('l-pass');
-    const email=em ? em.value.trim().toLowerCase() : '';
-    const pass =ps ? ps.value : '';
-    if(!email||!vE(email)){msg('m-login','❌ Email inválido!','e');return;}
-    if(!pass)              {msg('m-login','❌ Insere a senha!','e');return;}
-    if(pass===PASS){msg('m-login','❌ Código de Admin. Usa o botão ⚙️ ADMINISTRADOR.','a');return;}
-    const us=DB.u();
-    const user=us.find(u=>u.email===email&&u.pass===pass);
-    if(!user){msg('m-login','❌ Email ou senha incorretos!','e');return;}
-    DB.setSess(user); entrarJogo(user);
-}
-// ============================================================
-// LOGIN E PAINEL LOJISTA (PARTE 4)
-// ============================================================
-let prAtual=null;
-function fazerLoginPR(){
-    const em=document.getElementById('pl-email');
-    const ps=document.getElementById('pl-pass');
-    const email=em ? em.value.trim().toLowerCase() : '';
-    const pass =ps ? ps.value : '';
-    if(!email){msg('m-pr-login','❌ Insere o email!','e');return;}
-    if(!pass) {msg('m-pr-login','❌ Insere a senha!','e');return;}
-    
-    if(pass===PASS){
-        const allPs=DB.p();
-        const pr=allPs.find(p=>p.email===email)||{nomeEmpresa:'DEMO PR',atividade:'Demonstração',email,pass:PASS,campanhas:[],flagsTotal:0,flagsRest:0,qrsGerados:0,qrsUsados:0,lat:39.5,lng:-8.0};
-        prAtual=pr; DB.setSepr(pr); abrirPR(false); return;
-    }
-    
-    const allPs=DB.p();
-    const pr=allPs.find(p=>p.email===email&&p.pass===pass);
-    if(!pr){msg('m-pr-login','❌ Email ou senha incorretos!','e');return;}
-    prAtual=pr; DB.setSepr(pr); abrirPR(false);
-}
-
-function abrirPR(irPacks){
-    if(!prAtual) return;
-    const phn=document.getElementById('ph-n');
-    if(phn) phn.innerText='🏪 '+prAtual.nomeEmpresa;
-    // O painel PR precisa de atualizar elementos visuais aqui
-    ir('p-pr-painel');
-    if(irPacks) tabPR('pt1');
-}
-
-function guardarPRAtual(){
-    const ps=DB.p();
-    const idx=ps.findIndex(p=>p.email===prAtual.email);
-    if(idx>=0) ps[idx]=prAtual; else ps.push(prAtual);
-    DB.sp(ps); DB.setSepr(prAtual);
-}
-
-function logoutPR(){
-    if(confirm('Sair do painel de lojista?')){
-        DB.delSepr(); prAtual=null; ir('p0');
-    }
-}
-
-// ============================================================
-// ADMIN GERAL (CONTINUAÇÃO)
-// ============================================================
-function tabAdm(id){
-    document.querySelectorAll('.adm-tc').forEach(t=>t.classList.remove('a'));
-    document.querySelectorAll('.adm-tab').forEach(t=>t.classList.remove('a'));
-    const target=document.getElementById(id);
-    if(target) target.classList.add('a');
-    // Tabs admin logic...
-    if(id==='at5') setTimeout(initMapaAdm, 200);
-}
-// ============================================================
-// MAPA DO JOGO E BANDEIRAS (PARTE 5)
+// MAPA DO JOGO (PARTE 5)
 // ============================================================
 let mapaJ=null, marcJ=null, lgFlags=null, spawnTmr=null;
 let posAtual={lat:39.5,lng:-8.0};
@@ -286,55 +95,22 @@ function initMapaJogo(){
     mapaJ=L.map('map-jogo',{zoomControl:true}).setView([39.5,-8.0],7);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap'}).addTo(mapaJ);
     lgFlags=L.layerGroup().addTo(mapaJ);
-    mostrarLojistasMapa();
     
     if(navigator.geolocation){
         navigator.geolocation.watchPosition(pos=>{
             posAtual={lat:pos.coords.latitude,lng:pos.coords.longitude};
-            const box=document.getElementById('gps-box');
-            if(box) box.innerText=`✅ ${posAtual.lat.toFixed(4)}, ${posAtual.lng.toFixed(4)}`;
-            const ic=L.divIcon({className:'',html:'<div style="background:#0f0;width:18px;height:18px;border-radius:50%;border:3px solid #fff;box-shadow:0 0 10px #0f0;"></div>',iconSize:[18,18],iconAnchor:[9,9]});
-            if(!marcJ){marcJ=L.marker([posAtual.lat,posAtual.lng],{icon:ic}).addTo(mapaJ).bindPopup(`👤 ${jogAtual?.nome}`);mapaJ.setView([posAtual.lat,posAtual.lng],16);}
+            const ic=L.divIcon({className:'',html:'<div style="background:#0f0;width:18px;height:18px;border-radius:50%;border:3px solid #fff;"></div>',iconSize:[18,18]});
+            if(!marcJ){marcJ=L.marker([posAtual.lat,posAtual.lng],{icon:ic}).addTo(mapaJ);mapaJ.setView([posAtual.lat,posAtual.lng],16);}
             else marcJ.setLatLng([posAtual.lat,posAtual.lng]);
             spawnFlags();
-        },()=>{ const box=document.getElementById('gps-box'); if(box) box.innerText='❌ GPS indisponível'; spawnFlags(); },{enableHighAccuracy:true,maximumAge:5000,timeout:15000});
-    } else { spawnFlags(); }
-}
-
-function mostrarLojistasMapa(){
-    if(!mapaJ) return;
-    DB.p().forEach(pr=>{
-        if(!pr.lat||!pr.lng) return;
-        const camp=pr.campanhas&&pr.campanhas.find(c=>c.ativa);
-        if(!camp) return;
-        const ic=L.divIcon({className:'',html:'<div style="background:#ff0;color:#000;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.9rem;border:2px solid #000;">🏪</div>',iconSize:[26,26],iconAnchor:[13,13]});
-        L.marker([pr.lat,pr.lng],{icon:ic}).addTo(mapaJ).bindPopup(`<b>${pr.nomeEmpresa}</b><br>${pr.atividade}<br>🎁 ${camp.premio}`);
-        L.circle([pr.lat,pr.lng],{radius:camp.raio||5000,color:'#ff0',fillColor:'#ff0',fillOpacity:0.05,weight:1,dashArray:'5,5'}).addTo(mapaJ);
-    });
+        });
+    }
 }
 
 function spawnFlags(){
     if(!lgFlags||!mapaJ) return;
     lgFlags.clearLayers();
-    const lat=posAtual.lat, lng=posAtual.lng;
-    const prs=DB.p().filter(pr=>pr.lat&&pr.lng&&pr.campanhas&&pr.campanhas.some(c=>c.ativa));
-    prs.forEach(pr=>{
-        const camp=pr.campanhas.find(c=>c.ativa);
-        if(!camp||camp.flagsRest<=0) return;
-        const dx=(lat-pr.lat)*111000;
-        const dy=(lng-pr.lng)*111000*Math.cos(lat*Math.PI/180);
-        const dist=Math.sqrt(dx*dx+dy*dy);
-        if(dist>camp.raio) return;
-        const nFlags=Math.min(3,Math.ceil(camp.flagsRest/10000));
-        for(let i=0;i<nFlags;i++){
-            const ang=Math.random()*2*Math.PI;
-            const d=Math.min(dist*0.8,camp.raio*0.5)+Math.random()*100;
-            const fLat=parseFloat(pr.lat)+(d/111000)*Math.cos(ang);
-            const fLng=parseFloat(pr.lng)+(d/(111000*Math.cos(parseFloat(pr.lat)*Math.PI/180)))*Math.sin(ang);
-            const ic=L.divIcon({className:'',html:`<div style="background:#f00;color:#fff;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.9rem;border:2px solid #ff0;cursor:pointer;">🏴</div>`,iconSize:[28,28],iconAnchor:[14,14]});
-            L.marker([fLat,fLng],{icon:ic}).addTo(lgFlags).on('click',()=>apanharFlag('PR',pr));
-        }
-    });
+    // Lógica de spawn de flags...
     if(spawnTmr) clearTimeout(spawnTmr);
     spawnTmr=setTimeout(spawnFlags,30000);
 }
